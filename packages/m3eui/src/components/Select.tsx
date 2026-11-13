@@ -234,7 +234,23 @@ export function Select<Value extends string = string>({
           data-label-position={labelPosition}
           data-floating={isLabelFloated ? "" : undefined}
           data-popup-open={isOpen ? "" : undefined}
+          style={{ borderRadius: triggerRadius }}
         >
+          {isFloatingLabel && variant === "outlined" ? (
+            <fieldset
+              aria-hidden="true"
+              className="m3e-field__outline"
+              data-floating={isLabelFloated ? "" : undefined}
+            >
+              <legend className="m3e-field__outline-legend">
+                <span>
+                  {label}
+                  {required ? " *" : ""}
+                </span>
+              </legend>
+            </fieldset>
+          ) : null}
+
           {isFloatingLabel ? (
             <label
               htmlFor={triggerId}
@@ -262,21 +278,6 @@ export function Select<Value extends string = string>({
               borderRadius: triggerRadius,
             }}
           >
-            {isFloatingLabel && variant === "outlined" ? (
-              <fieldset
-                aria-hidden="true"
-                className="m3e-field__outline"
-                data-floating={isLabelFloated ? "" : undefined}
-              >
-                <legend className="m3e-field__outline-legend">
-                  <span>
-                    {label}
-                    {required ? " *" : ""}
-                  </span>
-                </legend>
-              </fieldset>
-            ) : null}
-
             <BaseSelect.Value
               placeholder={resolvedPlaceholder}
               className="m3e-select__value"

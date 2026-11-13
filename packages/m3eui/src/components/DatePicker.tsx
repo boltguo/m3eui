@@ -859,7 +859,19 @@ export function DatePickerField({
           data-label-position={labelPosition}
           data-floating=""
           data-popup-open={open ? "" : undefined}
+          style={{ borderRadius: `${radius}px` }}
         >
+          {isFloatingLabel ? (
+            <fieldset
+              aria-hidden="true"
+              className="m3e-field__outline"
+              data-floating=""
+            >
+              <legend className="m3e-field__outline-legend">
+                <span>{label}</span>
+              </legend>
+            </fieldset>
+          ) : null}
           {isFloatingLabel ? (
             <span
               className="m3e-field__floating-label m3e-select__floating-label"
@@ -880,17 +892,6 @@ export function DatePickerField({
               paddingInline: `${SELECT_TOKENS.paddingInline}px`,
             }}
           >
-            {isFloatingLabel ? (
-              <fieldset
-                aria-hidden="true"
-                className="m3e-field__outline"
-                data-floating=""
-              >
-                <legend className="m3e-field__outline-legend">
-                  <span>{label}</span>
-                </legend>
-              </fieldset>
-            ) : null}
             <span className="m3e-select__value">
               {parsed ? formatLocalizedFullDate(locale, parsed) : currentIso}
             </span>

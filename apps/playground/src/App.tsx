@@ -422,11 +422,16 @@ const LOCALE_GROUP_ITEMS = LOCALE_OPTIONS.map((opt) => ({
   label: opt.label,
 }));
 
-const SCHEME_GROUP_ITEMS = [
-  { value: "expressive", label: "Expressive" },
-  { value: "tonalSpot", label: "Tonal" },
-  { value: "vibrant", label: "Vibrant" },
-] as const;
+const LOCALE_MENU_OPTIONS: readonly {
+  code: M3EBuiltInLocale;
+  shortLabel: string;
+  fullLabel: string;
+}[] = [
+  { code: "zh-CN", shortLabel: "中文", fullLabel: "简体中文 (zh-CN)" },
+  { code: "en-US", shortLabel: "EN", fullLabel: "English (en-US)" },
+  { code: "ja-JP", shortLabel: "日本語", fullLabel: "日本語 (ja-JP)" },
+  { code: "ar-SA", shortLabel: "العربية", fullLabel: "العربية (ar-SA)" },
+];
 
 function SeedSwatchDot({ hex }: { readonly hex: string }) {
   return (
@@ -435,6 +440,112 @@ function SeedSwatchDot({ hex }: { readonly hex: string }) {
       style={{ backgroundColor: hex }}
       aria-hidden="true"
     />
+  );
+}
+
+function GlobeIcon() {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="M2 12h20" />
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+    </svg>
+  );
+}
+
+function ChevronDownTinyIcon() {
+  return (
+    <svg
+      width="13"
+      height="13"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  );
+}
+
+function ColorModeGlyph({ mode }: { readonly mode: "light" | "dark" | "system" }) {
+  if (mode === "light") {
+    return (
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="4.5" />
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+      </svg>
+    );
+  }
+  if (mode === "dark") {
+    return (
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z" />
+      </svg>
+    );
+  }
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function DocsBrandMark({ isScrolled }: { readonly isScrolled: boolean }) {
+  return (
+    <span className="docs-brand-mark" aria-hidden="true">
+      <MaterialShapeView
+        shape={isScrolled ? "clover8Leaf" : "cookie9Sided"}
+        size={34}
+        scaleFactor={0.95}
+        fill="var(--m3e-color-primary)"
+      />
+      <span className="docs-brand-mark__glyph">M3</span>
+    </span>
   );
 }
 
@@ -450,11 +561,6 @@ function DocsHeader({
   const ui = usePlaygroundStrings();
   const {
     seedHex,
-    setSeedHex,
-    schemeVariant,
-    setSchemeVariant,
-    contrastLevel,
-    setContrastLevel,
     colorMode,
     setColorMode,
     locale,
@@ -462,32 +568,56 @@ function DocsHeader({
     setDirectionMode,
   } = useM3E();
 
-  const seedPresets = React.useMemo(
-    () => [
-      { hex: "#6750A4", name: ui.seedPurple },
-      { hex: "#0B6B58", name: ui.seedJade },
-      { hex: "#1A73E8", name: ui.seedOcean },
-      { hex: "#B3261E", name: ui.seedVermilion },
-      { hex: "#7D5260", name: ui.seedRose },
-    ],
-    [ui],
+  const activeLocaleOption = React.useMemo(() => {
+    const langPrefix = locale.split(/[-_]/)[0]?.toLowerCase();
+    return (
+      LOCALE_MENU_OPTIONS.find(
+        (opt) => opt.code.split("-")[0]?.toLowerCase() === langPrefix,
+      ) ?? LOCALE_MENU_OPTIONS[0]!
+    );
+  }, [locale]);
+
+  const localeMenuItems = React.useMemo(
+    () =>
+      LOCALE_MENU_OPTIONS.map((opt) => ({
+        id: opt.code,
+        label: opt.fullLabel,
+        checked: activeLocaleOption.code === opt.code,
+        onCheckedChange: () => {
+          setDirectionMode("auto");
+          setLocale(opt.code);
+        },
+      })),
+    [activeLocaleOption.code, setDirectionMode, setLocale],
   );
-  const contrastItems = React.useMemo(
+
+  const colorModeMenuItems = React.useMemo(
     () => [
-      { value: "0", label: ui.contrastStandard },
-      { value: "0.5", label: ui.contrastMedium },
-      { value: "1", label: ui.contrastHigh },
+      {
+        id: "light",
+        label: ui.modeLight,
+        icon: <ColorModeGlyph mode="light" />,
+        checked: colorMode === "light",
+        onCheckedChange: () => setColorMode("light"),
+      },
+      {
+        id: "dark",
+        label: ui.modeDark,
+        icon: <ColorModeGlyph mode="dark" />,
+        checked: colorMode === "dark",
+        onCheckedChange: () => setColorMode("dark"),
+      },
+      {
+        id: "system",
+        label: ui.modeSystem,
+        icon: <ColorModeGlyph mode="system" />,
+        checked: colorMode === "system",
+        onCheckedChange: () => setColorMode("system"),
+      },
     ],
-    [ui],
+    [colorMode, setColorMode, ui.modeDark, ui.modeLight, ui.modeSystem],
   );
-  const colorModeItems = React.useMemo(
-    () => [
-      { value: "light", label: ui.modeLight },
-      { value: "dark", label: ui.modeDark },
-      { value: "system", label: ui.modeSystem },
-    ],
-    [ui],
-  );
+
   const globalSuggestions = React.useMemo<readonly SearchSuggestion[]>(
     () =>
       NAV_GROUPS.flatMap((group, gIdx) =>
@@ -550,12 +680,7 @@ function DocsHeader({
             onClick={onOpenMobileNav}
           />
           <a href="#docs-top" className="docs-brand-link">
-            <MaterialShapeView
-              shape="cookie9Sided"
-              toShape="clover8Leaf"
-              morphProgress={isScrolled ? 1 : 0}
-              size={32}
-            />
+            <DocsBrandMark isScrolled={isScrolled} />
             <span className="docs-brand__title">m3eui</span>
           </a>
           <AssistChip
@@ -591,121 +716,40 @@ function DocsHeader({
       }
       actions={
         <div className="docs-header-actions">
-          <ButtonGroup
-            variant="connected"
-            size="xs"
-            selectionMode="single"
-            aria-label={ui.languageLabel}
-            items={LOCALE_GROUP_ITEMS}
-            value={[locale]}
-            onValueChange={(vals) => {
-              const next = vals[0] as M3EBuiltInLocale | undefined;
-              if (next) {
-                setDirectionMode("auto");
-                setLocale(next);
-              }
-            }}
-          />
-
-          <div className="docs-header-desktop-only">
-            <ButtonGroup
-              variant="connected"
-              size="xs"
-              selectionMode="single"
-              aria-label={ui.colorModeLabel}
-              items={colorModeItems}
-              value={[colorMode]}
-              onValueChange={(vals) => {
-                const next = vals[0] as "light" | "dark" | "system" | undefined;
-                if (next) setColorMode(next);
-              }}
-            />
-          </div>
-
-          <Popover
+          <DropdownMenu
             align="end"
-            title={ui.themePopoverTitle}
+            items={localeMenuItems}
             trigger={
               <Button
                 size="xs"
                 variant="outlined"
-                leadingIcon={<SeedSwatchDot hex={seedHex} />}
+                aria-label={ui.languageLabel}
+                leadingIcon={<GlobeIcon />}
+                trailingIcon={<ChevronDownTinyIcon />}
               >
-                {ui.themeButton}
+                {activeLocaleOption.shortLabel}
               </Button>
             }
-          >
-            <div className="docs-theme-popover-body">
-              <div className="docs-studio-field">
-                <span className="docs-studio-field__label">{ui.seedPresetsLabel}</span>
-                <div className="demo-row" style={{ gap: 6 }}>
-                  {seedPresets.map((preset) => (
-                    <FilterChip
-                      key={preset.hex}
-                      selected={
-                        seedHex.toLowerCase() === preset.hex.toLowerCase()
-                      }
-                      icon={<SeedSwatchDot hex={preset.hex} />}
-                      onSelectedChange={() => setSeedHex(preset.hex)}
-                    >
-                      {preset.name}
-                    </FilterChip>
-                  ))}
-                  <label className="docs-color-picker-chip">
-                    <input
-                      type="color"
-                      aria-label={ui.seedCustomAria}
-                      className="docs-color-input"
-                      value={seedHex}
-                      onChange={(e) => setSeedHex(e.target.value)}
-                    />
-                    <span>{ui.seedCustom}</span>
-                  </label>
-                </div>
-              </div>
+          />
 
-              <div className="docs-studio-field">
-                <span className="docs-studio-field__label">{ui.schemeStyleLabel}</span>
-                <ButtonGroup
-                  variant="connected"
-                  size="xs"
-                  selectionMode="single"
-                  aria-label={ui.schemeStyleLabel}
-                  items={SCHEME_GROUP_ITEMS}
-                  value={[schemeVariant]}
-                  onValueChange={(vals) => {
-                    const next = vals[0] as
-                      | "expressive"
-                      | "tonalSpot"
-                      | "vibrant"
-                      | undefined;
-                    if (next) setSchemeVariant(next);
-                  }}
-                />
-              </div>
-
-              <div className="docs-studio-field">
-                <span className="docs-studio-field__label">{ui.contrastLabel}</span>
-                <ButtonGroup
-                  variant="connected"
-                  size="xs"
-                  selectionMode="single"
-                  aria-label={ui.contrastLabel}
-                  items={contrastItems}
-                  value={[String(contrastLevel)]}
-                  onValueChange={(vals) => {
-                    const next = vals[0];
-                    if (next !== undefined) setContrastLevel(Number(next));
-                  }}
-                />
-              </div>
-            </div>
-          </Popover>
+          <DropdownMenu
+            align="end"
+            items={colorModeMenuItems}
+            trigger={
+              <IconButton
+                size="sm"
+                variant="standard"
+                aria-label={ui.colorModeLabel}
+                icon={<ColorModeGlyph mode={colorMode} />}
+              />
+            }
+          />
 
           <Button
             size="xs"
             variant="tonal"
-            leadingIcon={<SlidersStudioIcon />}
+            leadingIcon={<SeedSwatchDot hex={seedHex} />}
+            trailingIcon={<SlidersStudioIcon />}
             onClick={onOpenStudio}
           >
             {ui.studioButton}
@@ -825,6 +869,16 @@ function ThemeStudioSheet({
                   {preset.name}
                 </FilterChip>
               ))}
+              <label className="docs-color-picker-chip">
+                <input
+                  type="color"
+                  aria-label={ui.seedCustomAria}
+                  className="docs-color-input"
+                  value={seedHex}
+                  onChange={(e) => setSeedHex(e.target.value)}
+                />
+                <span>{ui.seedCustom}</span>
+              </label>
             </div>
 
             <Select
@@ -969,21 +1023,9 @@ function DocsBody() {
   const ui = usePlaygroundStrings();
   const {
     seedHex,
-    setSeedHex,
     schemeVariant,
-    setSchemeVariant,
     specVersion,
-    setSpecVersion,
-    contrastLevel,
-    setContrastLevel,
     direction,
-    setDirection,
-    motionSchemeName,
-    setMotionSchemeName,
-    playbackRate,
-    setPlaybackRate,
-    debugGeometry,
-    setDebugGeometry,
     exportConfigJson,
   } = useM3E();
   const { locale, t } = useM3EI18n();
@@ -1006,24 +1048,6 @@ function DocsBody() {
       ),
     [ui],
   );
-  const seedPresets = React.useMemo(
-    () => [
-      { hex: "#6750A4", name: ui.seedPurple },
-      { hex: "#0B6B58", name: ui.seedJade },
-      { hex: "#1A73E8", name: ui.seedOcean },
-      { hex: "#B3261E", name: ui.seedVermilion },
-      { hex: "#7D5260", name: ui.seedRose },
-    ],
-    [ui],
-  );
-  const contrastItems = React.useMemo(
-    () => [
-      { value: "0", label: ui.contrastStandard },
-      { value: "0.5", label: ui.contrastMedium },
-      { value: "1", label: ui.contrastHigh },
-    ],
-    [ui],
-  );
   const [activeSection, setActiveSection] = React.useState<string>("theme-setup");
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
   const [studioOpen, setStudioOpen] = React.useState(false);
@@ -1038,10 +1062,6 @@ function DocsBody() {
     "heart",
   ];
   const currentHeroShape = HERO_SHAPES[heroShapeIdx % HERO_SHAPES.length]!;
-  const prevHeroShape =
-    HERO_SHAPES[
-      (heroShapeIdx - 1 + HERO_SHAPES.length) % HERO_SHAPES.length
-    ]!;
 
   const scrollToSection = React.useCallback((sectionId: string) => {
     setActiveSection(sectionId);
@@ -1169,8 +1189,7 @@ function DocsBody() {
                   <AssistChip icon={<SparkleIcon />}>
                     Material 3 Expressive
                   </AssistChip>
-                  <AssistChip>AOSP SPEC 2025</AssistChip>
-                  <AssistChip>v0.1.0</AssistChip>
+                  <AssistChip>{`AOSP SPEC ${specVersion}`}</AssistChip>
                 </div>
 
                 <h1 className="docs-hero__title">
@@ -1190,7 +1209,8 @@ function DocsBody() {
                   </Button>
                   <Button
                     variant="tonal"
-                    leadingIcon={<SlidersStudioIcon />}
+                    leadingIcon={<SeedSwatchDot hex={seedHex} />}
+                    trailingIcon={<SlidersStudioIcon />}
                     onClick={() => setStudioOpen(true)}
                   >
                     {ui.openStudioBtn}
@@ -1211,120 +1231,19 @@ function DocsBody() {
                   className="docs-hero__emblem"
                   onClick={() => setHeroShapeIdx((n) => n + 1)}
                 >
-                  <MaterialShapeView
-                    shape={prevHeroShape}
-                    toShape={currentHeroShape}
-                    morphProgress={1}
-                    size={84}
-                  />
+                  <span className="docs-hero__emblem-mark" aria-hidden="true">
+                    <MaterialShapeView
+                      shape={currentHeroShape}
+                      size={84}
+                      fill="var(--m3e-color-primary)"
+                    />
+                    <span className="docs-hero__emblem-glyph">M3</span>
+                  </span>
                   <span className="docs-hero__emblem-caption">
                     {currentHeroShape}
                   </span>
                 </Card>
               </Tooltip>
-            </div>
-
-            <Divider />
-
-            <div
-              role="group"
-              className="docs-hero__studio-bar"
-              aria-label={ui.quickStudioBarAria}
-            >
-              <div className="docs-hero__studio-group">
-                <span className="docs-studio-field__label">{ui.seedPresetsLabel}</span>
-                <div className="demo-row" style={{ gap: 6 }}>
-                  {seedPresets.map((preset) => (
-                    <FilterChip
-                      key={preset.hex}
-                      selected={
-                        seedHex.toLowerCase() === preset.hex.toLowerCase()
-                      }
-                      icon={<SeedSwatchDot hex={preset.hex} />}
-                      onSelectedChange={() => setSeedHex(preset.hex)}
-                    >
-                      {preset.name}
-                    </FilterChip>
-                  ))}
-                </div>
-              </div>
-
-              <div className="docs-hero__studio-group">
-                <span className="docs-studio-field__label">{ui.schemeStyleLabel}</span>
-                <ButtonGroup
-                  variant="connected"
-                  size="xs"
-                  selectionMode="single"
-                  aria-label={ui.schemeStyleLabel}
-                  items={SCHEME_GROUP_ITEMS}
-                  value={[schemeVariant]}
-                  onValueChange={(vals) => {
-                    const next = vals[0] as
-                      | "expressive"
-                      | "tonalSpot"
-                      | "vibrant"
-                      | undefined;
-                    if (next) setSchemeVariant(next);
-                  }}
-                />
-              </div>
-
-              <div className="docs-hero__studio-group">
-                <span className="docs-studio-field__label">{ui.contrastLabel}</span>
-                <ButtonGroup
-                  variant="connected"
-                  size="xs"
-                  selectionMode="single"
-                  aria-label={ui.contrastLabel}
-                  items={contrastItems}
-                  value={[String(contrastLevel)]}
-                  onValueChange={(vals) => {
-                    if (vals[0] !== undefined) setContrastLevel(Number(vals[0]));
-                  }}
-                />
-              </div>
-
-              <div className="docs-hero__studio-group">
-                <span className="docs-studio-field__label">{ui.motionAndDebugLegend}</span>
-                <div className="demo-row" style={{ gap: 6 }}>
-                  <FilterChip
-                    selected={specVersion !== "2021"}
-                    onSelectedChange={(is2025) =>
-                      setSpecVersion(is2025 ? "2025" : "2021")
-                    }
-                  >
-                    {`Monet ${specVersion}`}
-                  </FilterChip>
-                  <FilterChip
-                    selected={motionSchemeName === "expressive"}
-                    onSelectedChange={(on) =>
-                      setMotionSchemeName(on ? "expressive" : "standard")
-                    }
-                  >
-                    {motionSchemeName === "expressive"
-                      ? ui.expressiveSpringLabel
-                      : ui.standardSpringLabel}
-                  </FilterChip>
-                  <FilterChip
-                    selected={playbackRate < 1}
-                    onSelectedChange={(slow) => setPlaybackRate(slow ? 0.25 : 1)}
-                  >
-                    {playbackRate === 1 ? ui.normalSpeedLabel : ui.slowMotionLabel}
-                  </FilterChip>
-                  <FilterChip
-                    selected={debugGeometry}
-                    onSelectedChange={setDebugGeometry}
-                  >
-                    {ui.geometryRulerLabel}
-                  </FilterChip>
-                  <FilterChip
-                    selected={direction === "rtl"}
-                    onSelectedChange={(rtl) => setDirection(rtl ? "rtl" : "ltr")}
-                  >
-                    {direction === "ltr" ? "LTR →" : "← RTL"}
-                  </FilterChip>
-                </div>
-              </div>
             </div>
           </Card>
 
@@ -1373,7 +1292,7 @@ export function App() {
                   title={
                     <div className="docs-inline-card-head">
                       <span>
-                        <code>m3e.json</code> 配置
+                        <code>m3e.json</code> {ui.configCardSuffix}
                       </span>
                       <Button
                         size="xs"
@@ -1387,10 +1306,10 @@ export function App() {
                             setTimeout(() => setCopiedConfig(false), 1600);
                           } catch {
                           }
-                          toast({ title: "已复制 m3e.json" });
+                          toast({ title: ui.copiedM3eJsonToast });
                         }}
                       >
-                        {copiedConfig ? "已复制" : "复制"}
+                        {copiedConfig ? ui.cardCopied : ui.cardCopy}
                       </Button>
                     </div>
                   }
@@ -1409,12 +1328,12 @@ export function App() {
                   variant="outlined"
                   title={
                     <span>
-                      多语言词条 (<code>{locale}</code> ·{" "}
+                      {ui.i18nEntriesLabel} (<code>{locale}</code> ·{" "}
                       <code>dir=&quot;{direction}&quot;</code>)
                     </span>
                   }
                 >
-                  <SegmentedList aria-label="多语言词条示例">
+                  <SegmentedList aria-label={ui.i18nEntriesLabel}>
                     <SegmentedListItem
                       headline={<strong>{t("datePicker.title")}</strong>}
                       supportingText="Key: datePicker.title"

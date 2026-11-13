@@ -76,6 +76,8 @@ export interface PlaygroundStrings {
   readonly propColType: string;
   readonly propColDefault: string;
   readonly propColDesc: string;
+  readonly configCardSuffix: string;
+  readonly i18nEntriesLabel: string;
 }
 
 const ZH_CN: PlaygroundStrings = {
@@ -155,6 +157,8 @@ const ZH_CN: PlaygroundStrings = {
   propColType: "类型",
   propColDefault: "默认值",
   propColDesc: "说明",
+  configCardSuffix: "配置",
+  i18nEntriesLabel: "多语言词条",
 };
 
 const EN_US: PlaygroundStrings = {
@@ -234,6 +238,8 @@ const EN_US: PlaygroundStrings = {
   propColType: "Type",
   propColDefault: "Default",
   propColDesc: "Description",
+  configCardSuffix: "Configuration",
+  i18nEntriesLabel: "Localized Strings",
 };
 
 const JA_JP: PlaygroundStrings = {
@@ -313,6 +319,8 @@ const JA_JP: PlaygroundStrings = {
   propColType: "型",
   propColDefault: "既定値",
   propColDesc: "説明",
+  configCardSuffix: "設定",
+  i18nEntriesLabel: "多言語メッセージ",
 };
 
 const AR_SA: PlaygroundStrings = {
@@ -392,6 +400,8 @@ const AR_SA: PlaygroundStrings = {
   propColType: "النوع",
   propColDefault: "الافتراضي",
   propColDesc: "الوصف",
+  configCardSuffix: "الإعداد",
+  i18nEntriesLabel: "سلاسل الترجمة",
 };
 
 export function resolvePlaygroundStrings(locale: string): PlaygroundStrings {

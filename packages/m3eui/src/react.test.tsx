@@ -21,6 +21,7 @@ import {
   Combobox,
   ContainedLoadingIndicator,
   DataTable,
+  DatePickerField,
   DateRangePicker,
   Dialog,
   Divider,
@@ -67,6 +68,7 @@ import {
   TextareaField,
   TextField,
   TimePicker,
+  TimePickerField,
   ToggleButton,
   TopAppBar,
   arSAMessages,
@@ -1338,7 +1340,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(selected).toBe("button");
   });
 
-  it("floats labels and opens <fieldset>/<legend> outline notches on TextField, Select, and Combobox", () => {
+  it("floats labels and opens <fieldset>/<legend> outline notches on TextField, Select, DatePickerField, TimePickerField, and Combobox", () => {
     act(() => {
       root.render(
         <PausedWrapper locale="en-US">
@@ -1357,6 +1359,17 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
                 { value: "compose", label: "Compose" },
               ]}
             />
+            <Select
+              variant="outlined"
+              label="Model (Outlined)"
+              defaultValue="pro"
+              options={[
+                { value: "pro", label: "Gemini 2.5 Pro" },
+                { value: "flash", label: "Gemini 2.5 Flash" },
+              ]}
+            />
+            <DatePickerField label="Release date" defaultValue="2026-11-13" />
+            <TimePickerField label="Release time" defaultValue="09:30" />
           </div>
         </PausedWrapper>,
       );
@@ -1365,9 +1378,21 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     const outlines = container.querySelectorAll<HTMLFieldSetElement>(
       "fieldset.m3e-field__outline",
     );
-    expect(outlines.length).toBe(3);
+    expect(outlines.length).toBe(6);
     expect(outlines[0]!.hasAttribute("data-floating")).toBe(false);
     expect(outlines[1]!.hasAttribute("data-floating")).toBe(true);
+    expect(outlines[3]!.hasAttribute("data-floating")).toBe(true);
+
+    // Ensure <fieldset class="m3e-field__outline"> is a direct child of .m3e-select__shell (never inside <button class="m3e-select__trigger">)
+    const selectShellOutlines = container.querySelectorAll<HTMLFieldSetElement>(
+      ".m3e-select__shell > fieldset.m3e-field__outline",
+    );
+    expect(selectShellOutlines.length).toBe(3);
+    expect(
+      container.querySelector(".m3e-select__trigger fieldset.m3e-field__outline"),
+    ).toBeNull();
+    const selectShell = container.querySelector<HTMLElement>(".m3e-select__shell");
+    expect(selectShell?.style.borderRadius).toBe("4px");
 
     const firstInput = container.querySelector<HTMLInputElement>(
       ".m3e-text-field__input",

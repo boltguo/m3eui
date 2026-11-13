@@ -649,6 +649,7 @@ export function TimePicker({
 
 export interface M3ETimePickerFieldProps {
   readonly label?: React.ReactNode;
+  readonly labelPosition?: "floating" | "outside";
   readonly value?: PlainTimeString;
   readonly defaultValue?: PlainTimeString;
   readonly onValueChange?: (value: string) => void;
@@ -660,6 +661,7 @@ export interface M3ETimePickerFieldProps {
 
 export function TimePickerField({
   label,
+  labelPosition = "floating",
   value: controlledValue,
   defaultValue = "09:30",
   onValueChange,
@@ -680,6 +682,11 @@ export function TimePickerField({
     { hour: hour24, minute },
     use24Hour,
   );
+  const isFloatingLabel = labelPosition === "floating" && Boolean(label);
+  const height = isFloatingLabel ? SELECT_TOKENS.outlinedHeight : 48;
+  const radius = isFloatingLabel
+    ? SELECT_TOKENS.outlinedRadius
+    : SELECT_TOKENS.outsideLabelRadius;
 
   return (
     <div
@@ -688,25 +695,58 @@ export function TimePickerField({
           ? `m3e-date-picker-field m3e-time-picker-field ${className}`
           : "m3e-date-picker-field m3e-time-picker-field"
       }
+      data-label-position={labelPosition}
       style={style}
     >
-      {label ? <span className="m3e-select__label">{label}</span> : null}
+      {label && !isFloatingLabel ? (
+        <span className="m3e-field__label">{label}</span>
+      ) : null}
       <BasePopover.Root open={open} onOpenChange={setOpen}>
-        <BasePopover.Trigger
-          disabled={disabled}
-          className="m3e-select__trigger m3e-date-picker-field__trigger"
+        <div
+          className="m3e-select__shell"
           data-variant="outlined"
-          style={{
-            minHeight: `${SELECT_TOKENS.outlinedHeight}px`,
-            borderRadius: `${SELECT_TOKENS.outlinedRadius}px`,
-            paddingInline: `${SELECT_TOKENS.paddingInline}px`,
-          }}
+          data-label-position={labelPosition}
+          data-floating=""
+          data-popup-open={open ? "" : undefined}
+          style={{ borderRadius: `${radius}px` }}
         >
-          <span>{formattedLabel}</span>
-          <span className="m3e-select__chevron" aria-hidden="true">
-            <ClockIconSvg />
-          </span>
-        </BasePopover.Trigger>
+          {isFloatingLabel ? (
+            <fieldset
+              aria-hidden="true"
+              className="m3e-field__outline"
+              data-floating=""
+            >
+              <legend className="m3e-field__outline-legend">
+                <span>{label}</span>
+              </legend>
+            </fieldset>
+          ) : null}
+          {isFloatingLabel ? (
+            <span
+              className="m3e-field__floating-label m3e-select__floating-label"
+              data-floating=""
+            >
+              {label}
+            </span>
+          ) : null}
+          <BasePopover.Trigger
+            disabled={disabled}
+            className="m3e-select__trigger m3e-date-picker-field__trigger"
+            data-variant="outlined"
+            data-label-position={labelPosition}
+            data-floating=""
+            style={{
+              minHeight: `${height}px`,
+              borderRadius: `${radius}px`,
+              paddingInline: `${SELECT_TOKENS.paddingInline}px`,
+            }}
+          >
+            <span className="m3e-select__value">{formattedLabel}</span>
+            <span className="m3e-select__chevron" aria-hidden="true">
+              <ClockIconSvg />
+            </span>
+          </BasePopover.Trigger>
+        </div>
 
         <BasePopover.Portal>
           <BasePopover.Positioner
