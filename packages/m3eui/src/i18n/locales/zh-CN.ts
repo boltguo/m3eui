@@ -1,12 +1,18 @@
 import type { M3EMessages } from "../types.js";
 
 export const zhCNMessages: M3EMessages = {
-  "carousel.slideAnnouncement": "第 {index} / {count} 张{titleSuffix}",
+  "badge.overflow": "{max}+",
+
+  "carousel.roleDescription": "轮播",
+  "carousel.slideRoleDescription": "卡片",
+  "carousel.slideLabel": "第 {index} / {count} 张：{title}",
+  "carousel.slideAnnouncement": "第 {index} / {count} 张",
+  "carousel.slideAnnouncementWithTitle": "第 {index} / {count} 张：{title}",
   "carousel.prevSlide": "上一张卡片",
   "carousel.nextSlide": "下一张卡片",
   "carousel.paginationLabel": "跳转至指定卡片",
   "carousel.goToSlide": "跳至第 {index} 张：{title}",
-  "carousel.listLabel": "轮播卡片列表",
+  "carousel.listLabel": "卡片列表",
 
   "chip.remove": "移除标签",
 
@@ -39,7 +45,9 @@ export const zhCNMessages: M3EMessages = {
 
   "fabMenu.triggerOpen": "新建快捷操作",
   "fabMenu.triggerClose": "关闭快捷菜单",
+  "floatingToolbar.ariaLabel": "浮动工具栏",
   "splitButton.moreOptions": "展开更多选项",
+  "buttonGroup.moreActions": "更多操作",
 
   "form.errorSummaryHeading": "请修正以下 {count} 项表单填写问题：",
 
@@ -49,15 +57,15 @@ export const zhCNMessages: M3EMessages = {
   "progress.wavyLinearLabel": "进度",
   "progress.wavyCircularLabel": "环形进度",
 
-  "menubar.ariaLabel": "应用命令菜单栏",
-  "navigation.barLabel": "主导航栏",
-  "navigation.railLabel": "侧边导航轨",
-  "navigation.wideRailLabel": "宽版侧边导航轨",
-  "navigation.collapseRail": "收起侧边导航轨",
-  "navigation.expandRail": "展开侧边导航轨",
-  "navigation.drawerLabel": "应用抽屉导航",
-  "navigation.suiteLabel": "应用自适应主导航",
-  "navigation.siteMenuLabel": "站点主导航",
+  "menubar.ariaLabel": "应用命令",
+  "navigation.barLabel": "主栏",
+  "navigation.railLabel": "侧边轨",
+  "navigation.wideRailLabel": "宽版侧边轨",
+  "navigation.collapseRail": "收起侧边轨",
+  "navigation.expandRail": "展开侧边轨",
+  "navigation.drawerLabel": "主菜单抽屉",
+  "navigation.suiteLabel": "自适应主栏",
+  "navigation.siteMenuLabel": "站点",
 
   "numberField.decrement": "减小数值",
   "numberField.increment": "增大数值",

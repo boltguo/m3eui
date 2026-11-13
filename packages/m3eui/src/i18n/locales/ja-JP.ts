@@ -1,12 +1,18 @@
 import type { M3EMessages } from "../types.js";
 
 export const jaJPMessages: M3EMessages = {
-  "carousel.slideAnnouncement": "{count} 枚中 {index} 枚目{titleSuffix}",
+  "badge.overflow": "{max}+",
+
+  "carousel.roleDescription": "カルーセル",
+  "carousel.slideRoleDescription": "スライド",
+  "carousel.slideLabel": "{count} 枚中 {index} 枚目：{title}",
+  "carousel.slideAnnouncement": "{count} 枚中 {index} 枚目",
+  "carousel.slideAnnouncementWithTitle": "{count} 枚中 {index} 枚目：{title}",
   "carousel.prevSlide": "前のカード",
   "carousel.nextSlide": "次のカード",
   "carousel.paginationLabel": "指定したカードへ移動",
   "carousel.goToSlide": "{index} 枚目へ移動: {title}",
-  "carousel.listLabel": "カルーセル一覧",
+  "carousel.listLabel": "スライド一覧",
 
   "chip.remove": "チップを削除",
 
@@ -39,7 +45,9 @@ export const jaJPMessages: M3EMessages = {
 
   "fabMenu.triggerOpen": "クイック操作",
   "fabMenu.triggerClose": "クイックメニューを閉じる",
+  "floatingToolbar.ariaLabel": "フローティングツールバー",
   "splitButton.moreOptions": "その他のオプション",
+  "buttonGroup.moreActions": "その他の操作",
 
   "form.errorSummaryHeading": "次の {count} 件の入力内容を確認してください：",
 
@@ -49,15 +57,15 @@ export const jaJPMessages: M3EMessages = {
   "progress.wavyLinearLabel": "進行状況",
   "progress.wavyCircularLabel": "円形の進行状況",
 
-  "menubar.ariaLabel": "アプリケーションメニューバー",
-  "navigation.barLabel": "メインナビゲーションバー",
-  "navigation.railLabel": "ナビゲーションレール",
-  "navigation.wideRailLabel": "ワイドナビゲーションレール",
-  "navigation.collapseRail": "ナビゲーションレールを折りたたむ",
-  "navigation.expandRail": "ナビゲーションレールを展開",
-  "navigation.drawerLabel": "ナビゲーションドロワー",
-  "navigation.suiteLabel": "アダプティブナビゲーション",
-  "navigation.siteMenuLabel": "サイトナビゲーション",
+  "menubar.ariaLabel": "アプリケーションコマンド",
+  "navigation.barLabel": "メイン",
+  "navigation.railLabel": "サイドレール",
+  "navigation.wideRailLabel": "ワイドサイドレール",
+  "navigation.collapseRail": "サイドレールを折りたたむ",
+  "navigation.expandRail": "サイドレールを展開",
+  "navigation.drawerLabel": "メインドロワー",
+  "navigation.suiteLabel": "アダプティブメイン",
+  "navigation.siteMenuLabel": "サイト",
 
   "numberField.decrement": "値を減らす",
   "numberField.increment": "値を増やす",

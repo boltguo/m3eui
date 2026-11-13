@@ -27,6 +27,7 @@ import {
   DockedDatePicker,
   ExtendedFAB,
   FAB,
+  FABMenu,
   Fieldset,
   FilterChip,
   FloatingToolbar,
@@ -54,6 +55,7 @@ import {
   SegmentedList,
   SegmentedListItem,
   Select,
+  SideSheet,
   Skeleton,
   Slider,
   SplitButton,
@@ -68,14 +70,21 @@ import {
   ToggleButton,
   TopAppBar,
   arSAMessages,
+  canonicalizeBcp47Locale,
   defineM3EConfig,
   enUSMessages,
+  formatLocalizedDateRange,
   formatLocalizedFullDate,
+  formatLocalizedInteger,
   formatLocalizedMonthYear,
+  formatLocalizedPercent,
   formatLocalizedWallTime,
   formatM3EMessage,
   generateM3EStaticThemeCss,
+  getLocaleFirstDayOfWeek,
+  getLocaleUses24Hour,
   getLocalizedMondayWeekdays,
+  getLocalizedWeekdays,
   getM3EInitScript,
   isRtlLocale,
   jaJPMessages,
@@ -150,19 +159,43 @@ describe("m3eui — Source Architecture, i18n & Declarative Config Suite", () =>
     expect(m3euiViolations).toEqual([]);
   });
 
-  it("maintains 100% key parity and non-empty translations across en-US, zh-CN, ja-JP, and ar-SA", () => {
+  it("enforces zero hardcoded UI/ARIA attribute string literals across m3eui components", () => {
+    const repoRoot = resolve(__dirname, "../../..");
+    const componentsDir = join(repoRoot, "packages/m3eui/src/components");
+    const attrLiteralRe =
+      /\b(?:aria-label|aria-roledescription|aria-valuetext|placeholder|alt)\s*=\s*["'][^"']+["']/;
+    const violations: string[] = [];
+
+    for (const file of readdirSync(componentsDir)) {
+      if (!file.endsWith(".tsx")) continue;
+      const content = readFileSync(join(componentsDir, file), "utf8");
+      if (attrLiteralRe.test(content)) {
+        violations.push(file);
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
+  it("maintains 100% key parity, placeholder parity, and non-empty translations across en-US, zh-CN, ja-JP, and ar-SA", () => {
     const baseKeys = Object.keys(enUSMessages).sort();
-    expect(baseKeys.length).toBeGreaterThanOrEqual(70);
+    expect(baseKeys.length).toBeGreaterThanOrEqual(75);
+    const extractParams = (s: string) =>
+      Array.from(s.matchAll(/\{(\w+)\}/g), (m) => m[1]!).sort();
 
     for (const [code, dict] of Object.entries(M3E_BUILT_IN_LOCALES)) {
       const keys = Object.keys(dict).sort();
       expect(keys, `Key mismatch in ${code}`).toEqual(baseKeys);
       for (const k of keys) {
-        const val = dict[k as keyof typeof enUSMessages];
+        const typedKey = k as keyof typeof enUSMessages;
+        const val = dict[typedKey];
         expect(
           typeof val === "string" && val.trim().length > 0,
           `Empty value for ${code}.${k}`,
         ).toBe(true);
+        expect(
+          extractParams(val),
+          `Placeholder mismatch for ${code}.${k}`,
+        ).toEqual(extractParams(enUSMessages[typedKey]));
       }
     }
 
@@ -174,12 +207,25 @@ describe("m3eui — Source Architecture, i18n & Declarative Config Suite", () =>
     ).toBe("第 2 项，共 5 项");
   });
 
-  it("formats UTC-anchored localized dates, weekdays, and wall times without host-timezone drift", () => {
+  it("canonicalizes BCP 47 tags, resolves script-aware RTL, and formats CLDR dates, ranges, 12h/24h cycles, and numbers", () => {
+    expect(canonicalizeBcp47Locale("zh_cn")).toBe("zh-CN");
+    expect(canonicalizeBcp47Locale("EN_us")).toBe("en-US");
+
     expect(isRtlLocale("ar-SA")).toBe(true);
     expect(isRtlLocale("he-IL")).toBe(true);
     expect(isRtlLocale("fa-IR")).toBe(true);
+    expect(isRtlLocale("pa-Arab")).toBe(true);
+    expect(isRtlLocale("az-Arab")).toBe(true);
+    expect(isRtlLocale("ku-Latn")).toBe(false);
     expect(isRtlLocale("zh-CN")).toBe(false);
     expect(isRtlLocale("en-US")).toBe(false);
+
+    expect(getLocaleUses24Hour("en-US")).toBe(false);
+    expect(getLocaleUses24Hour("ar-SA")).toBe(false);
+    expect(getLocaleUses24Hour("zh-CN")).toBe(true);
+    expect(getLocaleUses24Hour("ja-JP")).toBe(true);
+    expect(getLocaleUses24Hour("en-US-u-hc-h23")).toBe(true);
+    expect(getLocaleUses24Hour("zh-CN-u-hc-h12")).toBe(false);
 
     const weekdaysZh = getLocalizedMondayWeekdays("zh-CN");
     const weekdaysEn = getLocalizedMondayWeekdays("en-US");
@@ -191,8 +237,24 @@ describe("m3eui — Source Architecture, i18n & Declarative Config Suite", () =>
       formatLocalizedFullDate("en-US", { year: 2026, month: 1, day: 1 }),
     ).toContain("Jan");
     expect(
+      formatLocalizedDateRange(
+        "en-US",
+        { year: 2026, month: 11, day: 10 },
+        { year: 2027, month: 1, day: 4 },
+      ),
+    ).toContain("2027");
+    expect(
       formatLocalizedWallTime("en-US", { hour: 14, minute: 30 }, true),
     ).toContain("14:30");
+    expect(formatLocalizedInteger("ar-SA", 99)).toBe(
+      new Intl.NumberFormat("ar-SA", { maximumFractionDigits: 0 }).format(99),
+    );
+    expect(formatLocalizedPercent("ar-SA", 0.45)).toBe(
+      new Intl.NumberFormat("ar-SA", {
+        style: "percent",
+        maximumFractionDigits: 0,
+      }).format(0.45),
+    );
   });
 
   it("generates a safe synchronous SSR zero-FOUC init script", () => {
@@ -475,7 +537,9 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
 
     const nav = container.querySelector("nav.m3e-nav-menu");
     expect(nav).not.toBeNull();
-    expect(nav!.getAttribute("aria-label")).toBe("Site navigation");
+    expect(nav!.getAttribute("aria-label")).toBe(
+      enUSMessages["navigation.siteMenuLabel"],
+    );
     expect(nav!.getAttribute("role")).toBeNull();
 
     const activeLink = container.querySelector<HTMLAnchorElement>(
@@ -799,7 +863,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(handleBar!.style.width).toBe("4px");
   });
 
-  it("renders Select filled variant with crisp 0px bottom corners and outlined variant with 12px corners", () => {
+  it("renders Select with canonical M3 4px floating corners by default and 12px corners when labelPosition is outside", () => {
     const options = [
       { value: "expressive", label: "Expressive" },
       { value: "vibrant", label: "Vibrant" },
@@ -820,6 +884,20 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
             options={options}
             defaultValue="vibrant"
           />
+          <Select
+            variant="filled"
+            labelPosition="outside"
+            label="外部填充"
+            options={options}
+            defaultValue="expressive"
+          />
+          <Select
+            variant="outlined"
+            labelPosition="outside"
+            label="外部边框"
+            options={options}
+            defaultValue="vibrant"
+          />
         </PausedWrapper>,
       );
     });
@@ -827,9 +905,11 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     const triggers = container.querySelectorAll<HTMLElement>(
       ".m3e-select__trigger",
     );
-    expect(triggers.length).toBe(2);
-    expect(triggers[0]!.style.borderRadius).toBe("12px 12px 0px 0px");
-    expect(triggers[1]!.style.borderRadius).toBe("12px");
+    expect(triggers.length).toBe(4);
+    expect(triggers[0]!.style.borderRadius).toBe("4px 4px 0px 0px");
+    expect(triggers[1]!.style.borderRadius).toBe("4px");
+    expect(triggers[2]!.style.borderRadius).toBe("12px 12px 0px 0px");
+    expect(triggers[3]!.style.borderRadius).toBe("12px");
   });
 
   it("mirrors ConnectedButtonGroup corner tuples and Switch thumb offset horizontally in RTL", () => {
@@ -1256,5 +1336,427 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
       links[1]!.click();
     });
     expect(selected).toBe("button");
+  });
+
+  it("floats labels and opens <fieldset>/<legend> outline notches on TextField, Select, and Combobox", () => {
+    act(() => {
+      root.render(
+        <PausedWrapper locale="en-US">
+          <div>
+            <TextField variant="outlined" label="Project name" />
+            <TextField
+              variant="outlined"
+              label="Filled field"
+              defaultValue="M3 Expressive"
+            />
+            <Combobox
+              variant="outlined"
+              label="Framework"
+              items={[
+                { value: "react", label: "React" },
+                { value: "compose", label: "Compose" },
+              ]}
+            />
+          </div>
+        </PausedWrapper>,
+      );
+    });
+
+    const outlines = container.querySelectorAll<HTMLFieldSetElement>(
+      "fieldset.m3e-field__outline",
+    );
+    expect(outlines.length).toBe(3);
+    expect(outlines[0]!.hasAttribute("data-floating")).toBe(false);
+    expect(outlines[1]!.hasAttribute("data-floating")).toBe(true);
+
+    const firstInput = container.querySelector<HTMLInputElement>(
+      ".m3e-text-field__input",
+    );
+    expect(firstInput).not.toBeNull();
+    act(() => {
+      firstInput!.focus();
+    });
+    expect(outlines[0]!.hasAttribute("data-floating")).toBe(true);
+  });
+
+  it("preserves ToggleButton leadingIcon by default when selected, supports showCheckIcon, and renders ButtonGroup overflow trigger", () => {
+    act(() => {
+      root.render(
+        <PausedWrapper locale="en-US">
+          <div>
+            <ToggleButton
+              defaultPressed
+              leadingIcon={<span data-testid="star-glyph">*</span>}
+            >
+              Favorite
+            </ToggleButton>
+            <ToggleButton
+              defaultPressed
+              showCheckIcon
+              leadingIcon={<span data-testid="pin-glyph">#</span>}
+            >
+              Pinned
+            </ToggleButton>
+            <ButtonGroup
+              maxVisibleItems={2}
+              items={[
+                { value: "one", label: "One" },
+                { value: "two", label: "Two" },
+                { value: "three", label: "Three" },
+                { value: "four", label: "Four" },
+              ]}
+            />
+          </div>
+        </PausedWrapper>,
+      );
+    });
+
+    expect(container.querySelector('[data-testid="star-glyph"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="pin-glyph"]')).toBeNull();
+
+    const visibleItems = container.querySelectorAll(
+      ".m3e-button-group__item:not(.m3e-button-group__overflow-trigger)",
+    );
+    expect(visibleItems.length).toBe(2);
+    const overflowBtn = container.querySelector<HTMLButtonElement>(
+      '.m3e-button-group button.m3e-button-group__overflow-trigger[aria-label="More actions"]',
+    );
+    expect(overflowBtn).not.toBeNull();
+  });
+
+  it("applies inert to collapsed FloatingToolbar and closed FABMenu, roving focus on ArrowUp/ArrowDown, and outside pointerdown dismiss", () => {
+    act(() => {
+      root.render(
+        <PausedWrapper locale="en-US">
+          <div>
+            <FloatingToolbar
+              collapsed
+              items={[
+                { id: "cut", label: "Cut", icon: <span>X</span> },
+                { id: "copy", label: "Copy", icon: <span>C</span> },
+              ]}
+            />
+            <FABMenu
+              triggerLabel="Create"
+              items={[
+                { id: "doc", label: "Document", icon: <span>D</span> },
+                { id: "sheet", label: "Spreadsheet", icon: <span>S</span> },
+              ]}
+            />
+          </div>
+        </PausedWrapper>,
+      );
+    });
+
+    const toolbar = container.querySelector<HTMLElement>(".m3e-floating-toolbar");
+    expect(toolbar).not.toBeNull();
+    expect(toolbar!.hasAttribute("data-collapsed")).toBe(true);
+    expect(toolbar!.inert).toBe(true);
+
+    const fabMenuList = container.querySelector<HTMLElement>(".m3e-fab-menu__list");
+    const toggleFab = container.querySelector<HTMLButtonElement>(".m3e-toggle-fab");
+    expect(fabMenuList).not.toBeNull();
+    expect(toggleFab).not.toBeNull();
+    expect(fabMenuList!.inert).toBe(true);
+    expect(
+      container.querySelector(".m3e-fab-menu__item")?.getAttribute("aria-hidden"),
+    ).toBeNull();
+
+    act(() => {
+      toggleFab!.click();
+    });
+    expect(fabMenuList!.inert).toBe(false);
+
+    const menuItems = container.querySelectorAll<HTMLButtonElement>(
+      ".m3e-fab-menu__item",
+    );
+    expect(menuItems.length).toBe(2);
+    act(() => {
+      menuItems[1]!.focus();
+      fabMenuList!.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true }),
+      );
+    });
+    expect(document.activeElement).toBe(menuItems[0]);
+
+    act(() => {
+      document.body.dispatchEvent(
+        new PointerEvent("pointerdown", { bubbles: true }),
+      );
+    });
+    expect(fabMenuList!.inert).toBe(true);
+  });
+
+  it("adapts DockedDatePicker firstDayOfWeek by locale and supports 2D arrow-key roving grid navigation", () => {
+    expect(getLocaleFirstDayOfWeek("en-US")).toBe(0);
+    expect(getLocaleFirstDayOfWeek("ar-SA")).toBe(6);
+    expect(getLocaleFirstDayOfWeek("zh-CN")).toBe(1);
+    expect(getLocalizedWeekdays("en-US").length).toBe(7);
+
+    act(() => {
+      root.render(
+        <PausedWrapper locale="en-US">
+          <DockedDatePicker defaultValue="2026-05-15" />
+        </PausedWrapper>,
+      );
+    });
+
+    const weekRows = container.querySelectorAll('.m3e-date-picker__week-row[role="row"]');
+    expect(weekRows.length).toBeGreaterThanOrEqual(5);
+    const gridCells = container.querySelectorAll('.m3e-date-picker__week-row [role="gridcell"]');
+    expect(gridCells.length).toBe(weekRows.length * 7);
+
+    const activeDay = container.querySelector<HTMLButtonElement>(
+      '.m3e-date-picker__day[tabindex="0"]',
+    );
+    expect(activeDay?.textContent).toBe("15");
+
+    act(() => {
+      activeDay!.focus();
+      activeDay!.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }),
+      );
+    });
+
+    const nextActiveDay = container.querySelector<HTMLButtonElement>(
+      '.m3e-date-picker__day[tabindex="0"]',
+    );
+    expect(nextActiveDay?.textContent).toBe("22");
+  });
+
+  it("advances Carousel focal slide via horizontal pointer drag scrubbing", () => {
+    let focalIndex = 0;
+    act(() => {
+      root.render(
+        <PausedWrapper locale="en-US">
+          <Carousel
+            defaultActiveIndex={0}
+            onActiveIndexChange={(idx) => {
+              focalIndex = idx;
+            }}
+            items={[
+              { id: "1", title: "Slide One" },
+              { id: "2", title: "Slide Two" },
+              { id: "3", title: "Slide Three" },
+            ]}
+          />
+        </PausedWrapper>,
+      );
+    });
+
+    const track = container.querySelector<HTMLElement>(".m3e-carousel__track");
+    expect(track).not.toBeNull();
+
+    act(() => {
+      track!.dispatchEvent(
+        new PointerEvent("pointerdown", {
+          bubbles: true,
+          button: 0,
+          pointerId: 1,
+          clientX: 280,
+          clientY: 100,
+        }),
+      );
+      track!.dispatchEvent(
+        new PointerEvent("pointermove", {
+          bubbles: true,
+          pointerId: 1,
+          clientX: 120,
+          clientY: 102,
+        }),
+      );
+      track!.dispatchEvent(
+        new PointerEvent("pointerup", {
+          bubbles: true,
+          pointerId: 1,
+          clientX: 120,
+          clientY: 102,
+        }),
+      );
+    });
+
+    expect(focalIndex).toBe(1);
+  });
+
+  it("supports TimePicker keyboard dial navigation, FloatingToolbar scrollCollapse, and SPEC_2025 M3EProvider tokens", () => {
+    let currentTime = "09:30";
+    let collapsedState = false;
+    const scrollBoxRef = { current: null as HTMLDivElement | null };
+
+    act(() => {
+      root.render(
+        <M3EProvider initialSpecVersion="2025" syncDocumentRoot={false}>
+          <div
+            ref={(node) => {
+              scrollBoxRef.current = node;
+            }}
+            style={{ height: 120, overflowY: "auto" }}
+          >
+            <TimePicker
+              defaultValue="09:30"
+              use24Hour
+              onValueChange={(v) => {
+                currentTime = v;
+              }}
+            />
+            <FloatingToolbar
+              scrollCollapse
+              scrollTarget={scrollBoxRef}
+              onCollapsedChange={(c) => {
+                collapsedState = c;
+              }}
+              items={[{ id: "edit", label: "Edit", icon: "✎" }]}
+              companionFab={<button type="button">+</button>}
+            />
+          </div>
+        </M3EProvider>,
+      );
+    });
+
+    const scope = container.querySelector<HTMLElement>(".m3e-scope");
+    expect(scope?.style.getPropertyValue("--m3e-color-primary-dim")).toContain("light-dark(");
+
+    const dial = container.querySelector<HTMLElement>(".m3e-time-picker__dial");
+    expect(dial?.getAttribute("tabindex")).toBe("0");
+
+    act(() => {
+      dial!.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp", bubbles: true }));
+    });
+    expect(currentTime).toBe("10:30");
+
+    act(() => {
+      dial!.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    });
+    act(() => {
+      dial!.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "ArrowRight", shiftKey: true, bubbles: true }),
+      );
+    });
+    expect(currentTime).toBe("10:35");
+
+    // Simulate downward scroll > 24px -> collapses toolbar; upward scroll -> expands toolbar
+    act(() => {
+      scrollBoxRef.current!.scrollTop = 60;
+      scrollBoxRef.current!.dispatchEvent(new Event("scroll"));
+    });
+    expect(collapsedState).toBe(true);
+
+    act(() => {
+      scrollBoxRef.current!.scrollTop = 0;
+      scrollBoxRef.current!.dispatchEvent(new Event("scroll"));
+    });
+    expect(collapsedState).toBe(false);
+  });
+
+  it("applies scoped BCP 47 lang/dir, CLDR 12h/24h TimePicker BiDi digits, localized Carousel/Badge/Progress, and RTL Slider/SideSheet geometry", () => {
+    act(() => {
+      root.render(
+        <div>
+          <div data-testid="ar-scope">
+            <M3EProvider locale="ar_sa" initialDirection="auto" syncDocumentRoot={false}>
+              <TimePicker defaultValue="14:30" />
+              <Carousel
+                items={[
+                  { id: "1", title: "الأولى" },
+                  { id: "2", title: "الثانية" },
+                ]}
+              />
+              <DateRangePicker
+                defaultValue={{ start: "2026-11-10", end: "2026-11-14" }}
+              />
+              <CircularProgressIndicator value={45} showValueLabel />
+              <Badge count={120} max={99}>
+                <span>Inbox</span>
+              </Badge>
+              <Slider defaultValue={40} step={20} showTicks aria-label="مستوى الصوت" />
+              <SideSheet open title="لوحة جانبية">
+                <span>محتوى</span>
+              </SideSheet>
+            </M3EProvider>
+          </div>
+          <div data-testid="zh-scope">
+            <M3EProvider locale="zh_cn" initialDirection="auto" syncDocumentRoot={false}>
+              <TimePicker defaultValue="14:30" />
+              <Carousel
+                items={[
+                  { id: "1", title: "第一张" },
+                  { id: "2", title: "第二张" },
+                ]}
+              />
+            </M3EProvider>
+          </div>
+        </div>,
+      );
+    });
+
+    const arScope = container.querySelector<HTMLElement>(
+      '[data-testid="ar-scope"] .m3e-scope',
+    );
+    const zhScope = container.querySelector<HTMLElement>(
+      '[data-testid="zh-scope"] .m3e-scope',
+    );
+    expect(arScope?.getAttribute("lang")).toBe("ar-SA");
+    expect(arScope?.getAttribute("dir")).toBe("rtl");
+    expect(zhScope?.getAttribute("lang")).toBe("zh-CN");
+    expect(zhScope?.getAttribute("dir")).toBe("ltr");
+
+    // CLDR default hourCycle: ar-SA -> 12h (12 dial options + LTR digit container), zh-CN -> 24h (24 dial options)
+    expect(
+      arScope?.querySelectorAll('.m3e-time-picker__dial [role="option"]').length,
+    ).toBe(12);
+    expect(
+      arScope
+        ?.querySelector(".m3e-time-picker__digits-ltr")
+        ?.getAttribute("dir"),
+    ).toBe("ltr");
+    expect(
+      zhScope?.querySelectorAll('.m3e-time-picker__dial [role="option"]').length,
+    ).toBe(24);
+
+    // Carousel localized aria-roledescription + RTL chevron mirroring
+    expect(
+      arScope?.querySelector(".m3e-carousel")?.getAttribute("aria-roledescription"),
+    ).toBe(arSAMessages["carousel.roleDescription"]);
+    expect(
+      zhScope?.querySelector(".m3e-carousel")?.getAttribute("aria-roledescription"),
+    ).toBe(zhCNMessages["carousel.roleDescription"]);
+    expect(
+      zhScope
+        ?.querySelector(".m3e-carousel__slide")
+        ?.getAttribute("aria-roledescription"),
+    ).toBe(zhCNMessages["carousel.slideRoleDescription"]);
+    const arChevronSvg = arScope?.querySelector<SVGSVGElement>(
+      ".m3e-carousel__nav-btn svg",
+    );
+    expect(arChevronSvg?.style.scale).toBe("-1 1");
+
+    // Badge overflow & CircularProgressIndicator localized via Intl.NumberFormat
+    const expectedOverflow = formatM3EMessage(arSAMessages["badge.overflow"], {
+      max: formatLocalizedInteger("ar-SA", 99),
+    });
+    expect(arScope?.querySelector(".m3e-badge")?.textContent).toBe(
+      expectedOverflow,
+    );
+    const expectedPct = formatLocalizedPercent("ar-SA", 0.45);
+    expect(
+      arScope
+        ?.querySelector(".m3e-circular-progress")
+        ?.getAttribute("aria-valuetext"),
+    ).toBe(expectedPct);
+
+    // Slider RTL segment borderRadius caps & logical tick positioning
+    const activeSeg = arScope?.querySelector<HTMLElement>(
+      ".m3e-slider__segment--active",
+    );
+    expect(activeSeg?.style.borderRadius).toBe("2px 8px 8px 2px");
+    const firstTick = arScope?.querySelector<HTMLElement>(".m3e-slider__tick");
+    expect(firstTick?.style.insetInlineStart).toContain("calc(6px +");
+    expect(firstTick?.style.left).toBe("");
+
+    // SideSheet defaults to logical side="end", resolving to data-side="left" in RTL
+    const rtlSideSheet = document.body.querySelector<HTMLElement>(
+      ".m3e-sheet__popup",
+    );
+    expect(rtlSideSheet?.getAttribute("data-side")).toBe("left");
   });
 });

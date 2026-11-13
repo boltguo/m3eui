@@ -1,5 +1,6 @@
 import * as React from "react";
 import {
+  LOADING_INDICATOR_DETERMINATE_MORPH_SEQUENCE,
   LOADING_INDICATOR_MORPH_SEQUENCE,
   LOADING_INDICATOR_TOKENS,
   type MorphPair,
@@ -30,7 +31,7 @@ export interface LoadingIndicatorProps {
 export function LoadingIndicator({
   size = LOADING_INDICATOR_TOKENS.containerSize,
   progress: determinateProgress,
-  morphSequence = LOADING_INDICATOR_MORPH_SEQUENCE,
+  morphSequence,
   paused: pausedProp,
   contained = false,
   "aria-label": ariaLabel,
@@ -42,6 +43,11 @@ export function LoadingIndicator({
   const resolvedAriaLabel = ariaLabel ?? t("loading.label");
   const isPaused = pausedProp ?? contextPaused;
   const isDeterminate = typeof determinateProgress === "number";
+  const resolvedSequence =
+    morphSequence ??
+    (isDeterminate
+      ? LOADING_INDICATOR_DETERMINATE_MORPH_SEQUENCE
+      : LOADING_INDICATOR_MORPH_SEQUENCE);
 
   const pathRef = React.useRef<SVGPathElement | null>(null);
   const groupRef = React.useRef<SVGGElement | null>(null);
@@ -49,25 +55,28 @@ export function LoadingIndicator({
   const onFrameRef = React.useRef(onFrameInfo);
   onFrameRef.current = onFrameInfo;
 
-  const scaleFactor = LOADING_INDICATOR_TOKENS.effectiveScaleFactor;
+  const scaleFactor =
+    isDeterminate && morphSequence === undefined
+      ? LOADING_INDICATOR_TOKENS.determinateEffectiveScaleFactor
+      : LOADING_INDICATOR_TOKENS.effectiveScaleFactor;
 
   const initialD = React.useMemo(() => {
-    const pair = morphSequence[0];
+    const pair = resolvedSequence[0];
     if (!pair) return "";
     const p = isDeterminate ? Math.max(0, Math.min(1, determinateProgress ?? 0)) : 0;
     const cubics = interpolateMorphCubics(pair, p);
     return cubicsToSvgPath(cubics, size, scaleFactor);
-  }, [morphSequence, size, scaleFactor, isDeterminate, determinateProgress]);
+  }, [resolvedSequence, size, scaleFactor, isDeterminate, determinateProgress]);
 
   React.useEffect(() => {
-    if (!isDeterminate || morphSequence.length === 0) return;
+    if (!isDeterminate || resolvedSequence.length === 0) return;
     const clamped = Math.max(0, Math.min(1, determinateProgress ?? 0));
-    const seqLen = morphSequence.length;
+    const seqLen = resolvedSequence.length;
     const activeIndex = Math.min(seqLen - 1, Math.floor(clamped * seqLen));
     const localProgress =
       clamped === 1 && activeIndex === seqLen - 1 ? 1 : (clamped * seqLen) % 1;
 
-    const pair = morphSequence[activeIndex];
+    const pair = resolvedSequence[activeIndex];
     const cubics = interpolateMorphCubics(pair, localProgress);
     const d = cubicsToSvgPath(cubics, size, scaleFactor);
     const rot = -clamped * 180;
@@ -86,10 +95,10 @@ export function LoadingIndicator({
       morphProgress: localProgress,
       rotationDeg: rot,
     });
-  }, [isDeterminate, determinateProgress, morphSequence, size, scaleFactor]);
+  }, [isDeterminate, determinateProgress, resolvedSequence, size, scaleFactor]);
 
   React.useEffect(() => {
-    if (isDeterminate || morphSequence.length === 0) return;
+    if (isDeterminate || resolvedSequence.length === 0) return;
 
     let rafId = 0;
     let lastNow = performance.now();
@@ -97,7 +106,7 @@ export function LoadingIndicator({
     const renderAt = (elapsedMs: number) => {
       const interval = LOADING_INDICATOR_TOKENS.morphIntervalMs;
       const totalSteps = Math.floor(elapsedMs / interval);
-      const morphIndex = totalSteps % morphSequence.length;
+      const morphIndex = totalSteps % resolvedSequence.length;
       const withinStepSec = (elapsedMs % interval) / 1000;
 
       const springSpec = prefersReducedMotion
@@ -105,7 +114,7 @@ export function LoadingIndicator({
         : LOADING_INDICATOR_TOKENS.morphSpring;
 
       const morphProgress = evaluateSpringDisplacement(springSpec, withinStepSec);
-      const pair = morphSequence[morphIndex];
+      const pair = resolvedSequence[morphIndex];
       const cubics = interpolateMorphCubics(pair, morphProgress);
       const d = cubicsToSvgPath(cubics, size, scaleFactor);
 
@@ -154,7 +163,7 @@ export function LoadingIndicator({
 
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [isDeterminate, isPaused, playbackRate, prefersReducedMotion, morphSequence, size, scaleFactor]);
+  }, [isDeterminate, isPaused, playbackRate, prefersReducedMotion, resolvedSequence, size, scaleFactor]);
 
   const ariaValueNow = isDeterminate
     ? Math.round(Math.max(0, Math.min(1, determinateProgress ?? 0)) * 100)

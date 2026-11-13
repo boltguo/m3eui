@@ -79,7 +79,7 @@ export function NumberField({
   className,
   style,
 }: M3ENumberFieldProps): React.JSX.Element {
-  const { direction, t } = useM3E();
+  const { locale, direction, t } = useM3E();
   const generatedId = React.useId();
   const inputId = id ?? generatedId;
 
@@ -117,6 +117,7 @@ export function NumberField({
       min={min}
       max={max}
       step={step}
+      locale={locale}
       format={format}
       disabled={disabled}
       readOnly={readOnly}

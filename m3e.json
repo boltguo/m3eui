@@ -4,6 +4,8 @@
   "theme": {
     "seed": "#6750A4",
     "schemeVariant": "expressive",
+    "specVersion": "2025",
+    "platform": "phone",
     "colorMode": "system",
     "contrastLevel": 0,
     "motionScheme": "expressive"

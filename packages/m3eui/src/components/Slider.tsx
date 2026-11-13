@@ -8,6 +8,7 @@ import {
 } from "../tokens/index.js";
 import { useM3E } from "../context/M3EProvider.js";
 import { useM3EScalarSpring } from "../hooks/useM3ESpring.js";
+import { formatLocalizedNumber } from "../i18n/index.js";
 
 export type SliderValue = number | readonly number[];
 
@@ -57,6 +58,7 @@ const SLIDER_STEP_KEYS = new Set([
 interface SliderThumbBarProps {
   readonly index: number;
   readonly rawValue: number;
+  readonly locale: string;
   readonly thumbHeight: number;
   readonly isPressed: boolean;
   readonly isBubbleShown: boolean;
@@ -71,6 +73,7 @@ interface SliderThumbBarProps {
 function SliderThumbBar({
   index,
   rawValue,
+  locale,
   thumbHeight,
   isPressed,
   isBubbleShown,
@@ -90,7 +93,7 @@ function SliderThumbBar({
 
   const formatted = formatValue
     ? formatValue(rawValue)
-    : `${Math.round(rawValue * 100) / 100}`;
+    : formatLocalizedNumber(locale, Math.round(rawValue * 100) / 100);
 
   return (
     <BaseSlider.Thumb
@@ -161,7 +164,7 @@ export function Slider<Value extends SliderValue = number>({
   className,
   style,
 }: M3ESliderProps<Value>): React.JSX.Element {
-  const { debugGeometry, t } = useM3E();
+  const { debugGeometry, direction, locale, t } = useM3E();
   const [uncontrolledValues, setUncontrolledValues] = React.useState<number[]>(
     () => normalizeValues(defaultValue, min),
   );
@@ -229,11 +232,13 @@ export function Slider<Value extends SliderValue = number>({
         return;
       }
       const rect = e.currentTarget.getBoundingClientRect();
-      const frac = rect.width > 0 ? clamp01((e.clientX - rect.left) / rect.width) : 0;
+      const rawFrac =
+        rect.width > 0 ? clamp01((e.clientX - rect.left) / rect.width) : 0;
+      const frac = direction === "rtl" ? 1 - rawFrac : rawFrac;
       const nearestIdx = Math.abs(p0 - frac) <= Math.abs(p1 - frac) ? 0 : 1;
       handleThumbPointerDown(nearestIdx);
     },
-    [disabled, isRange, p0, p1, handleThumbPointerDown],
+    [disabled, direction, isRange, p0, p1, handleThumbPointerDown],
   );
 
   const handleThumbKeyStep = React.useCallback((idx: number) => {
@@ -273,15 +278,29 @@ export function Slider<Value extends SliderValue = number>({
   const summaryLabel = React.useMemo(() => {
     if (!showValue) return null;
     if (isRange) {
-      const a = formatValue ? formatValue(values[0]) : `${values[0]}`;
-      const b = formatValue ? formatValue(values[1]) : `${values[1]}`;
+      const a = formatValue
+        ? formatValue(values[0])
+        : formatLocalizedNumber(locale, values[0]);
+      const b = formatValue
+        ? formatValue(values[1])
+        : formatLocalizedNumber(locale, values[1]);
       return `${a} – ${b}`;
     }
-    return formatValue ? formatValue(values[0]) : `${values[0]}`;
-  }, [showValue, isRange, values, formatValue]);
+    return formatValue
+      ? formatValue(values[0])
+      : formatLocalizedNumber(locale, values[0]);
+  }, [showValue, isRange, values, formatValue, locale]);
 
   const outerR = spec.outerTrackRadius;
   const innerR = spec.innerTrackRadius;
+  const startCapRadius =
+    direction === "rtl"
+      ? `${innerR}px ${outerR}px ${outerR}px ${innerR}px`
+      : `${outerR}px ${innerR}px ${innerR}px ${outerR}px`;
+  const endCapRadius =
+    direction === "rtl"
+      ? `${outerR}px ${innerR}px ${innerR}px ${outerR}px`
+      : `${innerR}px ${outerR}px ${outerR}px ${innerR}px`;
 
   return (
     <BaseSlider.Root
@@ -350,7 +369,7 @@ export function Slider<Value extends SliderValue = number>({
                 style={{
                   insetInlineStart: 0,
                   width: `max(0px, calc(${(p0 * 100).toFixed(3)}% - ${cut.toFixed(2)}px))`,
-                  borderRadius: `${outerR}px ${innerR}px ${innerR}px ${outerR}px`,
+                  borderRadius: startCapRadius,
                 }}
                 aria-hidden="true"
               />
@@ -359,7 +378,7 @@ export function Slider<Value extends SliderValue = number>({
                 style={{
                   insetInlineStart: `min(100%, calc(${(p0 * 100).toFixed(3)}% + ${cut.toFixed(2)}px))`,
                   insetInlineEnd: 0,
-                  borderRadius: `${innerR}px ${outerR}px ${outerR}px ${innerR}px`,
+                  borderRadius: endCapRadius,
                 }}
                 aria-hidden="true"
               />
@@ -382,7 +401,7 @@ export function Slider<Value extends SliderValue = number>({
                 style={{
                   insetInlineStart: 0,
                   width: `max(0px, calc(${(p0 * 100).toFixed(3)}% - ${cut.toFixed(2)}px))`,
-                  borderRadius: `${outerR}px ${innerR}px ${innerR}px ${outerR}px`,
+                  borderRadius: startCapRadius,
                 }}
                 aria-hidden="true"
               />
@@ -400,7 +419,7 @@ export function Slider<Value extends SliderValue = number>({
                 style={{
                   insetInlineStart: `min(100%, calc(${(p1 * 100).toFixed(3)}% + ${cut.toFixed(2)}px))`,
                   insetInlineEnd: 0,
-                  borderRadius: `${innerR}px ${outerR}px ${outerR}px ${innerR}px`,
+                  borderRadius: endCapRadius,
                 }}
                 aria-hidden="true"
               />
@@ -420,7 +439,7 @@ export function Slider<Value extends SliderValue = number>({
                 className="m3e-slider__tick"
                 data-active={insideActive ? "" : undefined}
                 style={{
-                  left: `calc(6px + (100% - 12px) * ${tf.toFixed(4)})`,
+                  insetInlineStart: `calc(6px + (100% - 12px) * ${tf.toFixed(4)})`,
                   width: `${SLIDER_TOKENS.stopDotSize}px`,
                   height: `${SLIDER_TOKENS.stopDotSize}px`,
                 }}
@@ -435,6 +454,7 @@ export function Slider<Value extends SliderValue = number>({
             key={idx}
             index={idx}
             rawValue={v}
+            locale={locale}
             thumbHeight={spec.thumbHeight}
             isPressed={pressedThumbIdx === idx}
             isBubbleShown={pressedThumbIdx === idx || keyBubbleIdx === idx}

@@ -8,7 +8,7 @@ import {
   resolveIconButtonGeometry,
 } from "../tokens/index.js";
 import { useM3E } from "../context/M3EProvider.js";
-import { useM3ECornerSpring, usePressHoldState } from "../hooks/useM3ESpring.js";
+import { useM3ECornerSpringRef, usePressHoldState } from "../hooks/useM3ESpring.js";
 
 export interface M3EIconButtonProps {
   readonly icon: React.ReactNode;
@@ -52,10 +52,8 @@ export const IconButton = React.forwardRef<HTMLElement, M3EIconButtonProps>(
       isSelected: false,
     });
 
-    const { corners, borderRadiusCss } = useM3ECornerSpring(
-      geo.corners,
-      "fastSpatial",
-    );
+    const { ref: mergedRef, borderRadiusCss } =
+      useM3ECornerSpringRef<HTMLElement>(geo.corners, "defaultEffects", ref);
 
     const mergedStyle: React.CSSProperties = {
       width: `${geo.width}px`,
@@ -70,7 +68,7 @@ export const IconButton = React.forwardRef<HTMLElement, M3EIconButtonProps>(
 
     return (
       <BaseButton
-        ref={ref}
+        ref={mergedRef}
         type={type}
         disabled={disabled}
         aria-label={ariaLabel}
@@ -95,7 +93,7 @@ export const IconButton = React.forwardRef<HTMLElement, M3EIconButtonProps>(
         </span>
         {debugGeometry ? (
           <span className="m3e-debug-badge" aria-hidden="true">
-            {geo.width}×{geo.height} r:{corners[0].toFixed(0)}
+            {geo.width}×{geo.height} r:{geo.corners[0].toFixed(0)}
           </span>
         ) : null}
       </BaseButton>
@@ -155,10 +153,8 @@ export const IconToggleButton = React.forwardRef<
     isSelected,
   });
 
-  const { corners, borderRadiusCss } = useM3ECornerSpring(
-    geo.corners,
-    "fastSpatial",
-  );
+  const { ref: mergedRef, borderRadiusCss } =
+    useM3ECornerSpringRef<HTMLButtonElement>(geo.corners, "fastSpatial", ref);
 
   const mergedStyle: React.CSSProperties = {
     width: `${geo.width}px`,
@@ -173,7 +169,7 @@ export const IconToggleButton = React.forwardRef<
 
   return (
     <BaseToggle
-      ref={ref}
+      ref={mergedRef}
       pressed={controlledPressed}
       defaultPressed={defaultPressed}
       disabled={disabled}
@@ -206,7 +202,7 @@ export const IconToggleButton = React.forwardRef<
       </span>
       {debugGeometry ? (
         <span className="m3e-debug-badge" aria-hidden="true">
-          {geo.width}×{geo.height} r:{corners[0].toFixed(0)}
+          {geo.width}×{geo.height} r:{geo.corners[0].toFixed(0)}
         </span>
       ) : null}
     </BaseToggle>

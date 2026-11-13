@@ -40,10 +40,10 @@ export const BUTTON_SIZE_SPECS: Record<ButtonSize, ButtonSizeSpec> = {
     size: "xs",
     height: 32,
     paddingHorizontal: 12,
-    iconSize: 18,
-    iconGap: 6,
-    fontSize: 13,
-    lineHeight: 18,
+    iconSize: 20,
+    iconGap: 8,
+    fontSize: 14,
+    lineHeight: 20,
     fontWeight: 500,
     restCornerRadius: 16,
     squareCornerRadius: 12,
@@ -416,6 +416,7 @@ export interface SplitButtonSizeSpec {
   readonly size: ButtonSize;
   readonly height: number;
   readonly innerRestRadius: number;
+  readonly innerHoverRadius: number;
   readonly innerActiveRadius: number;
   readonly leadingPaddingStart: number;
   readonly leadingPaddingEnd: number;
@@ -431,6 +432,7 @@ export interface SplitButtonSizeSpec {
 export const SPLIT_BUTTON_TOKENS = {
   gap: 2,
   opticalCenterCoefficient: 0.11,
+  minTouchTarget: 48,
 } as const;
 
 export const SPLIT_BUTTON_SPECS: Record<ButtonSize, SplitButtonSizeSpec> = {
@@ -438,21 +440,23 @@ export const SPLIT_BUTTON_SPECS: Record<ButtonSize, SplitButtonSizeSpec> = {
     size: "xs",
     height: 32,
     innerRestRadius: 4,
+    innerHoverRadius: 8,
     innerActiveRadius: 8,
     leadingPaddingStart: 12,
     leadingPaddingEnd: 10,
-    leadingIconSize: 18,
+    leadingIconSize: 20,
     leadingIconGap: 6,
     trailingPaddingInline: 13,
     trailingIconSize: 22,
     trailingWidth: 48,
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 20,
   },
   sm: {
     size: "sm",
     height: 40,
     innerRestRadius: 4,
+    innerHoverRadius: 12,
     innerActiveRadius: 12,
     leadingPaddingStart: 16,
     leadingPaddingEnd: 12,
@@ -468,6 +472,7 @@ export const SPLIT_BUTTON_SPECS: Record<ButtonSize, SplitButtonSizeSpec> = {
     size: "md",
     height: 56,
     innerRestRadius: 4,
+    innerHoverRadius: 12,
     innerActiveRadius: 12,
     leadingPaddingStart: 24,
     leadingPaddingEnd: 24,
@@ -483,6 +488,7 @@ export const SPLIT_BUTTON_SPECS: Record<ButtonSize, SplitButtonSizeSpec> = {
     size: "lg",
     height: 96,
     innerRestRadius: 8,
+    innerHoverRadius: 20,
     innerActiveRadius: 20,
     leadingPaddingStart: 48,
     leadingPaddingEnd: 48,
@@ -498,6 +504,7 @@ export const SPLIT_BUTTON_SPECS: Record<ButtonSize, SplitButtonSizeSpec> = {
     size: "xl",
     height: 136,
     innerRestRadius: 12,
+    innerHoverRadius: 20,
     innerActiveRadius: 20,
     leadingPaddingStart: 64,
     leadingPaddingEnd: 64,
@@ -513,6 +520,8 @@ export const SPLIT_BUTTON_SPECS: Record<ButtonSize, SplitButtonSizeSpec> = {
 
 export interface SplitButtonGeometryInput {
   readonly size?: ButtonSize;
+  readonly isLeadingHovered?: boolean;
+  readonly isTrailingHovered?: boolean;
   readonly isLeadingPressed?: boolean;
   readonly isTrailingPressed?: boolean;
   readonly isExpanded?: boolean;
@@ -532,6 +541,8 @@ export function resolveSplitButtonGeometry(
 ): SplitButtonGeometryOutput {
   const {
     size = "sm",
+    isLeadingHovered = false,
+    isTrailingHovered = false,
     isLeadingPressed = false,
     isTrailingPressed = false,
     isExpanded = false,
@@ -540,7 +551,11 @@ export function resolveSplitButtonGeometry(
   const spec = SPLIT_BUTTON_SPECS[size];
   const pill = Math.round(spec.height / 2);
 
-  const leadInner = isLeadingPressed ? spec.innerActiveRadius : spec.innerRestRadius;
+  const leadInner = isLeadingPressed
+    ? spec.innerActiveRadius
+    : isLeadingHovered
+      ? spec.innerHoverRadius
+      : spec.innerRestRadius;
   const leadingCorners: CornerTuple = [pill, leadInner, leadInner, pill];
 
   let trailingCorners: CornerTuple;
@@ -548,6 +563,8 @@ export function resolveSplitButtonGeometry(
     trailingCorners = [spec.innerActiveRadius, pill, pill, spec.innerActiveRadius];
   } else if (isExpanded) {
     trailingCorners = [pill, pill, pill, pill];
+  } else if (isTrailingHovered) {
+    trailingCorners = [spec.innerHoverRadius, pill, pill, spec.innerHoverRadius];
   } else {
     trailingCorners = [spec.innerRestRadius, pill, pill, spec.innerRestRadius];
   }
@@ -624,6 +641,8 @@ export const FLOATING_TOOLBAR_TOKENS = {
   itemSize: 48,
   itemGap: 4,
   companionFabGap: 8,
+  companionFabExpandedSize: 56,
+  companionFabCollapsedSize: 80,
   externalMargin: 16,
 } as const;
 
@@ -712,7 +731,7 @@ export const SWITCH_TOKENS = {
   checkedThumbSize: 24,
   pressedThumbSize: 28,
   thumbIconSize: 16,
-  minTouchTarget: 44,
+  minTouchTarget: 48,
 } as const;
 
 export interface SwitchGeometryInput {
@@ -786,7 +805,7 @@ export const SLIDER_TOKENS = {
   thumbActiveTrackGap: 5,
   stopDotSize: 4,
   stopDotInset: 6,
-  minControlHeight: 44,
+  minControlHeight: 48,
 } as const;
 
 export const SLIDER_SIZE_SPECS: Record<SliderSize, SliderSizeSpec> = {
@@ -833,7 +852,7 @@ export const CHECKBOX_TOKENS = {
   pressedCornerRadius: 6,
   strokeWidth: 2,
   stateLayerSize: 40,
-  minTouchTarget: 44,
+  minTouchTarget: 48,
 } as const;
 
 export const RADIO_TOKENS = {
@@ -841,7 +860,7 @@ export const RADIO_TOKENS = {
   dotSize: 10,
   strokeWidth: 2,
   stateLayerSize: 40,
-  minTouchTarget: 44,
+  minTouchTarget: 48,
 } as const;
 
 export const TABS_TOKENS = {
@@ -864,11 +883,14 @@ export const DIALOG_TOKENS = {
 } as const;
 
 export const SELECT_TOKENS = {
-  filledHeight: 52,
-  outlinedHeight: 48,
-  outlinedRadius: SHAPE_CORNER_TOKENS.medium,
-  filledTopRadius: SHAPE_CORNER_TOKENS.medium,
+  filledHeight: 56,
+  outlinedHeight: 56,
+  compactFilledHeight: 52,
+  compactOutlinedHeight: 48,
+  outlinedRadius: SHAPE_CORNER_TOKENS.extraSmall,
+  filledTopRadius: SHAPE_CORNER_TOKENS.extraSmall,
   filledBottomRadius: SHAPE_CORNER_TOKENS.none,
+  outsideLabelRadius: SHAPE_CORNER_TOKENS.medium,
   paddingInline: 16,
   popupRadius: SHAPE_CORNER_TOKENS.large,
   popupPadding: 6,
@@ -898,12 +920,15 @@ export const SNACKBAR_TOKENS = {
 } as const;
 
 export const TEXT_FIELD_TOKENS = {
-  outlinedHeight: 48,
-  filledHeight: 52,
-  outlinedRadius: SHAPE_CORNER_TOKENS.medium,
-  filledTopRadius: SHAPE_CORNER_TOKENS.medium,
+  outlinedHeight: 56,
+  filledHeight: 56,
+  compactOutlinedHeight: 48,
+  compactFilledHeight: 52,
+  outlinedRadius: SHAPE_CORNER_TOKENS.extraSmall,
+  filledTopRadius: SHAPE_CORNER_TOKENS.extraSmall,
   filledBottomRadius: SHAPE_CORNER_TOKENS.none,
-  paddingInline: 14,
+  outsideLabelRadius: SHAPE_CORNER_TOKENS.medium,
+  paddingInline: 16,
   minFontSize: 16,
 } as const;
 

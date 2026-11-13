@@ -1,14 +1,14 @@
 import * as React from "react";
-import { animate, useMotionValue } from "motion/react";
 import {
   type M3EShapeName,
   type MotionTokenKey,
   cubicsToSvgPath,
   getShapeMorphPair,
   interpolateMorphCubics,
-  resolveCrossPlatformSpring,
+  stepSpringSimulation,
 } from "../tokens/index.js";
 import { useM3E } from "../context/M3EProvider.js";
+import { subscribeSpringFrame } from "../hooks/useM3ESpring.js";
 
 export interface M3EMaterialShapeViewProps {
   readonly shape: M3EShapeName;
@@ -36,83 +36,108 @@ export function MaterialShapeView({
   style,
 }: M3EMaterialShapeViewProps): React.JSX.Element {
   const { motionScheme, playbackRate, prefersReducedMotion, paused } = useM3E();
-  const [transitionPair, setTransitionPair] = React.useState<{
+  const pathRef = React.useRef<SVGPathElement | null>(null);
+  const prevShapeRef = React.useRef<M3EShapeName>(shape);
+  const animStateRef = React.useRef<{
     from: M3EShapeName;
     to: M3EShapeName;
-  }>({ from: shape, to: shape });
-
-  const mv = useMotionValue(1);
-  const [animProgress, setAnimProgress] = React.useState(1);
-
-  React.useEffect(() => {
-    const unsub = mv.on("change", (v) => setAnimProgress(v));
-    return unsub;
-  }, [mv]);
-
-  const prevShapeRef = React.useRef<M3EShapeName>(shape);
+    progress: number;
+    velocity: number;
+  }>({
+    from: shape,
+    to: shape,
+    progress: 1,
+    velocity: 0,
+  });
 
   React.useEffect(() => {
     if (toShape !== undefined && manualProgress !== undefined) {
       prevShapeRef.current = shape;
+      animStateRef.current = {
+        from: shape,
+        to: toShape,
+        progress: manualProgress,
+        velocity: 0,
+      };
       return;
     }
+
     const prev = prevShapeRef.current;
     if (prev === shape) return;
     prevShapeRef.current = shape;
-    setTransitionPair({ from: prev, to: shape });
 
-    if (paused) {
-      mv.jump(1);
-      setAnimProgress(1);
+    if (paused || typeof requestAnimationFrame !== "function") {
+      animStateRef.current = {
+        from: shape,
+        to: shape,
+        progress: 1,
+        velocity: 0,
+      };
+      if (pathRef.current) {
+        const pair = getShapeMorphPair(shape, shape);
+        const cubics = interpolateMorphCubics(pair, 1);
+        pathRef.current.setAttribute("d", cubicsToSvgPath(cubics, size, scaleFactor));
+      }
       return;
     }
 
-    mv.jump(0);
-    setAnimProgress(0);
+    const pair = getShapeMorphPair(prev, shape);
+    animStateRef.current = {
+      from: prev,
+      to: shape,
+      progress: 0,
+      velocity: 0,
+    };
+    if (pathRef.current) {
+      const startCubics = interpolateMorphCubics(pair, 0);
+      pathRef.current.setAttribute("d", cubicsToSvgPath(startCubics, size, scaleFactor));
+    }
+
     const baseSpec = motionScheme[motionToken];
-    const effectiveSpec = prefersReducedMotion
-      ? {
-          ...baseSpec,
-          dampingRatio: 1.0,
-          stiffness: Math.max(baseSpec.stiffness, 900),
-        }
-      : baseSpec;
-    const resolved = resolveCrossPlatformSpring(effectiveSpec, playbackRate);
+    const clampedRate = Math.max(0.05, Math.min(2, playbackRate));
+    const dampingRatio = prefersReducedMotion ? 1.0 : baseSpec.dampingRatio;
+    const rawStiffness = prefersReducedMotion
+      ? Math.max(baseSpec.stiffness, 900)
+      : baseSpec.stiffness;
+    const stiffness = rawStiffness * clampedRate * clampedRate;
 
-    const controls = animate(mv, 1, {
-      type: "spring",
-      mass: resolved.webMotion.mass,
-      stiffness: resolved.webMotion.stiffness,
-      damping: resolved.webMotion.damping,
-      restDelta: 0.002,
-      restSpeed: 0.01,
+    return subscribeSpringFrame((dtSec) => {
+      const st = animStateRef.current;
+      const next = stepSpringSimulation(st.progress, st.velocity, 1, dtSec, {
+        dampingRatio,
+        stiffness,
+        restDisplacementThreshold: 0.002,
+        restVelocityThreshold: 0.01,
+      });
+      animStateRef.current = {
+        from: prev,
+        to: shape,
+        progress: next.value,
+        velocity: next.velocity,
+      };
+      if (pathRef.current) {
+        const cubics = interpolateMorphCubics(pair, next.value);
+        pathRef.current.setAttribute("d", cubicsToSvgPath(cubics, size, scaleFactor));
+      }
+      return !next.settled;
     });
-
-    return () => controls.stop();
   }, [
     shape,
     toShape,
     manualProgress,
+    size,
+    scaleFactor,
     motionScheme,
     motionToken,
     playbackRate,
     prefersReducedMotion,
     paused,
-    mv,
   ]);
 
-  const activeFrom =
-    toShape !== undefined && manualProgress !== undefined
-      ? shape
-      : transitionPair.from;
-  const activeTo =
-    toShape !== undefined && manualProgress !== undefined
-      ? toShape
-      : transitionPair.to;
-  const activeProgress =
-    toShape !== undefined && manualProgress !== undefined
-      ? manualProgress
-      : animProgress;
+  const isManual = toShape !== undefined && manualProgress !== undefined;
+  const activeFrom = isManual ? shape : animStateRef.current.from;
+  const activeTo = isManual ? toShape : shape;
+  const activeProgress = isManual ? manualProgress : animStateRef.current.progress;
 
   const pair = getShapeMorphPair(activeFrom, activeTo);
   const cubics = interpolateMorphCubics(pair, activeProgress);
@@ -131,7 +156,7 @@ export function MaterialShapeView({
       }
       style={style}
     >
-      <path d={d} fill={fill} />
+      <path ref={pathRef} d={d} fill={fill} />
     </svg>
   );
 }

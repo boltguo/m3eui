@@ -7,7 +7,7 @@ import {
   type CornerTuple,
 } from "../tokens/index.js";
 import { useM3E } from "../context/M3EProvider.js";
-import { useM3ECornerSpring, usePressHoldState } from "../hooks/useM3ESpring.js";
+import { useM3ECornerSpringRef, usePressHoldState } from "../hooks/useM3ESpring.js";
 
 export type ButtonVariant = "filled" | "tonal" | "elevated" | "outlined" | "text";
 export type ButtonShape = "round" | "square";
@@ -73,7 +73,10 @@ export const Button = React.forwardRef<HTMLElement, M3EButtonProps>(function But
   const targetCorners: CornerTuple =
     cornerOverride ?? [scalarRadius, scalarRadius, scalarRadius, scalarRadius];
 
-  const { corners, borderRadiusCss } = useM3ECornerSpring(targetCorners, "fastSpatial");
+  const {
+    ref: mergedRef,
+    borderRadiusCss,
+  } = useM3ECornerSpringRef<HTMLElement>(targetCorners, "defaultEffects", ref);
 
   const mergedStyle: React.CSSProperties = {
     height: `${spec.height}px`,
@@ -88,7 +91,7 @@ export const Button = React.forwardRef<HTMLElement, M3EButtonProps>(function But
 
   return (
     <BaseButton
-      ref={ref}
+      ref={mergedRef}
       type={type}
       disabled={disabled}
       aria-label={ariaLabel}
@@ -122,7 +125,7 @@ export const Button = React.forwardRef<HTMLElement, M3EButtonProps>(function But
       ) : null}
       {debugGeometry ? (
         <span className="m3e-debug-badge" aria-hidden="true">
-          {formatCornerBadge(corners)}
+          {formatCornerBadge(targetCorners)}
         </span>
       ) : null}
     </BaseButton>
@@ -178,7 +181,7 @@ export const ToggleButton = React.forwardRef<HTMLButtonElement, M3EToggleButtonP
       size = "sm",
       shape = "round",
       disabled = false,
-      showCheckIcon = true,
+      showCheckIcon = false,
       leadingIcon,
       className,
       style,
@@ -213,9 +216,13 @@ export const ToggleButton = React.forwardRef<HTMLButtonElement, M3EToggleButtonP
     const targetCorners: CornerTuple =
       cornerOverride ?? [scalarRadius, scalarRadius, scalarRadius, scalarRadius];
 
-    const { corners, borderRadiusCss } = useM3ECornerSpring(
+    const {
+      ref: mergedRef,
+      borderRadiusCss,
+    } = useM3ECornerSpringRef<HTMLButtonElement>(
       targetCorners,
       "fastSpatial",
+      ref,
     );
 
     const mergedStyle: React.CSSProperties = {
@@ -238,7 +245,7 @@ export const ToggleButton = React.forwardRef<HTMLButtonElement, M3EToggleButtonP
 
     return (
       <BaseToggle
-        ref={ref}
+        ref={mergedRef}
         value={value}
         pressed={controlledPressed}
         defaultPressed={defaultPressed}
@@ -272,7 +279,7 @@ export const ToggleButton = React.forwardRef<HTMLButtonElement, M3EToggleButtonP
         <span className="m3e-button__label">{children}</span>
         {debugGeometry ? (
           <span className="m3e-debug-badge" aria-hidden="true">
-            {formatCornerBadge(corners)}
+            {formatCornerBadge(targetCorners)}
           </span>
         ) : null}
       </BaseToggle>

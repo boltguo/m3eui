@@ -17,7 +17,7 @@ export interface CarouselItemSpec {
 
 export interface M3ECarouselProps {
   readonly items: readonly CarouselItemSpec[];
-  readonly "aria-label": string;
+  readonly "aria-label"?: string;
   readonly variant?: "multi-browse" | "hero";
   readonly activeIndex?: number;
   readonly defaultActiveIndex?: number;
@@ -28,7 +28,13 @@ export interface M3ECarouselProps {
   readonly style?: React.CSSProperties;
 }
 
-function ChevronSvg({ direction }: { readonly direction: "prev" | "next" }) {
+function ChevronSvg({
+  direction,
+  rtl,
+}: {
+  readonly direction: "prev" | "next";
+  readonly rtl: boolean;
+}) {
   return (
     <svg
       width={18}
@@ -39,6 +45,7 @@ function ChevronSvg({ direction }: { readonly direction: "prev" | "next" }) {
       strokeWidth="2.3"
       strokeLinecap="round"
       strokeLinejoin="round"
+      style={rtl ? { scale: "-1 1" } : undefined}
       aria-hidden="true"
     >
       {direction === "prev" ? (
@@ -49,6 +56,8 @@ function ChevronSvg({ direction }: { readonly direction: "prev" | "next" }) {
     </svg>
   );
 }
+
+const DRAG_DEADZONE_PX = 6;
 
 export function Carousel({
   items,
@@ -63,6 +72,7 @@ export function Carousel({
   style,
 }: M3ECarouselProps): React.JSX.Element {
   const { debugGeometry, t, direction } = useM3E();
+  const resolvedAriaLabel = ariaLabel ?? t("carousel.listLabel");
   const count = items.length;
   const [uncontrolledIdx, setUncontrolledIdx] = React.useState<number>(() =>
     Math.max(0, Math.min(count - 1, defaultActiveIndex)),
@@ -89,11 +99,16 @@ export function Carousel({
       onActiveIndexChange?.(next);
       const targetItem = items[next];
       setAnnouncement(
-        t("carousel.slideAnnouncement", {
-          index: next + 1,
-          count,
-          titleSuffix: targetItem ? `: ${targetItem.title}` : "",
-        }),
+        targetItem
+          ? t("carousel.slideAnnouncementWithTitle", {
+              index: next + 1,
+              count,
+              title: targetItem.title,
+            })
+          : t("carousel.slideAnnouncement", {
+              index: next + 1,
+              count,
+            }),
       );
     },
     [count, loop, controlledIndex, onActiveIndexChange, items, t],
@@ -119,23 +134,102 @@ export function Carousel({
     return undefined;
   }, []);
 
+  const canLoop = loop && count >= 3;
+  const rtlSign = direction === "rtl" ? -1 : 1;
+
+  const dragSessionRef = React.useRef<{
+    active: boolean;
+    pointerId: number;
+    startX: number;
+    lastX: number;
+    lastTime: number;
+    velocityPxPerMs: number;
+    dragging: boolean;
+  }>({
+    active: false,
+    pointerId: -1,
+    startX: 0,
+    lastX: 0,
+    lastTime: 0,
+    velocityPxPerMs: 0,
+    dragging: false,
+  });
+  const suppressClickRef = React.useRef(false);
+  const [isDragging, setIsDragging] = React.useState(false);
+  const [dragDeltaSlides, setDragDeltaSlides] = React.useState(0);
+
+  const slideStepPx = Math.max(80, containerWidth * 0.38);
+
+  const finishDrag = React.useCallback(
+    (e: React.PointerEvent<HTMLDivElement>, cancelled: boolean) => {
+      const session = dragSessionRef.current;
+      if (!session.active || session.pointerId !== e.pointerId) return;
+      session.active = false;
+
+      if (session.dragging) {
+        try {
+          if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
+            e.currentTarget.releasePointerCapture(e.pointerId);
+          }
+        } catch {
+          // Ignore synthetic pointer capture errors
+        }
+        setIsDragging(false);
+        setDragDeltaSlides(0);
+
+        if (!cancelled && count > 1) {
+          const dx = e.clientX - session.startX;
+          const dragSteps = (-dx * rtlSign) / slideStepPx;
+          const flickStep =
+            Math.abs(session.velocityPxPerMs) >= 0.35
+              ? -Math.sign(session.velocityPxPerMs) * rtlSign
+              : 0;
+          let stepDelta = Math.round(dragSteps);
+          if (stepDelta === 0) {
+            if (Math.abs(dragSteps) >= 0.22) {
+              stepDelta = dragSteps > 0 ? 1 : -1;
+            } else if (flickStep !== 0) {
+              stepDelta = flickStep;
+            }
+          }
+          if (stepDelta !== 0) {
+            selectIndex(currentIdx + stepDelta);
+          }
+        }
+      }
+      session.dragging = false;
+    },
+    [count, currentIdx, rtlSign, selectIndex, slideStepPx],
+  );
+
   const springFocalPos = useM3EScalarSpring(currentIdx, "defaultSpatial");
+
+  const effectiveFocalPos = React.useMemo(() => {
+    if (!isDragging || dragDeltaSlides === 0) return springFocalPos;
+    const raw = currentIdx + dragDeltaSlides;
+    if (canLoop) {
+      return ((raw % count) + count) % Math.max(1, count);
+    }
+    if (raw < 0) return raw * 0.25;
+    if (raw > count - 1) return count - 1 + (raw - (count - 1)) * 0.25;
+    return raw;
+  }, [isDragging, dragDeltaSlides, springFocalPos, currentIdx, canLoop, count]);
+
   const metrics = resolveCarouselLayout({
     count,
     containerWidth,
-    focalPosition: springFocalPos,
+    focalPosition: effectiveFocalPos,
     variant,
     gap: CAROUSEL_TOKENS.gap,
   });
 
-  const canLoop = loop && count >= 3;
   const prevDisabled = !canLoop && currentIdx <= 0;
   const nextDisabled = !canLoop && currentIdx >= count - 1;
 
   return (
     <section
-      aria-roledescription="carousel"
-      aria-label={ariaLabel}
+      aria-roledescription={t("carousel.roleDescription")}
+      aria-label={resolvedAriaLabel}
       className={className ? `m3e-carousel ${className}` : "m3e-carousel"}
       style={style}
     >
@@ -148,7 +242,7 @@ export function Carousel({
             className="m3e-carousel__nav-btn"
             onClick={() => selectIndex(currentIdx - 1)}
           >
-            <ChevronSvg direction="prev" />
+            <ChevronSvg direction="prev" rtl={direction === "rtl"} />
           </button>
           <button
             type="button"
@@ -157,7 +251,7 @@ export function Carousel({
             className="m3e-carousel__nav-btn"
             onClick={() => selectIndex(currentIdx + 1)}
           >
-            <ChevronSvg direction="next" />
+            <ChevronSvg direction="next" rtl={direction === "rtl"} />
           </button>
         </div>
 
@@ -186,21 +280,58 @@ export function Carousel({
         role="group"
         aria-label={t("carousel.listLabel")}
         className="m3e-carousel__track"
+        data-dragging={isDragging ? "" : undefined}
         style={{
           gap: `${CAROUSEL_TOKENS.gap}px`,
           height: `${height}px`,
         }}
+        onPointerDown={(e) => {
+          if (e.button !== 0 || count <= 1) return;
+          suppressClickRef.current = false;
+          dragSessionRef.current = {
+            active: true,
+            pointerId: e.pointerId,
+            startX: e.clientX,
+            lastX: e.clientX,
+            lastTime: performance.now(),
+            velocityPxPerMs: 0,
+            dragging: false,
+          };
+        }}
+        onPointerMove={(e) => {
+          const session = dragSessionRef.current;
+          if (!session.active || session.pointerId !== e.pointerId) return;
+          const dx = e.clientX - session.startX;
+          if (!session.dragging) {
+            if (Math.abs(dx) < DRAG_DEADZONE_PX) return;
+            session.dragging = true;
+            suppressClickRef.current = true;
+            setIsDragging(true);
+            try {
+              e.currentTarget.setPointerCapture?.(e.pointerId);
+            } catch {
+              // Ignore synthetic pointer capture errors
+            }
+          }
+          const now = performance.now();
+          const dt = Math.max(1, now - session.lastTime);
+          session.velocityPxPerMs = (e.clientX - session.lastX) / dt;
+          session.lastX = e.clientX;
+          session.lastTime = now;
+          setDragDeltaSlides((-dx * rtlSign) / slideStepPx);
+        }}
+        onPointerUp={(e) => finishDrag(e, false)}
+        onPointerCancel={(e) => finishDrag(e, true)}
         onKeyDown={(e) => {
           if (e.target !== e.currentTarget && (e.target as HTMLElement).tagName === "INPUT") {
             return;
           }
-          const delta = direction === "rtl" ? -1 : 1;
           if (e.key === "ArrowLeft") {
             e.preventDefault();
-            selectIndex(currentIdx - delta);
+            selectIndex(currentIdx - rtlSign);
           } else if (e.key === "ArrowRight") {
             e.preventDefault();
-            selectIndex(currentIdx + delta);
+            selectIndex(currentIdx + rtlSign);
           }
         }}
       >
@@ -217,12 +348,22 @@ export function Carousel({
             <div
               key={item.id}
               role="group"
-              aria-roledescription="slide"
-              aria-label={`${idx + 1} / ${count}: ${item.title}`}
+              aria-roledescription={t("carousel.slideRoleDescription")}
+              aria-label={t("carousel.slideLabel", {
+                index: idx + 1,
+                count,
+                title: item.title,
+              })}
               tabIndex={0}
               data-focal={isFocal ? "" : undefined}
               className="m3e-carousel__slide"
-              onClick={() => selectIndex(idx)}
+              onClick={() => {
+                if (suppressClickRef.current) {
+                  suppressClickRef.current = false;
+                  return;
+                }
+                selectIndex(idx);
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();

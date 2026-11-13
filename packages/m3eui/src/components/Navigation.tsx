@@ -13,6 +13,7 @@ import {
   useM3EScalarSpring,
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
+import { formatLocalizedInteger } from "../i18n/index.js";
 import { Badge } from "./AvatarAndBadge.js";
 
 export interface NavigationDestination<Value extends string = string> {
@@ -186,6 +187,7 @@ function WideRailItemButton<Value extends string>({
   readonly suppressDataActive?: boolean;
   readonly onSelect: (v: Value) => void;
 }) {
+  const { locale, t } = useM3E();
   const { isPressed, pressHandlers } = usePressHoldState(Boolean(item.disabled));
   const radius = useM3EScalarSpring(
     isPressed
@@ -209,7 +211,9 @@ function WideRailItemButton<Value extends string>({
       <span className="m3e-wide-rail__label">{item.label}</span>
       {item.badgeCount !== undefined && item.badgeCount > 0 ? (
         <span className="m3e-wide-rail__badge">
-          {item.badgeCount > 99 ? "99+" : item.badgeCount}
+          {item.badgeCount > 99
+            ? t("badge.overflow", { max: formatLocalizedInteger(locale, 99) })
+            : formatLocalizedInteger(locale, item.badgeCount)}
         </span>
       ) : item.badgeLabel !== undefined ? (
         <span className="m3e-wide-rail__tag">{item.badgeLabel}</span>
@@ -267,7 +271,13 @@ function WideRailItemButton<Value extends string>({
   );
 }
 
-function MenuToggleSvg({ expanded }: { readonly expanded: boolean }) {
+function MenuToggleSvg({
+  expanded,
+  rtl,
+}: {
+  readonly expanded: boolean;
+  readonly rtl: boolean;
+}) {
   return (
     <svg
       width={20}
@@ -278,6 +288,7 @@ function MenuToggleSvg({ expanded }: { readonly expanded: boolean }) {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      style={rtl ? { scale: "-1 1" } : undefined}
       aria-hidden="true"
     >
       {expanded ? (
@@ -310,7 +321,7 @@ export function WideNavigationRail<Value extends string = string>({
   className,
   style,
 }: M3EWideNavigationRailProps<Value>): React.JSX.Element {
-  const { t } = useM3E();
+  const { direction, t } = useM3E();
   const [uncontrolledExpanded, setUncontrolledExpanded] =
     React.useState<boolean>(defaultExpanded);
   const isExpanded = controlledExpanded ?? uncontrolledExpanded;
@@ -353,7 +364,7 @@ export function WideNavigationRail<Value extends string = string>({
               className="m3e-wide-rail__toggle"
               onClick={toggleExpanded}
             >
-              <MenuToggleSvg expanded={isExpanded} />
+              <MenuToggleSvg expanded={isExpanded} rtl={direction === "rtl"} />
             </button>
           ) : null}
           {header ? <div className="m3e-wide-rail__header">{header}</div> : null}

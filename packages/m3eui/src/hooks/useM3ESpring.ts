@@ -1,52 +1,277 @@
 import * as React from "react";
-import { animate, useMotionValue } from "motion/react";
 import {
   type CornerTuple,
   type MotionTokenKey,
-  resolveCrossPlatformSpring,
+  type SpringPhysicsSpec,
+  stepSpringSimulation,
 } from "../tokens/index.js";
 import { useM3E } from "../context/M3EProvider.js";
+
+type SpringFrameSubscriber = (dtSec: number) => boolean;
+
+const activeSubscribers = new Set<SpringFrameSubscriber>();
+let rafHandle: number | null = null;
+let lastFrameTimeMs = 0;
+
+function runFrame(nowMs: number): void {
+  const rawDtSec = lastFrameTimeMs > 0 ? (nowMs - lastFrameTimeMs) / 1000 : 1 / 60;
+  lastFrameTimeMs = nowMs;
+  const dtSec = rawDtSec > 0 ? Math.min(rawDtSec, 0.064) : 1 / 60;
+
+  for (const subscriber of Array.from(activeSubscribers)) {
+    const keepRunning = subscriber(dtSec);
+    if (!keepRunning) {
+      activeSubscribers.delete(subscriber);
+    }
+  }
+
+  if (activeSubscribers.size > 0 && typeof requestAnimationFrame === "function") {
+    rafHandle = requestAnimationFrame(runFrame);
+  } else {
+    rafHandle = null;
+    lastFrameTimeMs = 0;
+  }
+}
+
+export function subscribeSpringFrame(subscriber: SpringFrameSubscriber): () => void {
+  if (typeof requestAnimationFrame !== "function") {
+    return () => {};
+  }
+  activeSubscribers.add(subscriber);
+  if (rafHandle === null) {
+    lastFrameTimeMs = typeof performance !== "undefined" ? performance.now() : 0;
+    rafHandle = requestAnimationFrame(runFrame);
+  }
+  return () => {
+    activeSubscribers.delete(subscriber);
+    if (activeSubscribers.size === 0 && rafHandle !== null && typeof cancelAnimationFrame === "function") {
+      cancelAnimationFrame(rafHandle);
+      rafHandle = null;
+      lastFrameTimeMs = 0;
+    }
+  };
+}
+
+function resolveEffectiveSpringParams(
+  baseSpec: SpringPhysicsSpec,
+  playbackRate: number,
+  prefersReducedMotion: boolean,
+): { readonly dampingRatio: number; readonly stiffness: number } {
+  const clampedRate = Math.max(0.05, Math.min(2, playbackRate));
+  const dampingRatio = prefersReducedMotion ? 1.0 : baseSpec.dampingRatio;
+  const rawStiffness = prefersReducedMotion
+    ? Math.max(baseSpec.stiffness, 900)
+    : baseSpec.stiffness;
+  return {
+    dampingRatio,
+    stiffness: rawStiffness * clampedRate * clampedRate,
+  };
+}
+
+function formatCornersBorderRadius(c: CornerTuple): string {
+  return `${c[0].toFixed(1)}px ${c[1].toFixed(1)}px ${c[2].toFixed(1)}px ${c[3].toFixed(1)}px`;
+}
+
+function formatCornersDebug(c: CornerTuple): string {
+  return c.map((v) => Math.round(v)).join(" ");
+}
+
+export function useM3EScalarSpringEffect(
+  target: number,
+  tokenKey: MotionTokenKey,
+  onUpdate: (value: number) => void,
+): void {
+  const { motionScheme, playbackRate, prefersReducedMotion, paused } = useM3E();
+  const stateRef = React.useRef<{ value: number; velocity: number }>({
+    value: target,
+    velocity: 0,
+  });
+  const callbackRef = React.useRef(onUpdate);
+  callbackRef.current = onUpdate;
+
+  React.useEffect(() => {
+    if (paused || typeof requestAnimationFrame !== "function") {
+      stateRef.current = { value: target, velocity: 0 };
+      callbackRef.current(target);
+      return;
+    }
+
+    if (
+      Math.abs(stateRef.current.value - target) <= 0.002 &&
+      Math.abs(stateRef.current.velocity) <= 0.01
+    ) {
+      stateRef.current = { value: target, velocity: 0 };
+      callbackRef.current(target);
+      return;
+    }
+
+    const params = resolveEffectiveSpringParams(
+      motionScheme[tokenKey],
+      playbackRate,
+      prefersReducedMotion,
+    );
+
+    return subscribeSpringFrame((dtSec) => {
+      const next = stepSpringSimulation(
+        stateRef.current.value,
+        stateRef.current.velocity,
+        target,
+        dtSec,
+        {
+          dampingRatio: params.dampingRatio,
+          stiffness: params.stiffness,
+          restDisplacementThreshold: 0.002,
+          restVelocityThreshold: 0.01,
+        },
+      );
+      stateRef.current = { value: next.value, velocity: next.velocity };
+      callbackRef.current(next.value);
+      return !next.settled;
+    });
+  }, [target, tokenKey, motionScheme, playbackRate, prefersReducedMotion, paused]);
+}
 
 export function useM3EScalarSpring(
   target: number,
   tokenKey: MotionTokenKey = "fastSpatial",
 ): number {
-  const { motionScheme, playbackRate, prefersReducedMotion, paused } = useM3E();
-  const mv = useMotionValue(target);
   const [current, setCurrent] = React.useState<number>(target);
+  useM3EScalarSpringEffect(target, tokenKey, setCurrent);
+  return current;
+}
+
+export function useM3ECornerSpringRef<T extends HTMLElement = HTMLElement>(
+  target: CornerTuple,
+  tokenKey: MotionTokenKey = "defaultEffects",
+  forwardedRef?: React.Ref<T>,
+): {
+  readonly ref: React.RefCallback<T>;
+  readonly borderRadiusCss: string;
+  readonly debugCornersAttr: string | undefined;
+} {
+  const {
+    motionScheme,
+    playbackRate,
+    prefersReducedMotion,
+    paused,
+    debugGeometry,
+  } = useM3E();
+  const nodeRef = React.useRef<T | null>(null);
+  const currentRef = React.useRef<CornerTuple>(target);
+  const velocityRef = React.useRef<[number, number, number, number]>([0, 0, 0, 0]);
+
+  if (paused) {
+    currentRef.current = target;
+    velocityRef.current = [0, 0, 0, 0];
+  }
+
+  const debugRef = React.useRef(debugGeometry);
+  debugRef.current = debugGeometry;
+
+  const flushToDom = React.useCallback((next: CornerTuple) => {
+    currentRef.current = next;
+    const el = nodeRef.current;
+    if (!el) return;
+    el.style.borderRadius = formatCornersBorderRadius(next);
+    if (debugRef.current) {
+      el.dataset.corners = formatCornersDebug(next);
+    } else if (el.dataset.corners !== undefined) {
+      delete el.dataset.corners;
+    }
+  }, []);
+
+  const [t0, t1, t2, t3] = target;
 
   React.useEffect(() => {
-    const unsubscribe = mv.on("change", (v) => {
-      setCurrent(v);
-    });
-    return unsubscribe;
-  }, [mv]);
-
-  React.useEffect(() => {
-    if (paused) {
-      mv.jump(target);
-      setCurrent(target);
+    if (paused || typeof requestAnimationFrame !== "function") {
+      velocityRef.current = [0, 0, 0, 0];
+      flushToDom([t0, t1, t2, t3]);
       return;
     }
-    const baseSpec = motionScheme[tokenKey];
-    const effectiveSpec = prefersReducedMotion
-      ? { ...baseSpec, dampingRatio: 1.0, stiffness: Math.max(baseSpec.stiffness, 900) }
-      : baseSpec;
-    const resolved = resolveCrossPlatformSpring(effectiveSpec, playbackRate);
 
-    const controls = animate(mv, target, {
-      type: "spring",
-      mass: resolved.webMotion.mass,
-      stiffness: resolved.webMotion.stiffness,
-      damping: resolved.webMotion.damping,
-      restDelta: 0.002,
-      restSpeed: 0.01,
+    const cur = currentRef.current;
+    const vel = velocityRef.current;
+    const alreadySettled =
+      Math.abs(cur[0] - t0) <= 0.05 &&
+      Math.abs(cur[1] - t1) <= 0.05 &&
+      Math.abs(cur[2] - t2) <= 0.05 &&
+      Math.abs(cur[3] - t3) <= 0.05 &&
+      Math.abs(vel[0]) <= 0.1 &&
+      Math.abs(vel[1]) <= 0.1 &&
+      Math.abs(vel[2]) <= 0.1 &&
+      Math.abs(vel[3]) <= 0.1;
+
+    if (alreadySettled) {
+      velocityRef.current = [0, 0, 0, 0];
+      flushToDom([t0, t1, t2, t3]);
+      return;
+    }
+
+    const params = resolveEffectiveSpringParams(
+      motionScheme[tokenKey],
+      playbackRate,
+      prefersReducedMotion,
+    );
+    const stepOpts = {
+      dampingRatio: params.dampingRatio,
+      stiffness: params.stiffness,
+      restDisplacementThreshold: 0.05,
+      restVelocityThreshold: 0.1,
+    };
+
+    return subscribeSpringFrame((dtSec) => {
+      const c = currentRef.current;
+      const v = velocityRef.current;
+      const s0 = stepSpringSimulation(c[0], v[0], t0, dtSec, stepOpts);
+      const s1 = stepSpringSimulation(c[1], v[1], t1, dtSec, stepOpts);
+      const s2 = stepSpringSimulation(c[2], v[2], t2, dtSec, stepOpts);
+      const s3 = stepSpringSimulation(c[3], v[3], t3, dtSec, stepOpts);
+
+      velocityRef.current = [s0.velocity, s1.velocity, s2.velocity, s3.velocity];
+      flushToDom([
+        Math.max(0, s0.value),
+        Math.max(0, s1.value),
+        Math.max(0, s2.value),
+        Math.max(0, s3.value),
+      ]);
+
+      return !(s0.settled && s1.settled && s2.settled && s3.settled);
     });
+  }, [
+    t0,
+    t1,
+    t2,
+    t3,
+    tokenKey,
+    motionScheme,
+    playbackRate,
+    prefersReducedMotion,
+    paused,
+    flushToDom,
+  ]);
 
-    return () => controls.stop();
-  }, [target, tokenKey, motionScheme, playbackRate, prefersReducedMotion, paused, mv]);
+  const mergedRef = React.useCallback(
+    (node: T | null) => {
+      nodeRef.current = node;
+      if (node) {
+        node.style.borderRadius = formatCornersBorderRadius(currentRef.current);
+      }
+      if (typeof forwardedRef === "function") {
+        forwardedRef(node);
+      } else if (forwardedRef && typeof forwardedRef === "object") {
+        (forwardedRef as React.MutableRefObject<T | null>).current = node;
+      }
+    },
+    [forwardedRef],
+  );
 
-  return current;
+  return {
+    ref: mergedRef,
+    borderRadiusCss: formatCornersBorderRadius(currentRef.current),
+    debugCornersAttr: debugGeometry
+      ? formatCornersDebug(currentRef.current)
+      : undefined,
+  };
 }
 
 export function useM3ECornerSpring(
@@ -57,76 +282,77 @@ export function useM3ECornerSpring(
   readonly borderRadiusCss: string;
 } {
   const { motionScheme, playbackRate, prefersReducedMotion, paused } = useM3E();
-  const mv0 = useMotionValue(target[0]);
-  const mv1 = useMotionValue(target[1]);
-  const mv2 = useMotionValue(target[2]);
-  const mv3 = useMotionValue(target[3]);
-
   const [corners, setCorners] = React.useState<CornerTuple>(target);
-
-  React.useEffect(() => {
-    const sync = () => {
-      setCorners([
-        Math.max(0, mv0.get()),
-        Math.max(0, mv1.get()),
-        Math.max(0, mv2.get()),
-        Math.max(0, mv3.get()),
-      ]);
-    };
-    const u0 = mv0.on("change", sync);
-    const u1 = mv1.on("change", sync);
-    const u2 = mv2.on("change", sync);
-    const u3 = mv3.on("change", sync);
-    return () => {
-      u0();
-      u1();
-      u2();
-      u3();
-    };
-  }, [mv0, mv1, mv2, mv3]);
+  const currentRef = React.useRef<CornerTuple>(target);
+  const velocityRef = React.useRef<[number, number, number, number]>([0, 0, 0, 0]);
 
   const [t0, t1, t2, t3] = target;
 
   React.useEffect(() => {
-    if (paused) {
-      mv0.jump(t0);
-      mv1.jump(t1);
-      mv2.jump(t2);
-      mv3.jump(t3);
+    if (paused || typeof requestAnimationFrame !== "function") {
+      currentRef.current = [t0, t1, t2, t3];
+      velocityRef.current = [0, 0, 0, 0];
       setCorners([t0, t1, t2, t3]);
       return;
     }
 
-    const baseSpec = motionScheme[tokenKey];
-    const effectiveSpec = prefersReducedMotion
-      ? { ...baseSpec, dampingRatio: 1.0, stiffness: Math.max(baseSpec.stiffness, 900) }
-      : baseSpec;
-    const resolved = resolveCrossPlatformSpring(effectiveSpec, playbackRate);
-    const springOpts = {
-      type: "spring" as const,
-      mass: resolved.webMotion.mass,
-      stiffness: resolved.webMotion.stiffness,
-      damping: resolved.webMotion.damping,
-      restDelta: 0.05,
-      restSpeed: 0.1,
+    const cur = currentRef.current;
+    const vel = velocityRef.current;
+    const alreadySettled =
+      Math.abs(cur[0] - t0) <= 0.05 &&
+      Math.abs(cur[1] - t1) <= 0.05 &&
+      Math.abs(cur[2] - t2) <= 0.05 &&
+      Math.abs(cur[3] - t3) <= 0.05 &&
+      Math.abs(vel[0]) <= 0.1 &&
+      Math.abs(vel[1]) <= 0.1 &&
+      Math.abs(vel[2]) <= 0.1 &&
+      Math.abs(vel[3]) <= 0.1;
+
+    if (alreadySettled) {
+      currentRef.current = [t0, t1, t2, t3];
+      velocityRef.current = [0, 0, 0, 0];
+      setCorners([t0, t1, t2, t3]);
+      return;
+    }
+
+    const params = resolveEffectiveSpringParams(
+      motionScheme[tokenKey],
+      playbackRate,
+      prefersReducedMotion,
+    );
+    const stepOpts = {
+      dampingRatio: params.dampingRatio,
+      stiffness: params.stiffness,
+      restDisplacementThreshold: 0.05,
+      restVelocityThreshold: 0.1,
     };
 
-    const c0 = animate(mv0, t0, springOpts);
-    const c1 = animate(mv1, t1, springOpts);
-    const c2 = animate(mv2, t2, springOpts);
-    const c3 = animate(mv3, t3, springOpts);
+    return subscribeSpringFrame((dtSec) => {
+      const c = currentRef.current;
+      const v = velocityRef.current;
+      const s0 = stepSpringSimulation(c[0], v[0], t0, dtSec, stepOpts);
+      const s1 = stepSpringSimulation(c[1], v[1], t1, dtSec, stepOpts);
+      const s2 = stepSpringSimulation(c[2], v[2], t2, dtSec, stepOpts);
+      const s3 = stepSpringSimulation(c[3], v[3], t3, dtSec, stepOpts);
 
-    return () => {
-      c0.stop();
-      c1.stop();
-      c2.stop();
-      c3.stop();
-    };
-  }, [t0, t1, t2, t3, tokenKey, motionScheme, playbackRate, prefersReducedMotion, paused, mv0, mv1, mv2, mv3]);
+      const next: CornerTuple = [
+        Math.max(0, s0.value),
+        Math.max(0, s1.value),
+        Math.max(0, s2.value),
+        Math.max(0, s3.value),
+      ];
+      currentRef.current = next;
+      velocityRef.current = [s0.velocity, s1.velocity, s2.velocity, s3.velocity];
+      setCorners(next);
 
-  const borderRadiusCss = `${corners[0].toFixed(1)}px ${corners[1].toFixed(1)}px ${corners[2].toFixed(1)}px ${corners[3].toFixed(1)}px`;
+      return !(s0.settled && s1.settled && s2.settled && s3.settled);
+    });
+  }, [t0, t1, t2, t3, tokenKey, motionScheme, playbackRate, prefersReducedMotion, paused]);
 
-  return { corners, borderRadiusCss };
+  return {
+    corners,
+    borderRadiusCss: formatCornersBorderRadius(corners),
+  };
 }
 
 export function usePressHoldState(disabled = false, baseMinHoldMs = 95) {

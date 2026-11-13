@@ -3,11 +3,13 @@ import { Select as BaseSelect } from "@base-ui/react/select";
 import { SELECT_TOKENS } from "../tokens/index.js";
 import { useM3EI18n } from "../context/M3EProvider.js";
 import {
+  useM3ECornerSpringRef,
   useM3EScalarSpring,
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
 
 export type SelectVariant = "outlined" | "filled";
+export type SelectLabelPosition = "floating" | "outside";
 
 export interface SelectOption<Value extends string = string> {
   readonly value: Value;
@@ -23,6 +25,7 @@ export interface M3ESelectProps<Value extends string = string> {
   readonly defaultValue?: Value | null;
   readonly onValueChange?: (value: Value | null) => void;
   readonly variant?: SelectVariant;
+  readonly labelPosition?: SelectLabelPosition;
   readonly label?: string;
   readonly placeholder?: string;
   readonly disabled?: boolean;
@@ -80,17 +83,24 @@ function SelectOptionRow<Value extends string>({
   isSelected,
 }: SelectOptionRowProps<Value>) {
   const { isPressed, pressHandlers } = usePressHoldState(Boolean(option.disabled));
-  const targetRadius = isPressed
-    ? SELECT_TOKENS.itemPressedRadius
-    : isSelected
-      ? SELECT_TOKENS.itemSelectedRadius
-      : SELECT_TOKENS.itemRadius;
+  const targetRadius = Math.max(
+    4,
+    isPressed
+      ? SELECT_TOKENS.itemPressedRadius
+      : isSelected
+        ? SELECT_TOKENS.itemSelectedRadius
+        : SELECT_TOKENS.itemRadius,
+  );
 
-  const radius = useM3EScalarSpring(targetRadius, "fastSpatial");
+  const { ref, borderRadiusCss } = useM3ECornerSpringRef<HTMLDivElement>(
+    [targetRadius, targetRadius, targetRadius, targetRadius],
+    isSelected ? "fastSpatial" : "defaultEffects",
+  );
   const hasDescription = Boolean(option.description);
 
   return (
     <BaseSelect.Item
+      ref={ref}
       value={option.value}
       disabled={option.disabled}
       className="m3e-select__item"
@@ -99,7 +109,7 @@ function SelectOptionRow<Value extends string>({
         minHeight: hasDescription ? "56px" : "42px",
         paddingBlock: hasDescription ? "10px" : "8px",
         paddingInline: "12px",
-        borderRadius: `${Math.max(4, radius).toFixed(1)}px`,
+        borderRadius: borderRadiusCss,
       }}
       {...pressHandlers}
     >
@@ -129,6 +139,7 @@ export function Select<Value extends string = string>({
   defaultValue,
   onValueChange,
   variant = "outlined",
+  labelPosition = "floating",
   label,
   placeholder,
   disabled = false,
@@ -148,6 +159,13 @@ export function Select<Value extends string = string>({
   const currentValue =
     controlledValue !== undefined ? controlledValue : uncontrolledValue;
 
+  const hasSelection =
+    currentValue !== null &&
+    currentValue !== undefined &&
+    String(currentValue).length > 0;
+  const isFloatingLabel = labelPosition === "floating" && Boolean(label);
+  const isLabelFloated = isOpen || hasSelection;
+
   const chevronDeg = useM3EScalarSpring(isOpen ? 180 : 0, "fastSpatial");
 
   const generatedId = React.useId();
@@ -158,24 +176,38 @@ export function Select<Value extends string = string>({
     [options],
   );
 
-  const height =
-    variant === "filled"
+  const height = isFloatingLabel
+    ? variant === "filled"
       ? SELECT_TOKENS.filledHeight
-      : SELECT_TOKENS.outlinedHeight;
+      : SELECT_TOKENS.outlinedHeight
+    : 48;
+
+  const baseRadius = isFloatingLabel
+    ? variant === "filled"
+      ? SELECT_TOKENS.filledTopRadius
+      : SELECT_TOKENS.outlinedRadius
+    : SELECT_TOKENS.outsideLabelRadius;
 
   const triggerRadius =
     variant === "filled"
-      ? `${SELECT_TOKENS.filledTopRadius}px ${SELECT_TOKENS.filledTopRadius}px ${SELECT_TOKENS.filledBottomRadius}px ${SELECT_TOKENS.filledBottomRadius}px`
-      : `${SELECT_TOKENS.outlinedRadius}px`;
+      ? `${baseRadius}px ${baseRadius}px ${SELECT_TOKENS.filledBottomRadius}px ${SELECT_TOKENS.filledBottomRadius}px`
+      : `${baseRadius}px`;
 
   return (
     <div
       className={className ? `m3e-select-field ${className}` : "m3e-select-field"}
+      data-label-position={labelPosition}
+      data-disabled={disabled ? "" : undefined}
       style={style}
     >
-      {label ? (
+      {label && !isFloatingLabel ? (
         <label htmlFor={triggerId} className="m3e-field__label">
           {label}
+          {required ? (
+            <span className="m3e-field__required" aria-hidden="true">
+              {" "}*
+            </span>
+          ) : null}
         </label>
       ) : null}
       <BaseSelect.Root
@@ -196,27 +228,67 @@ export function Select<Value extends string = string>({
           onValueChange?.(resolved);
         }}
       >
-        <BaseSelect.Trigger
-          aria-label={!label ? ariaLabel ?? resolvedPlaceholder : undefined}
-          className="m3e-select__trigger"
+        <div
+          className="m3e-select__shell"
           data-variant={variant}
-          style={{
-            minHeight: `${height}px`,
-            paddingInline: `${SELECT_TOKENS.paddingInline}px`,
-            borderRadius: triggerRadius,
-          }}
+          data-label-position={labelPosition}
+          data-floating={isLabelFloated ? "" : undefined}
+          data-popup-open={isOpen ? "" : undefined}
         >
-          <BaseSelect.Value
-            placeholder={resolvedPlaceholder}
-            className="m3e-select__value"
-          />
-          <BaseSelect.Icon
-            className="m3e-select__chevron"
-            style={{ rotate: `${chevronDeg.toFixed(1)}deg` }}
+          {isFloatingLabel ? (
+            <label
+              htmlFor={triggerId}
+              className="m3e-field__floating-label m3e-select__floating-label"
+              data-floating={isLabelFloated ? "" : undefined}
+            >
+              {label}
+              {required ? (
+                <span className="m3e-field__required" aria-hidden="true">
+                  {" "}*
+                </span>
+              ) : null}
+            </label>
+          ) : null}
+
+          <BaseSelect.Trigger
+            aria-label={!label ? ariaLabel ?? resolvedPlaceholder : undefined}
+            className="m3e-select__trigger"
+            data-variant={variant}
+            data-label-position={labelPosition}
+            data-floating={isLabelFloated ? "" : undefined}
+            style={{
+              minHeight: `${height}px`,
+              paddingInline: `${SELECT_TOKENS.paddingInline}px`,
+              borderRadius: triggerRadius,
+            }}
           >
-            <ChevronSvg />
-          </BaseSelect.Icon>
-        </BaseSelect.Trigger>
+            {isFloatingLabel && variant === "outlined" ? (
+              <fieldset
+                aria-hidden="true"
+                className="m3e-field__outline"
+                data-floating={isLabelFloated ? "" : undefined}
+              >
+                <legend className="m3e-field__outline-legend">
+                  <span>
+                    {label}
+                    {required ? " *" : ""}
+                  </span>
+                </legend>
+              </fieldset>
+            ) : null}
+
+            <BaseSelect.Value
+              placeholder={resolvedPlaceholder}
+              className="m3e-select__value"
+            />
+            <BaseSelect.Icon
+              className="m3e-select__chevron"
+              style={{ rotate: `${chevronDeg.toFixed(1)}deg` }}
+            >
+              <ChevronSvg />
+            </BaseSelect.Icon>
+          </BaseSelect.Trigger>
+        </div>
 
         <BaseSelect.Portal>
           <BaseSelect.Positioner

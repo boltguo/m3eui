@@ -9,6 +9,7 @@ import {
 } from "../tokens/index.js";
 import { useM3E } from "../context/M3EProvider.js";
 import {
+  useM3ECornerSpringRef,
   useM3EScalarSpring,
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
@@ -24,23 +25,32 @@ export interface M3EFABProps {
   readonly style?: React.CSSProperties;
 }
 
-export function FAB({
-  icon,
-  "aria-label": ariaLabel,
-  size = "md",
-  variant = "primary",
-  disabled = false,
-  onClick,
-  className,
-  style,
-}: M3EFABProps): React.JSX.Element {
+export const FAB = React.forwardRef<HTMLElement, M3EFABProps>(function FAB(
+  {
+    icon,
+    "aria-label": ariaLabel,
+    size = "md",
+    variant = "primary",
+    disabled = false,
+    onClick,
+    className,
+    style,
+  },
+  ref,
+) {
   const { debugGeometry } = useM3E();
   const { isPressed, pressHandlers } = usePressHoldState(disabled);
   const geo = resolveFabGeometry({ size, isPressed });
-  const radius = useM3EScalarSpring(geo.cornerRadius, "fastSpatial");
+  const r = Math.max(4, geo.cornerRadius);
+  const { ref: mergedRef, borderRadiusCss } = useM3ECornerSpringRef<HTMLElement>(
+    [r, r, r, r],
+    "defaultEffects",
+    ref,
+  );
 
   return (
     <BaseButton
+      ref={mergedRef}
       type="button"
       disabled={disabled}
       aria-label={ariaLabel}
@@ -52,7 +62,7 @@ export function FAB({
       style={{
         width: `${geo.containerSize}px`,
         height: `${geo.containerSize}px`,
-        borderRadius: `${Math.max(4, radius).toFixed(1)}px`,
+        borderRadius: borderRadiusCss,
         ...style,
       }}
       {...pressHandlers}
@@ -66,12 +76,12 @@ export function FAB({
       </span>
       {debugGeometry ? (
         <span className="m3e-debug-badge" aria-hidden="true">
-          {geo.containerSize} r:{radius.toFixed(0)}
+          {geo.containerSize} r:{geo.cornerRadius.toFixed(0)}
         </span>
       ) : null}
     </BaseButton>
   );
-}
+});
 
 export interface M3EExtendedFABProps {
   readonly icon: React.ReactNode;
@@ -130,7 +140,7 @@ export function ExtendedFAB({
   const labelOpacity = useM3EScalarSpring(expanded ? 1 : 0, "fastEffects");
 
   const targetRadius = isPressed ? spec.pressedRadius : spec.restRadius;
-  const animatedRadius = useM3EScalarSpring(targetRadius, "fastSpatial");
+  const animatedRadius = useM3EScalarSpring(targetRadius, "defaultEffects");
 
   const accessibleName =
     ariaLabel ?? (typeof children === "string" ? children : undefined);

@@ -1,9 +1,9 @@
 import * as React from "react";
 import { Drawer as BaseDrawer } from "@base-ui/react/drawer";
 import { SHEET_TOKENS } from "../tokens/index.js";
-import { useM3EI18n } from "../context/M3EProvider.js";
+import { useM3E } from "../context/M3EProvider.js";
 
-export type SheetSide = "bottom" | "right" | "left";
+export type SheetSide = "bottom" | "start" | "end" | "right" | "left";
 
 export interface M3ESheetProps {
   readonly open?: boolean;
@@ -68,15 +68,31 @@ export function Sheet({
   className,
   style,
 }: M3ESheetProps): React.JSX.Element {
-  const { t } = useM3EI18n();
+  const { direction, t } = useM3E();
+  const physicalSide: "bottom" | "right" | "left" =
+    side === "bottom"
+      ? "bottom"
+      : side === "start"
+        ? direction === "rtl"
+          ? "right"
+          : "left"
+        : side === "end"
+          ? direction === "rtl"
+            ? "left"
+            : "right"
+          : side;
   const swipeDirection =
-    side === "bottom" ? "down" : side === "right" ? "right" : "left";
+    physicalSide === "bottom"
+      ? "down"
+      : physicalSide === "right"
+        ? "right"
+        : "left";
 
   const radius = SHEET_TOKENS.cornerRadius;
   const borderRadius =
-    side === "bottom"
+    physicalSide === "bottom"
       ? `${radius}px ${radius}px 0px 0px`
-      : side === "right"
+      : physicalSide === "right"
         ? `${radius}px 0px 0px ${radius}px`
         : `0px ${radius}px ${radius}px 0px`;
 
@@ -90,22 +106,25 @@ export function Sheet({
       {trigger ? <BaseDrawer.Trigger render={trigger} /> : null}
       <BaseDrawer.Portal>
         <BaseDrawer.Backdrop className="m3e-sheet__backdrop" />
-        <BaseDrawer.Viewport className="m3e-sheet__viewport" data-side={side}>
+        <BaseDrawer.Viewport
+          className="m3e-sheet__viewport"
+          data-side={physicalSide}
+        >
           <BaseDrawer.Popup
             className={
               className ? `m3e-sheet__popup ${className}` : "m3e-sheet__popup"
             }
-            data-side={side}
+            data-side={physicalSide}
             style={{
               borderRadius,
               padding: `${SHEET_TOKENS.padding}px`,
-              ...(side === "bottom"
+              ...(physicalSide === "bottom"
                 ? { maxWidth: `${SHEET_TOKENS.bottomMaxWidth}px` }
                 : { maxWidth: `${SHEET_TOKENS.sideWidth}px` }),
               ...style,
             }}
           >
-            {side === "bottom" ? (
+            {physicalSide === "bottom" ? (
               <div className="m3e-sheet__handle-wrap" aria-hidden="true">
                 <span
                   className="m3e-sheet__drag-handle"
@@ -155,7 +174,9 @@ export function BottomSheet(
 }
 
 export function SideSheet(
-  props: Omit<M3ESheetProps, "side"> & { readonly side?: "right" | "left" },
+  props: Omit<M3ESheetProps, "side"> & {
+    readonly side?: "start" | "end" | "right" | "left";
+  },
 ): React.JSX.Element {
-  return <Sheet {...props} side={props.side ?? "right"} />;
+  return <Sheet {...props} side={props.side ?? "end"} />;
 }

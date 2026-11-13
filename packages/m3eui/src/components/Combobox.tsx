@@ -3,7 +3,7 @@ import { Combobox as BaseCombobox } from "@base-ui/react/combobox";
 import { SELECT_TOKENS } from "../tokens/index.js";
 import { useM3EI18n } from "../context/M3EProvider.js";
 import {
-  useM3EScalarSpring,
+  useM3ECornerSpringRef,
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
 
@@ -19,6 +19,8 @@ export interface M3EComboboxProps {
   readonly value?: ComboboxOption | null;
   readonly defaultValue?: ComboboxOption | null;
   readonly onValueChange?: (option: ComboboxOption | null) => void;
+  readonly variant?: "outlined" | "filled";
+  readonly labelPosition?: "floating" | "outside";
   readonly label?: React.ReactNode;
   readonly placeholder?: string;
   readonly emptyMessage?: React.ReactNode;
@@ -93,17 +95,24 @@ function ComboboxOptionRow({
   readonly isSelected: boolean;
 }) {
   const { isPressed, pressHandlers } = usePressHoldState(Boolean(option.disabled));
-  const targetRadius = isPressed
-    ? SELECT_TOKENS.itemPressedRadius
-    : isSelected
-      ? SELECT_TOKENS.itemSelectedRadius
-      : SELECT_TOKENS.itemRadius;
+  const targetRadius = Math.max(
+    4,
+    isPressed
+      ? SELECT_TOKENS.itemPressedRadius
+      : isSelected
+        ? SELECT_TOKENS.itemSelectedRadius
+        : SELECT_TOKENS.itemRadius,
+  );
 
-  const radius = useM3EScalarSpring(targetRadius, "fastSpatial");
+  const { ref, borderRadiusCss } = useM3ECornerSpringRef<HTMLDivElement>(
+    [targetRadius, targetRadius, targetRadius, targetRadius],
+    isSelected ? "fastSpatial" : "defaultEffects",
+  );
   const hasDescription = Boolean(option.description);
 
   return (
     <BaseCombobox.Item
+      ref={ref}
       value={option}
       disabled={option.disabled}
       className="m3e-select__item"
@@ -111,7 +120,7 @@ function ComboboxOptionRow({
         minHeight: hasDescription ? "56px" : "42px",
         paddingBlock: hasDescription ? "10px" : "8px",
         paddingInline: "12px",
-        borderRadius: `${Math.max(4, radius).toFixed(1)}px`,
+        borderRadius: borderRadiusCss,
       }}
       {...pressHandlers}
     >
@@ -133,6 +142,8 @@ export function Combobox({
   value: controlledValue,
   defaultValue,
   onValueChange,
+  variant = "outlined",
+  labelPosition = "floating",
   label,
   placeholder,
   emptyMessage,
@@ -150,12 +161,39 @@ export function Combobox({
   const inputId = id ?? generatedId;
   const [uncontrolledValue, setUncontrolledValue] =
     React.useState<ComboboxOption | null>(defaultValue ?? null);
+  const [inputText, setInputText] = React.useState<string>(
+    defaultValue?.label ?? "",
+  );
+  const [isFocused, setIsFocused] = React.useState(false);
+
   const currentValue =
     controlledValue !== undefined ? controlledValue : uncontrolledValue;
+
+  const isFloatingLabel = labelPosition === "floating" && Boolean(label);
+  const isLabelFloated =
+    isFocused || currentValue !== null || inputText.length > 0;
+
+  const height = isFloatingLabel
+    ? variant === "filled"
+      ? SELECT_TOKENS.filledHeight
+      : SELECT_TOKENS.outlinedHeight
+    : 48;
+
+  const baseRadius = isFloatingLabel
+    ? variant === "filled"
+      ? SELECT_TOKENS.filledTopRadius
+      : SELECT_TOKENS.outlinedRadius
+    : SELECT_TOKENS.outsideLabelRadius;
+
+  const containerRadius =
+    variant === "filled"
+      ? `${baseRadius}px ${baseRadius}px ${SELECT_TOKENS.filledBottomRadius}px ${SELECT_TOKENS.filledBottomRadius}px`
+      : `${baseRadius}px`;
 
   return (
     <div
       className={className ? `m3e-combobox ${className}` : "m3e-combobox"}
+      data-label-position={labelPosition}
       style={style}
     >
       <BaseCombobox.Root
@@ -169,6 +207,7 @@ export function Combobox({
         isItemEqualToValue={(a, b) => a.value === b.value}
         itemToStringLabel={(item) => item.label}
         itemToStringValue={(item) => item.value}
+        onInputValueChange={(val) => setInputText(val)}
         onValueChange={(next) => {
           const resolved = next ?? null;
           if (controlledValue === undefined) {
@@ -177,30 +216,74 @@ export function Combobox({
           onValueChange?.(resolved);
         }}
       >
-        {label ? (
+        {label && !isFloatingLabel ? (
           <label htmlFor={inputId} className="m3e-field__label">
             {label}
+            {required ? (
+              <span className="m3e-field__required" aria-hidden="true">
+                {" "}*
+              </span>
+            ) : null}
           </label>
         ) : null}
 
         <div
           className="m3e-combobox__shell"
+          data-variant={variant}
+          data-label-position={labelPosition}
+          data-floating={isLabelFloated ? "" : undefined}
+          data-has-leading=""
           style={{
-            minHeight: `${SELECT_TOKENS.outlinedHeight}px`,
-            borderRadius: `${SELECT_TOKENS.outlinedRadius}px`,
+            minHeight: `${height}px`,
+            borderRadius: containerRadius,
           }}
         >
+          {isFloatingLabel && variant === "outlined" ? (
+            <fieldset
+              aria-hidden="true"
+              className="m3e-field__outline"
+              data-floating={isLabelFloated ? "" : undefined}
+            >
+              <legend className="m3e-field__outline-legend">
+                <span>
+                  {label}
+                  {required ? " *" : ""}
+                </span>
+              </legend>
+            </fieldset>
+          ) : null}
+
           <span className="m3e-text-field__affix" aria-hidden="true">
             <SearchSvg />
           </span>
-          <BaseCombobox.Input
-            id={inputId}
-            placeholder={resolvedPlaceholder}
-            autoCorrect="off"
-            autoCapitalize="none"
-            spellCheck={false}
-            className="m3e-combobox__input"
-          />
+
+          <div className="m3e-text-field__control-stack">
+            {isFloatingLabel ? (
+              <label
+                htmlFor={inputId}
+                className="m3e-field__floating-label"
+                data-floating={isLabelFloated ? "" : undefined}
+              >
+                {label}
+                {required ? (
+                  <span className="m3e-field__required" aria-hidden="true">
+                    {" "}*
+                  </span>
+                ) : null}
+              </label>
+            ) : null}
+            <BaseCombobox.Input
+              id={inputId}
+              placeholder={resolvedPlaceholder}
+              autoCorrect="off"
+              autoCapitalize="none"
+              spellCheck={false}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              className="m3e-combobox__input"
+            />
+          </div>
+
           <BaseCombobox.Clear
             aria-label={t("combobox.clear")}
             className="m3e-text-field__icon-btn m3e-combobox__clear"

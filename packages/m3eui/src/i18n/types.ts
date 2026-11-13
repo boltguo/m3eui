@@ -2,7 +2,13 @@ export type M3EBuiltInLocale = "zh-CN" | "en-US" | "ja-JP" | "ar-SA";
 export type M3ELocale = M3EBuiltInLocale | (string & {});
 
 export interface M3EMessages {
+  readonly "badge.overflow": string;
+
+  readonly "carousel.roleDescription": string;
+  readonly "carousel.slideRoleDescription": string;
+  readonly "carousel.slideLabel": string;
   readonly "carousel.slideAnnouncement": string;
+  readonly "carousel.slideAnnouncementWithTitle": string;
   readonly "carousel.prevSlide": string;
   readonly "carousel.nextSlide": string;
   readonly "carousel.paginationLabel": string;
@@ -40,7 +46,9 @@ export interface M3EMessages {
 
   readonly "fabMenu.triggerOpen": string;
   readonly "fabMenu.triggerClose": string;
+  readonly "floatingToolbar.ariaLabel": string;
   readonly "splitButton.moreOptions": string;
+  readonly "buttonGroup.moreActions": string;
 
   readonly "form.errorSummaryHeading": string;
 

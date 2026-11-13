@@ -1,5 +1,7 @@
 import * as React from "react";
 import {
+  type ColorSchemeVariant,
+  type ColorSpecVersion,
   M3E_ALL_SHAPE_NAMES,
   type M3EShapeName,
 } from "m3eui/tokens";
@@ -86,6 +88,7 @@ import {
 } from "m3eui";
 import m3eProjectConfig from "../../../m3e.json";
 import { DocsCategoryHeader, ShowcaseCard } from "./components/ShowcaseCard";
+import { usePlaygroundStrings } from "./i18n";
 
 const LOCALE_OPTIONS: readonly { code: M3EBuiltInLocale; label: string }[] = [
   { code: "zh-CN", label: "中文" },
@@ -94,23 +97,9 @@ const LOCALE_OPTIONS: readonly { code: M3EBuiltInLocale; label: string }[] = [
   { code: "ar-SA", label: "العربية" },
 ];
 
-const CONTRAST_OPTIONS: readonly { value: number; label: string }[] = [
-  { value: 0, label: "标准 0" },
-  { value: 0.5, label: "中对比 +0.5" },
-  { value: 1, label: "高对比 +1.0" },
-];
-
 const CompositeSuiteSection = React.lazy(
   () => import("./sections/CompositeSuiteSection"),
 );
-
-const SEED_PRESETS = [
-  { hex: "#6750A4", name: "Expressive 紫" },
-  { hex: "#0B6B58", name: "翡翠青" },
-  { hex: "#1A73E8", name: "海湾蓝" },
-  { hex: "#B3261E", name: "朱砂红" },
-  { hex: "#7D5260", name: "玫瑰棕" },
-] as const;
 
 const COMPONENT_SEARCH_OPTIONS: readonly ComboboxOption[] = [
   { value: "button-group", label: "ButtonGroup", description: "按钮组" },
@@ -428,27 +417,6 @@ function NavCategoryGlyph({ index }: { readonly index: number }) {
   }
 }
 
-const NAV_DRAWER_ITEMS: readonly NavigationDestination<string>[] =
-  NAV_GROUPS.flatMap((group, groupIdx) =>
-    group.items.map((item) => ({
-      value: item.id,
-      label: item.label,
-      href: `#${item.id}`,
-      section: group.title,
-      icon: <NavCategoryGlyph index={groupIdx} />,
-    })),
-  );
-
-const GLOBAL_COMPONENT_SUGGESTIONS: readonly SearchSuggestion[] =
-  NAV_GROUPS.flatMap((group) =>
-    group.items.map((item) => ({
-      value: item.id,
-      label: item.label,
-      category: group.title,
-      description: `#${item.id}`,
-    })),
-  );
-
 const LOCALE_GROUP_ITEMS = LOCALE_OPTIONS.map((opt) => ({
   value: opt.code,
   label: opt.label,
@@ -458,17 +426,6 @@ const SCHEME_GROUP_ITEMS = [
   { value: "expressive", label: "Expressive" },
   { value: "tonalSpot", label: "Tonal" },
   { value: "vibrant", label: "Vibrant" },
-] as const;
-
-const CONTRAST_GROUP_ITEMS = CONTRAST_OPTIONS.map((c) => ({
-  value: String(c.value),
-  label: c.label,
-}));
-
-const COLOR_MODE_GROUP_ITEMS = [
-  { value: "light", label: "浅色" },
-  { value: "dark", label: "深色" },
-  { value: "system", label: "跟随系统" },
 ] as const;
 
 function SeedSwatchDot({ hex }: { readonly hex: string }) {
@@ -490,6 +447,7 @@ function DocsHeader({
   readonly onOpenStudio: () => void;
   readonly onJumpToSection: (sectionId: string) => void;
 }) {
+  const ui = usePlaygroundStrings();
   const {
     seedHex,
     setSeedHex,
@@ -503,6 +461,45 @@ function DocsHeader({
     setLocale,
     setDirectionMode,
   } = useM3E();
+
+  const seedPresets = React.useMemo(
+    () => [
+      { hex: "#6750A4", name: ui.seedPurple },
+      { hex: "#0B6B58", name: ui.seedJade },
+      { hex: "#1A73E8", name: ui.seedOcean },
+      { hex: "#B3261E", name: ui.seedVermilion },
+      { hex: "#7D5260", name: ui.seedRose },
+    ],
+    [ui],
+  );
+  const contrastItems = React.useMemo(
+    () => [
+      { value: "0", label: ui.contrastStandard },
+      { value: "0.5", label: ui.contrastMedium },
+      { value: "1", label: ui.contrastHigh },
+    ],
+    [ui],
+  );
+  const colorModeItems = React.useMemo(
+    () => [
+      { value: "light", label: ui.modeLight },
+      { value: "dark", label: ui.modeDark },
+      { value: "system", label: ui.modeSystem },
+    ],
+    [ui],
+  );
+  const globalSuggestions = React.useMemo<readonly SearchSuggestion[]>(
+    () =>
+      NAV_GROUPS.flatMap((group, gIdx) =>
+        group.items.map((item) => ({
+          value: item.id,
+          label: item.id === "theme-setup" ? ui.navGroups[0] : item.label,
+          category: ui.navGroups[gIdx] ?? group.title,
+          description: `#${item.id}`,
+        })),
+      ),
+    [ui],
+  );
 
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [quickQuery, setQuickQuery] = React.useState("");
@@ -519,14 +516,14 @@ function DocsHeader({
   const resolveAndJump = (queryOrLabel: string) => {
     const trimmed = queryOrLabel.trim().toLowerCase();
     if (!trimmed) return;
-    const exact = GLOBAL_COMPONENT_SUGGESTIONS.find(
+    const exact = globalSuggestions.find(
       (s) =>
         s.label.toLowerCase() === trimmed ||
         s.value.toLowerCase() === trimmed,
     );
     const fuzzy =
       exact ??
-      GLOBAL_COMPONENT_SUGGESTIONS.find(
+      globalSuggestions.find(
         (s) =>
           s.label.toLowerCase().includes(trimmed) ||
           s.value.toLowerCase().includes(trimmed),
@@ -547,7 +544,7 @@ function DocsHeader({
           <IconButton
             size="sm"
             variant="standard"
-            aria-label="打开组件导航抽屉"
+            aria-label={ui.openNavDrawer}
             className="docs-mobile-menu-btn"
             icon={<MenuHamburgerIcon />}
             onClick={onOpenMobileNav}
@@ -574,11 +571,11 @@ function DocsHeader({
           <SearchBar
             size="sm"
             className="docs-global-search"
-            suggestions={GLOBAL_COMPONENT_SUGGESTIONS}
+            suggestions={globalSuggestions}
             value={quickQuery}
             onValueChange={(val) => {
               setQuickQuery(val);
-              const matched = GLOBAL_COMPONENT_SUGGESTIONS.find(
+              const matched = globalSuggestions.find(
                 (s) => s.label === val,
               );
               if (matched) {
@@ -587,8 +584,8 @@ function DocsHeader({
               }
             }}
             onSearchSubmit={resolveAndJump}
-            placeholder="搜索组件 (如 Button, DatePicker, Tabs)…"
-            aria-label="搜索组件"
+            placeholder={ui.searchPlaceholder}
+            aria-label={ui.searchAriaLabel}
           />
         </div>
       }
@@ -598,7 +595,7 @@ function DocsHeader({
             variant="connected"
             size="xs"
             selectionMode="single"
-            aria-label="语言"
+            aria-label={ui.languageLabel}
             items={LOCALE_GROUP_ITEMS}
             value={[locale]}
             onValueChange={(vals) => {
@@ -615,8 +612,8 @@ function DocsHeader({
               variant="connected"
               size="xs"
               selectionMode="single"
-              aria-label="明暗模式"
-              items={COLOR_MODE_GROUP_ITEMS}
+              aria-label={ui.colorModeLabel}
+              items={colorModeItems}
               value={[colorMode]}
               onValueChange={(vals) => {
                 const next = vals[0] as "light" | "dark" | "system" | undefined;
@@ -627,22 +624,22 @@ function DocsHeader({
 
           <Popover
             align="end"
-            title="主题设置"
+            title={ui.themePopoverTitle}
             trigger={
               <Button
                 size="xs"
                 variant="outlined"
                 leadingIcon={<SeedSwatchDot hex={seedHex} />}
               >
-                主题
+                {ui.themeButton}
               </Button>
             }
           >
             <div className="docs-theme-popover-body">
               <div className="docs-studio-field">
-                <span className="docs-studio-field__label">HCT 种子色预设</span>
+                <span className="docs-studio-field__label">{ui.seedPresetsLabel}</span>
                 <div className="demo-row" style={{ gap: 6 }}>
-                  {SEED_PRESETS.map((preset) => (
+                  {seedPresets.map((preset) => (
                     <FilterChip
                       key={preset.hex}
                       selected={
@@ -657,23 +654,23 @@ function DocsHeader({
                   <label className="docs-color-picker-chip">
                     <input
                       type="color"
-                      aria-label="自定义种子色"
+                      aria-label={ui.seedCustomAria}
                       className="docs-color-input"
                       value={seedHex}
                       onChange={(e) => setSeedHex(e.target.value)}
                     />
-                    <span>自定义</span>
+                    <span>{ui.seedCustom}</span>
                   </label>
                 </div>
               </div>
 
               <div className="docs-studio-field">
-                <span className="docs-studio-field__label">调色板风格</span>
+                <span className="docs-studio-field__label">{ui.schemeStyleLabel}</span>
                 <ButtonGroup
                   variant="connected"
                   size="xs"
                   selectionMode="single"
-                  aria-label="调色板风格"
+                  aria-label={ui.schemeStyleLabel}
                   items={SCHEME_GROUP_ITEMS}
                   value={[schemeVariant]}
                   onValueChange={(vals) => {
@@ -688,13 +685,13 @@ function DocsHeader({
               </div>
 
               <div className="docs-studio-field">
-                <span className="docs-studio-field__label">对比度层级</span>
+                <span className="docs-studio-field__label">{ui.contrastLabel}</span>
                 <ButtonGroup
                   variant="connected"
                   size="xs"
                   selectionMode="single"
-                  aria-label="对比度层级"
-                  items={CONTRAST_GROUP_ITEMS}
+                  aria-label={ui.contrastLabel}
+                  items={contrastItems}
                   value={[String(contrastLevel)]}
                   onValueChange={(vals) => {
                     const next = vals[0];
@@ -711,7 +708,7 @@ function DocsHeader({
             leadingIcon={<SlidersStudioIcon />}
             onClick={onOpenStudio}
           >
-            工作台
+            {ui.studioButton}
           </Button>
         </div>
       }
@@ -726,11 +723,14 @@ function ThemeStudioSheet({
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
 }) {
+  const ui = usePlaygroundStrings();
   const {
     seedHex,
     setSeedHex,
     schemeVariant,
     setSchemeVariant,
+    specVersion,
+    setSpecVersion,
     contrastLevel,
     setContrastLevel,
     colorMode,
@@ -751,12 +751,39 @@ function ThemeStudioSheet({
   } = useM3E();
   const { toast } = useM3EToast();
 
+  const seedPresets = React.useMemo(
+    () => [
+      { hex: "#6750A4", name: ui.seedPurple },
+      { hex: "#0B6B58", name: ui.seedJade },
+      { hex: "#1A73E8", name: ui.seedOcean },
+      { hex: "#B3261E", name: ui.seedVermilion },
+      { hex: "#7D5260", name: ui.seedRose },
+    ],
+    [ui],
+  );
+  const contrastItems = React.useMemo(
+    () => [
+      { value: "0", label: ui.contrastStandard },
+      { value: "0.5", label: ui.contrastMedium },
+      { value: "1", label: ui.contrastHigh },
+    ],
+    [ui],
+  );
+  const colorModeItems = React.useMemo(
+    () => [
+      { value: "light", label: ui.modeLight },
+      { value: "dark", label: ui.modeDark },
+      { value: "system", label: ui.modeSystem },
+    ],
+    [ui],
+  );
+
   return (
     <SideSheet
       open={open}
       onOpenChange={onOpenChange}
-      side={direction === "rtl" ? "left" : "right"}
-      title="主题与动效工作台"
+      side="end"
+      title={ui.studioTitle}
       footer={
         <div className="demo-row" style={{ justifyContent: "space-between", width: "100%" }}>
           <Button
@@ -767,15 +794,15 @@ function ThemeStudioSheet({
                 await navigator.clipboard.writeText(exportConfigJson());
               } catch {
               }
-              toast({ title: "已复制 m3e.json" });
+              toast({ title: ui.copiedM3eJsonToast });
             }}
           >
-            复制 m3e.json
+            {ui.copyM3eJson}
           </Button>
           <SheetClose
             render={
               <Button variant="tonal" size="sm">
-                完成
+                {ui.done}
               </Button>
             }
           />
@@ -784,9 +811,9 @@ function ThemeStudioSheet({
     >
       <ScrollArea maxHeight="calc(100dvh - 210px)">
         <div className="docs-studio-sheet-content">
-          <Fieldset legend="色彩与对比度">
+          <Fieldset legend={ui.colorAndContrastLegend}>
             <div className="demo-row" style={{ gap: 8 }}>
-              {SEED_PRESETS.map((preset) => (
+              {seedPresets.map((preset) => (
                 <FilterChip
                   key={preset.hex}
                   selected={
@@ -801,31 +828,54 @@ function ThemeStudioSheet({
             </div>
 
             <Select
-              label="调色板变体"
+              label={ui.schemeSelectLabel}
               value={schemeVariant}
               onValueChange={(v) => {
                 if (v) {
-                  setSchemeVariant(
-                    v as "expressive" | "tonalSpot" | "vibrant" | "neutral",
-                  );
+                  setSchemeVariant(v as ColorSchemeVariant);
                 }
               }}
               options={[
-                { value: "expressive", label: "Expressive" },
+                { value: "expressive", label: "Expressive (M3E)" },
                 { value: "tonalSpot", label: "Tonal Spot" },
                 { value: "vibrant", label: "Vibrant" },
                 { value: "neutral", label: "Neutral" },
+                { value: "fidelity", label: "Fidelity" },
+                { value: "content", label: "Content" },
+                { value: "monochrome", label: "Monochrome" },
+                { value: "rainbow", label: "Rainbow" },
+                { value: "fruitSalad", label: "Fruit Salad" },
               ]}
             />
 
             <div className="docs-studio-field">
-              <span className="docs-studio-field__label">对比度</span>
+              <span className="docs-studio-field__label">{ui.specVersionLabel}</span>
               <ButtonGroup
                 variant="connected"
                 size="xs"
                 selectionMode="single"
-                aria-label="对比度"
-                items={CONTRAST_GROUP_ITEMS}
+                aria-label={ui.specVersionLabel}
+                items={[
+                  { value: "2025", label: "SPEC 2025 (M3E)" },
+                  { value: "2026", label: "SPEC 2026" },
+                  { value: "2021", label: "SPEC 2021" },
+                ]}
+                value={[specVersion]}
+                onValueChange={(vals) => {
+                  const next = vals[0] as ColorSpecVersion | undefined;
+                  if (next) setSpecVersion(next);
+                }}
+              />
+            </div>
+
+            <div className="docs-studio-field">
+              <span className="docs-studio-field__label">{ui.contrastLabel}</span>
+              <ButtonGroup
+                variant="connected"
+                size="xs"
+                selectionMode="single"
+                aria-label={ui.contrastLabel}
+                items={contrastItems}
                 value={[String(contrastLevel)]}
                 onValueChange={(vals) => {
                   if (vals[0] !== undefined) setContrastLevel(Number(vals[0]));
@@ -834,13 +884,13 @@ function ThemeStudioSheet({
             </div>
 
             <div className="docs-studio-field">
-              <span className="docs-studio-field__label">明暗模式</span>
+              <span className="docs-studio-field__label">{ui.colorModeLabel}</span>
               <ButtonGroup
                 variant="connected"
                 size="xs"
                 selectionMode="single"
-                aria-label="明暗模式"
-                items={COLOR_MODE_GROUP_ITEMS}
+                aria-label={ui.colorModeLabel}
+                items={colorModeItems}
                 value={[colorMode]}
                 onValueChange={(vals) => {
                   const next = vals[0] as "light" | "dark" | "system" | undefined;
@@ -850,12 +900,12 @@ function ThemeStudioSheet({
             </div>
           </Fieldset>
 
-          <Fieldset legend="语言与方向">
+          <Fieldset legend={ui.langAndDirLegend}>
             <ButtonGroup
               variant="connected"
               size="xs"
               selectionMode="single"
-              aria-label="语言"
+              aria-label={ui.languageLabel}
               items={LOCALE_GROUP_ITEMS}
               value={[locale]}
               onValueChange={(vals) => {
@@ -871,9 +921,9 @@ function ThemeStudioSheet({
               variant="connected"
               size="xs"
               selectionMode="single"
-              aria-label="书写方向"
+              aria-label={ui.writingDirLabel}
               items={[
-                { value: "auto", label: `自动 (${direction.toUpperCase()})` },
+                { value: "auto", label: ui.autoDirLabel(direction.toUpperCase()) },
                 { value: "ltr", label: "LTR →" },
                 { value: "rtl", label: "← RTL" },
               ]}
@@ -890,23 +940,23 @@ function ThemeStudioSheet({
             />
           </Fieldset>
 
-          <Fieldset legend="动效与调试">
+          <Fieldset legend={ui.motionAndDebugLegend}>
             <Switch
               checked={motionSchemeName === "expressive"}
               onCheckedChange={(checked) =>
                 setMotionSchemeName(checked ? "expressive" : "standard")
               }
-              label="Expressive 弹性弹簧"
+              label={ui.expressiveSpringLabel}
             />
             <Switch
               checked={playbackRate < 1}
               onCheckedChange={(checked) => setPlaybackRate(checked ? 0.25 : 1)}
-              label="0.25x 慢动作"
+              label={ui.slowMotionLabel}
             />
             <Switch
               checked={debugGeometry}
               onCheckedChange={setDebugGeometry}
-              label="几何标尺"
+              label={ui.geometryRulerLabel}
             />
           </Fieldset>
         </div>
@@ -916,11 +966,14 @@ function ThemeStudioSheet({
 }
 
 function DocsBody() {
+  const ui = usePlaygroundStrings();
   const {
     seedHex,
     setSeedHex,
     schemeVariant,
     setSchemeVariant,
+    specVersion,
+    setSpecVersion,
     contrastLevel,
     setContrastLevel,
     direction,
@@ -935,6 +988,42 @@ function DocsBody() {
   } = useM3E();
   const { locale, t } = useM3EI18n();
   const { toast } = useM3EToast();
+
+  React.useEffect(() => {
+    document.title = ui.docTitle;
+  }, [ui.docTitle]);
+
+  const navDrawerItems = React.useMemo<readonly NavigationDestination<string>[]>(
+    () =>
+      NAV_GROUPS.flatMap((group, groupIdx) =>
+        group.items.map((item) => ({
+          value: item.id,
+          label: item.id === "theme-setup" ? ui.navGroups[0] : item.label,
+          href: `#${item.id}`,
+          section: ui.navGroups[groupIdx] ?? group.title,
+          icon: <NavCategoryGlyph index={groupIdx} />,
+        })),
+      ),
+    [ui],
+  );
+  const seedPresets = React.useMemo(
+    () => [
+      { hex: "#6750A4", name: ui.seedPurple },
+      { hex: "#0B6B58", name: ui.seedJade },
+      { hex: "#1A73E8", name: ui.seedOcean },
+      { hex: "#B3261E", name: ui.seedVermilion },
+      { hex: "#7D5260", name: ui.seedRose },
+    ],
+    [ui],
+  );
+  const contrastItems = React.useMemo(
+    () => [
+      { value: "0", label: ui.contrastStandard },
+      { value: "0.5", label: ui.contrastMedium },
+      { value: "1", label: ui.contrastHigh },
+    ],
+    [ui],
+  );
   const [activeSection, setActiveSection] = React.useState<string>("theme-setup");
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
   const [studioOpen, setStudioOpen] = React.useState(false);
@@ -967,6 +1056,7 @@ function DocsBody() {
   const [iconToggleOn, setIconToggleOn] = React.useState(true);
   const [viewPeriod, setViewPeriod] = React.useState("week");
   const [toolbarTheme, setToolbarTheme] = React.useState<"standard" | "vibrant">("vibrant");
+  const [toolbarCollapsed, setToolbarCollapsed] = React.useState(false);
   const [toolbarTool, setToolbarTool] = React.useState("brush");
 
   const [wifiOn, setWifiOn] = React.useState(true);
@@ -1030,7 +1120,7 @@ function DocsBody() {
   return (
     <div id="docs-top" className="docs-app-root">
       <a href="#docs-main" className="docs-skip-link">
-        跳至主内容
+        {ui.skipToMain}
       </a>
 
       <DocsHeader
@@ -1045,9 +1135,9 @@ function DocsBody() {
         variant="modal"
         open={mobileNavOpen}
         onOpenChange={setMobileNavOpen}
-        aria-label="移动端组件规范导航"
-        headline="m3eui 组件规范目录"
-        items={NAV_DRAWER_ITEMS}
+        aria-label={ui.mobileNavAria}
+        headline={ui.mobileNavHeadline}
+        items={navDrawerItems}
         value={activeSection}
         onValueChange={(nextId) => scrollToSection(nextId)}
       />
@@ -1061,9 +1151,9 @@ function DocsBody() {
             <NavigationDrawer
               variant="permanent"
               scrollSpy
-              aria-label="组件目录"
-              headline="组件目录"
-              items={NAV_DRAWER_ITEMS}
+              aria-label={ui.sidebarHeading}
+              headline={ui.sidebarHeading}
+              items={navDrawerItems}
               value={activeSection}
               onValueChange={setActiveSection}
               className="docs-nav-drawer"
@@ -1079,15 +1169,15 @@ function DocsBody() {
                   <AssistChip icon={<SparkleIcon />}>
                     Material 3 Expressive
                   </AssistChip>
-                  <AssistChip>Base UI</AssistChip>
+                  <AssistChip>AOSP SPEC 2025</AssistChip>
                   <AssistChip>v0.1.0</AssistChip>
                 </div>
 
                 <h1 className="docs-hero__title">
-                  Material 3 Expressive React 组件库
+                  {ui.heroTitle}
                 </h1>
                 <p className="docs-hero__desc">
-                  基于 <code>@base-ui/react</code> 构建，内置 HCT 动态色彩、物理弹簧动效、<code>m3e.json</code> 主题配置与多语言支持。
+                  {ui.heroDesc}
                 </p>
 
                 <div className="demo-row">
@@ -1096,25 +1186,25 @@ function DocsBody() {
                     leadingIcon={<SparkleIcon />}
                     onClick={() => scrollToSection("theme-setup")}
                   >
-                    快速上手
+                    {ui.quickStartBtn}
                   </Button>
                   <Button
                     variant="tonal"
                     leadingIcon={<SlidersStudioIcon />}
                     onClick={() => setStudioOpen(true)}
                   >
-                    主题工作台
+                    {ui.openStudioBtn}
                   </Button>
                   <Button
                     variant="outlined"
                     onClick={() => scrollToSection("site-nav-collapsible")}
                   >
-                    复合组件
+                    {ui.compositeSuiteBtn}
                   </Button>
                 </div>
               </div>
 
-              <Tooltip content="切换多边形">
+              <Tooltip content={ui.switchPolygonTooltip}>
                 <Card
                   interactive
                   variant="outlined"
@@ -1136,11 +1226,15 @@ function DocsBody() {
 
             <Divider />
 
-            <div className="docs-hero__studio-bar" aria-label="快捷主题与物理控制栏">
+            <div
+              role="group"
+              className="docs-hero__studio-bar"
+              aria-label={ui.quickStudioBarAria}
+            >
               <div className="docs-hero__studio-group">
-                <span className="docs-studio-field__label">种子色</span>
+                <span className="docs-studio-field__label">{ui.seedPresetsLabel}</span>
                 <div className="demo-row" style={{ gap: 6 }}>
-                  {SEED_PRESETS.map((preset) => (
+                  {seedPresets.map((preset) => (
                     <FilterChip
                       key={preset.hex}
                       selected={
@@ -1156,12 +1250,12 @@ function DocsBody() {
               </div>
 
               <div className="docs-hero__studio-group">
-                <span className="docs-studio-field__label">调色板</span>
+                <span className="docs-studio-field__label">{ui.schemeStyleLabel}</span>
                 <ButtonGroup
                   variant="connected"
                   size="xs"
                   selectionMode="single"
-                  aria-label="快捷调色板风格"
+                  aria-label={ui.schemeStyleLabel}
                   items={SCHEME_GROUP_ITEMS}
                   value={[schemeVariant]}
                   onValueChange={(vals) => {
@@ -1176,13 +1270,13 @@ function DocsBody() {
               </div>
 
               <div className="docs-hero__studio-group">
-                <span className="docs-studio-field__label">对比度</span>
+                <span className="docs-studio-field__label">{ui.contrastLabel}</span>
                 <ButtonGroup
                   variant="connected"
                   size="xs"
                   selectionMode="single"
-                  aria-label="快捷对比度层级"
-                  items={CONTRAST_GROUP_ITEMS}
+                  aria-label={ui.contrastLabel}
+                  items={contrastItems}
                   value={[String(contrastLevel)]}
                   onValueChange={(vals) => {
                     if (vals[0] !== undefined) setContrastLevel(Number(vals[0]));
@@ -1191,27 +1285,37 @@ function DocsBody() {
               </div>
 
               <div className="docs-hero__studio-group">
-                <span className="docs-studio-field__label">弹簧与调试</span>
+                <span className="docs-studio-field__label">{ui.motionAndDebugLegend}</span>
                 <div className="demo-row" style={{ gap: 6 }}>
+                  <FilterChip
+                    selected={specVersion !== "2021"}
+                    onSelectedChange={(is2025) =>
+                      setSpecVersion(is2025 ? "2025" : "2021")
+                    }
+                  >
+                    {`Monet ${specVersion}`}
+                  </FilterChip>
                   <FilterChip
                     selected={motionSchemeName === "expressive"}
                     onSelectedChange={(on) =>
                       setMotionSchemeName(on ? "expressive" : "standard")
                     }
                   >
-                    {motionSchemeName === "expressive" ? "弹性弹簧" : "标准弹簧"}
+                    {motionSchemeName === "expressive"
+                      ? ui.expressiveSpringLabel
+                      : ui.standardSpringLabel}
                   </FilterChip>
                   <FilterChip
                     selected={playbackRate < 1}
                     onSelectedChange={(slow) => setPlaybackRate(slow ? 0.25 : 1)}
                   >
-                    {playbackRate === 1 ? "1x 速度" : "0.25x 慢放"}
+                    {playbackRate === 1 ? ui.normalSpeedLabel : ui.slowMotionLabel}
                   </FilterChip>
                   <FilterChip
                     selected={debugGeometry}
                     onSelectedChange={setDebugGeometry}
                   >
-                    几何标尺
+                    {ui.geometryRulerLabel}
                   </FilterChip>
                   <FilterChip
                     selected={direction === "rtl"}
@@ -1225,7 +1329,7 @@ function DocsBody() {
           </Card>
 
           <div className="docs-category">
-            <DocsCategoryHeader indexLabel="01" title="主题与国际化" />
+            <DocsCategoryHeader indexLabel="01" title={ui.navGroups[0]} />
 
             <ShowcaseCard
               id="theme-setup"
@@ -1348,7 +1452,7 @@ export function App() {
           </div>
 
           <div className="docs-category">
-            <DocsCategoryHeader indexLabel="02" title="动作与工具栏" />
+            <DocsCategoryHeader indexLabel="02" title={ui.navGroups[1]} />
 
           <ShowcaseCard
             id="button"
@@ -1504,14 +1608,18 @@ export function App() {
             </div>
 
             <div className="demo-panel">
-              <span className="demo-panel__label">Standard</span>
+              <span className="demo-panel__label">Standard (15% Squish + Overflow Menu)</span>
               <ButtonGroup
                 variant="standard"
                 buttonVariant="tonal"
+                maxVisibleItems={3}
+                onAction={(action) => toast({ title: `执行操作: ${action}` })}
                 items={[
                   { value: "reply", label: "回复" },
                   { value: "forward", label: "转发" },
                   { value: "archive", label: "归档" },
+                  { value: "snooze", label: "稍后提醒" },
+                  { value: "mute", label: "静音会话" },
                 ]}
               />
             </div>
@@ -1544,6 +1652,8 @@ export function App() {
             <div className="demo-row" style={{ justifyContent: "space-between" }}>
               <FloatingToolbar
                 theme={toolbarTheme}
+                collapsed={toolbarCollapsed}
+                onCollapsedChange={setToolbarCollapsed}
                 aria-label="悬浮工具栏"
                 items={[
                   {
@@ -1591,15 +1701,24 @@ export function App() {
                 }
               />
 
-              <Button
-                size="xs"
-                variant="outlined"
-                onClick={() =>
-                  setToolbarTheme((t) => (t === "vibrant" ? "standard" : "vibrant"))
-                }
-              >
-                {toolbarTheme === "vibrant" ? "Standard" : "Vibrant"}
-              </Button>
+              <div className="demo-row" style={{ gap: 8 }}>
+                <Button
+                  size="xs"
+                  variant="tonal"
+                  onClick={() => setToolbarCollapsed((c) => !c)}
+                >
+                  {toolbarCollapsed ? "展开工具栏" : "折叠至 FAB"}
+                </Button>
+                <Button
+                  size="xs"
+                  variant="outlined"
+                  onClick={() =>
+                    setToolbarTheme((t) => (t === "vibrant" ? "standard" : "vibrant"))
+                  }
+                >
+                  {toolbarTheme === "vibrant" ? "Standard" : "Vibrant"}
+                </Button>
+              </div>
             </div>
           </ShowcaseCard>
 
@@ -1681,7 +1800,7 @@ export function App() {
         </div>
 
         <div className="docs-category">
-          <DocsCategoryHeader indexLabel="03" title="表单控件" />
+          <DocsCategoryHeader indexLabel="03" title={ui.navGroups[2]} />
 
           <ShowcaseCard
             id="search-bar"
@@ -2169,7 +2288,7 @@ export function App() {
         </div>
 
         <div className="docs-category">
-          <DocsCategoryHeader indexLabel="04" title="数据展示与容器" />
+          <DocsCategoryHeader indexLabel="04" title={ui.navGroups[3]} />
 
           <ShowcaseCard
             id="carousel"
@@ -2560,7 +2679,7 @@ export function App() {
         </div>
 
         <div className="docs-category">
-          <DocsCategoryHeader indexLabel="05" title="导航与列表" />
+          <DocsCategoryHeader indexLabel="05" title={ui.navGroups[4]} />
 
           <ShowcaseCard
             id="top-app-bar"
@@ -2872,7 +2991,7 @@ export function App() {
         </div>
 
         <div className="docs-category">
-          <DocsCategoryHeader indexLabel="06" title="浮层与反馈" />
+          <DocsCategoryHeader indexLabel="06" title={ui.navGroups[5]} />
 
           <ShowcaseCard
             id="sheets"
@@ -3391,7 +3510,7 @@ const { toast } = useM3EToast();
                 variant="tonal"
                 onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
               >
-                返回顶部 ↑
+                {ui.backToTop}
               </Button>
             </div>
           </div>

@@ -5,6 +5,7 @@ import { TEXT_FIELD_TOKENS } from "../tokens/index.js";
 import { useM3EI18n } from "../context/M3EProvider.js";
 
 export type TextFieldVariant = "outlined" | "filled";
+export type FieldLabelPosition = "floating" | "outside";
 
 export interface M3ETextFieldProps {
   readonly label: React.ReactNode;
@@ -12,6 +13,7 @@ export interface M3ETextFieldProps {
   readonly defaultValue?: string;
   readonly onValueChange?: (value: string) => void;
   readonly variant?: TextFieldVariant;
+  readonly labelPosition?: FieldLabelPosition;
   readonly type?: "text" | "email" | "password" | "search" | "tel" | "url";
   readonly name?: string;
   readonly id?: string;
@@ -43,6 +45,7 @@ export interface M3ETextareaFieldProps {
   readonly defaultValue?: string;
   readonly onValueChange?: (value: string) => void;
   readonly variant?: TextFieldVariant;
+  readonly labelPosition?: FieldLabelPosition;
   readonly rows?: number;
   readonly name?: string;
   readonly id?: string;
@@ -141,6 +144,7 @@ export const TextField = React.forwardRef<HTMLInputElement, M3ETextFieldProps>(
       defaultValue = "",
       onValueChange,
       variant = "outlined",
+      labelPosition = "floating",
       type = "text",
       name,
       id,
@@ -171,23 +175,35 @@ export const TextField = React.forwardRef<HTMLInputElement, M3ETextFieldProps>(
     const [uncontrolledValue, setUncontrolledValue] =
       React.useState<string>(defaultValue);
     const [showPassword, setShowPassword] = React.useState(false);
+    const [isFocused, setIsFocused] = React.useState(false);
 
     const currentVal = controlledValue ?? uncontrolledValue;
+    const isPopulated = currentVal.length > 0;
+    const isFloatingLabel = labelPosition === "floating" && Boolean(label);
+    const isLabelFloated = isFocused || isPopulated;
+
     const isPassword = type === "password";
     const effectiveType = isPassword && showPassword ? "text" : type;
 
     const isIdentifierField =
       type === "email" || type === "url" || type === "search" || isPassword;
 
-    const height =
-      variant === "filled"
+    const height = isFloatingLabel
+      ? variant === "filled"
         ? TEXT_FIELD_TOKENS.filledHeight
-        : TEXT_FIELD_TOKENS.outlinedHeight;
+        : TEXT_FIELD_TOKENS.outlinedHeight
+      : 48;
+
+    const baseRadius = isFloatingLabel
+      ? variant === "filled"
+        ? TEXT_FIELD_TOKENS.filledTopRadius
+        : TEXT_FIELD_TOKENS.outlinedRadius
+      : TEXT_FIELD_TOKENS.outsideLabelRadius;
 
     const containerRadius =
       variant === "filled"
-        ? `${TEXT_FIELD_TOKENS.filledTopRadius}px ${TEXT_FIELD_TOKENS.filledTopRadius}px ${TEXT_FIELD_TOKENS.filledBottomRadius}px ${TEXT_FIELD_TOKENS.filledBottomRadius}px`
-        : `${TEXT_FIELD_TOKENS.outlinedRadius}px`;
+        ? `${baseRadius}px ${baseRadius}px ${TEXT_FIELD_TOKENS.filledBottomRadius}px ${TEXT_FIELD_TOKENS.filledBottomRadius}px`
+        : `${baseRadius}px`;
 
     const handleChange = (next: string) => {
       if (controlledValue === undefined) {
@@ -195,6 +211,8 @@ export const TextField = React.forwardRef<HTMLInputElement, M3ETextFieldProps>(
       }
       onValueChange?.(next);
     };
+
+    const hasCounter = Boolean(showCharacterCount && maxLength);
 
     return (
       <BaseField.Root
@@ -204,33 +222,41 @@ export const TextField = React.forwardRef<HTMLInputElement, M3ETextFieldProps>(
         validate={validate}
         validationMode="onBlur"
         className={className ? `m3e-field ${className}` : "m3e-field"}
+        data-label-position={labelPosition}
         style={style}
       >
-        <div className="m3e-field__label-row">
-          <BaseField.Label className="m3e-field__label">
-            {label}
-            {required ? (
-              <span className="m3e-field__required" aria-hidden="true">
-                {" "}*
-              </span>
+        {!isFloatingLabel ? (
+          <>
+            <div className="m3e-field__label-row">
+              <BaseField.Label className="m3e-field__label">
+                {label}
+                {required ? (
+                  <span className="m3e-field__required" aria-hidden="true">
+                    {" "}*
+                  </span>
+                ) : null}
+              </BaseField.Label>
+              {hasCounter ? (
+                <span className="m3e-field__counter" aria-live="off">
+                  {currentVal.length}/{maxLength}
+                </span>
+              ) : null}
+            </div>
+            {description ? (
+              <BaseField.Description className="m3e-field__description">
+                {description}
+              </BaseField.Description>
             ) : null}
-          </BaseField.Label>
-          {showCharacterCount && maxLength ? (
-            <span className="m3e-field__counter" aria-live="off">
-              {currentVal.length}/{maxLength}
-            </span>
-          ) : null}
-        </div>
-
-        {description ? (
-          <BaseField.Description className="m3e-field__description">
-            {description}
-          </BaseField.Description>
+          </>
         ) : null}
 
         <div
           className="m3e-text-field__shell"
           data-variant={variant}
+          data-label-position={labelPosition}
+          data-floating={isLabelFloated ? "" : undefined}
+          data-populated={isPopulated ? "" : undefined}
+          data-has-leading={leadingIcon ? "" : undefined}
           data-invalid={invalid ? "" : undefined}
           style={{
             minHeight: `${height}px`,
@@ -238,78 +264,128 @@ export const TextField = React.forwardRef<HTMLInputElement, M3ETextFieldProps>(
             borderRadius: containerRadius,
           }}
         >
+          {isFloatingLabel && variant === "outlined" ? (
+            <fieldset
+              aria-hidden="true"
+              className="m3e-field__outline"
+              data-floating={isLabelFloated ? "" : undefined}
+            >
+              <legend className="m3e-field__outline-legend">
+                <span>
+                  {label}
+                  {required ? " *" : ""}
+                </span>
+              </legend>
+            </fieldset>
+          ) : null}
+
           {leadingIcon ? (
             <span className="m3e-text-field__affix" aria-hidden="true">
               {leadingIcon}
             </span>
           ) : null}
 
-          <BaseInput
-            ref={ref}
-            id={id}
-          type={effectiveType}
-          value={controlledValue}
-          defaultValue={controlledValue === undefined ? defaultValue : undefined}
-          onValueChange={handleChange}
-          placeholder={placeholder}
-          required={required}
-          readOnly={readOnly}
-          autoComplete={autoComplete}
-          inputMode={inputMode}
-          enterKeyHint={enterKeyHint}
-          pattern={pattern}
-          minLength={minLength}
-          maxLength={maxLength}
-          autoCorrect={isIdentifierField ? "off" : undefined}
-          autoCapitalize={isIdentifierField ? "none" : undefined}
-          spellCheck={isIdentifierField ? false : undefined}
-          className="m3e-text-field__input"
-        />
+          <div className="m3e-text-field__control-stack">
+            {isFloatingLabel ? (
+              <BaseField.Label
+                className="m3e-field__floating-label"
+                data-floating={isLabelFloated ? "" : undefined}
+              >
+                {label}
+                {required ? (
+                  <span className="m3e-field__required" aria-hidden="true">
+                    {" "}*
+                  </span>
+                ) : null}
+              </BaseField.Label>
+            ) : null}
 
-        {clearable && currentVal.length > 0 && !disabled && !readOnly ? (
-          <button
-            type="button"
-            aria-label={t("textField.clear")}
-            className="m3e-text-field__icon-btn"
-            onClick={() => handleChange("")}
-          >
-            <ClearGlyph />
-          </button>
+            <BaseInput
+              ref={ref}
+              id={id}
+              type={effectiveType}
+              value={controlledValue}
+              defaultValue={controlledValue === undefined ? defaultValue : undefined}
+              onValueChange={handleChange}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              placeholder={placeholder}
+              required={required}
+              readOnly={readOnly}
+              autoComplete={autoComplete}
+              inputMode={inputMode}
+              enterKeyHint={enterKeyHint}
+              pattern={pattern}
+              minLength={minLength}
+              maxLength={maxLength}
+              autoCorrect={isIdentifierField ? "off" : undefined}
+              autoCapitalize={isIdentifierField ? "none" : undefined}
+              spellCheck={isIdentifierField ? false : undefined}
+              className="m3e-text-field__input"
+            />
+          </div>
+
+          {clearable && currentVal.length > 0 && !disabled && !readOnly ? (
+            <button
+              type="button"
+              aria-label={t("textField.clear")}
+              className="m3e-text-field__icon-btn"
+              onClick={() => handleChange("")}
+            >
+              <ClearGlyph />
+            </button>
+          ) : null}
+
+          {isPassword ? (
+            <button
+              type="button"
+              aria-pressed={showPassword}
+              aria-label={
+                showPassword
+                  ? t("textField.hidePassword")
+                  : t("textField.showPassword")
+              }
+              className="m3e-text-field__icon-btn"
+              onClick={() => setShowPassword((s) => !s)}
+            >
+              <EyeGlyph shown={showPassword} />
+            </button>
+          ) : null}
+
+          {trailingIcon ? (
+            <span className="m3e-text-field__affix" aria-hidden="true">
+              {trailingIcon}
+            </span>
+          ) : null}
+        </div>
+
+        {isFloatingLabel && (description || hasCounter) ? (
+          <div className="m3e-field__supporting-row">
+            {description ? (
+              <BaseField.Description className="m3e-field__description">
+                {description}
+              </BaseField.Description>
+            ) : (
+              <span />
+            )}
+            {hasCounter ? (
+              <span className="m3e-field__counter" aria-live="off">
+                {currentVal.length}/{maxLength}
+              </span>
+            ) : null}
+          </div>
         ) : null}
 
-        {isPassword ? (
-          <button
-            type="button"
-            aria-pressed={showPassword}
-            aria-label={
-              showPassword
-                ? t("textField.hidePassword")
-                : t("textField.showPassword")
-            }
-            className="m3e-text-field__icon-btn"
-            onClick={() => setShowPassword((s) => !s)}
-          >
-            <EyeGlyph shown={showPassword} />
-          </button>
-        ) : null}
-
-        {trailingIcon ? (
-          <span className="m3e-text-field__affix" aria-hidden="true">
-            {trailingIcon}
-          </span>
-        ) : null}
-      </div>
-
-      <BaseField.Error
-        match={invalid ? true : undefined}
-        className="m3e-field__error"
-      >
-        <ErrorIconSvg label={t("textField.errorIcon")} />
-        <span>{errorMessage ?? t("textField.defaultInvalid")}</span>
-      </BaseField.Error>
-    </BaseField.Root>
-  );
-},
+        <BaseField.Error
+          match={invalid ? true : undefined}
+          className="m3e-field__error"
+        >
+          <ErrorIconSvg label={t("textField.errorIcon")} />
+          <span>{errorMessage ?? t("textField.defaultInvalid")}</span>
+        </BaseField.Error>
+      </BaseField.Root>
+    );
+  },
 );
 
 export function TextareaField({
@@ -318,6 +394,7 @@ export function TextareaField({
   defaultValue = "",
   onValueChange,
   variant = "outlined",
+  labelPosition = "floating",
   rows = 3,
   name,
   id,
@@ -335,12 +412,24 @@ export function TextareaField({
 }: M3ETextareaFieldProps): React.JSX.Element {
   const { t } = useM3EI18n();
   const [uncontrolledValue, setUncontrolledValue] = React.useState<string>(defaultValue);
+  const [isFocused, setIsFocused] = React.useState(false);
   const currentVal = controlledValue ?? uncontrolledValue;
+  const isPopulated = currentVal.length > 0;
+  const isFloatingLabel = labelPosition === "floating" && Boolean(label);
+  const isLabelFloated = isFocused || isPopulated;
+
+  const baseRadius = isFloatingLabel
+    ? variant === "filled"
+      ? TEXT_FIELD_TOKENS.filledTopRadius
+      : TEXT_FIELD_TOKENS.outlinedRadius
+    : TEXT_FIELD_TOKENS.outsideLabelRadius;
 
   const containerRadius =
     variant === "filled"
-      ? `${TEXT_FIELD_TOKENS.filledTopRadius}px ${TEXT_FIELD_TOKENS.filledTopRadius}px ${TEXT_FIELD_TOKENS.filledBottomRadius}px ${TEXT_FIELD_TOKENS.filledBottomRadius}px`
-      : `${TEXT_FIELD_TOKENS.outlinedRadius}px`;
+      ? `${baseRadius}px ${baseRadius}px ${TEXT_FIELD_TOKENS.filledBottomRadius}px ${TEXT_FIELD_TOKENS.filledBottomRadius}px`
+      : `${baseRadius}px`;
+
+  const hasCounter = Boolean(showCharacterCount && maxLength);
 
   return (
     <BaseField.Root
@@ -349,63 +438,126 @@ export function TextareaField({
       invalid={invalid}
       validationMode="onBlur"
       className={className ? `m3e-field ${className}` : "m3e-field"}
+      data-label-position={labelPosition}
       style={style}
     >
-      <div className="m3e-field__label-row">
-        <BaseField.Label className="m3e-field__label">
-          {label}
-          {required ? (
-            <span className="m3e-field__required" aria-hidden="true">
-              {" "}*
-            </span>
+      {!isFloatingLabel ? (
+        <>
+          <div className="m3e-field__label-row">
+            <BaseField.Label className="m3e-field__label">
+              {label}
+              {required ? (
+                <span className="m3e-field__required" aria-hidden="true">
+                  {" "}*
+                </span>
+              ) : null}
+            </BaseField.Label>
+            {hasCounter ? (
+              <span className="m3e-field__counter" aria-live="off">
+                {currentVal.length}/{maxLength}
+              </span>
+            ) : null}
+          </div>
+          {description ? (
+            <BaseField.Description className="m3e-field__description">
+              {description}
+            </BaseField.Description>
           ) : null}
-        </BaseField.Label>
-        {showCharacterCount && maxLength ? (
-          <span className="m3e-field__counter" aria-live="off">
-            {currentVal.length}/{maxLength}
-          </span>
-        ) : null}
-      </div>
-
-      {description ? (
-        <BaseField.Description className="m3e-field__description">
-          {description}
-        </BaseField.Description>
+        </>
       ) : null}
 
       <div
         className="m3e-text-field__shell m3e-text-field__shell--textarea"
         data-variant={variant}
+        data-label-position={labelPosition}
+        data-floating={isLabelFloated ? "" : undefined}
+        data-populated={isPopulated ? "" : undefined}
         data-invalid={invalid ? "" : undefined}
         style={{
           paddingInline: `${TEXT_FIELD_TOKENS.paddingInline}px`,
           borderRadius: containerRadius,
         }}
       >
-        <BaseField.Control
-          id={id}
-          required={required}
-          readOnly={readOnly}
-          render={(props) => (
-            <textarea
-              {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
-              rows={rows}
-              placeholder={placeholder}
-              maxLength={maxLength}
-              value={controlledValue}
-              defaultValue={controlledValue === undefined ? defaultValue : undefined}
-              onChange={(e) => {
-                if (controlledValue === undefined) {
-                  setUncontrolledValue(e.target.value);
-                }
-                onValueChange?.(e.target.value);
-                (props as React.TextareaHTMLAttributes<HTMLTextAreaElement>).onChange?.(e);
-              }}
-              className="m3e-text-field__textarea"
-            />
-          )}
-        />
+        {isFloatingLabel && variant === "outlined" ? (
+          <fieldset
+            aria-hidden="true"
+            className="m3e-field__outline"
+            data-floating={isLabelFloated ? "" : undefined}
+          >
+            <legend className="m3e-field__outline-legend">
+              <span>
+                {label}
+                {required ? " *" : ""}
+              </span>
+            </legend>
+          </fieldset>
+        ) : null}
+
+        <div className="m3e-text-field__control-stack m3e-text-field__control-stack--textarea">
+          {isFloatingLabel ? (
+            <BaseField.Label
+              className="m3e-field__floating-label m3e-field__floating-label--textarea"
+              data-floating={isLabelFloated ? "" : undefined}
+            >
+              {label}
+              {required ? (
+                <span className="m3e-field__required" aria-hidden="true">
+                  {" "}*
+                </span>
+              ) : null}
+            </BaseField.Label>
+          ) : null}
+
+          <BaseField.Control
+            id={id}
+            required={required}
+            readOnly={readOnly}
+            render={(props) => (
+              <textarea
+                {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
+                rows={rows}
+                placeholder={placeholder}
+                maxLength={maxLength}
+                value={controlledValue}
+                defaultValue={controlledValue === undefined ? defaultValue : undefined}
+                onFocus={(e) => {
+                  setIsFocused(true);
+                  (props as React.TextareaHTMLAttributes<HTMLTextAreaElement>).onFocus?.(e);
+                }}
+                onBlur={(e) => {
+                  setIsFocused(false);
+                  (props as React.TextareaHTMLAttributes<HTMLTextAreaElement>).onBlur?.(e);
+                }}
+                onChange={(e) => {
+                  if (controlledValue === undefined) {
+                    setUncontrolledValue(e.target.value);
+                  }
+                  onValueChange?.(e.target.value);
+                  (props as React.TextareaHTMLAttributes<HTMLTextAreaElement>).onChange?.(e);
+                }}
+                className="m3e-text-field__textarea"
+              />
+            )}
+          />
+        </div>
       </div>
+
+      {isFloatingLabel && (description || hasCounter) ? (
+        <div className="m3e-field__supporting-row">
+          {description ? (
+            <BaseField.Description className="m3e-field__description">
+              {description}
+            </BaseField.Description>
+          ) : (
+            <span />
+          )}
+          {hasCounter ? (
+            <span className="m3e-field__counter" aria-live="off">
+              {currentVal.length}/{maxLength}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
 
       <BaseField.Error
         match={invalid ? true : undefined}

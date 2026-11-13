@@ -13,7 +13,10 @@ import {
   useM3EScalarSpring,
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
-import { formatLocalizedWallTime } from "../i18n/index.js";
+import {
+  formatLocalizedWallTime,
+  getLocaleUses24Hour,
+} from "../i18n/index.js";
 
 export type PlainTimeString = `${string}:${string}` | string;
 
@@ -168,13 +171,14 @@ export function TimePicker({
   value: controlledValue,
   defaultValue = "09:30",
   onValueChange,
-  use24Hour = false,
+  use24Hour: use24HourProp,
   defaultInputMode = "dial",
   title,
   className,
   style,
 }: M3ETimePickerProps): React.JSX.Element {
-  const { t } = useM3EI18n();
+  const { locale, t } = useM3EI18n();
+  const use24Hour = use24HourProp ?? getLocaleUses24Hour(locale);
   const resolvedTitle = title ?? t("timePicker.title");
   const [uncontrolledTime, setUncontrolledTime] =
     React.useState<string>(defaultValue);
@@ -312,50 +316,52 @@ export function TimePicker({
 
       {inputMode === "keyboard" ? (
         <div className="m3e-time-picker__keyboard-row">
-          <label className="m3e-time-picker__kb-field">
-            <input
-              type="number"
-              min={use24Hour ? 0 : 1}
-              max={use24Hour ? 23 : 12}
-              value={use24Hour ? hour24 : displayHour12}
-              aria-label={t("timePicker.hour")}
-              className="m3e-time-picker__kb-input"
-              onChange={(e) => {
-                const raw = Number(e.target.value);
-                if (Number.isNaN(raw)) return;
-                if (use24Hour) {
-                  commitTime(Math.max(0, Math.min(23, raw)), minute);
-                } else {
-                  const clamped12 = Math.max(1, Math.min(12, raw)) % 12;
-                  commitTime(isPm ? clamped12 + 12 : clamped12, minute);
-                }
-              }}
-            />
-            <span className="m3e-time-picker__kb-caption">
-              {t("timePicker.hourShort")}
+          <div className="m3e-time-picker__digits-ltr" dir="ltr">
+            <label className="m3e-time-picker__kb-field">
+              <input
+                type="number"
+                min={use24Hour ? 0 : 1}
+                max={use24Hour ? 23 : 12}
+                value={use24Hour ? hour24 : displayHour12}
+                aria-label={t("timePicker.hour")}
+                className="m3e-time-picker__kb-input"
+                onChange={(e) => {
+                  const raw = Number(e.target.value);
+                  if (Number.isNaN(raw)) return;
+                  if (use24Hour) {
+                    commitTime(Math.max(0, Math.min(23, raw)), minute);
+                  } else {
+                    const clamped12 = Math.max(1, Math.min(12, raw)) % 12;
+                    commitTime(isPm ? clamped12 + 12 : clamped12, minute);
+                  }
+                }}
+              />
+              <span className="m3e-time-picker__kb-caption">
+                {t("timePicker.hourShort")}
+              </span>
+            </label>
+            <span className="m3e-time-picker__colon" aria-hidden="true">
+              :
             </span>
-          </label>
-          <span className="m3e-time-picker__colon" aria-hidden="true">
-            :
-          </span>
-          <label className="m3e-time-picker__kb-field">
-            <input
-              type="number"
-              min={0}
-              max={59}
-              value={minute}
-              aria-label={t("timePicker.minute")}
-              className="m3e-time-picker__kb-input"
-              onChange={(e) => {
-                const raw = Number(e.target.value);
-                if (Number.isNaN(raw)) return;
-                commitTime(hour24, Math.max(0, Math.min(59, raw)));
-              }}
-            />
-            <span className="m3e-time-picker__kb-caption">
-              {t("timePicker.minuteShort")}
-            </span>
-          </label>
+            <label className="m3e-time-picker__kb-field">
+              <input
+                type="number"
+                min={0}
+                max={59}
+                value={minute}
+                aria-label={t("timePicker.minute")}
+                className="m3e-time-picker__kb-input"
+                onChange={(e) => {
+                  const raw = Number(e.target.value);
+                  if (Number.isNaN(raw)) return;
+                  commitTime(hour24, Math.max(0, Math.min(59, raw)));
+                }}
+              />
+              <span className="m3e-time-picker__kb-caption">
+                {t("timePicker.minuteShort")}
+              </span>
+            </label>
+          </div>
           {!use24Hour ? (
             <div
               className="m3e-time-picker__period"
@@ -388,21 +394,23 @@ export function TimePicker({
       ) : (
         <>
           <div className="m3e-time-picker__selector-row">
-            <TimeSegmentChip
-              label={t("timePicker.selectHour")}
-              active={selectionMode === "hour"}
-              valueText={hourDisplayStr}
-              onClick={() => setSelectionMode("hour")}
-            />
-            <span className="m3e-time-picker__colon" aria-hidden="true">
-              :
-            </span>
-            <TimeSegmentChip
-              label={t("timePicker.selectMinute")}
-              active={selectionMode === "minute"}
-              valueText={minuteDisplayStr}
-              onClick={() => setSelectionMode("minute")}
-            />
+            <div className="m3e-time-picker__digits-ltr" dir="ltr">
+              <TimeSegmentChip
+                label={t("timePicker.selectHour")}
+                active={selectionMode === "hour"}
+                valueText={hourDisplayStr}
+                onClick={() => setSelectionMode("hour")}
+              />
+              <span className="m3e-time-picker__colon" aria-hidden="true">
+                :
+              </span>
+              <TimeSegmentChip
+                label={t("timePicker.selectMinute")}
+                active={selectionMode === "minute"}
+                valueText={minuteDisplayStr}
+                onClick={() => setSelectionMode("minute")}
+              />
+            </div>
 
             {!use24Hour ? (
               <div
@@ -437,15 +445,66 @@ export function TimePicker({
           <div
             ref={dialRef}
             role="listbox"
+            tabIndex={0}
             aria-label={
               selectionMode === "hour"
                 ? t("timePicker.hourDial")
                 : t("timePicker.minuteDial")
             }
+            aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Home End"
             className="m3e-time-picker__dial"
             style={{
               width: `${TIME_PICKER_TOKENS.dialSize}px`,
               height: `${TIME_PICKER_TOKENS.dialSize}px`,
+            }}
+            onKeyDown={(e) => {
+              const step = e.shiftKey && selectionMode === "minute" ? 5 : 1;
+              if (e.key === "ArrowUp" || e.key === "ArrowRight") {
+                e.preventDefault();
+                if (selectionMode === "hour") {
+                  if (use24Hour) {
+                    commitTime((hour24 + 1) % 24, minute);
+                  } else {
+                    const nextMod12 = ((hour24 % 12) + 1) % 12;
+                    commitTime(isPm ? nextMod12 + 12 : nextMod12, minute);
+                  }
+                } else {
+                  commitTime(hour24, (minute + step) % 60);
+                }
+              } else if (e.key === "ArrowDown" || e.key === "ArrowLeft") {
+                e.preventDefault();
+                if (selectionMode === "hour") {
+                  if (use24Hour) {
+                    commitTime((hour24 + 23) % 24, minute);
+                  } else {
+                    const prevMod12 = ((hour24 % 12) + 11) % 12;
+                    commitTime(isPm ? prevMod12 + 12 : prevMod12, minute);
+                  }
+                } else {
+                  commitTime(hour24, (minute + 60 - (step % 60)) % 60);
+                }
+              } else if (e.key === "Home") {
+                e.preventDefault();
+                if (selectionMode === "hour") {
+                  commitTime(use24Hour ? 0 : isPm ? 12 : 0, minute);
+                } else {
+                  commitTime(hour24, 0);
+                }
+              } else if (e.key === "End") {
+                e.preventDefault();
+                if (selectionMode === "hour") {
+                  commitTime(use24Hour ? 23 : isPm ? 23 : 11, minute);
+                } else {
+                  commitTime(hour24, 59);
+                }
+              } else if (
+                (e.key === "Enter" || e.key === " ") &&
+                e.target === e.currentTarget &&
+                selectionMode === "hour"
+              ) {
+                e.preventDefault();
+                setSelectionMode("minute");
+              }
             }}
             onPointerDown={(e) => {
               if ((e.target as HTMLElement).closest("button")) return;
@@ -604,12 +663,13 @@ export function TimePickerField({
   value: controlledValue,
   defaultValue = "09:30",
   onValueChange,
-  use24Hour = false,
+  use24Hour: use24HourProp,
   disabled = false,
   className,
   style,
 }: M3ETimePickerFieldProps): React.JSX.Element {
   const { locale } = useM3EI18n();
+  const use24Hour = use24HourProp ?? getLocaleUses24Hour(locale);
   const [uncontrolledTime, setUncontrolledTime] =
     React.useState<string>(defaultValue);
   const [open, setOpen] = React.useState(false);

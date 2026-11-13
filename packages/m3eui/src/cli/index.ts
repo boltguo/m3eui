@@ -14,14 +14,19 @@ import {
   serializeM3EConfig,
 } from "../config.js";
 import { M3E_BUILT_IN_LOCALES, enUSMessages } from "../i18n/index.js";
-import type { ColorSchemeVariant, MotionSchemeName } from "../tokens/index.js";
+import {
+  type ColorSchemeVariant,
+  type ColorSpecVersion,
+  M3E_COLOR_SCHEME_VARIANTS,
+  M3E_COLOR_SPEC_VERSIONS,
+  type MotionSchemeName,
+} from "../tokens/index.js";
 
-export const VALID_SCHEME_VARIANTS: readonly ColorSchemeVariant[] = [
-  "expressive",
-  "tonalSpot",
-  "vibrant",
-  "neutral",
-];
+export const VALID_SCHEME_VARIANTS: readonly ColorSchemeVariant[] =
+  M3E_COLOR_SCHEME_VARIANTS;
+
+export const VALID_SPEC_VERSIONS: readonly ColorSpecVersion[] =
+  M3E_COLOR_SPEC_VERSIONS;
 
 export const VALID_MOTION_SCHEMES: readonly MotionSchemeName[] = [
   "expressive",
@@ -44,6 +49,7 @@ export interface InitProjectOptions {
   readonly cwd: string;
   readonly seedHex?: string;
   readonly schemeVariant?: ColorSchemeVariant;
+  readonly specVersion?: ColorSpecVersion;
   readonly locale?: string;
   readonly cssOutput?: string;
   readonly schemaUrl?: string;
@@ -70,6 +76,7 @@ export function initM3EProject(options: InitProjectOptions): {
     schemaUrl: options.schemaUrl,
     seedHex: options.seedHex ?? "#6750A4",
     schemeVariant: options.schemeVariant ?? "expressive",
+    specVersion: options.specVersion ?? "2025",
     locale: options.locale ?? "zh-CN",
     cssOutput: options.cssOutput ?? "src/styles/m3e-theme.css",
   });
@@ -136,6 +143,76 @@ export function scaffoldM3ELocalePack(
   return targetAbs;
 }
 
+function extractPlaceholders(template: string): string[] {
+  const out = new Set<string>();
+  const re = /\{(\w+)\}/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(template)) !== null) {
+    if (m[1]) out.add(m[1]);
+  }
+  return [...out].sort();
+}
+
+function validateBuiltInLocaleParity(): {
+  readonly passed: boolean;
+  readonly detail: string;
+} {
+  const baseKeys = Object.keys(enUSMessages).sort();
+  const issues: string[] = [];
+
+  for (const [localeCode, dict] of Object.entries(M3E_BUILT_IN_LOCALES)) {
+    const keys = Object.keys(dict).sort();
+    if (keys.join("|") !== baseKeys.join("|")) {
+      issues.push(`${localeCode}: key set mismatch`);
+      continue;
+    }
+    for (const k of baseKeys) {
+      const msgKey = k as keyof typeof enUSMessages;
+      const val = dict[msgKey];
+      if (typeof val !== "string" || val.trim().length === 0) {
+        issues.push(`${localeCode}.${k}: empty translation`);
+        continue;
+      }
+      const expectedParams = extractPlaceholders(enUSMessages[msgKey]);
+      const actualParams = extractPlaceholders(val);
+      if (expectedParams.join(",") !== actualParams.join(",")) {
+        issues.push(
+          `${localeCode}.${k}: placeholder mismatch (expected {${expectedParams.join(",")}}, got {${actualParams.join(",")}})`,
+        );
+      }
+    }
+  }
+
+  return {
+    passed: issues.length === 0,
+    detail:
+      issues.length === 0
+        ? `All ${Object.keys(M3E_BUILT_IN_LOCALES).length} built-in locale packs share ${baseKeys.length} keys with matching {param} placeholders`
+        : issues.join("; "),
+  };
+}
+
+const HARDCODED_UI_ATTR_RE =
+  /\b(?:aria-label|aria-roledescription|aria-valuetext|placeholder|alt)\s*=\s*"([^"]+)"/;
+
+function scanHardcodedUiLiterals(componentsDir: string): string[] {
+  const offenders: string[] = [];
+  if (!existsSync(componentsDir)) return offenders;
+
+  for (const entry of readdirSync(componentsDir).sort()) {
+    if (!entry.endsWith(".tsx")) continue;
+    if (entry.endsWith(".test.tsx")) continue;
+    const full = join(componentsDir, entry);
+    const lines = readFileSync(full, "utf8").split("\n");
+    lines.forEach((line, idx) => {
+      const m = HARDCODED_UI_ATTR_RE.exec(line);
+      if (m && m[1] && m[1].trim().length > 0) {
+        offenders.push(`${entry}:${idx + 1} (${m[0]})`);
+      }
+    });
+  }
+  return offenders;
+}
 function scanHardcodedCjkFiles(dir: string, excludedSegment: string): string[] {
   const offenders: string[] = [];
   if (!existsSync(dir)) return offenders;
@@ -214,6 +291,16 @@ export function runM3EDoctor(
       : `Unsupported schemeVariant "${String(variant)}"`,
   });
 
+  const specVersion = config.theme?.specVersion ?? "2025";
+  const specValid = VALID_SPEC_VERSIONS.includes(specVersion);
+  checks.push({
+    name: "theme-spec-version",
+    passed: specValid,
+    detail: specValid
+      ? `AOSP Monet spec version "${specVersion}" supported`
+      : `Unsupported specVersion "${String(specVersion)}"`,
+  });
+
   const rawContrast = config.theme?.contrastLevel ?? 0;
   const contrastValid =
     typeof rawContrast === "number" && rawContrast >= -1 && rawContrast <= 1;
@@ -242,6 +329,13 @@ export function runM3EDoctor(
     name: "i18n-locale-resolution",
     passed: Boolean(resolved.locale && resolved.locale.trim().length >= 2),
     detail: `Locale "${resolved.locale}" (${isBuiltInLocale ? "built-in pack" : "custom/fallback pack"}) -> dir="${resolved.resolvedDirection}"`,
+  });
+
+  const parity = validateBuiltInLocaleParity();
+  checks.push({
+    name: "i18n-locale-pack-parity",
+    passed: parity.passed,
+    detail: parity.detail,
   });
 
   const cssPath = resolve(dirname(configPath), resolved.cssOutput);
@@ -277,6 +371,18 @@ export function runM3EDoctor(
         offenders.length === 0
           ? "Zero hardcoded CJK strings outside packages/m3eui/src/i18n/locales"
           : `Found hardcoded CJK in: ${offenders.join(", ")}`,
+    });
+
+    const literalOffenders = scanHardcodedUiLiterals(
+      join(reactSrcDir, "components"),
+    );
+    checks.push({
+      name: "zero-hardcoded-ui-literals",
+      passed: literalOffenders.length === 0,
+      detail:
+        literalOffenders.length === 0
+          ? "Zero hardcoded ARIA/placeholder/alt string literals in packages/m3eui/src/components"
+          : `Found hardcoded UI literals: ${literalOffenders.join(", ")}`,
     });
   }
 

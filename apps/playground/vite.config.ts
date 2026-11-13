@@ -37,7 +37,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes("/packages/m3eui/src/tokens/") || id.includes("@material/material-color-utilities")) {
+          if (id.includes("/packages/m3eui/src/tokens/")) {
             return "m3eui-tokens";
           }
           if (id.includes("/packages/m3eui/")) {
@@ -45,9 +45,6 @@ export default defineConfig({
           }
           if (id.includes("node_modules/@base-ui/")) {
             return "vendor-base-ui";
-          }
-          if (id.includes("node_modules/motion") || id.includes("node_modules/framer-motion")) {
-            return "vendor-motion";
           }
           if (id.includes("node_modules/react") || id.includes("node_modules/scheduler")) {
             return "vendor-react";

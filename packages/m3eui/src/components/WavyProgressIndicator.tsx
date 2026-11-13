@@ -2,6 +2,8 @@ import * as React from "react";
 import { Progress } from "@base-ui/react/progress";
 import {
   CIRCULAR_WAVY_TOKENS,
+  type CircularWavyGeometryOutput as CircularWavyGeometry,
+  type LinearWavyGeometryOutput as LinearWavyGeometry,
   WAVY_PROGRESS_TOKENS,
   buildDeterminateCircularWavyGeometry,
   buildDeterminateLinearWavyGeometry,
@@ -10,6 +12,9 @@ import {
   resolveDeterminateWaveAmplitude,
 } from "../tokens/index.js";
 import { useM3E } from "../context/M3EProvider.js";
+
+const MAX_LINEAR_TRACK_SEGMENTS = 3;
+const MAX_LINEAR_ACTIVE_SEGMENTS = 2;
 
 export interface WavyProgressIndicatorProps {
   readonly value?: number | null;
@@ -34,12 +39,22 @@ export function WavyProgressIndicator({
   className,
   style,
 }: WavyProgressIndicatorProps): React.JSX.Element {
-  const { playbackRate, paused: contextPaused, prefersReducedMotion, t } = useM3E();
+  const {
+    playbackRate,
+    paused: contextPaused,
+    prefersReducedMotion,
+    locale,
+    t,
+  } = useM3E();
   const resolvedAriaLabel = ariaLabel ?? t("progress.wavyLinearLabel");
   const isPaused = pausedProp ?? contextPaused;
   const isIndeterminate = value === null || value === undefined;
 
   const containerRef = React.useRef<HTMLDivElement | null>(null);
+  const trackPathRefs = React.useRef<(SVGPathElement | null)[]>([]);
+  const activePathRefs = React.useRef<(SVGPathElement | null)[]>([]);
+  const stopDotRef = React.useRef<SVGCircleElement | null>(null);
+
   const [width, setWidth] = React.useState<number>(WAVY_PROGRESS_TOKENS.defaultWidth);
 
   React.useEffect(() => {
@@ -70,17 +85,102 @@ export function WavyProgressIndicator({
       ? WAVY_PROGRESS_TOKENS.indeterminateWavelength
       : WAVY_PROGRESS_TOKENS.determinateWavelength);
 
-  const [frameState, setFrameState] = React.useState(() => ({
+  const height = WAVY_PROGRESS_TOKENS.containerHeight;
+
+  const stateRef = React.useRef({
     progress: targetProgress,
     amplitude: targetAmplitude,
     phasePx: 0,
     cycleFraction: 0,
-  }));
+  });
 
-  const stateRef = React.useRef(frameState);
-  stateRef.current = frameState;
+  const computeGeometry = React.useCallback(
+    (s: {
+      readonly progress: number;
+      readonly amplitude: number;
+      readonly phasePx: number;
+      readonly cycleFraction: number;
+    }): LinearWavyGeometry =>
+      isIndeterminate
+        ? buildIndeterminateLinearWavyGeometry({
+            width,
+            height,
+            cycleFraction: s.cycleFraction,
+            amplitude: s.amplitude,
+            wavelength: effectiveWavelength,
+            phasePx: s.phasePx,
+            strokeWidth,
+            trackGap,
+          })
+        : buildDeterminateLinearWavyGeometry({
+            width,
+            height,
+            progress: s.progress,
+            amplitude: s.amplitude,
+            wavelength: effectiveWavelength,
+            phasePx: s.phasePx,
+            strokeWidth,
+            trackGap,
+          }),
+    [
+      isIndeterminate,
+      width,
+      height,
+      effectiveWavelength,
+      strokeWidth,
+      trackGap,
+    ],
+  );
+
+  const applyGeometryToDom = React.useCallback((geo: LinearWavyGeometry) => {
+    for (let i = 0; i < MAX_LINEAR_TRACK_SEGMENTS; i++) {
+      const el = trackPathRefs.current[i];
+      if (!el) continue;
+      const d = geo.trackPaths[i];
+      if (d) {
+        el.setAttribute("d", d);
+        el.style.display = "";
+      } else {
+        el.removeAttribute("d");
+        el.style.display = "none";
+      }
+    }
+    for (let i = 0; i < MAX_LINEAR_ACTIVE_SEGMENTS; i++) {
+      const el = activePathRefs.current[i];
+      if (!el) continue;
+      const d = geo.activePaths[i];
+      if (d) {
+        el.setAttribute("d", d);
+        el.style.display = "";
+      } else {
+        el.removeAttribute("d");
+        el.style.display = "none";
+      }
+    }
+    const dotEl = stopDotRef.current;
+    if (dotEl) {
+      if (geo.stopDot) {
+        dotEl.setAttribute("cx", String(geo.stopDot.cx));
+        dotEl.setAttribute("cy", String(geo.stopDot.cy));
+        dotEl.setAttribute("r", String(geo.stopDot.r));
+        dotEl.style.display = "";
+      } else {
+        dotEl.style.display = "none";
+      }
+    }
+  }, []);
 
   React.useEffect(() => {
+    if (isPaused) {
+      stateRef.current = {
+        ...stateRef.current,
+        progress: targetProgress,
+        amplitude: targetAmplitude,
+      };
+      applyGeometryToDom(computeGeometry(stateRef.current));
+      return;
+    }
+
     let rafId = 0;
     let lastNow = performance.now();
 
@@ -88,24 +188,19 @@ export function WavyProgressIndicator({
       const dtMs = Math.min(64, Math.max(0, now - lastNow));
       lastNow = now;
       const rate = prefersReducedMotion ? Math.min(0.4, playbackRate) : playbackRate;
-      const dtScaledMs = isPaused ? 0 : dtMs * rate;
+      const dtScaledMs = dtMs * rate;
 
       const prev = stateRef.current;
-
-      const alpha = isPaused
-        ? 0.35
-        : Math.min(1, dtMs / (140 / Math.max(0.1, rate)));
+      const alpha = Math.min(1, dtMs / (140 / Math.max(0.1, rate)));
 
       const nextProgress = isIndeterminate
         ? 0
         : prev.progress + (targetProgress - prev.progress) * alpha;
       const nextAmplitude =
         prev.amplitude + (targetAmplitude - prev.amplitude) * alpha;
-
       const nextPhase =
         (prev.phasePx + (dtScaledMs / 1000) * effectiveWavelength) %
         Math.max(1, effectiveWavelength);
-
       const nextCycle = isIndeterminate
         ? (prev.cycleFraction + dtScaledMs / WAVY_PROGRESS_TOKENS.indeterminateCycleMs) % 1
         : 0;
@@ -117,19 +212,20 @@ export function WavyProgressIndicator({
         cycleFraction: nextCycle,
       };
       stateRef.current = next;
-      setFrameState(next);
+      applyGeometryToDom(computeGeometry(next));
 
       const settledDeterminate =
         !isIndeterminate &&
-        (isPaused || nextAmplitude < 0.005) &&
+        nextAmplitude < 0.005 &&
         Math.abs(nextProgress - targetProgress) < 0.001 &&
         Math.abs(nextAmplitude - targetAmplitude) < 0.002;
 
-      if (!settledDeterminate && (!isPaused || Math.abs(nextProgress - targetProgress) >= 0.001 || Math.abs(nextAmplitude - targetAmplitude) >= 0.002)) {
+      if (!settledDeterminate) {
         rafId = requestAnimationFrame(step);
       }
     };
 
+    applyGeometryToDom(computeGeometry(stateRef.current));
     rafId = requestAnimationFrame(step);
     return () => cancelAnimationFrame(rafId);
   }, [
@@ -140,35 +236,22 @@ export function WavyProgressIndicator({
     isPaused,
     playbackRate,
     prefersReducedMotion,
+    computeGeometry,
+    applyGeometryToDom,
   ]);
 
-  const height = WAVY_PROGRESS_TOKENS.containerHeight;
-  const geometry = isIndeterminate
-    ? buildIndeterminateLinearWavyGeometry({
-        width,
-        height,
-        cycleFraction: frameState.cycleFraction,
-        amplitude: frameState.amplitude,
-        wavelength: effectiveWavelength,
-        phasePx: frameState.phasePx,
-        strokeWidth,
-        trackGap,
-      })
-    : buildDeterminateLinearWavyGeometry({
-        width,
-        height,
-        progress: frameState.progress,
-        amplitude: frameState.amplitude,
-        wavelength: effectiveWavelength,
-        phasePx: frameState.phasePx,
-        strokeWidth,
-        trackGap,
-      });
+  const initialGeometry = computeGeometry({
+    progress: targetProgress,
+    amplitude: targetAmplitude,
+    phasePx: stateRef.current.phasePx,
+    cycleFraction: stateRef.current.cycleFraction,
+  });
 
   return (
     <Progress.Root
       ref={containerRef}
       value={isIndeterminate ? null : Math.round(targetProgress * 100)}
+      locale={locale}
       aria-label={resolvedAriaLabel}
       className={
         className ? `m3e-wavy-progress ${className}` : "m3e-wavy-progress"
@@ -182,34 +265,48 @@ export function WavyProgressIndicator({
         viewBox={`0 0 ${width} ${height}`}
         aria-hidden="true"
       >
-        {geometry.trackPaths.map((d, idx) => (
-          <path
-            key={`track-${idx}`}
-            d={d}
-            fill="none"
-            stroke="var(--m3e-color-secondary-container)"
-            strokeWidth={strokeWidth}
-            strokeLinecap="round"
-          />
-        ))}
-        {geometry.activePaths.map((d, idx) => (
-          <path
-            key={`active-${idx}`}
-            d={d}
-            fill="none"
-            stroke="var(--m3e-color-primary)"
-            strokeWidth={strokeWidth}
-            strokeLinecap="round"
-          />
-        ))}
-        {geometry.stopDot ? (
-          <circle
-            cx={geometry.stopDot.cx}
-            cy={geometry.stopDot.cy}
-            r={geometry.stopDot.r}
-            fill="var(--m3e-color-primary)"
-          />
-        ) : null}
+        {Array.from({ length: MAX_LINEAR_TRACK_SEGMENTS }, (_, idx) => {
+          const d = initialGeometry.trackPaths[idx];
+          return (
+            <path
+              key={`track-${idx}`}
+              ref={(el) => {
+                trackPathRefs.current[idx] = el;
+              }}
+              d={d}
+              fill="none"
+              stroke="var(--m3e-color-secondary-container)"
+              strokeWidth={strokeWidth}
+              strokeLinecap="round"
+              style={d ? undefined : { display: "none" }}
+            />
+          );
+        })}
+        {Array.from({ length: MAX_LINEAR_ACTIVE_SEGMENTS }, (_, idx) => {
+          const d = initialGeometry.activePaths[idx];
+          return (
+            <path
+              key={`active-${idx}`}
+              ref={(el) => {
+                activePathRefs.current[idx] = el;
+              }}
+              d={d}
+              fill="none"
+              stroke="var(--m3e-color-primary)"
+              strokeWidth={strokeWidth}
+              strokeLinecap="round"
+              style={d ? undefined : { display: "none" }}
+            />
+          );
+        })}
+        <circle
+          ref={stopDotRef}
+          cx={initialGeometry.stopDot?.cx ?? 0}
+          cy={initialGeometry.stopDot?.cy ?? height / 2}
+          r={initialGeometry.stopDot?.r ?? WAVY_PROGRESS_TOKENS.stopIndicatorSize / 2}
+          fill="var(--m3e-color-primary)"
+          style={initialGeometry.stopDot ? undefined : { display: "none" }}
+        />
       </svg>
     </Progress.Root>
   );
@@ -244,10 +341,19 @@ export function CircularWavyProgressIndicator({
   className,
   style,
 }: CircularWavyProgressIndicatorProps): React.JSX.Element {
-  const { playbackRate, paused: contextPaused, prefersReducedMotion, t } = useM3E();
+  const {
+    playbackRate,
+    paused: contextPaused,
+    prefersReducedMotion,
+    locale,
+    t,
+  } = useM3E();
   const resolvedAriaLabel = ariaLabel ?? t("progress.wavyCircularLabel");
   const isPaused = pausedProp ?? contextPaused;
   const isIndeterminate = value === null || value === undefined;
+
+  const trackPathRef = React.useRef<SVGPathElement | null>(null);
+  const activePathRef = React.useRef<SVGPathElement | null>(null);
 
   const targetProgress = isIndeterminate
     ? 0
@@ -258,17 +364,85 @@ export function CircularWavyProgressIndicator({
     : (amplitudeOverride ??
       (isIndeterminate ? 1 : resolveDeterminateWaveAmplitude(targetProgress)));
 
-  const [frameState, setFrameState] = React.useState(() => ({
+  const stateRef = React.useRef({
     progress: targetProgress,
     amplitude: targetAmplitude,
     phaseRad: 0,
     cycleFraction: 0,
-  }));
+  });
 
-  const stateRef = React.useRef(frameState);
-  stateRef.current = frameState;
+  const computeGeometry = React.useCallback(
+    (s: {
+      readonly progress: number;
+      readonly amplitude: number;
+      readonly phaseRad: number;
+      readonly cycleFraction: number;
+    }): CircularWavyGeometry =>
+      isIndeterminate
+        ? buildIndeterminateCircularWavyGeometry({
+            size,
+            cycleFraction: s.cycleFraction,
+            amplitude: s.amplitude,
+            phaseRad: s.phaseRad,
+            strokeWidth,
+            maxAmplitudePx,
+            targetWavelength,
+            trackGap,
+          })
+        : buildDeterminateCircularWavyGeometry({
+            size,
+            progress: s.progress,
+            amplitude: s.amplitude,
+            phaseRad: s.phaseRad,
+            strokeWidth,
+            maxAmplitudePx,
+            targetWavelength,
+            trackGap,
+          }),
+    [
+      isIndeterminate,
+      size,
+      strokeWidth,
+      maxAmplitudePx,
+      targetWavelength,
+      trackGap,
+    ],
+  );
+
+  const applyGeometryToDom = React.useCallback((geo: CircularWavyGeometry) => {
+    const trackEl = trackPathRef.current;
+    if (trackEl) {
+      if (geo.trackPath) {
+        trackEl.setAttribute("d", geo.trackPath);
+        trackEl.style.display = "";
+      } else {
+        trackEl.removeAttribute("d");
+        trackEl.style.display = "none";
+      }
+    }
+    const activeEl = activePathRef.current;
+    if (activeEl) {
+      if (geo.activePath) {
+        activeEl.setAttribute("d", geo.activePath);
+        activeEl.style.display = "";
+      } else {
+        activeEl.removeAttribute("d");
+        activeEl.style.display = "none";
+      }
+    }
+  }, []);
 
   React.useEffect(() => {
+    if (isPaused) {
+      stateRef.current = {
+        ...stateRef.current,
+        progress: targetProgress,
+        amplitude: targetAmplitude,
+      };
+      applyGeometryToDom(computeGeometry(stateRef.current));
+      return;
+    }
+
     let rafId = 0;
     let lastNow = performance.now();
 
@@ -278,24 +452,20 @@ export function CircularWavyProgressIndicator({
       const rate = prefersReducedMotion
         ? Math.min(0.4, playbackRate)
         : playbackRate;
-      const dtScaledMs = isPaused ? 0 : dtMs * rate;
+      const dtScaledMs = dtMs * rate;
 
       const prev = stateRef.current;
-      const alpha = isPaused
-        ? 0.35
-        : Math.min(1, dtMs / (140 / Math.max(0.1, rate)));
+      const alpha = Math.min(1, dtMs / (140 / Math.max(0.1, rate)));
 
       const nextProgress = isIndeterminate
         ? 0
         : prev.progress + (targetProgress - prev.progress) * alpha;
       const nextAmplitude =
         prev.amplitude + (targetAmplitude - prev.amplitude) * alpha;
-
       const nextPhase =
         (prev.phaseRad +
           (dtScaledMs / 1000) * CIRCULAR_WAVY_TOKENS.defaultAngularWaveSpeedRad) %
         (2 * Math.PI);
-
       const nextCycle = isIndeterminate
         ? (prev.cycleFraction +
             dtScaledMs / CIRCULAR_WAVY_TOKENS.indeterminateCycleMs) %
@@ -309,24 +479,20 @@ export function CircularWavyProgressIndicator({
         cycleFraction: nextCycle,
       };
       stateRef.current = next;
-      setFrameState(next);
+      applyGeometryToDom(computeGeometry(next));
 
       const settledDeterminate =
         !isIndeterminate &&
-        (isPaused || nextAmplitude < 0.005) &&
+        nextAmplitude < 0.005 &&
         Math.abs(nextProgress - targetProgress) < 0.001 &&
         Math.abs(nextAmplitude - targetAmplitude) < 0.002;
 
-      if (
-        !settledDeterminate &&
-        (!isPaused ||
-          Math.abs(nextProgress - targetProgress) >= 0.001 ||
-          Math.abs(nextAmplitude - targetAmplitude) >= 0.002)
-      ) {
+      if (!settledDeterminate) {
         rafId = requestAnimationFrame(step);
       }
     };
 
+    applyGeometryToDom(computeGeometry(stateRef.current));
     rafId = requestAnimationFrame(step);
     return () => cancelAnimationFrame(rafId);
   }, [
@@ -336,33 +502,21 @@ export function CircularWavyProgressIndicator({
     isPaused,
     playbackRate,
     prefersReducedMotion,
+    computeGeometry,
+    applyGeometryToDom,
   ]);
 
-  const geometry = isIndeterminate
-    ? buildIndeterminateCircularWavyGeometry({
-        size,
-        cycleFraction: frameState.cycleFraction,
-        amplitude: frameState.amplitude,
-        phaseRad: frameState.phaseRad,
-        strokeWidth,
-        maxAmplitudePx,
-        targetWavelength,
-        trackGap,
-      })
-    : buildDeterminateCircularWavyGeometry({
-        size,
-        progress: frameState.progress,
-        amplitude: frameState.amplitude,
-        phaseRad: frameState.phaseRad,
-        strokeWidth,
-        maxAmplitudePx,
-        targetWavelength,
-        trackGap,
-      });
+  const initialGeometry = computeGeometry({
+    progress: targetProgress,
+    amplitude: targetAmplitude,
+    phaseRad: stateRef.current.phaseRad,
+    cycleFraction: stateRef.current.cycleFraction,
+  });
 
   return (
     <Progress.Root
       value={isIndeterminate ? null : Math.round(targetProgress * 100)}
+      locale={locale}
       aria-label={resolvedAriaLabel}
       className={
         className ? `m3e-circular-wavy ${className}` : "m3e-circular-wavy"
@@ -376,24 +530,24 @@ export function CircularWavyProgressIndicator({
         aria-hidden="true"
         style={{ display: "block", overflow: "visible" }}
       >
-        {geometry.trackPath ? (
-          <path
-            d={geometry.trackPath}
-            fill="none"
-            stroke="var(--m3e-color-secondary-container)"
-            strokeWidth={strokeWidth}
-            strokeLinecap="round"
-          />
-        ) : null}
-        {geometry.activePath ? (
-          <path
-            d={geometry.activePath}
-            fill="none"
-            stroke="var(--m3e-color-primary)"
-            strokeWidth={strokeWidth}
-            strokeLinecap="round"
-          />
-        ) : null}
+        <path
+          ref={trackPathRef}
+          d={initialGeometry.trackPath || undefined}
+          fill="none"
+          stroke="var(--m3e-color-secondary-container)"
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          style={initialGeometry.trackPath ? undefined : { display: "none" }}
+        />
+        <path
+          ref={activePathRef}
+          d={initialGeometry.activePath || undefined}
+          fill="none"
+          stroke="var(--m3e-color-primary)"
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          style={initialGeometry.activePath ? undefined : { display: "none" }}
+        />
       </svg>
     </Progress.Root>
   );

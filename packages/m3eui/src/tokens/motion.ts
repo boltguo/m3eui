@@ -156,6 +156,100 @@ export interface CrossPlatformSpringTarget {
   };
 }
 
+export interface SpringSimulationState {
+  readonly value: number;
+  readonly velocity: number;
+  readonly settled: boolean;
+}
+
+export interface SpringSimulationOptions {
+  readonly dampingRatio: number;
+  readonly stiffness: number;
+  readonly restDisplacementThreshold?: number;
+  readonly restVelocityThreshold?: number;
+}
+
+/**
+ * Exact analytical solution to the second-order damped harmonic oscillator
+ * matching AOSP `androidx.compose.animation.core.SpringSimulation` (`SpringForce.kt`),
+ * preserving arbitrary initial displacement and velocity across mid-flight retargeting.
+ */
+export function stepSpringSimulation(
+  currentValue: number,
+  currentVelocity: number,
+  targetValue: number,
+  dtSec: number,
+  options: SpringSimulationOptions,
+): SpringSimulationState {
+  const valueThreshold = options.restDisplacementThreshold ?? 0.002;
+  const velocityThreshold = options.restVelocityThreshold ?? 0.01;
+
+  if (dtSec <= 0 || !Number.isFinite(dtSec)) {
+    const settled =
+      Math.abs(currentValue - targetValue) <= valueThreshold &&
+      Math.abs(currentVelocity) <= velocityThreshold;
+    return settled
+      ? { value: targetValue, velocity: 0, settled: true }
+      : { value: currentValue, velocity: currentVelocity, settled: false };
+  }
+
+  // Clamp frame delta to 64ms so backgrounded tabs never cause numerical jumps
+  const dt = Math.min(dtSec, 0.064);
+  const zeta = Math.max(0, options.dampingRatio);
+  const omega0 = Math.sqrt(Math.max(1e-4, options.stiffness));
+  const dx = currentValue - targetValue;
+  const v0 = currentVelocity;
+
+  let nextDisplacement: number;
+  let nextVelocity: number;
+
+  if (zeta > 1 + 1e-6) {
+    // Over-damped (zeta > 1)
+    const gamma = Math.sqrt(zeta * zeta - 1);
+    const r1 = -omega0 * (zeta - gamma);
+    const r2 = -omega0 * (zeta + gamma);
+    const c1 = (v0 - r2 * dx) / (r1 - r2);
+    const c2 = dx - c1;
+    const e1 = Math.exp(r1 * dt);
+    const e2 = Math.exp(r2 * dt);
+    nextDisplacement = c1 * e1 + c2 * e2;
+    nextVelocity = c1 * r1 * e1 + c2 * r2 * e2;
+  } else if (Math.abs(zeta - 1) <= 1e-6) {
+    // Critically damped (zeta == 1)
+    const c1 = dx;
+    const c2 = v0 + omega0 * dx;
+    const expTerm = Math.exp(-omega0 * dt);
+    nextDisplacement = (c1 + c2 * dt) * expTerm;
+    nextVelocity = (c2 - omega0 * (c1 + c2 * dt)) * expTerm;
+  } else {
+    // Under-damped (0 <= zeta < 1)
+    const omegaD = omega0 * Math.sqrt(1 - zeta * zeta);
+    const c1 = dx;
+    const c2 = (v0 + zeta * omega0 * dx) / omegaD;
+    const expTerm = Math.exp(-zeta * omega0 * dt);
+    const cosTerm = Math.cos(omegaD * dt);
+    const sinTerm = Math.sin(omegaD * dt);
+    nextDisplacement = expTerm * (c1 * cosTerm + c2 * sinTerm);
+    nextVelocity =
+      -zeta * omega0 * nextDisplacement +
+      expTerm * omegaD * (-c1 * sinTerm + c2 * cosTerm);
+  }
+
+  const nextValue = targetValue + nextDisplacement;
+  if (
+    Math.abs(nextDisplacement) <= valueThreshold &&
+    Math.abs(nextVelocity) <= velocityThreshold
+  ) {
+    return { value: targetValue, velocity: 0, settled: true };
+  }
+
+  return {
+    value: nextValue,
+    velocity: nextVelocity,
+    settled: false,
+  };
+}
+
 export function evaluateSpringDisplacement(
   spec: Pick<SpringPhysicsSpec, "dampingRatio" | "stiffness">,
   timeSec: number,

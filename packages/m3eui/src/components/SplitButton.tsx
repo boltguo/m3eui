@@ -11,7 +11,7 @@ import {
 } from "../tokens/index.js";
 import { useM3E } from "../context/M3EProvider.js";
 import {
-  useM3ECornerSpring,
+  useM3ECornerSpringRef,
   useM3EScalarSpring,
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
@@ -85,10 +85,12 @@ function SegmentedMenuItemRow({
     isHighlighted: highlighted,
     isSelected: item.selected,
   });
-  const { borderRadiusCss } = useM3ECornerSpring(corners, "fastSpatial");
+  const { ref: itemRef, borderRadiusCss } =
+    useM3ECornerSpringRef<HTMLDivElement>(corners, "fastSpatial");
 
   return (
     <Menu.Item
+      ref={itemRef}
       disabled={item.disabled}
       onClick={() => item.onSelect?.()}
       onPointerEnter={() => setHighlighted(true)}
@@ -138,6 +140,9 @@ export function SplitButton({
     React.useState<boolean>(defaultOpen);
   const isExpanded = controlledOpen ?? uncontrolledOpen;
 
+  const [isLeadingHovered, setIsLeadingHovered] = React.useState(false);
+  const [isTrailingHovered, setIsTrailingHovered] = React.useState(false);
+
   const { isPressed: isLeadingPressed, pressHandlers: leadingPressHandlers } =
     usePressHoldState(disabled);
   const { isPressed: isTrailingPressed, pressHandlers: trailingPressHandlers } =
@@ -147,6 +152,8 @@ export function SplitButton({
     size,
     isLeadingPressed,
     isTrailingPressed,
+    isLeadingHovered,
+    isTrailingHovered,
     isExpanded,
   });
 
@@ -163,10 +170,13 @@ export function SplitButton({
       ? -geo.trailingOpticalOffsetPx
       : geo.trailingOpticalOffsetPx;
 
-  const { corners: leadCorners, borderRadiusCss: leadRadiusCss } =
-    useM3ECornerSpring(targetLeadCorners, "fastSpatial");
-  const { corners: trailCorners, borderRadiusCss: trailRadiusCss } =
-    useM3ECornerSpring(targetTrailCorners, "fastSpatial");
+  const { ref: leadRef, borderRadiusCss: leadRadiusCss } =
+    useM3ECornerSpringRef<HTMLElement>(targetLeadCorners, "defaultEffects");
+  const { ref: trailRef, borderRadiusCss: trailRadiusCss } =
+    useM3ECornerSpringRef<HTMLButtonElement>(
+      targetTrailCorners,
+      isExpanded ? "fastSpatial" : "defaultEffects",
+    );
 
   const chevronDeg = useM3EScalarSpring(geo.chevronRotationDeg, "fastSpatial");
   const opticalX = useM3EScalarSpring(targetOpticalX, "fastSpatial");
@@ -184,6 +194,7 @@ export function SplitButton({
       data-expanded={isExpanded ? "" : undefined}
     >
       <BaseButton
+        ref={leadRef}
         type="button"
         disabled={disabled}
         onClick={onClick}
@@ -202,6 +213,13 @@ export function SplitButton({
           borderRadius: leadRadiusCss,
         }}
         {...leadingPressHandlers}
+        onPointerEnter={() => {
+          if (!disabled) setIsLeadingHovered(true);
+        }}
+        onPointerLeave={() => {
+          setIsLeadingHovered(false);
+          leadingPressHandlers.onPointerLeave();
+        }}
       >
         {leadingIcon ? (
           <span
@@ -218,7 +236,7 @@ export function SplitButton({
         <span className="m3e-button__label">{children}</span>
         {debugGeometry ? (
           <span className="m3e-debug-badge" aria-hidden="true">
-            {formatTupleBadge(leadCorners)}
+            {formatTupleBadge(targetLeadCorners)}
           </span>
         ) : null}
       </BaseButton>
@@ -236,6 +254,7 @@ export function SplitButton({
         }}
       >
         <Menu.Trigger
+          ref={trailRef}
           disabled={disabled}
           aria-label={resolvedMenuTriggerLabel}
           className="m3e-button m3e-split-button__trailing"
@@ -250,6 +269,13 @@ export function SplitButton({
             borderRadius: trailRadiusCss,
           }}
           {...trailingPressHandlers}
+          onPointerEnter={() => {
+            if (!disabled) setIsTrailingHovered(true);
+          }}
+          onPointerLeave={() => {
+            setIsTrailingHovered(false);
+            trailingPressHandlers.onPointerLeave();
+          }}
         >
           <span
             className="m3e-split-button__chevron"
@@ -265,7 +291,7 @@ export function SplitButton({
           </span>
           {debugGeometry ? (
             <span className="m3e-debug-badge" aria-hidden="true">
-              {formatTupleBadge(trailCorners)}
+              {formatTupleBadge(targetTrailCorners)}
             </span>
           ) : null}
         </Menu.Trigger>

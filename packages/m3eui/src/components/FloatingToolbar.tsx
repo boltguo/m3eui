@@ -9,7 +9,7 @@ import {
 } from "../tokens/index.js";
 import { useM3E } from "../context/M3EProvider.js";
 import {
-  useM3ECornerSpring,
+  useM3ECornerSpringRef,
   useM3EScalarSpring,
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
@@ -26,9 +26,14 @@ export interface FloatingToolbarItemSpec {
 
 export interface M3EFloatingToolbarProps {
   readonly items: readonly FloatingToolbarItemSpec[];
-  readonly "aria-label": string;
+  readonly "aria-label"?: string;
   readonly orientation?: "horizontal" | "vertical";
   readonly theme?: FloatingToolbarTheme;
+  readonly collapsed?: boolean;
+  readonly defaultCollapsed?: boolean;
+  readonly onCollapsedChange?: (collapsed: boolean) => void;
+  readonly scrollCollapse?: boolean;
+  readonly scrollTarget?: React.RefObject<HTMLElement | null>;
   readonly companionFab?: React.ReactNode;
   readonly className?: string;
   readonly style?: React.CSSProperties;
@@ -43,13 +48,14 @@ function FloatingToolbarActionButton({
   const { isPressed, pressHandlers } = usePressHoldState(Boolean(item.disabled));
   const pill = FLOATING_TOOLBAR_TOKENS.itemSize / 2;
   const targetRadius = isPressed ? 10 : item.selected ? 14 : pill;
-  const { corners, borderRadiusCss } = useM3ECornerSpring(
+  const { ref, borderRadiusCss } = useM3ECornerSpringRef<HTMLButtonElement>(
     [targetRadius, targetRadius, targetRadius, targetRadius],
-    "fastSpatial",
+    item.selected ? "fastSpatial" : "defaultEffects",
   );
 
   return (
     <Toolbar.Button
+      ref={ref}
       disabled={item.disabled}
       aria-label={item.label}
       aria-pressed={item.selected}
@@ -72,7 +78,7 @@ function FloatingToolbarActionButton({
       </span>
       {debugGeometry ? (
         <span className="m3e-debug-badge" aria-hidden="true">
-          r:{corners[0].toFixed(0)}
+          r:{targetRadius.toFixed(0)}
         </span>
       ) : null}
     </Toolbar.Button>
@@ -84,11 +90,63 @@ export function FloatingToolbar({
   "aria-label": ariaLabel,
   orientation = "horizontal",
   theme = "vibrant",
+  collapsed: controlledCollapsed,
+  defaultCollapsed = false,
+  onCollapsedChange,
+  scrollCollapse = false,
+  scrollTarget,
   companionFab,
   className,
   style,
 }: M3EFloatingToolbarProps): React.JSX.Element {
+  const { t } = useM3E();
+  const resolvedAriaLabel = ariaLabel ?? t("floatingToolbar.ariaLabel");
   const isVertical = orientation === "vertical";
+
+  const [uncontrolledCollapsed, setUncontrolledCollapsed] =
+    React.useState<boolean>(defaultCollapsed);
+  const collapsed = controlledCollapsed ?? uncontrolledCollapsed;
+
+  const updateCollapsed = React.useCallback(
+    (next: boolean) => {
+      if (controlledCollapsed === undefined) {
+        setUncontrolledCollapsed((prev) => {
+          if (prev !== next) onCollapsedChange?.(next);
+          return next;
+        });
+      } else if (next !== controlledCollapsed) {
+        onCollapsedChange?.(next);
+      }
+    },
+    [controlledCollapsed, onCollapsedChange],
+  );
+
+  React.useEffect(() => {
+    if (!scrollCollapse || typeof window === "undefined") return;
+    const targetEl = scrollTarget?.current;
+    const eventSource: HTMLElement | Window = targetEl ?? window;
+    const readScrollOffset = () =>
+      targetEl ? targetEl.scrollTop : window.scrollY;
+
+    let lastOffset = readScrollOffset();
+    const onScroll = () => {
+      const current = readScrollOffset();
+      const delta = current - lastOffset;
+      if (current <= 8 || delta < -8) {
+        updateCollapsed(false);
+        lastOffset = current;
+      } else if (delta > 10 && current > 24) {
+        updateCollapsed(true);
+        lastOffset = current;
+      }
+    };
+
+    eventSource.addEventListener("scroll", onScroll, { passive: true });
+    return () => eventSource.removeEventListener("scroll", onScroll);
+  }, [scrollCollapse, scrollTarget, updateCollapsed]);
+
+  const collapseMorph = useM3EScalarSpring(collapsed ? 1 : 0, "fastSpatial");
+  const companionScale = 1 + 0.08 * Math.max(0, collapseMorph);
 
   return (
     <div
@@ -98,26 +156,33 @@ export function FloatingToolbar({
           : "m3e-floating-toolbar-layout"
       }
       data-orientation={orientation}
+      data-collapsed={collapsed ? "" : undefined}
       style={{
-        gap: `${FLOATING_TOOLBAR_TOKENS.companionFabGap}px`,
+        gap: collapsed ? "0px" : `${FLOATING_TOOLBAR_TOKENS.companionFabGap}px`,
         ...style,
       }}
     >
       <Toolbar.Root
         orientation={orientation}
-        aria-label={ariaLabel}
+        aria-label={resolvedAriaLabel}
+        inert={collapsed ? true : undefined}
         className="m3e-floating-toolbar"
         data-theme={theme}
         data-orientation={orientation}
+        data-collapsed={collapsed ? "" : undefined}
         style={{
           borderRadius: `${FLOATING_TOOLBAR_TOKENS.containerRadius}px`,
-          padding: `${FLOATING_TOOLBAR_TOKENS.containerPadding}px`,
+          padding: collapsed ? "0px" : `${FLOATING_TOOLBAR_TOKENS.containerPadding}px`,
           gap: `${FLOATING_TOOLBAR_TOKENS.itemGap}px`,
           minHeight: isVertical
             ? undefined
-            : `${FLOATING_TOOLBAR_TOKENS.containerCrossSize}px`,
+            : collapsed
+              ? "0px"
+              : `${FLOATING_TOOLBAR_TOKENS.containerCrossSize}px`,
           minWidth: isVertical
-            ? `${FLOATING_TOOLBAR_TOKENS.containerCrossSize}px`
+            ? collapsed
+              ? "0px"
+              : `${FLOATING_TOOLBAR_TOKENS.containerCrossSize}px`
             : undefined,
         }}
       >
@@ -134,7 +199,13 @@ export function FloatingToolbar({
         ))}
       </Toolbar.Root>
       {companionFab ? (
-        <div className="m3e-floating-toolbar__companion">{companionFab}</div>
+        <div
+          className="m3e-floating-toolbar__companion"
+          data-collapsed={collapsed ? "" : undefined}
+          style={{ scale: `${companionScale.toFixed(3)}` }}
+        >
+          {companionFab}
+        </div>
       ) : null}
     </div>
   );
@@ -182,13 +253,19 @@ function StaggeredFabMenuItem({
   index,
   count,
   isOpen,
+  isRovingActive,
+  onFocusItem,
   onDismissAndSelect,
+  buttonRef,
 }: {
   readonly item: FABMenuItemSpec;
   readonly index: number;
   readonly count: number;
   readonly isOpen: boolean;
+  readonly isRovingActive: boolean;
+  readonly onFocusItem: () => void;
   readonly onDismissAndSelect: () => void;
+  readonly buttonRef: (el: HTMLButtonElement | null) => void;
 }) {
   const { playbackRate } = useM3E();
   const [itemActive, setItemActive] = React.useState<boolean>(isOpen);
@@ -218,10 +295,12 @@ function StaggeredFabMenuItem({
 
   const { isPressed, pressHandlers } = usePressHoldState(!isOpen);
   const itemCornerTarget = isPressed ? 16 : FAB_MENU_TOKENS.itemRadius;
-  const { borderRadiusCss } = useM3ECornerSpring(
-    [itemCornerTarget, itemCornerTarget, itemCornerTarget, itemCornerTarget],
-    "fastSpatial",
-  );
+  const { ref: mergedRef, borderRadiusCss } =
+    useM3ECornerSpringRef<HTMLButtonElement>(
+      [itemCornerTarget, itemCornerTarget, itemCornerTarget, itemCornerTarget],
+      "defaultEffects",
+      buttonRef,
+    );
 
   const translateY = (1 - spatialProgress) * 18;
   const scale = 0.88 + 0.12 * spatialProgress;
@@ -229,10 +308,11 @@ function StaggeredFabMenuItem({
 
   return (
     <button
+      ref={mergedRef}
       type="button"
       role="menuitem"
-      tabIndex={isOpen ? 0 : -1}
-      aria-hidden={!isOpen && clampedOpacity < 0.02 ? true : undefined}
+      tabIndex={isOpen && isRovingActive ? 0 : -1}
+      onFocus={onFocusItem}
       onClick={onDismissAndSelect}
       className="m3e-fab-menu__item"
       data-open={isOpen ? "" : undefined}
@@ -280,7 +360,12 @@ export function FABMenu({
   const [uncontrolledOpen, setUncontrolledOpen] =
     React.useState<boolean>(defaultOpen);
   const isOpen = controlledOpen ?? uncontrolledOpen;
+  const rootRef = React.useRef<HTMLDivElement | null>(null);
   const triggerRef = React.useRef<HTMLButtonElement | null>(null);
+  const itemRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
+  const [activeIndex, setActiveIndex] = React.useState<number>(() =>
+    Math.max(0, items.length - 1),
+  );
   const menuListId = React.useId();
 
   const setOpen = React.useCallback(
@@ -293,6 +378,28 @@ export function FABMenu({
     [controlledOpen, onOpenChange],
   );
 
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as Node | null;
+      if (target && rootRef.current && !rootRef.current.contains(target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [isOpen, setOpen]);
+
+  const focusItemAt = React.useCallback(
+    (idx: number) => {
+      if (items.length === 0) return;
+      const clamped = ((idx % items.length) + items.length) % items.length;
+      setActiveIndex(clamped);
+      itemRefs.current[clamped]?.focus();
+    },
+    [items.length],
+  );
+
   const { isPressed, pressHandlers } = usePressHoldState(false);
   const morphProgress = useM3EScalarSpring(isOpen ? 1 : 0, "fastSpatial");
   const fabGeo = resolveToggleFabGeometry(size, morphProgress);
@@ -303,6 +410,7 @@ export function FABMenu({
 
   return (
     <div
+      ref={rootRef}
       className={className ? `m3e-fab-menu ${className}` : "m3e-fab-menu"}
       data-open={isOpen ? "" : undefined}
       style={style}
@@ -311,6 +419,37 @@ export function FABMenu({
           e.stopPropagation();
           setOpen(false);
           triggerRef.current?.focus();
+          return;
+        }
+        if (items.length === 0) return;
+        if (e.target === triggerRef.current) {
+          if (e.key === "ArrowUp") {
+            e.preventDefault();
+            if (!isOpen) {
+              setOpen(true);
+              queueMicrotask(() => focusItemAt(items.length - 1));
+            } else {
+              focusItemAt(items.length - 1);
+            }
+          } else if (e.key === "ArrowDown" && isOpen) {
+            e.preventDefault();
+            focusItemAt(0);
+          }
+          return;
+        }
+        if (!isOpen) return;
+        if (e.key === "ArrowUp") {
+          e.preventDefault();
+          focusItemAt(activeIndex - 1);
+        } else if (e.key === "ArrowDown") {
+          e.preventDefault();
+          focusItemAt(activeIndex + 1);
+        } else if (e.key === "Home") {
+          e.preventDefault();
+          focusItemAt(0);
+        } else if (e.key === "End") {
+          e.preventDefault();
+          focusItemAt(items.length - 1);
         }
       }}
     >
@@ -318,6 +457,7 @@ export function FABMenu({
         id={menuListId}
         role="menu"
         aria-label={resolvedTriggerLabel}
+        inert={!isOpen ? true : undefined}
         className="m3e-fab-menu__list"
         style={{
           gap: `${FAB_MENU_TOKENS.listGap}px`,
@@ -331,9 +471,15 @@ export function FABMenu({
             index={idx}
             count={items.length}
             isOpen={isOpen}
+            isRovingActive={idx === activeIndex}
+            onFocusItem={() => setActiveIndex(idx)}
+            buttonRef={(el) => {
+              itemRefs.current[idx] = el;
+            }}
             onDismissAndSelect={() => {
               item.onSelect?.();
               setOpen(false);
+              triggerRef.current?.focus();
             }}
           />
         ))}
@@ -344,6 +490,7 @@ export function FABMenu({
         type="button"
         aria-label={isOpen ? t("fabMenu.triggerClose") : resolvedTriggerLabel}
         aria-expanded={isOpen}
+        aria-haspopup="menu"
         aria-controls={menuListId}
         onClick={() => setOpen(!isOpen)}
         className="m3e-toggle-fab"

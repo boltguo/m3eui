@@ -8,6 +8,7 @@ import {
 } from "../tokens/index.js";
 import { useM3EI18n } from "../context/M3EProvider.js";
 import { useM3EScalarSpring } from "../hooks/useM3ESpring.js";
+import { formatLocalizedPercent } from "../i18n/index.js";
 
 export interface M3ELinearProgressIndicatorProps {
   readonly value?: number | null;
@@ -30,7 +31,7 @@ export function LinearProgressIndicator({
   className,
   style,
 }: M3ELinearProgressIndicatorProps): React.JSX.Element {
-  const { t } = useM3EI18n();
+  const { locale, t } = useM3EI18n();
   const isIndet = indeterminate || value === null || value === undefined;
   const clampedPct = isIndet ? 0 : Math.max(0, Math.min(100, value));
   const smoothPct = useM3EScalarSpring(clampedPct, "defaultSpatial");
@@ -48,6 +49,7 @@ export function LinearProgressIndicator({
       value={isIndet ? null : Math.round(clampedPct)}
       min={0}
       max={100}
+      locale={locale}
       aria-label={!label ? (ariaLabel ?? t("progress.linearLabel")) : undefined}
       className={
         className
@@ -130,10 +132,13 @@ export function CircularProgressIndicator({
   className,
   style,
 }: M3ECircularProgressIndicatorProps): React.JSX.Element {
-  const { t } = useM3EI18n();
+  const { locale, t } = useM3EI18n();
   const resolvedAriaLabel = ariaLabel ?? t("progress.circularLabel");
   const isIndet = indeterminate || value === null || value === undefined;
   const clamped = isIndet ? 0 : Math.max(0, Math.min(100, value));
+  const localizedPctText = !isIndet
+    ? formatLocalizedPercent(locale, clamped / 100)
+    : undefined;
   const smooth = useM3EScalarSpring(clamped / 100, "defaultSpatial");
   const spec = PROGRESS_TOKENS.circularSizes[size];
 
@@ -150,8 +155,9 @@ export function CircularProgressIndicator({
       value={isIndet ? null : Math.round(clamped)}
       min={0}
       max={100}
+      locale={locale}
       aria-label={resolvedAriaLabel}
-      aria-valuetext={!isIndet ? `${Math.round(clamped)}%` : undefined}
+      aria-valuetext={localizedPctText}
       className={
         className
           ? `m3e-circular-progress ${className}`
@@ -201,7 +207,7 @@ export function CircularProgressIndicator({
 
       {showValue && !isIndet && size !== "sm" ? (
         <span className="m3e-circular-progress__center" aria-hidden="true">
-          {Math.round(clamped)}%
+          {localizedPctText}
         </span>
       ) : null}
     </BaseProgress.Root>
@@ -227,6 +233,7 @@ export function Meter({
   className,
   style,
 }: M3EMeterProps): React.JSX.Element {
+  const { locale } = useM3EI18n();
   const ratio =
     max > min ? Math.max(0, Math.min(1, (value - min) / (max - min))) : 0;
   const smoothPct = useM3EScalarSpring(ratio * 100, "defaultSpatial");
@@ -246,6 +253,7 @@ export function Meter({
       value={value}
       min={min}
       max={max}
+      locale={locale}
       className={className ? `m3e-meter ${className}` : "m3e-meter"}
       data-tone={tone}
       style={style}

@@ -9,19 +9,23 @@ import {
 import { Toast as BaseToast } from "@base-ui/react/toast";
 import { Tooltip as BaseTooltip } from "@base-ui/react/tooltip";
 import {
+  type ColorPlatform,
   type ColorSchemeVariant,
+  type ColorSpecVersion,
   EXPRESSIVE_MOTION_SCHEME,
   type M3EThemeTokens,
   MOTION_SCHEMES,
   type MotionScheme,
   type MotionSchemeName,
+  generateM3ESystemCssVars,
   generateM3EThemeTokens,
-  resolveCrossPlatformSpring,
+  generateM3ETypographyCssVars,
 } from "../tokens/index.js";
 import { M3EToastViewportHost } from "../components/Toast.js";
 import {
   type M3EConfig,
   type M3EDirectionSetting,
+  generateM3EMotionCssVars,
   resolveM3EConfig,
   serializeM3EConfig,
 } from "../config.js";
@@ -30,6 +34,7 @@ import {
   type M3EMessageOverrides,
   type M3EMessages,
   type M3ETranslateFn,
+  canonicalizeBcp47Locale,
   createM3ETranslator,
   enUSMessages,
   isRtlLocale,
@@ -54,6 +59,10 @@ export interface M3EContextValue {
   readonly setSeedHex: (hex: string) => void;
   readonly schemeVariant: ColorSchemeVariant;
   readonly setSchemeVariant: (variant: ColorSchemeVariant) => void;
+  readonly specVersion: ColorSpecVersion;
+  readonly setSpecVersion: (specVersion: ColorSpecVersion) => void;
+  readonly platform: ColorPlatform;
+  readonly setPlatform: (platform: ColorPlatform) => void;
   readonly contrastLevel: number;
   readonly setContrastLevel: (level: number) => void;
   readonly colorMode: ColorMode;
@@ -84,6 +93,8 @@ const DEFAULT_THEME = generateM3EThemeTokens({
   seedHex: "#6750A4",
   variant: "expressive",
   contrastLevel: 0,
+  specVersion: "2025",
+  platform: "phone",
 });
 
 const DEFAULT_TRANSLATOR = createM3ETranslator("en-US");
@@ -93,6 +104,10 @@ const M3EContext = React.createContext<M3EContextValue>({
   setSeedHex: () => {},
   schemeVariant: "expressive",
   setSchemeVariant: () => {},
+  specVersion: "2025",
+  setSpecVersion: () => {},
+  platform: "phone",
+  setPlatform: () => {},
   contrastLevel: 0,
   setContrastLevel: () => {},
   colorMode: "system",
@@ -124,6 +139,8 @@ export interface M3EProviderProps {
   readonly config?: M3EConfig;
   readonly initialSeedHex?: string;
   readonly initialSchemeVariant?: ColorSchemeVariant;
+  readonly initialSpecVersion?: ColorSpecVersion;
+  readonly initialPlatform?: ColorPlatform;
   readonly initialContrastLevel?: number;
   readonly initialColorMode?: ColorMode;
   readonly initialLocale?: M3ELocale;
@@ -142,6 +159,8 @@ export function M3EProvider({
   config,
   initialSeedHex,
   initialSchemeVariant,
+  initialSpecVersion,
+  initialPlatform,
   initialContrastLevel,
   initialColorMode,
   initialLocale,
@@ -161,6 +180,12 @@ export function M3EProvider({
   );
   const [schemeVariant, setSchemeVariant] = React.useState<ColorSchemeVariant>(
     initialSchemeVariant ?? resolvedCfg.schemeVariant,
+  );
+  const [specVersion, setSpecVersion] = React.useState<ColorSpecVersion>(
+    initialSpecVersion ?? resolvedCfg.specVersion,
+  );
+  const [platform, setPlatform] = React.useState<ColorPlatform>(
+    initialPlatform ?? resolvedCfg.platform,
   );
   const [contrastLevel, setContrastLevelState] = React.useState<number>(
     initialContrastLevel ?? resolvedCfg.contrastLevel,
@@ -259,36 +284,29 @@ export function M3EProvider({
         seedHex,
         variant: schemeVariant,
         contrastLevel,
+        specVersion,
+        platform,
       }),
-    [seedHex, schemeVariant, contrastLevel],
+    [seedHex, schemeVariant, contrastLevel, specVersion, platform],
   );
 
   const motionScheme = MOTION_SCHEMES[motionSchemeName];
 
-  const cssVars = React.useMemo(() => {
-    const fastEffects = resolveCrossPlatformSpring(
-      motionScheme.fastEffects,
-      playbackRate,
-    );
-    const defaultEffects = resolveCrossPlatformSpring(
-      motionScheme.defaultEffects,
-      playbackRate,
-    );
-    const fastSpatial = resolveCrossPlatformSpring(
-      motionScheme.fastSpatial,
-      playbackRate,
-    );
+  const staticFoundationVars = React.useMemo(
+    () => ({
+      ...generateM3ESystemCssVars(),
+      ...generateM3ETypographyCssVars(),
+    }),
+    [],
+  );
 
+  const cssVars = React.useMemo(() => {
     return {
+      ...staticFoundationVars,
       ...themeTokens.cssLightDarkVars,
-      "--m3e-effects-fast-duration": `${fastEffects.cssLinear.durationMs}ms`,
-      "--m3e-effects-fast-easing": fastEffects.cssLinear.easing,
-      "--m3e-effects-default-duration": `${defaultEffects.cssLinear.durationMs}ms`,
-      "--m3e-effects-default-easing": defaultEffects.cssLinear.easing,
-      "--m3e-spatial-fast-duration": `${fastSpatial.cssLinear.durationMs}ms`,
-      "--m3e-spatial-fast-easing": fastSpatial.cssLinear.easing,
+      ...generateM3EMotionCssVars(motionScheme, playbackRate),
     } as Record<string, string>;
-  }, [themeTokens, motionScheme, playbackRate]);
+  }, [staticFoundationVars, themeTokens, motionScheme, playbackRate]);
 
   React.useEffect(() => {
     if (!syncDocumentRoot || typeof document === "undefined") return;
@@ -313,11 +331,16 @@ export function M3EProvider({
     }
   }, [colorMode, syncDocumentRoot]);
 
+  const canonicalLocale = React.useMemo(
+    () => canonicalizeBcp47Locale(activeLocale),
+    [activeLocale],
+  );
+
   React.useEffect(() => {
     if (!syncDocumentRoot || typeof document === "undefined") return;
     document.documentElement.dir = direction;
-    document.documentElement.lang = activeLocale;
-  }, [direction, activeLocale, syncDocumentRoot]);
+    document.documentElement.lang = canonicalLocale;
+  }, [direction, canonicalLocale, syncDocumentRoot]);
 
   React.useEffect(() => {
     if (!syncDocumentRoot || typeof document === "undefined") return;
@@ -332,20 +355,24 @@ export function M3EProvider({
       serializeM3EConfig({
         seedHex,
         schemeVariant,
+        specVersion,
+        platform,
         colorMode,
         contrastLevel,
         motionScheme: motionSchemeName,
-        locale: activeLocale,
+        locale: canonicalLocale,
         directionMode,
         cssOutput: resolvedCfg.cssOutput,
       }),
     [
       seedHex,
       schemeVariant,
+      specVersion,
+      platform,
       colorMode,
       contrastLevel,
       motionSchemeName,
-      activeLocale,
+      canonicalLocale,
       directionMode,
       resolvedCfg.cssOutput,
     ],
@@ -357,11 +384,15 @@ export function M3EProvider({
       setSeedHex,
       schemeVariant,
       setSchemeVariant,
+      specVersion,
+      setSpecVersion,
+      platform,
+      setPlatform,
       contrastLevel,
       setContrastLevel,
       colorMode,
       setColorMode,
-      locale: activeLocale,
+      locale: canonicalLocale,
       setLocale: setUncontrolledLocale,
       messages,
       t,
@@ -385,10 +416,12 @@ export function M3EProvider({
     [
       seedHex,
       schemeVariant,
+      specVersion,
+      platform,
       contrastLevel,
       setContrastLevel,
       colorMode,
-      activeLocale,
+      canonicalLocale,
       messages,
       t,
       directionMode,
@@ -414,8 +447,8 @@ export function M3EProvider({
       <BaseTooltip.Provider delay={280} timeout={400}>
         <BaseToast.Provider limit={4} timeout={4200}>
           <div
-            lang={syncDocumentRoot ? undefined : activeLocale}
-            dir={syncDocumentRoot ? undefined : direction}
+            lang={canonicalLocale}
+            dir={direction}
             className="m3e-scope"
             data-motion-scheme={motionSchemeName}
             data-debug-geometry={debugGeometry ? "" : undefined}

@@ -18,7 +18,8 @@ body {
   margin: 0;
   font-family:
     -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "PingFang SC",
-    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    "Hiragino Sans", "Hiragino Sans GB", "Yu Gothic UI", "Geeza Pro",
+    "Noto Sans Arabic", "Microsoft YaHei", sans-serif;
   background-color: var(--m3e-color-surface);
   color: var(--m3e-color-on-surface);
   line-height: 1.5;

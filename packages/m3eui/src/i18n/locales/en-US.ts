@@ -1,12 +1,18 @@
 import type { M3EMessages } from "../types.js";
 
 export const enUSMessages: M3EMessages = {
-  "carousel.slideAnnouncement": "Slide {index} of {count}{titleSuffix}",
+  "badge.overflow": "{max}+",
+
+  "carousel.roleDescription": "carousel",
+  "carousel.slideRoleDescription": "slide",
+  "carousel.slideLabel": "{index} of {count}: {title}",
+  "carousel.slideAnnouncement": "Slide {index} of {count}",
+  "carousel.slideAnnouncementWithTitle": "Slide {index} of {count}: {title}",
   "carousel.prevSlide": "Previous slide",
   "carousel.nextSlide": "Next slide",
   "carousel.paginationLabel": "Jump to slide",
   "carousel.goToSlide": "Go to slide {index}: {title}",
-  "carousel.listLabel": "Carousel slides",
+  "carousel.listLabel": "Slides",
 
   "chip.remove": "Remove chip",
 
@@ -39,7 +45,9 @@ export const enUSMessages: M3EMessages = {
 
   "fabMenu.triggerOpen": "Quick actions",
   "fabMenu.triggerClose": "Close quick actions",
+  "floatingToolbar.ariaLabel": "Floating toolbar",
   "splitButton.moreOptions": "More options",
+  "buttonGroup.moreActions": "More actions",
 
   "form.errorSummaryHeading": "Please fix the following {count} issue(s):",
 
@@ -49,15 +57,15 @@ export const enUSMessages: M3EMessages = {
   "progress.wavyLinearLabel": "Progress",
   "progress.wavyCircularLabel": "Circular progress",
 
-  "menubar.ariaLabel": "Application menu bar",
-  "navigation.barLabel": "Primary navigation bar",
-  "navigation.railLabel": "Navigation rail",
-  "navigation.wideRailLabel": "Wide navigation rail",
-  "navigation.collapseRail": "Collapse navigation rail",
-  "navigation.expandRail": "Expand navigation rail",
-  "navigation.drawerLabel": "Navigation drawer",
-  "navigation.suiteLabel": "Adaptive primary navigation",
-  "navigation.siteMenuLabel": "Site navigation",
+  "menubar.ariaLabel": "Application commands",
+  "navigation.barLabel": "Primary",
+  "navigation.railLabel": "Sidebar",
+  "navigation.wideRailLabel": "Expanded sidebar",
+  "navigation.collapseRail": "Collapse sidebar",
+  "navigation.expandRail": "Expand sidebar",
+  "navigation.drawerLabel": "Main menu",
+  "navigation.suiteLabel": "Adaptive primary",
+  "navigation.siteMenuLabel": "Site",
 
   "numberField.decrement": "Decrease value",
   "numberField.increment": "Increase value",

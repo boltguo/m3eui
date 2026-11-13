@@ -1,10 +1,17 @@
 import type { TextDirection } from "@base-ui/react/direction-provider";
 import {
+  type ColorPlatform,
   type ColorSchemeVariant,
+  type ColorSpecVersion,
   MOTION_SCHEMES,
+  type MotionScheme,
   type MotionSchemeName,
+  type SemanticColorRoleKey,
+  generateM3ESystemCssVars,
   generateM3EThemeTokens,
+  generateM3ETypographyCssVars,
   resolveCrossPlatformSpring,
+  roleKeyToCssVarName,
 } from "./tokens/index.js";
 import {
   type M3ELocale,
@@ -21,6 +28,8 @@ export interface M3EConfig {
   readonly theme?: {
     readonly seed?: string;
     readonly schemeVariant?: ColorSchemeVariant;
+    readonly specVersion?: ColorSpecVersion;
+    readonly platform?: ColorPlatform;
     readonly colorMode?: M3EColorModeSetting;
     readonly contrastLevel?: number;
     readonly motionScheme?: MotionSchemeName;
@@ -48,6 +57,8 @@ export interface ResolvedM3EConfig {
   readonly style: "expressive" | "standard";
   readonly seedHex: string;
   readonly schemeVariant: ColorSchemeVariant;
+  readonly specVersion: ColorSpecVersion;
+  readonly platform: ColorPlatform;
   readonly colorMode: M3EColorModeSetting;
   readonly contrastLevel: number;
   readonly motionScheme: MotionSchemeName;
@@ -75,6 +86,8 @@ export function resolveM3EConfig(config?: M3EConfig): ResolvedM3EConfig {
   const schemeVariant =
     config?.theme?.schemeVariant ??
     (style === "standard" ? "tonalSpot" : "expressive");
+  const specVersion: ColorSpecVersion = config?.theme?.specVersion ?? "2025";
+  const platform: ColorPlatform = config?.theme?.platform ?? "phone";
   const colorMode = config?.theme?.colorMode ?? "system";
   const contrastLevel = Math.max(
     -1,
@@ -97,6 +110,8 @@ export function resolveM3EConfig(config?: M3EConfig): ResolvedM3EConfig {
     style,
     seedHex,
     schemeVariant,
+    specVersion,
+    platform,
     colorMode,
     contrastLevel,
     motionScheme,
@@ -120,6 +135,8 @@ export function serializeM3EConfig(
     schemaUrl: string;
     seedHex: string;
     schemeVariant: ColorSchemeVariant;
+    specVersion: ColorSpecVersion;
+    platform: ColorPlatform;
     colorMode: M3EColorModeSetting;
     contrastLevel: number;
     motionScheme: MotionSchemeName;
@@ -136,6 +153,8 @@ export function serializeM3EConfig(
     theme: {
       seed: input.seedHex ?? "#6750A4",
       schemeVariant: input.schemeVariant ?? "expressive",
+      specVersion: input.specVersion ?? "2025",
+      platform: input.platform ?? "phone",
       colorMode: input.colorMode ?? "system",
       contrastLevel: input.contrastLevel ?? 0,
       motionScheme: input.motionScheme ?? "expressive",
@@ -156,17 +175,46 @@ export function serializeM3EConfig(
   return `${JSON.stringify(doc, null, 2)}\n`;
 }
 
+export function generateM3EMotionCssVars(
+  scheme: MotionScheme,
+  playbackRate = 1,
+): Record<string, string> {
+  const fastEffects = resolveCrossPlatformSpring(scheme.fastEffects, playbackRate);
+  const defaultEffects = resolveCrossPlatformSpring(scheme.defaultEffects, playbackRate);
+  const slowEffects = resolveCrossPlatformSpring(scheme.slowEffects, playbackRate);
+  const fastSpatial = resolveCrossPlatformSpring(scheme.fastSpatial, playbackRate);
+  const defaultSpatial = resolveCrossPlatformSpring(scheme.defaultSpatial, playbackRate);
+  const slowSpatial = resolveCrossPlatformSpring(scheme.slowSpatial, playbackRate);
+
+  return {
+    "--m3e-effects-fast-duration": `${fastEffects.cssLinear.durationMs}ms`,
+    "--m3e-effects-fast-easing": fastEffects.cssLinear.easing,
+    "--m3e-effects-default-duration": `${defaultEffects.cssLinear.durationMs}ms`,
+    "--m3e-effects-default-easing": defaultEffects.cssLinear.easing,
+    "--m3e-effects-slow-duration": `${slowEffects.cssLinear.durationMs}ms`,
+    "--m3e-effects-slow-easing": slowEffects.cssLinear.easing,
+    "--m3e-spatial-fast-duration": `${fastSpatial.cssLinear.durationMs}ms`,
+    "--m3e-spatial-fast-easing": fastSpatial.cssLinear.easing,
+    "--m3e-spatial-default-duration": `${defaultSpatial.cssLinear.durationMs}ms`,
+    "--m3e-spatial-default-easing": defaultSpatial.cssLinear.easing,
+    "--m3e-spatial-slow-duration": `${slowSpatial.cssLinear.durationMs}ms`,
+    "--m3e-spatial-slow-easing": slowSpatial.cssLinear.easing,
+  };
+}
+
 export function generateM3EStaticThemeCss(config?: M3EConfig): string {
   const resolved = resolveM3EConfig(config);
   const tokens = generateM3EThemeTokens({
     seedHex: resolved.seedHex,
     variant: resolved.schemeVariant,
     contrastLevel: resolved.contrastLevel,
+    specVersion: resolved.specVersion,
+    platform: resolved.platform,
   });
   const scheme = MOTION_SCHEMES[resolved.motionScheme];
-  const fastEffects = resolveCrossPlatformSpring(scheme.fastEffects);
-  const defaultEffects = resolveCrossPlatformSpring(scheme.defaultEffects);
-  const fastSpatial = resolveCrossPlatformSpring(scheme.fastSpatial);
+  const motionVars = generateM3EMotionCssVars(scheme, 1);
+  const systemVars = generateM3ESystemCssVars();
+  const typographyVars = generateM3ETypographyCssVars();
 
   const lines: string[] = [
     `:root {`,
@@ -177,16 +225,43 @@ export function generateM3EStaticThemeCss(config?: M3EConfig): string {
     lines.push(`  ${key}: ${val};`);
   }
 
-  lines.push(
-    `  --m3e-effects-fast-duration: ${fastEffects.cssLinear.durationMs}ms;`,
-    `  --m3e-effects-fast-easing: ${fastEffects.cssLinear.easing};`,
-    `  --m3e-effects-default-duration: ${defaultEffects.cssLinear.durationMs}ms;`,
-    `  --m3e-effects-default-easing: ${defaultEffects.cssLinear.easing};`,
-    `  --m3e-spatial-fast-duration: ${fastSpatial.cssLinear.durationMs}ms;`,
-    `  --m3e-spatial-fast-easing: ${fastSpatial.cssLinear.easing};`,
-    `}`,
-    "",
-  );
+  for (const [key, val] of Object.entries(motionVars)) {
+    lines.push(`  ${key}: ${val};`);
+  }
+
+  for (const [key, val] of Object.entries(systemVars)) {
+    lines.push(`  ${key}: ${val};`);
+  }
+
+  for (const [key, val] of Object.entries(typographyVars)) {
+    lines.push(`  ${key}: ${val};`);
+  }
+
+  lines.push(`}`, "");
+
+  const roleKeys = Object.keys(tokens.light) as SemanticColorRoleKey[];
+  lines.push(`@supports not (color: light-dark(white, black)) {`);
+  lines.push(`  :root {`);
+  for (const key of roleKeys) {
+    const cssVar = roleKeyToCssVarName(key);
+    lines.push(`    ${cssVar}: var(${cssVar}-light, ${tokens.light[key]});`);
+  }
+  lines.push(`  }`);
+  lines.push(`  @media (prefers-color-scheme: dark) {`);
+  lines.push(`    :root:not([data-color-mode="light"]) {`);
+  for (const key of roleKeys) {
+    const cssVar = roleKeyToCssVarName(key);
+    lines.push(`      ${cssVar}: var(${cssVar}-dark, ${tokens.dark[key]});`);
+  }
+  lines.push(`    }`);
+  lines.push(`  }`);
+  lines.push(`  :root[data-color-mode="dark"] {`);
+  for (const key of roleKeys) {
+    const cssVar = roleKeyToCssVarName(key);
+    lines.push(`    ${cssVar}: var(${cssVar}-dark, ${tokens.dark[key]});`);
+  }
+  lines.push(`  }`);
+  lines.push(`}`, "");
 
   return lines.join("\n");
 }

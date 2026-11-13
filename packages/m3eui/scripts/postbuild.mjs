@@ -92,6 +92,12 @@ const payload = {
     expressive: resolveSchemeMap(tokens.EXPRESSIVE_MOTION_SCHEME),
     standard: resolveSchemeMap(tokens.STANDARD_MOTION_SCHEME),
   },
+  typography: {
+    typefaces: tokens.M3E_TYPEFACE_TOKENS,
+    scale: tokens.M3E_TYPOGRAPHY_TOKENS,
+  },
+  elevation: tokens.M3E_ELEVATION_TOKENS,
+  stateLayer: tokens.M3E_STATE_LAYER_TOKENS,
   topology: {
     shapeCorners: tokens.SHAPE_CORNER_TOKENS,
     buttonSizes: tokens.BUTTON_SIZE_SPECS,

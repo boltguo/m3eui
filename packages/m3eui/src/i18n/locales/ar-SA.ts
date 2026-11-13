@@ -1,12 +1,18 @@
 import type { M3EMessages } from "../types.js";
 
 export const arSAMessages: M3EMessages = {
-  "carousel.slideAnnouncement": "الشريحة {index} من {count}{titleSuffix}",
+  "badge.overflow": "{max}+",
+
+  "carousel.roleDescription": "عرض دوار",
+  "carousel.slideRoleDescription": "شريحة",
+  "carousel.slideLabel": "{index} من {count}: {title}",
+  "carousel.slideAnnouncement": "الشريحة {index} من {count}",
+  "carousel.slideAnnouncementWithTitle": "الشريحة {index} من {count}: {title}",
   "carousel.prevSlide": "الشريحة السابقة",
   "carousel.nextSlide": "الشريحة التالية",
   "carousel.paginationLabel": "الانتقال إلى شريحة محددة",
   "carousel.goToSlide": "الانتقال إلى الشريحة {index}: {title}",
-  "carousel.listLabel": "شرائح العرض الدوار",
+  "carousel.listLabel": "الشرائح",
 
   "chip.remove": "إزالة الشريحة",
 
@@ -39,7 +45,9 @@ export const arSAMessages: M3EMessages = {
 
   "fabMenu.triggerOpen": "إجراءات سريعة",
   "fabMenu.triggerClose": "إغلاق القائمة السريعة",
+  "floatingToolbar.ariaLabel": "شريط الأدوات العائم",
   "splitButton.moreOptions": "المزيد من الخيارات",
+  "buttonGroup.moreActions": "المزيد من الإجراءات",
 
   "form.errorSummaryHeading": "يرجى تصحيح المشكلات التالية ({count}):",
 
@@ -49,15 +57,15 @@ export const arSAMessages: M3EMessages = {
   "progress.wavyLinearLabel": "التقدم",
   "progress.wavyCircularLabel": "التقدم الدائري",
 
-  "menubar.ariaLabel": "شريط قوائم التطبيق",
-  "navigation.barLabel": "شريط التنقل الرئيسي",
-  "navigation.railLabel": "مسار التنقل الجانبي",
-  "navigation.wideRailLabel": "مسار التنقل الجانبي العريض",
-  "navigation.collapseRail": "طي مسار التنقل",
-  "navigation.expandRail": "توسيع مسار التنقل",
-  "navigation.drawerLabel": "درج التنقل",
-  "navigation.suiteLabel": "التنقل التكيفي الرئيسي",
-  "navigation.siteMenuLabel": "تنقل الموقع",
+  "menubar.ariaLabel": "أوامر التطبيق",
+  "navigation.barLabel": "الرئيسي",
+  "navigation.railLabel": "المسار الجانبي",
+  "navigation.wideRailLabel": "المسار الجانبي العريض",
+  "navigation.collapseRail": "طي المسار الجانبي",
+  "navigation.expandRail": "توسيع المسار الجانبي",
+  "navigation.drawerLabel": "القائمة الرئيسية",
+  "navigation.suiteLabel": "الرئيسي التكيفي",
+  "navigation.siteMenuLabel": "الموقع",
 
   "numberField.decrement": "إنقاص القيمة",
   "numberField.increment": "زيادة القيمة",

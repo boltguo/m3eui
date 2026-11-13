@@ -5,12 +5,20 @@ import {
   EXPRESSIVE_MOTION_SCHEME,
   FLOATING_TOOLBAR_TOKENS,
   ICON_BUTTON_SIZE_SPECS,
+  LOADING_INDICATOR_DETERMINATE_MORPH_SEQUENCE,
   LOADING_INDICATOR_MORPH_SEQUENCE,
   LOADING_INDICATOR_SHAPE_SEQUENCE,
   LOADING_INDICATOR_TOKENS,
+  Hct,
   M3E_ALL_SHAPE_NAMES,
+  M3E_COLOR_SCHEME_VARIANTS,
+  M3E_COLOR_SPEC_VERSIONS,
+  M3E_ELEVATION_TOKENS,
+  M3E_STATE_LAYER_TOKENS,
+  M3E_TYPOGRAPHY_TOKENS,
   MATERIAL_SHAPES,
   STANDARD_MOTION_SCHEME,
+  argbFromHex,
   buildDeterminateCircularWavyGeometry,
   buildDeterminateLinearWavyGeometry,
   buildIndeterminateCircularWavyGeometry,
@@ -40,6 +48,7 @@ import {
   resolveToggleFabGeometry,
   resolveTopAppBarGeometry,
   SLIDER_SIZE_SPECS,
+  stepSpringSimulation,
   SWITCH_TOKENS,
 } from "./index.js";
 
@@ -526,5 +535,146 @@ describe("m3eui/tokens — RTL Corner Mirroring & Clock Geometry", () => {
     expect(m45.angleDeg).toBe(270);
     expect(m45.offsetX).toBeCloseTo(-92, 2);
     expect(m45.offsetY).toBeCloseTo(0, 1);
+  });
+});
+
+describe("m3eui/tokens — AOSP Compose Material 3 Expressive 1.5.0 Parity", () => {
+  it("defines all 30 M3E typography scales (15 baseline + 15 Emphasized) plus elevation & state-layer tokens", () => {
+    const scaleNames = Object.keys(M3E_TYPOGRAPHY_TOKENS);
+    expect(scaleNames.length).toBe(30);
+    const emphasizedNames = scaleNames.filter((name) => name.endsWith("Emphasized"));
+    expect(emphasizedNames.length).toBe(15);
+    expect(M3E_TYPOGRAPHY_TOKENS.displayLargeEmphasized.fontWeight).toBeGreaterThan(
+      M3E_TYPOGRAPHY_TOKENS.displayLarge.fontWeight,
+    );
+    expect(M3E_TYPOGRAPHY_TOKENS.labelLargeEmphasized.fontWeight).toBe(700);
+
+    expect(Object.keys(M3E_ELEVATION_TOKENS)).toEqual([
+      "level0",
+      "level1",
+      "level2",
+      "level3",
+      "level4",
+      "level5",
+    ]);
+    expect(M3E_STATE_LAYER_TOKENS).toMatchObject({
+      hoverOpacity: 0.08,
+      focusOpacity: 0.1,
+      pressOpacity: 0.1,
+      draggedOpacity: 0.16,
+      disabledContainerOpacity: 0.12,
+      disabledContentOpacity: 0.38,
+    });
+  });
+
+  it("supports all 9 AOSP Monet dynamic color scheme variants, SPEC_2025/2021/2026, and outputs all 53 semantic color roles", () => {
+    expect(M3E_COLOR_SCHEME_VARIANTS.length).toBe(9);
+    expect(M3E_COLOR_SPEC_VERSIONS).toEqual(["2025", "2021", "2026"]);
+    for (const variant of M3E_COLOR_SCHEME_VARIANTS) {
+      const theme = generateM3EThemeTokens({ seedHex: "#6750A4", variant });
+      expect(theme.specVersion).toBe("2025");
+      expect(Object.keys(theme.light).length).toBe(53);
+      expect(Object.keys(theme.dark).length).toBe(53);
+      expect(theme.light.primaryDim).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(theme.light.secondaryDim).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(theme.light.tertiaryDim).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(theme.light.errorDim).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(theme.light.primaryFixed).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(theme.light.primaryFixedDim).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(theme.light.onPrimaryFixed).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(theme.light.onPrimaryFixedVariant).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(theme.light.surfaceTint).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(theme.light.background).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(theme.light.onBackground).toMatch(/^#[0-9a-f]{6}$/i);
+      // In AOSP SPEC_2025, Fixed roles keep invariant light/dark tone within <= 5 tone units across all 9 variants
+      // (while Expressive/TonalSpot adjust dark-mode palette chroma slightly to prevent OLED bloom).
+      const lightFixedTone = Hct.fromInt(argbFromHex(theme.light.primaryFixed)).tone;
+      const darkFixedTone = Hct.fromInt(argbFromHex(theme.dark.primaryFixed)).tone;
+      expect(Math.abs(lightFixedTone - darkFixedTone)).toBeLessThanOrEqual(5);
+      expect(theme.light.tertiaryFixed).toBe(theme.dark.tertiaryFixed);
+    }
+
+    // Verify AOSP SPEC_2025 Expressive preserves source violet hue & high-chroma neutral surfaces vs SPEC_2021
+    const exp2025 = generateM3EThemeTokens({
+      seedHex: "#6750A4",
+      variant: "expressive",
+      specVersion: "2025",
+    });
+    const exp2021 = generateM3EThemeTokens({
+      seedHex: "#6750A4",
+      variant: "expressive",
+      specVersion: "2021",
+    });
+    // In SPEC_2021, Fixed roles share identical palette chroma & tone across light and dark modes
+    expect(exp2021.light.primaryFixed).toBe(exp2021.dark.primaryFixed);
+    expect(exp2021.light.secondaryFixed).toBe(exp2021.dark.secondaryFixed);
+    expect(exp2021.light.tertiaryFixed).toBe(exp2021.dark.tertiaryFixed);
+    expect(exp2025.light.primary).not.toBe(exp2021.light.primary);
+    expect(exp2025.light.surfaceContainer).not.toBe(exp2021.light.surfaceContainer);
+    const surf2025Chroma = Hct.fromInt(argbFromHex(exp2025.light.surfaceContainerHigh)).chroma;
+    const surf2021Chroma = Hct.fromInt(argbFromHex(exp2021.light.surfaceContainerHigh)).chroma;
+    expect(surf2025Chroma).toBeGreaterThan(surf2021Chroma);
+
+    const watchTheme = generateM3EThemeTokens({
+      seedHex: "#6750A4",
+      variant: "expressive",
+      specVersion: "2025",
+      platform: "watch",
+    });
+    expect(watchTheme.light.surfaceContainer).not.toBe(exp2025.light.surfaceContainer);
+  });
+
+  it("preserves exact analytical displacement and mid-flight velocity in stepSpringSimulation", () => {
+    const spec = EXPRESSIVE_MOTION_SCHEME.fastSpatial;
+    // Step from 0 -> 1 in two 16ms halves and verify exact semi-group identity with single 32ms step
+    const half1 = stepSpringSimulation(0, 0, 1, 0.016, spec);
+    const half2 = stepSpringSimulation(half1.value, half1.velocity, 1, 0.016, spec);
+    const full = stepSpringSimulation(0, 0, 1, 0.032, spec);
+    expect(half2.value).toBeCloseTo(full.value, 6);
+    expect(half2.velocity).toBeCloseTo(full.velocity, 5);
+    expect(full.value).toBeCloseTo(evaluateSpringDisplacement(spec, 0.032), 6);
+
+    // Mid-flight retargeting back to 0 carries forward positive momentum before reversing
+    const retargeted = stepSpringSimulation(half1.value, half1.velocity, 0, 0.004, spec);
+    expect(retargeted.value).toBeGreaterThan(half1.value);
+    expect(retargeted.settled).toBe(false);
+
+    // Overdamped semi-group consistency
+    const overSpec = { dampingRatio: 1.4, stiffness: 500 };
+    const o1 = stepSpringSimulation(0, 0, 10, 0.02, overSpec);
+    const o2 = stepSpringSimulation(o1.value, o1.velocity, 10, 0.02, overSpec);
+    const oFull = stepSpringSimulation(0, 0, 10, 0.04, overSpec);
+    expect(o2.value).toBeCloseTo(oFull.value, 6);
+    expect(o2.velocity).toBeCloseTo(oFull.velocity, 5);
+  });
+
+  it("tracks convex/concave corner features for AOSP FeatureMapping, determinate LoadingIndicator morph, dual-segment wavy, and SplitButton hover inner corners", () => {
+    expect(MATERIAL_SHAPES.softBurst.features.some((f) => f.convex)).toBe(true);
+    expect(MATERIAL_SHAPES.softBurst.features.some((f) => !f.convex)).toBe(true);
+
+    expect(LOADING_INDICATOR_DETERMINATE_MORPH_SEQUENCE.length).toBe(1);
+    expect(LOADING_INDICATOR_DETERMINATE_MORPH_SEQUENCE[0].from).toBe("circle");
+    expect(LOADING_INDICATOR_DETERMINATE_MORPH_SEQUENCE[0].to).toBe("softBurst");
+
+    const dualWave = buildIndeterminateLinearWavyGeometry({
+      width: 240,
+      cycleFraction: 0.6,
+      phasePx: 6,
+    });
+    expect(dualWave.activePaths.length).toBe(2);
+    expect(dualWave.trackPaths.length).toBeGreaterThanOrEqual(1);
+
+    const leadHover = resolveSplitButtonGeometry({ size: "sm", isLeadingHovered: true });
+    expect(leadHover.leadingCorners).toEqual([20, 12, 12, 20]);
+    const trailHover = resolveSplitButtonGeometry({ size: "sm", isTrailingHovered: true });
+    expect(trailHover.trailingCorners).toEqual([12, 20, 20, 12]);
+
+    expect(BUTTON_SIZE_SPECS.xs).toMatchObject({
+      height: 32,
+      fontSize: 14,
+      lineHeight: 20,
+      iconSize: 20,
+      iconGap: 8,
+    });
   });
 });

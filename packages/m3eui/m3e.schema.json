@@ -28,9 +28,31 @@
         },
         "schemeVariant": {
           "type": "string",
-          "enum": ["expressive", "tonalSpot", "vibrant", "neutral"],
+          "enum": [
+            "expressive",
+            "tonalSpot",
+            "vibrant",
+            "neutral",
+            "fidelity",
+            "content",
+            "monochrome",
+            "rainbow",
+            "fruitSalad"
+          ],
           "default": "expressive",
           "description": "Dynamic color scheme variant."
+        },
+        "specVersion": {
+          "type": "string",
+          "enum": ["2025", "2021", "2026"],
+          "default": "2025",
+          "description": "AOSP Material Dynamic Color specification version (2025 M3 Expressive default)."
+        },
+        "platform": {
+          "type": "string",
+          "enum": ["phone", "watch"],
+          "default": "phone",
+          "description": "Target device platform for SPEC_2025 tonal surfaces."
         },
         "colorMode": {
           "type": "string",

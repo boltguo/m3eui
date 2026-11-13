@@ -49,9 +49,21 @@ export const M3E_ALL_SHAPE_NAMES = [
 
 export type M3EShapeName = (typeof M3E_ALL_SHAPE_NAMES)[number];
 
+export type ShapeFeature =
+  | {
+      readonly type: "corner";
+      readonly convex: boolean;
+      readonly cubics: readonly CubicTuple[];
+    }
+  | {
+      readonly type: "edge";
+      readonly cubics: readonly CubicTuple[];
+    };
+
 export interface NormalizedShapeData {
   readonly name: M3EShapeName;
   readonly cubics: readonly CubicTuple[];
+  readonly features: readonly ShapeFeature[];
   readonly bounds: readonly [number, number, number, number];
   readonly maxRadialDistance: number;
   readonly previewSvgPath: string;
@@ -79,7 +91,13 @@ interface RawVertex {
   readonly r: CornerRounding;
 }
 
+const DISTANCE_EPSILON = 1e-4;
+const ANGLE_EPSILON = 1e-4;
 const UNROUNDED: CornerRounding = { radius: 0, smoothing: 0 };
+
+function positiveModulo(num: number, mod: number): number {
+  return ((num % mod) + mod) % mod;
+}
 
 function rotatePointDeg(p: Point2D, deg: number, center: Point2D = { x: 0, y: 0 }): Point2D {
   const rad = (deg * Math.PI) / 180;
@@ -93,11 +111,25 @@ function rotatePointDeg(p: Point2D, deg: number, center: Point2D = { x: 0, y: 0 
   };
 }
 
-function scaleVertices(vertices: RawVertex[], sx: number, sy: number): RawVertex[] {
-  return vertices.map((v) => ({
-    p: { x: v.p.x * sx, y: v.p.y * sy },
-    r: v.r,
-  }));
+function rotate90(p: Point2D): Point2D {
+  return { x: -p.y, y: p.x };
+}
+
+function dotProduct(a: Point2D, b: Point2D): number {
+  return a.x * b.x + a.y * b.y;
+}
+
+function directionVector(dx: number, dy: number): Point2D {
+  const d = Math.hypot(dx, dy);
+  if (d <= 1e-7) return { x: 0, y: 0 };
+  return { x: dx / d, y: dy / d };
+}
+
+function lerpPoint(a: Point2D, b: Point2D, t: number): Point2D {
+  return {
+    x: a.x + (b.x - a.x) * t,
+    y: a.y + (b.y - a.y) * t,
+  };
 }
 
 function rotateVertices(
@@ -228,6 +260,48 @@ function lineCubic(a: Point2D, b: Point2D): CubicTuple {
   ];
 }
 
+function circularArcCubic(
+  centerX: number,
+  centerY: number,
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+): CubicTuple {
+  const p0 = directionVector(x0 - centerX, y0 - centerY);
+  const p1 = directionVector(x1 - centerX, y1 - centerY);
+  const rotatedP0 = rotate90(p0);
+  const rotatedP1 = rotate90(p1);
+  const clockwise = rotatedP0.x * (x1 - centerX) + rotatedP0.y * (y1 - centerY) >= 0;
+  const cosa = Math.max(-1, Math.min(1, dotProduct(p0, p1)));
+  if (cosa > 0.999) {
+    return lineCubic({ x: x0, y: y0 }, { x: x1, y: y1 });
+  }
+  const radius = Math.hypot(x0 - centerX, y0 - centerY);
+  const k =
+    ((radius * 4) / 3) *
+    ((Math.sqrt(2 * (1 - cosa)) - Math.sqrt(Math.max(0, 1 - cosa * cosa))) / (1 - cosa)) *
+    (clockwise ? 1 : -1);
+  return [
+    x0,
+    y0,
+    x0 + rotatedP0.x * k,
+    y0 + rotatedP0.y * k,
+    x1 - rotatedP1.x * k,
+    y1 - rotatedP1.y * k,
+    x1,
+    y1,
+  ];
+}
+
+function isZeroLengthCubic(c: CubicTuple): boolean {
+  return (
+    Math.hypot(c[6] - c[0], c[7] - c[1]) < 1e-5 &&
+    Math.hypot(c[2] - c[0], c[3] - c[1]) < 1e-5 &&
+    Math.hypot(c[4] - c[6], c[5] - c[7]) < 1e-5
+  );
+}
+
 function splitCubic(c: CubicTuple, t: number): [CubicTuple, CubicTuple] {
   const [x0, y0, x1, y1, x2, y2, x3, y3] = c;
   const u = 1 - t;
@@ -253,17 +327,6 @@ function splitCubic(c: CubicTuple, t: number): [CubicTuple, CubicTuple] {
   ];
 }
 
-function sliceCubic(c: CubicTuple, t0: number, t1: number): CubicTuple {
-  if (t0 <= 1e-7 && t1 >= 1 - 1e-7) return c;
-  if (t0 <= 1e-7) {
-    return splitCubic(c, Math.max(0, Math.min(1, t1)))[0];
-  }
-  const [, tail] = splitCubic(c, Math.max(0, Math.min(1, t0)));
-  if (t1 >= 1 - 1e-7) return tail;
-  const localT = (t1 - t0) / Math.max(1e-7, 1 - t0);
-  return splitCubic(tail, Math.max(0, Math.min(1, localT)))[0];
-}
-
 function evalCubic(c: CubicTuple, t: number): Point2D {
   const u = 1 - t;
   const b0 = u * u * u;
@@ -280,237 +343,346 @@ function reverseCubic(c: CubicTuple): CubicTuple {
   return [c[6], c[7], c[4], c[5], c[2], c[3], c[0], c[1]];
 }
 
-function buildRoundedPolygonCubics(vertices: RawVertex[]): CubicTuple[] {
-  const n = vertices.length;
-  interface CornerGeo {
-    v: Point2D;
-    u1: Point2D;
-    u2: Point2D;
-    len1: number;
-    len2: number;
-    tanHalf: number;
-    sweepAngle: number;
-    expectedRoundCut: number;
-    expectedTotalCut: number;
-    smoothing: number;
+function lineIntersection(
+  p0: Point2D,
+  d0: Point2D,
+  p1: Point2D,
+  d1: Point2D,
+): Point2D | null {
+  const rotatedD1 = rotate90(d1);
+  const den = dotProduct(d0, rotatedD1);
+  if (Math.abs(den) < DISTANCE_EPSILON) return null;
+  const num = dotProduct({ x: p1.x - p0.x, y: p1.y - p0.y }, rotatedD1);
+  if (Math.abs(den) < DISTANCE_EPSILON * Math.abs(num)) return null;
+  const k = num / den;
+  return {
+    x: p0.x + d0.x * k,
+    y: p0.y + d0.y * k,
+  };
+}
+
+class RoundedCornerBuilder {
+  readonly d1: Point2D;
+  readonly d2: Point2D;
+  readonly cornerRadius: number;
+  readonly smoothing: number;
+  readonly cosAngle: number;
+  readonly sinAngle: number;
+  readonly expectedRoundCut: number;
+  readonly expectedCut: number;
+
+  constructor(
+    readonly p0: Point2D,
+    readonly p1: Point2D,
+    readonly p2: Point2D,
+    rounding?: CornerRounding,
+  ) {
+    const v01x = p0.x - p1.x;
+    const v01y = p0.y - p1.y;
+    const v21x = p2.x - p1.x;
+    const v21y = p2.y - p1.y;
+    const d01 = Math.hypot(v01x, v01y);
+    const d21 = Math.hypot(v21x, v21y);
+
+    if (d01 > 0 && d21 > 0) {
+      this.d1 = { x: v01x / d01, y: v01y / d01 };
+      this.d2 = { x: v21x / d21, y: v21y / d21 };
+      this.cornerRadius = rounding?.radius ?? 0;
+      this.smoothing = rounding?.smoothing ?? 0;
+      this.cosAngle = Math.max(-1, Math.min(1, dotProduct(this.d1, this.d2)));
+      this.sinAngle = Math.sqrt(Math.max(0, 1 - this.cosAngle * this.cosAngle));
+      this.expectedRoundCut =
+        this.sinAngle > 1e-3
+          ? (this.cornerRadius * (this.cosAngle + 1)) / this.sinAngle
+          : 0;
+      this.expectedCut = (1 + this.smoothing) * this.expectedRoundCut;
+    } else {
+      this.d1 = { x: 0, y: 0 };
+      this.d2 = { x: 0, y: 0 };
+      this.cornerRadius = 0;
+      this.smoothing = 0;
+      this.cosAngle = 0;
+      this.sinAngle = 0;
+      this.expectedRoundCut = 0;
+      this.expectedCut = 0;
+    }
   }
 
-  const corners: CornerGeo[] = [];
+  getCubics(allowedCut0: number, allowedCut1: number = allowedCut0): CubicTuple[] {
+    const allowedCut = Math.min(allowedCut0, allowedCut1);
+    if (
+      this.expectedRoundCut < DISTANCE_EPSILON ||
+      allowedCut < DISTANCE_EPSILON ||
+      this.cornerRadius < DISTANCE_EPSILON
+    ) {
+      return [lineCubic(this.p1, this.p1)];
+    }
+
+    const actualRoundCut = Math.min(allowedCut, this.expectedRoundCut);
+    const actualSmoothing0 = this.calculateActualSmoothingValue(allowedCut0);
+    const actualSmoothing1 = this.calculateActualSmoothingValue(allowedCut1);
+    const actualR = (this.cornerRadius * actualRoundCut) / this.expectedRoundCut;
+    const centerDistance = Math.hypot(actualR, actualRoundCut);
+    const bisector = directionVector(
+      (this.d1.x + this.d2.x) / 2,
+      (this.d1.y + this.d2.y) / 2,
+    );
+    const center: Point2D = {
+      x: this.p1.x + bisector.x * centerDistance,
+      y: this.p1.y + bisector.y * centerDistance,
+    };
+    const circleIntersection0: Point2D = {
+      x: this.p1.x + this.d1.x * actualRoundCut,
+      y: this.p1.y + this.d1.y * actualRoundCut,
+    };
+    const circleIntersection2: Point2D = {
+      x: this.p1.x + this.d2.x * actualRoundCut,
+      y: this.p1.y + this.d2.y * actualRoundCut,
+    };
+
+    const flanking0 = this.computeFlankingCurve(
+      actualRoundCut,
+      actualSmoothing0,
+      this.p1,
+      this.p0,
+      circleIntersection0,
+      circleIntersection2,
+      center,
+      actualR,
+    );
+    const flanking2 = reverseCubic(
+      this.computeFlankingCurve(
+        actualRoundCut,
+        actualSmoothing1,
+        this.p1,
+        this.p2,
+        circleIntersection2,
+        circleIntersection0,
+        center,
+        actualR,
+      ),
+    );
+
+    return [
+      flanking0,
+      circularArcCubic(
+        center.x,
+        center.y,
+        flanking0[6],
+        flanking0[7],
+        flanking2[0],
+        flanking2[1],
+      ),
+      flanking2,
+    ];
+  }
+
+  private calculateActualSmoothingValue(allowedCut: number): number {
+    if (allowedCut > this.expectedCut) {
+      return this.smoothing;
+    }
+    if (allowedCut > this.expectedRoundCut) {
+      return (
+        (this.smoothing * (allowedCut - this.expectedRoundCut)) /
+        (this.expectedCut - this.expectedRoundCut)
+      );
+    }
+    return 0;
+  }
+
+  private computeFlankingCurve(
+    actualRoundCut: number,
+    actualSmoothingValues: number,
+    corner: Point2D,
+    sideStart: Point2D,
+    circleSegmentIntersection: Point2D,
+    otherCircleSegmentIntersection: Point2D,
+    circleCenter: Point2D,
+    actualR: number,
+  ): CubicTuple {
+    const sideDirection = directionVector(
+      sideStart.x - corner.x,
+      sideStart.y - corner.y,
+    );
+    const cutDist = actualRoundCut * (1 + actualSmoothingValues);
+    const curveStart: Point2D = {
+      x: corner.x + sideDirection.x * cutDist,
+      y: corner.y + sideDirection.y * cutDist,
+    };
+    const midIntersection: Point2D = {
+      x: (circleSegmentIntersection.x + otherCircleSegmentIntersection.x) / 2,
+      y: (circleSegmentIntersection.y + otherCircleSegmentIntersection.y) / 2,
+    };
+    const p = lerpPoint(
+      circleSegmentIntersection,
+      midIntersection,
+      actualSmoothingValues,
+    );
+    const radialDir = directionVector(p.x - circleCenter.x, p.y - circleCenter.y);
+    const curveEnd: Point2D = {
+      x: circleCenter.x + radialDir.x * actualR,
+      y: circleCenter.y + radialDir.y * actualR,
+    };
+    const circleTangent = rotate90({
+      x: curveEnd.x - circleCenter.x,
+      y: curveEnd.y - circleCenter.y,
+    });
+    const anchorEnd =
+      lineIntersection(sideStart, sideDirection, curveEnd, circleTangent) ??
+      circleSegmentIntersection;
+    const anchorStart: Point2D = {
+      x: (curveStart.x + anchorEnd.x * 2) / 3,
+      y: (curveStart.y + anchorEnd.y * 2) / 3,
+    };
+
+    return [
+      curveStart.x,
+      curveStart.y,
+      anchorStart.x,
+      anchorStart.y,
+      anchorEnd.x,
+      anchorEnd.y,
+      curveEnd.x,
+      curveEnd.y,
+    ];
+  }
+}
+
+function ensureClockwiseVertices(vertices: RawVertex[]): RawVertex[] {
+  let signedArea2 = 0;
+  const n = vertices.length;
   for (let i = 0; i < n; i++) {
-    const prev = vertices[(i - 1 + n) % n].p;
     const curr = vertices[i].p;
     const next = vertices[(i + 1) % n].p;
-    const r = vertices[i].r.radius;
-    const smoothing = vertices[i].r.smoothing ?? 0;
+    signedArea2 += curr.x * next.y - next.x * curr.y;
+  }
+  return signedArea2 < 0 ? vertices.slice().reverse() : vertices;
+}
 
-    const dx1 = prev.x - curr.x;
-    const dy1 = prev.y - curr.y;
-    const dx2 = next.x - curr.x;
-    const dy2 = next.y - curr.y;
-    const len1 = Math.hypot(dx1, dy1);
-    const len2 = Math.hypot(dx2, dy2);
+function isConvexVertex(prev: Point2D, curr: Point2D, next: Point2D): boolean {
+  const v1x = curr.x - prev.x;
+  const v1y = curr.y - prev.y;
+  const v2x = next.x - curr.x;
+  const v2y = next.y - curr.y;
+  return v1x * v2y - v1y * v2x >= 0;
+}
 
-    if (len1 < 1e-6 || len2 < 1e-6 || r <= 1e-5) {
-      corners.push({
-        v: curr,
-        u1: { x: 0, y: 0 },
-        u2: { x: 0, y: 0 },
-        len1,
-        len2,
-        tanHalf: 1,
-        sweepAngle: 0,
-        expectedRoundCut: 0,
-        expectedTotalCut: 0,
-        smoothing: 0,
-      });
-      continue;
+function buildRoundedPolygonFeatures(rawVertices: RawVertex[]): ShapeFeature[] {
+  const vertices = ensureClockwiseVertices(dedupeVertices(rawVertices));
+  const n = vertices.length;
+  if (n < 3) return [];
+
+  const roundedCorners: RoundedCornerBuilder[] = [];
+  for (let i = 0; i < n; i++) {
+    const prev = vertices[(i + n - 1) % n].p;
+    const curr = vertices[i].p;
+    const next = vertices[(i + 1) % n].p;
+    roundedCorners.push(new RoundedCornerBuilder(prev, curr, next, vertices[i].r));
+  }
+
+  const cutAdjusts: Array<[number, number]> = [];
+  for (let ix = 0; ix < n; ix++) {
+    const nextIx = (ix + 1) % n;
+    const expectedRoundCut =
+      roundedCorners[ix].expectedRoundCut + roundedCorners[nextIx].expectedRoundCut;
+    const expectedCut =
+      roundedCorners[ix].expectedCut + roundedCorners[nextIx].expectedCut;
+    const sideSize = Math.hypot(
+      vertices[ix].p.x - vertices[nextIx].p.x,
+      vertices[ix].p.y - vertices[nextIx].p.y,
+    );
+
+    if (expectedRoundCut > sideSize && expectedRoundCut > 1e-6) {
+      cutAdjusts.push([sideSize / expectedRoundCut, 0]);
+    } else if (expectedCut > sideSize && expectedCut - expectedRoundCut > 1e-6) {
+      cutAdjusts.push([
+        1,
+        (sideSize - expectedRoundCut) / (expectedCut - expectedRoundCut),
+      ]);
+    } else {
+      cutAdjusts.push([1, 1]);
     }
+  }
 
-    const u1 = { x: dx1 / len1, y: dy1 / len1 };
-    const u2 = { x: dx2 / len2, y: dy2 / len2 };
-    const dot = Math.max(-0.999999, Math.min(0.999999, u1.x * u2.x + u1.y * u2.y));
-    const interiorAngle = Math.acos(dot);
-    const halfAngle = interiorAngle / 2;
-    const sinHalf = Math.sin(halfAngle);
-    const cosHalf = Math.cos(halfAngle);
+  const corners: CubicTuple[][] = [];
+  for (let i = 0; i < n; i++) {
+    const [r0, c0] = cutAdjusts[(i + n - 1) % n];
+    const [r1, c1] = cutAdjusts[i];
+    const rc = roundedCorners[i];
+    const allowedCut0 =
+      rc.expectedRoundCut * r0 + (rc.expectedCut - rc.expectedRoundCut) * c0;
+    const allowedCut1 =
+      rc.expectedRoundCut * r1 + (rc.expectedCut - rc.expectedRoundCut) * c1;
+    corners.push(rc.getCubics(allowedCut0, allowedCut1));
+  }
 
-    if (sinHalf < 1e-4 || Math.abs(Math.PI - interiorAngle) < 1e-4) {
-      corners.push({
-        v: curr,
-        u1,
-        u2,
-        len1,
-        len2,
-        tanHalf: 1,
-        sweepAngle: 0,
-        expectedRoundCut: 0,
-        expectedTotalCut: 0,
-        smoothing: 0,
-      });
-      continue;
-    }
+  const features: ShapeFeature[] = [];
+  for (let i = 0; i < n; i++) {
+    const prev = vertices[(i + n - 1) % n].p;
+    const curr = vertices[i].p;
+    const next = vertices[(i + 1) % n].p;
+    const convex = isConvexVertex(prev, curr, next);
+    const cornerCubics = corners[i];
+    const nextCornerCubics = corners[(i + 1) % n];
 
-    const cotHalf = cosHalf / sinHalf;
-    const tanHalf = sinHalf / cosHalf;
-    const expectedRoundCut = r * cotHalf;
-    const expectedTotalCut = expectedRoundCut * (1 + smoothing);
+    features.push({
+      type: "corner",
+      convex,
+      cubics: cornerCubics,
+    });
 
-    corners.push({
-      v: curr,
-      u1,
-      u2,
-      len1,
-      len2,
-      tanHalf,
-      sweepAngle: Math.PI - interiorAngle,
-      expectedRoundCut,
-      expectedTotalCut,
-      smoothing,
+    const edgeStart = cornerCubics[cornerCubics.length - 1];
+    const edgeEnd = nextCornerCubics[0];
+    features.push({
+      type: "edge",
+      cubics: [
+        lineCubic(
+          { x: edgeStart[6], y: edgeStart[7] },
+          { x: edgeEnd[0], y: edgeEnd[1] },
+        ),
+      ],
     });
   }
 
-  const edgeScale: number[] = [];
-  for (let i = 0; i < n; i++) {
-    const cA = corners[i];
-    const cB = corners[(i + 1) % n];
-    const edgeLen = cA.len2;
-    const needed = cA.expectedTotalCut + cB.expectedTotalCut;
-    edgeScale.push(needed > edgeLen && needed > 1e-6 ? edgeLen / needed : 1);
-  }
-
-  interface BuiltCorner {
-    start: Point2D;
-    end: Point2D;
-    arcs: CubicTuple[];
-  }
-
-  const builtCorners: BuiltCorner[] = corners.map((c, i) => {
-    if (c.expectedTotalCut <= 1e-5 || c.sweepAngle <= 1e-4) {
-      return { start: c.v, end: c.v, arcs: [] };
-    }
-    const prevEdgeRatio = edgeScale[(i - 1 + n) % n];
-    const nextEdgeRatio = edgeScale[i];
-    const ratio = Math.min(1, prevEdgeRatio, nextEdgeRatio);
-    const actualCut = c.expectedTotalCut * ratio;
-
-    const start: Point2D = {
-      x: c.v.x + c.u1.x * actualCut,
-      y: c.v.y + c.u1.y * actualCut,
-    };
-    const end: Point2D = {
-      x: c.v.x + c.u2.x * actualCut,
-      y: c.v.y + c.u2.y * actualCut,
-    };
-
-    const roundCut = c.expectedRoundCut * ratio;
-    const effRadius = roundCut * c.tanHalf;
-    const arcHandle = (4 / 3) * Math.tan(c.sweepAngle / 4) * effRadius;
-    const smoothExtra = ((actualCut - roundCut) * 2) / 3;
-    const handleDist = Math.min(actualCut * 0.95, arcHandle + smoothExtra);
-
-    const fullCubic: CubicTuple = [
-      start.x,
-      start.y,
-      start.x - c.u1.x * handleDist,
-      start.y - c.u1.y * handleDist,
-      end.x - c.u2.x * handleDist,
-      end.y - c.u2.y * handleDist,
-      end.x,
-      end.y,
-    ];
-
-    if (c.sweepAngle > Math.PI / 2 && c.smoothing === 0) {
-      const halfSweep = c.sweepAngle / 2;
-      const halfHandle = (4 / 3) * Math.tan(halfSweep / 4) * effRadius;
-      const bisX = c.u1.x + c.u2.x;
-      const bisY = c.u1.y + c.u2.y;
-      const bisLen = Math.hypot(bisX, bisY);
-      if (bisLen > 1e-5) {
-        const bux = bisX / bisLen;
-        const buy = bisY / bisLen;
-        const centerDist = Math.hypot(roundCut, effRadius);
-        const cx = c.v.x + bux * centerDist;
-        const cy = c.v.y + buy * centerDist;
-        const midX = cx - bux * effRadius;
-        const midY = cy - buy * effRadius;
-        const dirSign =
-          (end.x - start.x) * -buy + (end.y - start.y) * bux >= 0 ? 1 : -1;
-        const tx = -buy * dirSign;
-        const ty = bux * dirSign;
-
-        const startArc: Point2D = {
-          x: c.v.x + c.u1.x * roundCut,
-          y: c.v.y + c.u1.y * roundCut,
-        };
-        const endArc: Point2D = {
-          x: c.v.x + c.u2.x * roundCut,
-          y: c.v.y + c.u2.y * roundCut,
-        };
-
-        return {
-          start: startArc,
-          end: endArc,
-          arcs: [
-            [
-              startArc.x,
-              startArc.y,
-              startArc.x - c.u1.x * halfHandle,
-              startArc.y - c.u1.y * halfHandle,
-              midX - tx * halfHandle,
-              midY - ty * halfHandle,
-              midX,
-              midY,
-            ],
-            [
-              midX,
-              midY,
-              midX + tx * halfHandle,
-              midY + ty * halfHandle,
-              endArc.x - c.u2.x * halfHandle,
-              endArc.y - c.u2.y * halfHandle,
-              endArc.x,
-              endArc.y,
-            ],
-          ],
-        };
-      }
-    }
-
-    return { start, end, arcs: [fullCubic] };
-  });
-
-  const cubics: CubicTuple[] = [];
-  for (let i = 0; i < n; i++) {
-    const curr = builtCorners[i];
-    const next = builtCorners[(i + 1) % n];
-    for (const arc of curr.arcs) {
-      cubics.push(arc);
-    }
-    const edgeGap = Math.hypot(next.start.x - curr.end.x, next.start.y - curr.end.y);
-    if (edgeGap > 1e-5) {
-      cubics.push(lineCubic(curr.end, next.start));
-    }
-  }
-
-  return cubics;
+  return features;
 }
 
-function normalizeAndOrientShape(
+function transformFeatures(
+  features: readonly ShapeFeature[],
+  mapPoint: (x: number, y: number) => Point2D,
+): ShapeFeature[] {
+  return features.map((f) => {
+    const mappedCubics: CubicTuple[] = f.cubics.map((c) => {
+      const p0 = mapPoint(c[0], c[1]);
+      const p1 = mapPoint(c[2], c[3]);
+      const p2 = mapPoint(c[4], c[5]);
+      const p3 = mapPoint(c[6], c[7]);
+      return [p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y];
+    });
+    return f.type === "corner"
+      ? { type: "corner", convex: f.convex, cubics: mappedCubics }
+      : { type: "edge", cubics: mappedCubics };
+  });
+}
+
+function normalizeAndOrientShapeFromFeatures(
   name: M3EShapeName,
-  rawCubics: CubicTuple[],
+  rawFeatures: readonly ShapeFeature[],
 ): NormalizedShapeData {
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
   let maxY = -Infinity;
 
-  for (const c of rawCubics) {
-    for (let s = 0; s <= 16; s++) {
-      const p = evalCubic(c, s / 16);
-      if (p.x < minX) minX = p.x;
-      if (p.y < minY) minY = p.y;
-      if (p.x > maxX) maxX = p.x;
-      if (p.y > maxY) maxY = p.y;
+  for (const f of rawFeatures) {
+    for (const c of f.cubics) {
+      for (let s = 0; s <= 16; s++) {
+        const p = evalCubic(c, s / 16);
+        if (p.x < minX) minX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y > maxY) maxY = p.y;
+      }
     }
   }
 
@@ -520,76 +692,39 @@ function normalizeAndOrientShape(
   const cx = (minX + maxX) / 2;
   const cy = (minY + maxY) / 2;
 
-  const tx = (x: number) => (x - cx) / maxSide + 0.5;
-  const ty = (y: number) => (y - cy) / maxSide + 0.5;
+  const normalizedFeatures = transformFeatures(rawFeatures, (x, y) => ({
+    x: (x - cx) / maxSide + 0.5,
+    y: (y - cy) / maxSide + 0.5,
+  }));
 
-  let cubics: CubicTuple[] = rawCubics.map((c) => [
-    tx(c[0]),
-    ty(c[1]),
-    tx(c[2]),
-    ty(c[3]),
-    tx(c[4]),
-    ty(c[5]),
-    tx(c[6]),
-    ty(c[7]),
-  ]);
-
-  let signedArea2 = 0;
-  for (const c of cubics) {
-    let prev = { x: c[0], y: c[1] };
-    for (let s = 1; s <= 8; s++) {
-      const curr = evalCubic(c, s / 8);
-      signedArea2 += prev.x * curr.y - curr.x * prev.y;
-      prev = curr;
-    }
-  }
-  if (signedArea2 < 0) {
-    cubics = cubics.slice().reverse().map(reverseCubic);
-  }
-
-  let bestIdx = 0;
-  let bestT = 0;
-  let bestScore = Infinity;
-
-  for (let i = 0; i < cubics.length; i++) {
-    const c = cubics[i];
-    for (let s = 0; s < 32; s++) {
-      const t = s / 32;
-      const p = evalCubic(c, t);
-      const angle = Math.atan2(p.y - 0.5, p.x - 0.5);
-      const absAngle = Math.abs(angle);
-      if (absAngle < bestScore) {
-        bestScore = absAngle;
-        bestIdx = i;
-        bestT = t;
+  const rawCubics: CubicTuple[] = [];
+  for (let i = 0; i < normalizedFeatures.length; i++) {
+    const f = normalizedFeatures[i];
+    if (i === 0 && f.cubics.length === 3) {
+      const [, secondSplit] = splitCubic(f.cubics[1], 0.5);
+      for (const candidate of [secondSplit, f.cubics[2]]) {
+        if (!isZeroLengthCubic(candidate)) rawCubics.push(candidate);
+      }
+    } else {
+      for (const candidate of f.cubics) {
+        if (!isZeroLengthCubic(candidate)) rawCubics.push(candidate);
       }
     }
   }
-
-  if (bestT > 1e-3 && bestT < 1 - 1e-3) {
-    const [firstHalf, secondHalf] = splitCubic(cubics[bestIdx], bestT);
-    cubics = [
-      secondHalf,
-      ...cubics.slice(bestIdx + 1),
-      ...cubics.slice(0, bestIdx),
-      firstHalf,
-    ];
-  } else if (bestIdx > 0) {
-    cubics = [...cubics.slice(bestIdx), ...cubics.slice(0, bestIdx)];
+  if (normalizedFeatures.length > 0 && normalizedFeatures[0].cubics.length === 3) {
+    const [firstSplit] = splitCubic(normalizedFeatures[0].cubics[1], 0.5);
+    for (const candidate of [normalizedFeatures[0].cubics[0], firstSplit]) {
+      if (!isZeroLengthCubic(candidate)) rawCubics.push(candidate);
+    }
   }
 
+  let cubics = rawCubics;
   if (cubics.length > 0) {
     const first = cubics[0];
     const last = cubics[cubics.length - 1];
-    cubics[cubics.length - 1] = [
-      last[0],
-      last[1],
-      last[2],
-      last[3],
-      last[4],
-      last[5],
-      first[0],
-      first[1],
+    cubics = [
+      ...cubics.slice(0, -1),
+      [last[0], last[1], last[2], last[3], last[4], last[5], first[0], first[1]],
     ];
   }
 
@@ -614,6 +749,7 @@ function normalizeAndOrientShape(
   return {
     name,
     cubics,
+    features: normalizedFeatures,
     bounds: [bLeft, bTop, bRight, bBottom],
     maxRadialDistance,
     previewSvgPath: cubicsToSvgPath(cubics, 100, 1),
@@ -628,48 +764,357 @@ function cubicArcLength(c: CubicTuple, steps = 16): number {
     len += Math.hypot(curr.x - prev.x, curr.y - prev.y);
     prev = curr;
   }
-  return Math.max(len, 1e-6);
+  return len;
 }
 
-function cumulativeArcCutPoints(cubics: readonly CubicTuple[]): number[] {
-  const lengths = cubics.map((c) => cubicArcLength(c));
-  const total = lengths.reduce((acc, v) => acc + v, 0);
-  const cuts = [0];
-  let acc = 0;
-  for (let i = 0; i < lengths.length - 1; i++) {
-    acc += lengths[i] / total;
-    cuts.push(acc);
+interface ProgressableCornerFeature {
+  readonly progress: number;
+  readonly convex: boolean;
+  readonly representativePoint: Point2D;
+}
+
+interface MeasuredCubic {
+  readonly cubic: CubicTuple;
+  readonly startOutlineProgress: number;
+  readonly endOutlineProgress: number;
+}
+
+interface MeasuredPolygonData {
+  readonly cubics: readonly MeasuredCubic[];
+  readonly corners: readonly ProgressableCornerFeature[];
+}
+
+function measureShapePolygon(shape: NormalizedShapeData): MeasuredPolygonData {
+  const seqCubics: CubicTuple[] = [];
+  const featureToCubicIndices: Array<{
+    feature: ShapeFeature;
+    startIdx: number;
+    endIdx: number;
+  }> = [];
+
+  const features = shape.features;
+  if (features.length > 0 && features[0].cubics.length === 3) {
+    const f0 = features[0];
+    const [firstHalf, secondHalf] = splitCubic(f0.cubics[1], 0.5);
+    const startIdx = seqCubics.length;
+    seqCubics.push(secondHalf, f0.cubics[2]);
+    for (let i = 1; i < features.length; i++) {
+      const fi = features[i];
+      const sIdx = seqCubics.length;
+      for (const c of fi.cubics) seqCubics.push(c);
+      featureToCubicIndices.push({
+        feature: fi,
+        startIdx: sIdx,
+        endIdx: seqCubics.length - 1,
+      });
+    }
+    seqCubics.push(f0.cubics[0], firstHalf);
+    featureToCubicIndices.unshift({
+      feature: f0,
+      startIdx: seqCubics.length - 2,
+      endIdx: startIdx + 1,
+    });
+  } else {
+    for (const fi of features) {
+      const sIdx = seqCubics.length;
+      for (const c of fi.cubics) seqCubics.push(c);
+      featureToCubicIndices.push({
+        feature: fi,
+        startIdx: sIdx,
+        endIdx: seqCubics.length - 1,
+      });
+    }
   }
-  cuts.push(1);
-  return cuts;
+
+  const lengths = seqCubics.map((c) => cubicArcLength(c));
+  const total = Math.max(
+    1e-6,
+    lengths.reduce((acc, v) => acc + v, 0),
+  );
+  const cumulative: number[] = [0];
+  let acc = 0;
+  for (let i = 0; i < lengths.length; i++) {
+    acc += lengths[i] / total;
+    cumulative.push(i === lengths.length - 1 ? 1 : acc);
+  }
+
+  const corners: ProgressableCornerFeature[] = [];
+  for (const entry of featureToCubicIndices) {
+    if (entry.feature.type !== "corner") continue;
+    const fCubics = entry.feature.cubics;
+    const first = fCubics[0];
+    const last = fCubics[fCubics.length - 1];
+    const rep: Point2D = {
+      x: (first[0] + last[6]) / 2,
+      y: (first[1] + last[7]) / 2,
+    };
+    let progress: number;
+    if (entry.startIdx > entry.endIdx) {
+      progress = 0;
+    } else {
+      progress = positiveModulo(
+        (cumulative[entry.startIdx] + cumulative[entry.endIdx + 1]) / 2,
+        1,
+      );
+    }
+    corners.push({
+      progress,
+      convex: entry.feature.convex,
+      representativePoint: rep,
+    });
+  }
+
+  const measuredCubics: MeasuredCubic[] = [];
+  let prevEnd = 0;
+  for (let i = 0; i < seqCubics.length; i++) {
+    const startP = cumulative[i];
+    const endP = cumulative[i + 1];
+    if (endP - startP > DISTANCE_EPSILON) {
+      measuredCubics.push({
+        cubic: seqCubics[i],
+        startOutlineProgress: prevEnd,
+        endOutlineProgress: endP,
+      });
+      prevEnd = endP;
+    }
+  }
+
+  if (measuredCubics.length > 0) {
+    const lastIdx = measuredCubics.length - 1;
+    measuredCubics[lastIdx] = {
+      ...measuredCubics[lastIdx],
+      endOutlineProgress: 1,
+    };
+  }
+
+  return { cubics: measuredCubics, corners };
 }
 
-function subdivideAtArcMilestones(
-  cubics: readonly CubicTuple[],
-  ownCuts: readonly number[],
-  unionCuts: readonly number[],
-): CubicTuple[] {
-  const out: CubicTuple[] = [];
-  let segIdx = 0;
+function progressDistance(p1: number, p2: number): number {
+  const diff = Math.abs(p1 - p2);
+  return Math.min(diff, 1 - diff);
+}
 
-  for (let k = 0; k < unionCuts.length - 1; k++) {
-    const u0 = unionCuts[k];
-    const u1 = unionCuts[k + 1];
-    const mid = (u0 + u1) / 2;
+function progressInRange(
+  progress: number,
+  progressFrom: number,
+  progressTo: number,
+): boolean {
+  if (progressTo >= progressFrom) {
+    return progress >= progressFrom && progress <= progressTo;
+  }
+  return progress >= progressFrom || progress <= progressTo;
+}
 
-    while (segIdx < cubics.length - 1 && ownCuts[segIdx + 1] < mid) {
-      segIdx++;
+class CyclicDoubleMapper {
+  private readonly source: number[];
+  private readonly target: number[];
+
+  constructor(mappings: ReadonlyArray<readonly [number, number]>) {
+    this.source = mappings.map((m) => m[0]);
+    this.target = mappings.map((m) => m[1]);
+  }
+
+  map(x: number): number {
+    return this.linearMap(this.source, this.target, positiveModulo(x, 1));
+  }
+
+  mapBack(y: number): number {
+    return this.linearMap(this.target, this.source, positiveModulo(y, 1));
+  }
+
+  private linearMap(xValues: number[], yValues: number[], x: number): number {
+    const n = xValues.length;
+    if (n === 0) return x;
+    let segIdx = 0;
+    for (let i = 0; i < n; i++) {
+      if (progressInRange(x, xValues[i], xValues[(i + 1) % n])) {
+        segIdx = i;
+        break;
+      }
+    }
+    const nextIdx = (segIdx + 1) % n;
+    const segSizeX = positiveModulo(xValues[nextIdx] - xValues[segIdx], 1);
+    const segSizeY = positiveModulo(yValues[nextIdx] - yValues[segIdx], 1);
+    const posInSeg =
+      segSizeX < 1e-5
+        ? 0.5
+        : positiveModulo(x - xValues[segIdx], 1) / segSizeX;
+    return positiveModulo(yValues[segIdx] + segSizeY * posInSeg, 1);
+  }
+}
+
+function buildFeatureMapper(
+  corners1: readonly ProgressableCornerFeature[],
+  corners2: readonly ProgressableCornerFeature[],
+): CyclicDoubleMapper {
+  const candidates: Array<{
+    distSq: number;
+    f1: ProgressableCornerFeature;
+    f2: ProgressableCornerFeature;
+  }> = [];
+
+  for (const f1 of corners1) {
+    for (const f2 of corners2) {
+      if (f1.convex !== f2.convex) continue;
+      const dx = f1.representativePoint.x - f2.representativePoint.x;
+      const dy = f1.representativePoint.y - f2.representativePoint.y;
+      candidates.push({ distSq: dx * dx + dy * dy, f1, f2 });
+    }
+  }
+  candidates.sort((a, b) => a.distSq - b.distSq);
+
+  if (candidates.length === 0) {
+    return new CyclicDoubleMapper([
+      [0, 0],
+      [0.5, 0.5],
+    ]);
+  }
+  if (candidates.length === 1) {
+    const { f1, f2 } = candidates[0];
+    return new CyclicDoubleMapper([
+      [f1.progress, f2.progress],
+      [positiveModulo(f1.progress + 0.5, 1), positiveModulo(f2.progress + 0.5, 1)],
+    ]);
+  }
+
+  const mapping: Array<[number, number]> = [];
+  const used1 = new Set<ProgressableCornerFeature>();
+  const used2 = new Set<ProgressableCornerFeature>();
+
+  for (const { f1, f2 } of candidates) {
+    if (used1.has(f1) || used2.has(f2)) continue;
+
+    let insertionIndex = 0;
+    while (insertionIndex < mapping.length && mapping[insertionIndex][0] < f1.progress) {
+      insertionIndex++;
+    }
+    if (
+      insertionIndex < mapping.length &&
+      Math.abs(mapping[insertionIndex][0] - f1.progress) < 1e-7
+    ) {
+      continue;
     }
 
-    const segStart = ownCuts[segIdx];
-    const segEnd = ownCuts[segIdx + 1];
-    const span = Math.max(1e-7, segEnd - segStart);
-    const t0 = Math.max(0, Math.min(1, (u0 - segStart) / span));
-    const t1 = Math.max(t0, Math.min(1, (u1 - segStart) / span));
+    const n = mapping.length;
+    if (n >= 1) {
+      const [before1, before2] = mapping[(insertionIndex + n - 1) % n];
+      const [after1, after2] = mapping[insertionIndex % n];
 
-    out.push(sliceCubic(cubics[segIdx], t0, t1));
+      if (
+        progressDistance(f1.progress, before1) < DISTANCE_EPSILON ||
+        progressDistance(f1.progress, after1) < DISTANCE_EPSILON ||
+        progressDistance(f2.progress, before2) < DISTANCE_EPSILON ||
+        progressDistance(f2.progress, after2) < DISTANCE_EPSILON
+      ) {
+        continue;
+      }
+
+      if (n > 1 && !progressInRange(f2.progress, before2, after2)) {
+        continue;
+      }
+    }
+
+    mapping.splice(insertionIndex, 0, [f1.progress, f2.progress]);
+    used1.add(f1);
+    used2.add(f2);
   }
 
+  if (mapping.length < 2) {
+    if (mapping.length === 1) {
+      const [p1, p2] = mapping[0];
+      return new CyclicDoubleMapper([
+        [p1, p2],
+        [positiveModulo(p1 + 0.5, 1), positiveModulo(p2 + 0.5, 1)],
+      ]);
+    }
+    return new CyclicDoubleMapper([
+      [0, 0],
+      [0.5, 0.5],
+    ]);
+  }
+
+  return new CyclicDoubleMapper(mapping);
+}
+
+function cutMeasuredCubicAtProgress(
+  mc: MeasuredCubic,
+  cutOutlineProgress: number,
+): [MeasuredCubic, MeasuredCubic] {
+  const clamped = Math.max(
+    mc.startOutlineProgress,
+    Math.min(mc.endOutlineProgress, cutOutlineProgress),
+  );
+  const span = Math.max(1e-7, mc.endOutlineProgress - mc.startOutlineProgress);
+  const localT = Math.max(0, Math.min(1, (clamped - mc.startOutlineProgress) / span));
+  const [c1, c2] = splitCubic(mc.cubic, localT);
+  return [
+    {
+      cubic: c1,
+      startOutlineProgress: mc.startOutlineProgress,
+      endOutlineProgress: clamped,
+    },
+    {
+      cubic: c2,
+      startOutlineProgress: clamped,
+      endOutlineProgress: mc.endOutlineProgress,
+    },
+  ];
+}
+
+function cutAndShiftMeasuredCubics(
+  cubics: readonly MeasuredCubic[],
+  cutPoint: number,
+): MeasuredCubic[] {
+  if (cutPoint < 1e-6 || cutPoint > 1 - 1e-6 || cubics.length === 0) {
+    return cubics.slice();
+  }
+
+  let targetIndex = cubics.findIndex(
+    (c) => cutPoint >= c.startOutlineProgress && cutPoint <= c.endOutlineProgress,
+  );
+  if (targetIndex < 0) targetIndex = 0;
+
+  const target = cubics[targetIndex];
+  const [b1, b2] = cutMeasuredCubicAtProgress(target, cutPoint);
+
+  const orderedCubics: CubicTuple[] = [b2.cubic];
+  for (let i = 1; i < cubics.length; i++) {
+    orderedCubics.push(cubics[(targetIndex + i) % cubics.length].cubic);
+  }
+  orderedCubics.push(b1.cubic);
+
+  const orderedProgress: number[] = [];
+  const totalCount = cubics.length + 2;
+  for (let index = 0; index < totalCount; index++) {
+    if (index === 0) {
+      orderedProgress.push(0);
+    } else if (index === totalCount - 1) {
+      orderedProgress.push(1);
+    } else {
+      const cubicIndex = (targetIndex + index - 1) % cubics.length;
+      orderedProgress.push(
+        positiveModulo(cubics[cubicIndex].endOutlineProgress - cutPoint, 1),
+      );
+    }
+  }
+
+  const out: MeasuredCubic[] = [];
+  for (let i = 0; i < orderedCubics.length; i++) {
+    const s = orderedProgress[i];
+    const e = orderedProgress[i + 1];
+    if (e - s > 1e-6) {
+      out.push({
+        cubic: orderedCubics[i],
+        startOutlineProgress: s,
+        endOutlineProgress: e,
+      });
+    }
+  }
+  if (out.length > 0) {
+    out[0] = { ...out[0], startOutlineProgress: 0 };
+    out[out.length - 1] = { ...out[out.length - 1], endOutlineProgress: 1 };
+  }
   return out;
 }
 
@@ -677,21 +1122,88 @@ export function createMorphPair(
   startShape: NormalizedShapeData,
   endShape: NormalizedShapeData,
 ): MorphPair {
-  const cutsA = cumulativeArcCutPoints(startShape.cubics);
-  const cutsB = cumulativeArcCutPoints(endShape.cubics);
+  const mp1 = measureShapePolygon(startShape);
+  const mp2 = measureShapePolygon(endShape);
+  const doubleMapper = buildFeatureMapper(mp1.corners, mp2.corners);
+  const polygon2CutPoint = doubleMapper.map(0);
 
-  const rawUnion = [...cutsA, ...cutsB].sort((a, b) => a - b);
-  const union: number[] = [];
-  for (const val of rawUnion) {
-    if (union.length === 0 || val - union[union.length - 1] > 1e-4) {
-      union.push(val);
+  const bs1 = mp1.cubics;
+  const bs2 = cutAndShiftMeasuredCubics(mp2.cubics, polygon2CutPoint);
+
+  const startCubics: CubicTuple[] = [];
+  const endCubics: CubicTuple[] = [];
+
+  let i1 = 0;
+  let i2 = 0;
+  let b1: MeasuredCubic | undefined = bs1[i1++];
+  let b2: MeasuredCubic | undefined = bs2[i2++];
+
+  let guard = 0;
+  while (b1 && b2 && guard < 1024) {
+    guard++;
+    const b1a = i1 === bs1.length ? 1 : b1.endOutlineProgress;
+    const b2a =
+      i2 === bs2.length
+        ? 1
+        : doubleMapper.mapBack(
+            positiveModulo(b2.endOutlineProgress + polygon2CutPoint, 1),
+          );
+    const minb = Math.min(b1a, b2a);
+
+    let seg1: MeasuredCubic;
+    let newb1: MeasuredCubic | undefined;
+    if (b1a > minb + ANGLE_EPSILON) {
+      [seg1, newb1] = cutMeasuredCubicAtProgress(b1, minb);
+    } else {
+      seg1 = b1;
+      newb1 = bs1[i1++];
     }
-  }
-  union[0] = 0;
-  union[union.length - 1] = 1;
 
-  const startCubics = subdivideAtArcMilestones(startShape.cubics, cutsA, union);
-  const endCubics = subdivideAtArcMilestones(endShape.cubics, cutsB, union);
+    let seg2: MeasuredCubic;
+    let newb2: MeasuredCubic | undefined;
+    if (b2a > minb + ANGLE_EPSILON) {
+      const mappedCut = positiveModulo(
+        doubleMapper.map(minb) - polygon2CutPoint,
+        1,
+      );
+      [seg2, newb2] = cutMeasuredCubicAtProgress(b2, mappedCut);
+    } else {
+      seg2 = b2;
+      newb2 = bs2[i2++];
+    }
+
+    startCubics.push(seg1.cubic);
+    endCubics.push(seg2.cubic);
+    b1 = newb1;
+    b2 = newb2;
+  }
+
+  if (startCubics.length > 0 && endCubics.length > 0) {
+    const sFirst = startCubics[0];
+    const sLast = startCubics[startCubics.length - 1];
+    startCubics[startCubics.length - 1] = [
+      sLast[0],
+      sLast[1],
+      sLast[2],
+      sLast[3],
+      sLast[4],
+      sLast[5],
+      sFirst[0],
+      sFirst[1],
+    ];
+    const eFirst = endCubics[0];
+    const eLast = endCubics[endCubics.length - 1];
+    endCubics[endCubics.length - 1] = [
+      eLast[0],
+      eLast[1],
+      eLast[2],
+      eLast[3],
+      eLast[4],
+      eLast[5],
+      eFirst[0],
+      eFirst[1],
+    ];
+  }
 
   return {
     from: startShape.name,
@@ -733,32 +1245,15 @@ export function cubicsToSvgPath(
   if (cubics.length === 0) return "";
 
   const scaled = viewportSize * scaleFactor;
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  for (const c of cubics) {
-    if (c[0] < minX) minX = c[0];
-    if (c[1] < minY) minY = c[1];
-    if (c[0] > maxX) maxX = c[0];
-    if (c[1] > maxY) maxY = c[1];
-    if (c[2] < minX) minX = c[2];
-    if (c[3] < minY) minY = c[3];
-    if (c[2] > maxX) maxX = c[2];
-    if (c[3] > maxY) maxY = c[3];
-  }
-  const pathCenterX = ((minX + maxX) / 2) * scaled;
-  const pathCenterY = ((minY + maxY) / 2) * scaled;
-  const offsetX = viewportSize / 2 - pathCenterX;
-  const offsetY = viewportSize / 2 - pathCenterY;
-
-  const fmt = (v: number, off: number) => Number((v * scaled + off).toFixed(2));
+  const halfViewport = viewportSize / 2;
+  const fmt = (v: number) =>
+    Number(((v - 0.5) * scaled + halfViewport).toFixed(2));
 
   const first = cubics[0];
-  const parts = [`M ${fmt(first[0], offsetX)} ${fmt(first[1], offsetY)}`];
+  const parts = [`M ${fmt(first[0])} ${fmt(first[1])}`];
   for (const c of cubics) {
     parts.push(
-      `C ${fmt(c[2], offsetX)} ${fmt(c[3], offsetY)}, ${fmt(c[4], offsetX)} ${fmt(c[5], offsetY)}, ${fmt(c[6], offsetX)} ${fmt(c[7], offsetY)}`,
+      `C ${fmt(c[2])} ${fmt(c[3])}, ${fmt(c[4])} ${fmt(c[5])}, ${fmt(c[6])} ${fmt(c[7])}`,
     );
   }
   parts.push("Z");
@@ -791,22 +1286,19 @@ function dedupeVertices(vertices: RawVertex[]): RawVertex[] {
   return out;
 }
 
-function scaleCubics(cubics: CubicTuple[], sx: number, sy: number): CubicTuple[] {
-  return cubics.map((c) => [
-    c[0] * sx,
-    c[1] * sy,
-    c[2] * sx,
-    c[3] * sy,
-    c[4] * sx,
-    c[5] * sy,
-    c[6] * sx,
-    c[7] * sy,
-  ]);
+function rotateNormalizedShape(
+  shape: NormalizedShapeData,
+  deg: number,
+): NormalizedShapeData {
+  const rotatedFeatures = transformFeatures(shape.features, (x, y) =>
+    rotatePointDeg({ x, y }, deg, { x: 0.5, y: 0.5 }),
+  );
+  return normalizeAndOrientShapeFromFeatures(shape.name, rotatedFeatures);
 }
 
 function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
   const build = (name: M3EShapeName, vertices: RawVertex[]) =>
-    normalizeAndOrientShape(name, buildRoundedPolygonCubics(dedupeVertices(vertices)));
+    normalizeAndOrientShapeFromFeatures(name, buildRoundedPolygonFeatures(vertices));
 
   return {
     circle: build("circle", regularPolygonVertices(10, cornerRound100)),
@@ -866,11 +1358,11 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         cornerRound100,
       ]),
     ),
-    oval: build(
+    oval: normalizeAndOrientShapeFromFeatures(
       "oval",
-      rotateVertices(
-        scaleVertices(regularPolygonVertices(10, cornerRound100), 1, 0.64),
-        -45,
+      transformFeatures(
+        buildRoundedPolygonFeatures(regularPolygonVertices(10, cornerRound100)),
+        (x, y) => rotatePointDeg({ x, y: y * 0.64 }, -45, { x: 0, y: 0 }),
       ),
     ),
     pill: build(
@@ -1074,33 +1566,30 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         true,
       ),
     ),
-    puffy: normalizeAndOrientShape(
+    puffy: normalizeAndOrientShapeFromFeatures(
       "puffy",
-      scaleCubics(
-        buildRoundedPolygonCubics(
-          dedupeVertices(
-            doRepeat(
-              [
-                { p: { x: 0.5, y: 0.053 }, r: UNROUNDED },
-                { p: { x: 0.545, y: -0.04 }, r: { radius: 0.405 } },
-                { p: { x: 0.67, y: -0.035 }, r: { radius: 0.426 } },
-                { p: { x: 0.717, y: 0.066 }, r: { radius: 0.574 } },
-                { p: { x: 0.722, y: 0.128 }, r: UNROUNDED },
-                { p: { x: 0.777, y: 0.002 }, r: { radius: 0.36 } },
-                { p: { x: 0.914, y: 0.149 }, r: { radius: 0.66 } },
-                { p: { x: 0.926, y: 0.289 }, r: { radius: 0.66 } },
-                { p: { x: 0.881, y: 0.346 }, r: UNROUNDED },
-                { p: { x: 0.94, y: 0.344 }, r: { radius: 0.126 } },
-                { p: { x: 1.003, y: 0.437 }, r: { radius: 0.255 } },
-              ],
-              2,
-              { x: 0.5, y: 0.5 },
-              true,
-            ),
+      transformFeatures(
+        buildRoundedPolygonFeatures(
+          doRepeat(
+            [
+              { p: { x: 0.5, y: 0.053 }, r: UNROUNDED },
+              { p: { x: 0.545, y: -0.04 }, r: { radius: 0.405 } },
+              { p: { x: 0.67, y: -0.035 }, r: { radius: 0.426 } },
+              { p: { x: 0.717, y: 0.066 }, r: { radius: 0.574 } },
+              { p: { x: 0.722, y: 0.128 }, r: UNROUNDED },
+              { p: { x: 0.777, y: 0.002 }, r: { radius: 0.36 } },
+              { p: { x: 0.914, y: 0.149 }, r: { radius: 0.66 } },
+              { p: { x: 0.926, y: 0.289 }, r: { radius: 0.66 } },
+              { p: { x: 0.881, y: 0.346 }, r: UNROUNDED },
+              { p: { x: 0.94, y: 0.344 }, r: { radius: 0.126 } },
+              { p: { x: 1.003, y: 0.437 }, r: { radius: 0.255 } },
+            ],
+            2,
+            { x: 0.5, y: 0.5 },
+            true,
           ),
         ),
-        1,
-        0.742,
+        (x, y) => ({ x, y: y * 0.742 }),
       ),
     ),
     puffyDiamond: build(
@@ -1215,6 +1704,11 @@ export const LOADING_INDICATOR_SHAPE_SEQUENCE: readonly M3EShapeName[] = [
   "oval",
 ] as const;
 
+export const LOADING_INDICATOR_DETERMINATE_SHAPE_SEQUENCE: readonly M3EShapeName[] = [
+  "circle",
+  "softBurst",
+] as const;
+
 export function calculateIndicatorScaleFactor(
   shapeNames: readonly M3EShapeName[] = LOADING_INDICATOR_SHAPE_SEQUENCE,
 ): number {
@@ -1237,12 +1731,22 @@ export const LOADING_INDICATOR_MORPH_SEQUENCE: readonly MorphPair[] =
     return createMorphPair(MATERIAL_SHAPES[fromName], MATERIAL_SHAPES[toName]);
   });
 
+export const LOADING_INDICATOR_DETERMINATE_MORPH_SEQUENCE: readonly MorphPair[] = [
+  createMorphPair(
+    rotateNormalizedShape(MATERIAL_SHAPES.circle, 360 / 20),
+    MATERIAL_SHAPES.softBurst,
+  ),
+];
+
 export const LOADING_INDICATOR_TOKENS = {
   containerSize: 48,
   activeIndicatorSize: 38,
   activeIndicatorScale: 38 / 48,
   effectiveScaleFactor:
     calculateIndicatorScaleFactor(LOADING_INDICATOR_SHAPE_SEQUENCE) * (38 / 48),
+  determinateEffectiveScaleFactor:
+    calculateIndicatorScaleFactor(LOADING_INDICATOR_DETERMINATE_SHAPE_SEQUENCE) *
+    (38 / 48),
   morphIntervalMs: 650,
   globalRotationDurationMs: 4666,
   quarterRotationDeg: 90,

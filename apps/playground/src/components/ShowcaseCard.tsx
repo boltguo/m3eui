@@ -16,6 +16,7 @@ import {
   useM3EToast,
 } from "m3eui";
 import { PROPS_CATALOG, type PropDocRow } from "../data/propsCatalog";
+import { usePlaygroundStrings } from "../i18n";
 
 export interface DocsCategoryHeaderProps {
   readonly indexLabel: string;
@@ -97,38 +98,6 @@ function CopyCodeIcon() {
   );
 }
 
-const PROP_COLUMNS: readonly M3EDataTableColumn<PropDocRow>[] = [
-  {
-    id: "name",
-    header: "属性",
-    headerLabel: "属性",
-    isRowHeader: true,
-    sortable: true,
-    sortAccessor: (row) => row.name,
-    cell: (row) => <code className="docs-api-prop">{row.name}</code>,
-  },
-  {
-    id: "type",
-    header: "类型",
-    headerLabel: "类型",
-    cell: (row) => <code className="docs-api-type">{row.type}</code>,
-  },
-  {
-    id: "defaultValue",
-    header: "默认值",
-    headerLabel: "默认值",
-    cell: (row) => (
-      <code className="docs-api-default">{row.defaultValue ?? "—"}</code>
-    ),
-  },
-  {
-    id: "description",
-    header: "说明",
-    headerLabel: "说明",
-    cell: (row) => <span>{row.description}</span>,
-  },
-];
-
 export function ShowcaseCard({
   id,
   title,
@@ -138,9 +107,45 @@ export function ShowcaseCard({
   propsRows,
   children,
 }: ShowcaseCardProps): React.JSX.Element {
+  const ui = usePlaygroundStrings();
   const { toast } = useM3EToast();
   const [tab, setTab] = React.useState<"preview" | "code" | "api">("preview");
   const [copied, setCopied] = React.useState(false);
+
+  const propColumns = React.useMemo<readonly M3EDataTableColumn<PropDocRow>[]>(
+    () => [
+      {
+        id: "name",
+        header: ui.propColName,
+        headerLabel: ui.propColName,
+        isRowHeader: true,
+        sortable: true,
+        sortAccessor: (row) => row.name,
+        cell: (row) => <code className="docs-api-prop">{row.name}</code>,
+      },
+      {
+        id: "type",
+        header: ui.propColType,
+        headerLabel: ui.propColType,
+        cell: (row) => <code className="docs-api-type">{row.type}</code>,
+      },
+      {
+        id: "defaultValue",
+        header: ui.propColDefault,
+        headerLabel: ui.propColDefault,
+        cell: (row) => (
+          <code className="docs-api-default">{row.defaultValue ?? "—"}</code>
+        ),
+      },
+      {
+        id: "description",
+        header: ui.propColDesc,
+        headerLabel: ui.propColDesc,
+        cell: (row) => <span>{row.description}</span>,
+      },
+    ],
+    [ui],
+  );
 
   const resolvedProps = propsRows ?? PROPS_CATALOG[id] ?? [];
 
@@ -150,7 +155,7 @@ export function ShowcaseCard({
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
     } catch {}
-    toast({ title: `已复制 ${title} 代码` });
+    toast({ title: ui.cardCopiedCodeToast(title) });
   };
 
   const handleCopyAnchor = async () => {
@@ -159,7 +164,7 @@ export function ShowcaseCard({
     try {
       await navigator.clipboard.writeText(hashUrl);
     } catch {}
-    toast({ title: `已复制链接 #${id}` });
+    toast({ title: ui.cardCopiedLinkToast(id) });
   };
 
   return (
@@ -183,11 +188,11 @@ export function ShowcaseCard({
             ) : null}
           </div>
 
-          <Tooltip content={`复制 #${id} 链接`}>
+          <Tooltip content={ui.cardCopyAnchorTooltip(id)}>
             <IconButton
               size="xs"
               variant="standard"
-              aria-label={`复制 ${title} 链接`}
+              aria-label={ui.cardCopyAnchorAria(title)}
               icon={<LinkAnchorIcon />}
               onClick={handleCopyAnchor}
             />
@@ -202,11 +207,11 @@ export function ShowcaseCard({
         >
           <TabsList
             activateOnFocus={false}
-            aria-label={`${title} 视图切换`}
+            aria-label={ui.cardViewSwitchAria(title)}
             className="docs-card__tablist"
           >
-            <Tab value="preview">预览</Tab>
-            <Tab value="code">代码</Tab>
+            <Tab value="preview">{ui.cardPreviewTab}</Tab>
+            <Tab value="code">{ui.cardCodeTab}</Tab>
             {resolvedProps.length > 0 ? (
               <Tab value="api" badge={resolvedProps.length}>
                 API
@@ -227,7 +232,7 @@ export function ShowcaseCard({
                 leadingIcon={<CopyCodeIcon />}
                 onClick={handleCopyCode}
               >
-                {copied ? "已复制" : "复制"}
+                {copied ? ui.cardCopied : ui.cardCopy}
               </Button>
             </div>
             <ScrollArea maxHeight={420} orientation="both">
@@ -243,7 +248,7 @@ export function ShowcaseCard({
                 caption={`${title} API`}
                 hideCaption
                 density="compact"
-                columns={PROP_COLUMNS}
+                columns={propColumns}
                 rows={resolvedProps}
                 getRowKey={(row) => row.name}
               />

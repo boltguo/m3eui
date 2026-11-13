@@ -8,6 +8,8 @@ import {
   MATERIAL_SHAPES,
   cubicsToSvgPath,
 } from "../tokens/index.js";
+import { useM3EI18n } from "../context/M3EProvider.js";
+import { formatLocalizedInteger } from "../i18n/index.js";
 
 export type AvatarShape = "circle" | "square" | M3EShapeName;
 
@@ -110,12 +112,13 @@ export function Badge({
   className,
   style,
 }: M3EBadgeProps): React.JSX.Element {
+  const { locale, t } = useM3EI18n();
   const show = !hidden && (dot || (count !== undefined && count > 0));
   const text =
     !dot && count !== undefined
       ? count > max
-        ? `${max}+`
-        : `${count}`
+        ? t("badge.overflow", { max: formatLocalizedInteger(locale, max) })
+        : formatLocalizedInteger(locale, count)
       : null;
 
   const indicator = show ? (

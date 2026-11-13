@@ -27,6 +27,7 @@ import {
   useM3EToast,
 } from "m3eui";
 import { DocsCategoryHeader, ShowcaseCard } from "../components/ShowcaseCard";
+import { usePlaygroundStrings } from "../i18n";
 
 interface TokenBenchmarkRow {
   readonly id: string;
@@ -89,6 +90,7 @@ function MiniNavIcon({ glyph }: { readonly glyph: string }) {
 }
 
 export default function CompositeSuiteSection(): React.JSX.Element {
+  const ui = usePlaygroundStrings();
   const { toast } = useM3EToast();
   const { debugGeometry, setDebugGeometry } = useM3E();
 
@@ -145,7 +147,7 @@ export default function CompositeSuiteSection(): React.JSX.Element {
 
   return (
     <div id="cat-composite" className="docs-category">
-      <DocsCategoryHeader indexLabel="07" title="复合组件与自适应套件" />
+      <DocsCategoryHeader indexLabel="07" title={ui.navGroups[6]} />
 
       <ShowcaseCard
         id="site-nav-collapsible"

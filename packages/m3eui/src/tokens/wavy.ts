@@ -10,6 +10,14 @@ export const WAVY_PROGRESS_TOKENS = {
   stopIndicatorSize: 4,
   amplitudeTransitionMs: 500,
   indeterminateCycleMs: 1800,
+  firstLineHeadDelayMs: 0,
+  firstLineHeadDurationMs: 750,
+  firstLineTailDelayMs: 333,
+  firstLineTailDurationMs: 850,
+  secondLineHeadDelayMs: 1000,
+  secondLineHeadDurationMs: 567,
+  secondLineTailDelayMs: 1267,
+  secondLineTailDurationMs: 533,
 } as const;
 
 export function resolveDeterminateWaveAmplitude(progress: number): number {
@@ -18,6 +26,54 @@ export function resolveDeterminateWaveAmplitude(progress: number): number {
     return 0;
   }
   return 1;
+}
+
+function evalCubicBezierEasing(
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  x: number,
+): number {
+  if (x <= 0) return 0;
+  if (x >= 1) return 1;
+
+  const sampleX = (t: number) => {
+    const u = 1 - t;
+    return 3 * u * u * t * x1 + 3 * u * t * t * x2 + t * t * t;
+  };
+  const sampleDX = (t: number) => {
+    const u = 1 - t;
+    return 3 * u * u * x1 + 6 * u * t * (x2 - x1) + 3 * t * t * (1 - x2);
+  };
+  const sampleY = (t: number) => {
+    const u = 1 - t;
+    return 3 * u * u * t * y1 + 3 * u * t * t * y2 + t * t * t;
+  };
+
+  let t = x;
+  for (let i = 0; i < 6; i++) {
+    const err = sampleX(t) - x;
+    if (Math.abs(err) < 1e-6) break;
+    const dx = sampleDX(t);
+    if (Math.abs(dx) < 1e-6) break;
+    t = Math.max(0, Math.min(1, t - err / dx));
+  }
+  return sampleY(t);
+}
+
+function segmentFractionAtPlayTime(
+  playMs: number,
+  delayMs: number,
+  durationMs: number,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+): number {
+  if (playMs <= delayMs) return 0;
+  if (playMs >= delayMs + durationMs) return 1;
+  return evalCubicBezierEasing(x1, y1, x2, y2, (playMs - delayMs) / durationMs);
 }
 
 export function buildSinusoidSvgPath(params: {
@@ -176,6 +232,7 @@ export function buildIndeterminateLinearWavyGeometry(params: {
   } = params;
 
   const t = ((cycleFraction % 1) + 1) % 1;
+  const playMs = t * WAVY_PROGRESS_TOKENS.indeterminateCycleMs;
   const halfStroke = strokeWidth / 2;
   const centerY = height / 2;
   const usableStart = halfStroke;
@@ -184,39 +241,88 @@ export function buildIndeterminateLinearWavyGeometry(params: {
   const maxAmp = Math.max(0, (height - strokeWidth) / 2);
   const ampPx = Math.max(0, Math.min(1, amplitude)) * maxAmp;
 
-  const head = easeInOutCubic(Math.min(1, t / 0.72));
-  const tail = t < 0.18 ? 0 : easeInOutCubic(Math.min(1, (t - 0.18) / 0.82));
+  const line1Head = segmentFractionAtPlayTime(
+    playMs,
+    WAVY_PROGRESS_TOKENS.firstLineHeadDelayMs,
+    WAVY_PROGRESS_TOKENS.firstLineHeadDurationMs,
+    0.2,
+    0,
+    0.8,
+    1,
+  );
+  const line1Tail = segmentFractionAtPlayTime(
+    playMs,
+    WAVY_PROGRESS_TOKENS.firstLineTailDelayMs,
+    WAVY_PROGRESS_TOKENS.firstLineTailDurationMs,
+    0.4,
+    0,
+    1,
+    1,
+  );
+  const line2Head = segmentFractionAtPlayTime(
+    playMs,
+    WAVY_PROGRESS_TOKENS.secondLineHeadDelayMs,
+    WAVY_PROGRESS_TOKENS.secondLineHeadDurationMs,
+    0,
+    0,
+    0.65,
+    1,
+  );
+  const line2Tail = segmentFractionAtPlayTime(
+    playMs,
+    WAVY_PROGRESS_TOKENS.secondLineTailDelayMs,
+    WAVY_PROGRESS_TOKENS.secondLineTailDurationMs,
+    0.1,
+    0,
+    0.45,
+    1,
+  );
 
-  const barStart = usableStart + usableSpan * tail;
-  const barEnd = usableStart + usableSpan * head;
+  const rawBars: Array<[number, number]> = [
+    [usableStart + usableSpan * line2Tail, usableStart + usableSpan * line2Head],
+    [usableStart + usableSpan * line1Tail, usableStart + usableSpan * line1Head],
+  ];
 
+  const activeIntervals: Array<[number, number]> = [];
   const activePaths: string[] = [];
-  if (barEnd - barStart > 1) {
-    const d = buildSinusoidSvgPath({
-      xStart: barStart,
-      xEnd: barEnd,
-      centerY,
-      amplitudePx: ampPx,
-      wavelength,
-      phasePx,
-    });
-    if (d) activePaths.push(d);
+
+  for (const [barStart, barEnd] of rawBars) {
+    if (barEnd - barStart > 1) {
+      const d = buildSinusoidSvgPath({
+        xStart: barStart,
+        xEnd: barEnd,
+        centerY,
+        amplitudePx: ampPx,
+        wavelength,
+        phasePx,
+      });
+      if (d) {
+        activePaths.push(d);
+        activeIntervals.push([barStart, barEnd]);
+      }
+    }
   }
+
+  activeIntervals.sort((a, b) => a[0] - b[0]);
 
   const capClearance = strokeWidth + trackGap;
   const trackPaths: string[] = [];
+  const fmt = (v: number) => Number(v.toFixed(2));
+  let cursor = usableStart;
 
-  const leftTrackEnd = barStart - capClearance;
-  if (leftTrackEnd > usableStart + 1) {
-    trackPaths.push(
-      `M ${Number(usableStart.toFixed(2))} ${Number(centerY.toFixed(2))} L ${Number(leftTrackEnd.toFixed(2))} ${Number(centerY.toFixed(2))}`,
-    );
+  for (const [segStart, segEnd] of activeIntervals) {
+    const gapEnd = segStart - capClearance;
+    if (gapEnd > cursor + 1) {
+      trackPaths.push(
+        `M ${fmt(cursor)} ${fmt(centerY)} L ${fmt(gapEnd)} ${fmt(centerY)}`,
+      );
+    }
+    cursor = Math.max(cursor, segEnd + capClearance);
   }
 
-  const rightTrackStart = barEnd + capClearance;
-  if (rightTrackStart < usableEnd - 1) {
+  if (usableEnd > cursor + 1) {
     trackPaths.push(
-      `M ${Number(rightTrackStart.toFixed(2))} ${Number(centerY.toFixed(2))} L ${Number(usableEnd.toFixed(2))} ${Number(centerY.toFixed(2))}`,
+      `M ${fmt(cursor)} ${fmt(centerY)} L ${fmt(usableEnd)} ${fmt(centerY)}`,
     );
   }
 
