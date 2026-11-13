@@ -1,0 +1,87 @@
+name: Release to npm
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Optional version override (e.g. 0.1.0). Leave blank to use packages/m3eui/package.json version."
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    name: Build, Verify & Publish m3eui to npm
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Sync version from GitHub Release tag (if applicable)
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          RAW_VER="${INPUT_VERSION:-${RELEASE_TAG#v}}"
+          if [ -n "$RAW_VER" ]; then
+            node -e '
+              const fs = require("node:fs");
+              const ver = process.argv[1];
+              if (!/^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/.test(ver)) {
+                console.error("Invalid semver version:", ver);
+                process.exit(1);
+              }
+              const pkgPath = "packages/m3eui/package.json";
+              const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
+              if (pkg.version !== ver) {
+                pkg.version = ver;
+                fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
+                console.log("Synced packages/m3eui/package.json version ->", ver);
+              }
+              const schemaPath = "packages/m3eui/m3e.schema.json";
+              const schema = JSON.parse(fs.readFileSync(schemaPath, "utf8"));
+              schema.$id = `https://unpkg.com/m3eui@${ver}/m3e.schema.json`;
+              fs.writeFileSync(schemaPath, JSON.stringify(schema, null, 2) + "\n");
+            ' "$RAW_VER"
+          fi
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build m3eui and showcase
+        run: pnpm build
+
+      - name: Verify m3e doctor, TypeScript & Vitest suite
+        run: |
+          pnpm m3e:doctor
+          pnpm typecheck
+          pnpm test
+
+      - name: Upgrade npm CLI (for OIDC Trusted Publishing & Provenance)
+        run: npm install -g npm@latest
+
+      - name: Publish m3eui to npm with Provenance
+        working-directory: packages/m3eui
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -n "$NPM_TOKEN" ]; then
+            npm config set //registry.npmjs.org/:_authToken="$NPM_TOKEN"
+          fi
+          npm publish --provenance --access public
