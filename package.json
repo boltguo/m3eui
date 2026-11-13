@@ -1,0 +1,35 @@
+{
+  "name": "m3eui-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/boltguo/m3eui.git"
+  },
+  "description": "Material 3 Expressive (M3E) Web React unified component system (m3eui) with HCT color synthesis, spring physics, key-based i18n, and built-in m3e.json CLI.",
+  "scripts": {
+    "dev": "pnpm --filter m3eui-playground dev",
+    "build": "pnpm --filter m3eui build && node packages/m3eui/dist/cli/bin.js sync && pnpm --filter m3eui-playground build",
+    "m3eui": "node packages/m3eui/dist/cli/bin.js",
+    "m3e": "node packages/m3eui/dist/cli/bin.js",
+    "m3e:sync": "node packages/m3eui/dist/cli/bin.js sync",
+    "m3e:doctor": "node packages/m3eui/dist/cli/bin.js doctor",
+    "test": "vitest run",
+    "typecheck": "pnpm -r typecheck",
+    "release": "pnpm build && pnpm --filter m3eui publish --no-git-checks --access public"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "happy-dom": "^21.0.4",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0",
+    "vitest": "^3.0.0"
+  }
+}

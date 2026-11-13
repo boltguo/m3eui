@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "noEmit": true,
+    "paths": {
+      "m3eui/tokens": ["../../packages/m3eui/src/tokens/index.ts"],
+      "m3eui/i18n": ["../../packages/m3eui/src/i18n/index.ts"],
+      "m3eui/config": ["../../packages/m3eui/src/config.ts"],
+      "m3eui/primitives": ["../../packages/m3eui/src/primitives.ts"],
+      "m3eui": ["../../packages/m3eui/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*", "../../m3e.json"]
+}

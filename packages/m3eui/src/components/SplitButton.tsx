@@ -1,0 +1,297 @@
+import * as React from "react";
+import { Button as BaseButton } from "@base-ui/react/button";
+import { Menu } from "@base-ui/react/menu";
+import {
+  type ButtonSize,
+  type CornerTuple,
+  SEGMENTED_MENU_TOKENS,
+  flipCornersHorizontal,
+  resolveSegmentedMenuItemCorners,
+  resolveSplitButtonGeometry,
+} from "../tokens/index.js";
+import { useM3E } from "../context/M3EProvider.js";
+import {
+  useM3ECornerSpring,
+  useM3EScalarSpring,
+  usePressHoldState,
+} from "../hooks/useM3ESpring.js";
+import type { ButtonVariant } from "./Button.js";
+
+export type SplitButtonVariant = Exclude<ButtonVariant, "text">;
+
+export interface SplitButtonMenuItemSpec {
+  readonly id: string;
+  readonly label: string;
+  readonly icon?: React.ReactNode;
+  readonly shortcut?: string;
+  readonly disabled?: boolean;
+  readonly selected?: boolean;
+  readonly onSelect?: () => void;
+}
+
+export interface M3ESplitButtonProps {
+  readonly children: React.ReactNode;
+  readonly menuItems: readonly SplitButtonMenuItemSpec[];
+  readonly variant?: SplitButtonVariant;
+  readonly size?: ButtonSize;
+  readonly disabled?: boolean;
+  readonly leadingIcon?: React.ReactNode;
+  readonly onClick?: React.MouseEventHandler<HTMLElement>;
+  readonly open?: boolean;
+  readonly defaultOpen?: boolean;
+  readonly onOpenChange?: (open: boolean) => void;
+  readonly menuTriggerLabel?: string;
+  readonly className?: string;
+  readonly style?: React.CSSProperties;
+}
+
+function ChevronDownSvg({ size }: { readonly size: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  );
+}
+
+function formatTupleBadge(c: CornerTuple): string {
+  return `${Math.round(c[0])}/${Math.round(c[1])}/${Math.round(c[2])}/${Math.round(c[3])}`;
+}
+
+interface SegmentedMenuItemRowProps {
+  readonly item: SplitButtonMenuItemSpec;
+  readonly index: number;
+  readonly count: number;
+}
+
+function SegmentedMenuItemRow({
+  item,
+  index,
+  count,
+}: SegmentedMenuItemRowProps) {
+  const [highlighted, setHighlighted] = React.useState(false);
+  const corners = resolveSegmentedMenuItemCorners({
+    index,
+    count,
+    isHighlighted: highlighted,
+    isSelected: item.selected,
+  });
+  const { borderRadiusCss } = useM3ECornerSpring(corners, "fastSpatial");
+
+  return (
+    <Menu.Item
+      disabled={item.disabled}
+      onClick={() => item.onSelect?.()}
+      onPointerEnter={() => setHighlighted(true)}
+      onPointerLeave={() => setHighlighted(false)}
+      onFocus={() => setHighlighted(true)}
+      onBlur={() => setHighlighted(false)}
+      className="m3e-segmented-menu__item"
+      data-selected={item.selected ? "" : undefined}
+      style={{
+        minHeight: `${SEGMENTED_MENU_TOKENS.itemHeight}px`,
+        paddingInline: `${SEGMENTED_MENU_TOKENS.itemPaddingInline}px`,
+        borderRadius: borderRadiusCss,
+      }}
+    >
+      {item.icon ? (
+        <span className="m3e-segmented-menu__icon" aria-hidden="true">
+          {item.icon}
+        </span>
+      ) : null}
+      <span className="m3e-segmented-menu__label">{item.label}</span>
+      {item.shortcut ? (
+        <span className="m3e-segmented-menu__shortcut">{item.shortcut}</span>
+      ) : null}
+    </Menu.Item>
+  );
+}
+
+export function SplitButton({
+  children,
+  menuItems,
+  variant = "filled",
+  size = "sm",
+  disabled = false,
+  leadingIcon,
+  onClick,
+  open: controlledOpen,
+  defaultOpen = false,
+  onOpenChange,
+  menuTriggerLabel,
+  className,
+  style,
+}: M3ESplitButtonProps): React.JSX.Element {
+  const { debugGeometry, direction, t } = useM3E();
+  const resolvedMenuTriggerLabel =
+    menuTriggerLabel ?? t("splitButton.moreOptions");
+  const [uncontrolledOpen, setUncontrolledOpen] =
+    React.useState<boolean>(defaultOpen);
+  const isExpanded = controlledOpen ?? uncontrolledOpen;
+
+  const { isPressed: isLeadingPressed, pressHandlers: leadingPressHandlers } =
+    usePressHoldState(disabled);
+  const { isPressed: isTrailingPressed, pressHandlers: trailingPressHandlers } =
+    usePressHoldState(disabled);
+
+  const geo = resolveSplitButtonGeometry({
+    size,
+    isLeadingPressed,
+    isTrailingPressed,
+    isExpanded,
+  });
+
+  const targetLeadCorners =
+    direction === "rtl"
+      ? flipCornersHorizontal(geo.leadingCorners)
+      : geo.leadingCorners;
+  const targetTrailCorners =
+    direction === "rtl"
+      ? flipCornersHorizontal(geo.trailingCorners)
+      : geo.trailingCorners;
+  const targetOpticalX =
+    direction === "rtl"
+      ? -geo.trailingOpticalOffsetPx
+      : geo.trailingOpticalOffsetPx;
+
+  const { corners: leadCorners, borderRadiusCss: leadRadiusCss } =
+    useM3ECornerSpring(targetLeadCorners, "fastSpatial");
+  const { corners: trailCorners, borderRadiusCss: trailRadiusCss } =
+    useM3ECornerSpring(targetTrailCorners, "fastSpatial");
+
+  const chevronDeg = useM3EScalarSpring(geo.chevronRotationDeg, "fastSpatial");
+  const opticalX = useM3EScalarSpring(targetOpticalX, "fastSpatial");
+
+  const { spec } = geo;
+
+  return (
+    <div
+      className={
+        className ? `m3e-split-button ${className}` : "m3e-split-button"
+      }
+      style={{ gap: `${geo.gap}px`, ...style }}
+      data-size={size}
+      data-variant={variant}
+      data-expanded={isExpanded ? "" : undefined}
+    >
+      <BaseButton
+        type="button"
+        disabled={disabled}
+        onClick={onClick}
+        className="m3e-button m3e-split-button__leading"
+        data-variant={variant}
+        data-size={size}
+        data-pressed={isLeadingPressed ? "" : undefined}
+        style={{
+          height: `${spec.height}px`,
+          paddingInlineStart: `${spec.leadingPaddingStart}px`,
+          paddingInlineEnd: `${spec.leadingPaddingEnd}px`,
+          gap: `${spec.leadingIconGap}px`,
+          fontSize: `${spec.fontSize}px`,
+          lineHeight: `${spec.lineHeight}px`,
+          fontWeight: 500,
+          borderRadius: leadRadiusCss,
+        }}
+        {...leadingPressHandlers}
+      >
+        {leadingIcon ? (
+          <span
+            className="m3e-button__icon"
+            style={{
+              width: spec.leadingIconSize,
+              height: spec.leadingIconSize,
+            }}
+            aria-hidden="true"
+          >
+            {leadingIcon}
+          </span>
+        ) : null}
+        <span className="m3e-button__label">{children}</span>
+        {debugGeometry ? (
+          <span className="m3e-debug-badge" aria-hidden="true">
+            {formatTupleBadge(leadCorners)}
+          </span>
+        ) : null}
+      </BaseButton>
+
+      <Menu.Root
+        modal={false}
+        open={controlledOpen}
+        defaultOpen={defaultOpen}
+        disabled={disabled}
+        onOpenChange={(next) => {
+          if (controlledOpen === undefined) {
+            setUncontrolledOpen(next);
+          }
+          onOpenChange?.(next);
+        }}
+      >
+        <Menu.Trigger
+          disabled={disabled}
+          aria-label={resolvedMenuTriggerLabel}
+          className="m3e-button m3e-split-button__trailing"
+          data-variant={variant}
+          data-size={size}
+          data-pressed={isTrailingPressed ? "" : undefined}
+          data-expanded={isExpanded ? "" : undefined}
+          style={{
+            width: `${spec.trailingWidth}px`,
+            height: `${spec.height}px`,
+            paddingInline: `${spec.trailingPaddingInline}px`,
+            borderRadius: trailRadiusCss,
+          }}
+          {...trailingPressHandlers}
+        >
+          <span
+            className="m3e-split-button__chevron"
+            style={{
+              width: spec.trailingIconSize,
+              height: spec.trailingIconSize,
+              translate: `${opticalX.toFixed(2)}px 0px`,
+              rotate: `${chevronDeg.toFixed(1)}deg`,
+            }}
+            aria-hidden="true"
+          >
+            <ChevronDownSvg size={spec.trailingIconSize} />
+          </span>
+          {debugGeometry ? (
+            <span className="m3e-debug-badge" aria-hidden="true">
+              {formatTupleBadge(trailCorners)}
+            </span>
+          ) : null}
+        </Menu.Trigger>
+
+        <Menu.Portal>
+          <Menu.Positioner side="bottom" align="end" sideOffset={6} className="m3e-segmented-menu__positioner">
+            <Menu.Popup
+              className="m3e-segmented-menu"
+              style={{
+                borderRadius: `${SEGMENTED_MENU_TOKENS.containerRadius}px`,
+                padding: `${SEGMENTED_MENU_TOKENS.containerPadding}px`,
+                gap: `${SEGMENTED_MENU_TOKENS.itemGap}px`,
+              }}
+            >
+              {menuItems.map((item, idx) => (
+                <SegmentedMenuItemRow
+                  key={item.id}
+                  item={item}
+                  index={idx}
+                  count={menuItems.length}
+                />
+              ))}
+            </Menu.Popup>
+          </Menu.Positioner>
+        </Menu.Portal>
+      </Menu.Root>
+    </div>
+  );
+}

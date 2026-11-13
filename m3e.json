@@ -1,0 +1,23 @@
+{
+  "$schema": "./packages/m3eui/m3e.schema.json",
+  "style": "expressive",
+  "theme": {
+    "seed": "#6750A4",
+    "schemeVariant": "expressive",
+    "colorMode": "system",
+    "contrastLevel": 0,
+    "motionScheme": "expressive"
+  },
+  "i18n": {
+    "locale": "zh-CN",
+    "direction": "auto"
+  },
+  "css": {
+    "output": "apps/playground/src/m3e-theme.generated.css"
+  },
+  "aliases": {
+    "components": "m3eui",
+    "tokens": "m3eui/tokens",
+    "i18n": "m3eui/i18n"
+  }
+}

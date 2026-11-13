@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <meta
+      name="description"
+      content="m3eui — Material 3 Expressive Web React component library built on Base UI 1.9, HCT dynamic color, dual-track spring physics, and key-based i18n."
+    />
+    <meta property="og:title" content="m3eui — Material 3 Expressive Web UI" />
+    <meta
+      property="og:description"
+      content="60+ accessible React components with real spring physics, dynamic corner topology, HCT light-dark() themes, and automatic RTL."
+    />
+    <meta property="og:type" content="website" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <script>
+      try {
+        const stored = localStorage.getItem("m3e-color-scheme");
+        if (stored === "light" || stored === "dark") {
+          document.querySelector('meta[name="color-scheme"]').content = stored;
+        }
+      } catch {}
+    </script>
+    <title>m3eui — Material 3 Expressive Web 组件库 (Built on Base UI)</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

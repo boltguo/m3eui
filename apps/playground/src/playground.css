@@ -1,0 +1,690 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  margin: 0;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  background-color: var(--m3e-color-surface);
+  color: var(--m3e-color-on-surface);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+:target,
+.docs-showcase-anchor {
+  scroll-margin-top: 84px;
+  outline: none;
+}
+
+/* =========================================================================
+   Skip Link
+   ========================================================================= */
+
+.docs-skip-link {
+  position: fixed;
+  top: 10px;
+  inset-inline-start: 16px;
+  z-index: 200;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  background-color: var(--m3e-color-primary);
+  color: var(--m3e-color-on-primary);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transform: translateY(-160%);
+  transition: transform 140ms ease-out;
+}
+
+.docs-skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 2.5px solid var(--m3e-color-on-surface);
+  outline-offset: 2px;
+}
+
+/* =========================================================================
+   1. Sticky Single-Row TopAppBar Shell (m3eui TopAppBar)
+   ========================================================================= */
+
+.docs-top-app-bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background-color: color-mix(in srgb, var(--m3e-color-surface) 90%, transparent);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--m3e-color-outline-variant);
+}
+
+.docs-top-app-bar[data-elevated] {
+  background-color: color-mix(
+    in srgb,
+    var(--m3e-color-surface-container) 92%,
+    transparent
+  );
+}
+
+.docs-top-app-bar > .m3e-top-app-bar__top-row {
+  max-width: 1420px;
+  margin-inline: auto;
+  gap: 14px;
+}
+
+.docs-top-app-bar .m3e-top-app-bar__inline-titles {
+  overflow: visible;
+}
+
+.docs-top-app-bar .m3e-top-app-bar__title {
+  overflow: visible;
+  white-space: normal;
+  font-weight: 400;
+  display: flex;
+  justify-content: center;
+}
+
+.docs-brand-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.docs-brand-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--m3e-color-on-surface);
+  text-decoration: none;
+}
+
+.docs-brand__title {
+  font-size: 16px;
+  font-weight: 750;
+  letter-spacing: -0.015em;
+}
+
+.docs-mobile-menu-btn {
+  display: none;
+}
+
+.docs-header-search-wrap {
+  width: 100%;
+  max-width: 380px;
+}
+
+.docs-global-search {
+  width: 100%;
+}
+
+.docs-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.docs-seed-dot {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border-radius: 9999px;
+  border: 1.5px solid color-mix(in srgb, var(--m3e-color-on-surface) 30%, transparent);
+  flex-shrink: 0;
+}
+
+.docs-color-picker-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding-inline: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--m3e-color-outline);
+  background-color: var(--m3e-color-surface-container-low);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.docs-color-input {
+  width: 20px;
+  height: 20px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.docs-theme-popover-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.docs-studio-sheet-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-inline-end: 6px;
+}
+
+.docs-studio-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.docs-studio-field__label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--m3e-color-on-surface-variant);
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 1260px) {
+  .docs-header-desktop-only {
+    display: none;
+  }
+
+  .docs-brand__chip {
+    display: none;
+  }
+}
+
+@media (max-width: 960px) {
+  .docs-mobile-menu-btn {
+    display: inline-flex;
+  }
+
+  .docs-header-search-wrap {
+    display: none;
+  }
+}
+
+/* =========================================================================
+   2. Main Shell: m3eui ScrollArea + Permanent NavigationDrawer + Main
+   ========================================================================= */
+
+.docs-shell {
+  max-width: 1460px;
+  margin: 0 auto;
+  padding: 32px 32px 120px;
+  display: grid;
+  grid-template-columns: 308px minmax(0, 1fr);
+  gap: 40px;
+  align-items: start;
+}
+
+.docs-sidebar-container {
+  position: sticky;
+  top: 80px;
+  min-width: 0;
+}
+
+.docs-sidebar-scroll.m3e-scroll-area {
+  border-radius: 28px;
+}
+
+.docs-sidebar-scroll .m3e-scroll-area__content {
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.docs-sidebar-scroll .m3e-scroll-area__scrollbar[data-orientation="vertical"] {
+  padding-block: 20px;
+  inset-inline-end: 3px !important;
+}
+
+.docs-nav-drawer.m3e-nav-drawer {
+  width: 100% !important;
+  max-width: 100%;
+  padding-block: 14px !important;
+  padding-inline-start: 12px !important;
+  padding-inline-end: 18px !important;
+  border: 0;
+  background-color: transparent;
+}
+
+.docs-nav-drawer .m3e-nav-drawer__items {
+  overflow-y: visible;
+  min-width: 0;
+  gap: 4px;
+}
+
+.docs-nav-drawer .m3e-wide-rail__item {
+  min-width: 0;
+  padding-inline: 12px;
+  gap: 9px;
+  font-size: 13px;
+}
+
+@media (max-width: 960px) {
+  .docs-shell {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 18px 16px 72px;
+    gap: 20px;
+  }
+
+  .docs-sidebar-container {
+    display: none;
+  }
+}
+
+/* =========================================================================
+   3. Expressive Hero Card & Inline Studio (m3eui Card)
+   ========================================================================= */
+
+.docs-main {
+  display: flex;
+  flex-direction: column;
+  gap: 72px;
+  min-width: 0;
+  outline: none;
+}
+
+.docs-hero-card.m3e-card {
+  border-radius: 28px !important;
+  border: 1px solid var(--m3e-color-outline-variant);
+  background-color: var(--m3e-color-surface-container-low);
+}
+
+.docs-hero-card > .m3e-card__body {
+  padding: 28px !important;
+}
+
+.docs-hero-card > .m3e-card__body > .m3e-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.docs-hero__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.docs-hero__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.docs-hero__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.docs-hero__title {
+  margin: 0;
+  font-size: clamp(24px, 2.8vw, 32px);
+  line-height: 1.22;
+  letter-spacing: -0.02em;
+}
+
+.docs-hero__desc {
+  margin: 0;
+  max-width: 780px;
+  font-size: 14.5px;
+  color: var(--m3e-color-on-surface-variant);
+}
+
+.docs-hero__emblem.m3e-card {
+  flex-shrink: 0;
+  background-color: var(--m3e-color-surface-container);
+}
+
+.docs-hero__emblem .m3e-card__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.docs-hero__emblem-caption {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--m3e-color-on-surface-variant);
+}
+
+.docs-hero__studio-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px 22px;
+}
+
+.docs-hero__studio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+@media (max-width: 760px) {
+  .docs-hero__top {
+    flex-direction: column;
+  }
+}
+
+/* =========================================================================
+   4. Category Headers & ShowcaseCard (m3eui Card + Tabs + DataTable)
+   ========================================================================= */
+
+.docs-category {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+  scroll-margin-top: 84px;
+}
+
+.docs-category__header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.docs-category__divider {
+  margin-bottom: 12px;
+}
+
+.docs-category__title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.docs-category__index-chip.m3e-chip {
+  background-color: var(--m3e-color-primary-container);
+  color: var(--m3e-color-on-primary-container);
+  border-color: transparent;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.docs-category__count-chip.m3e-chip {
+  font-size: 11.5px;
+}
+
+.docs-category__title {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+}
+
+.docs-category__subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: var(--m3e-color-on-surface-variant);
+}
+
+.docs-showcase-card.m3e-card {
+  border-radius: 24px !important;
+  background-color: var(--m3e-color-surface-container-lowest);
+  overflow: hidden;
+}
+
+.docs-showcase-card > .m3e-card__body {
+  padding: 0 !important;
+}
+
+.docs-card__head {
+  padding: 24px 28px 18px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  background-color: var(--m3e-color-surface-container-low);
+}
+
+.docs-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.docs-card__title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.docs-card__title {
+  margin: 0;
+  font-size: 16.5px;
+  font-weight: 700;
+}
+
+.docs-primitive-chip.m3e-chip {
+  height: 26px !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px;
+  background-color: var(--m3e-color-surface-container-high);
+}
+
+.docs-card__desc {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--m3e-color-on-surface-variant);
+}
+
+.docs-card__tablist {
+  background-color: var(--m3e-color-surface-container-low);
+  padding-inline: 20px;
+}
+
+.docs-card__preview {
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.docs-code-wrap {
+  background-color: var(--m3e-color-surface-container);
+  padding: 16px 22px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.docs-code-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.docs-code-lang-chip.m3e-chip {
+  height: 26px !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px;
+}
+
+.docs-code-pre {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--m3e-color-on-surface);
+}
+
+.docs-api-wrap {
+  padding: 14px 18px 18px;
+  background-color: var(--m3e-color-surface-container-lowest);
+}
+
+.docs-api-prop {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 650;
+  color: var(--m3e-color-primary);
+}
+
+.docs-api-type {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: var(--m3e-color-tertiary);
+}
+
+.docs-api-default {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: var(--m3e-color-on-surface-variant);
+}
+
+.docs-inline-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+/* =========================================================================
+   5. Demo Layout Helpers & Footer
+   ========================================================================= */
+
+.demo-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px 20px;
+}
+
+.demo-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 28px;
+}
+
+.demo-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 24px;
+}
+
+.context-canvas {
+  padding: 22px 20px;
+  border-radius: 18px;
+  border: 1.5px dashed var(--m3e-color-outline);
+  background-color: var(--m3e-color-surface-container-low);
+  color: var(--m3e-color-on-surface-variant);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  font-size: 13.5px;
+  cursor: context-menu;
+  user-select: none;
+  transition: background-color 140ms ease-out, border-color 140ms ease-out;
+}
+
+.context-canvas:hover {
+  background-color: var(--m3e-color-surface-container);
+  border-color: var(--m3e-color-primary);
+}
+
+.demo-panel {
+  padding: 20px 22px;
+  border-radius: 18px;
+  background-color: var(--m3e-color-surface-container-low);
+  border: 1px solid var(--m3e-color-outline-variant);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.demo-panel__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--m3e-color-on-surface-variant);
+}
+
+.surface-ramp {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px;
+}
+
+.surface-swatch-card .m3e-card__body {
+  padding: 14px !important;
+}
+
+.surface-swatch-card .m3e-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12.5px;
+}
+
+.shape-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 12px;
+}
+
+.shape-tile-card .m3e-card__body {
+  padding: 10px 6px !important;
+}
+
+.shape-tile-card .m3e-card__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  text-align: center;
+}
+
+.shape-tile-card--selected.m3e-card {
+  border: 1.5px solid var(--m3e-color-primary);
+}
+
+.docs-footer-card.m3e-card {
+  border-radius: 24px !important;
+  border: 1px solid var(--m3e-color-outline-variant);
+}
+
+.docs-footer__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.docs-footer__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.docs-footer__sub {
+  font-size: 12.5px;
+  color: var(--m3e-color-on-surface-variant);
+}

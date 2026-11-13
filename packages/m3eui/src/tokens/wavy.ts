@@ -1,0 +1,541 @@
+/**
+ * Material 3 Expressive — Parametric Wavy Progress Geometry
+ *
+ * Upstream Source of Truth:
+ * - AOSP `WavyProgressIndicator.kt` (`WavyProgressIndicatorDefaults`)
+ * - AOSP `LinearProgressIndicatorTokens.kt`
+ *   (`ActiveThickness = 4.dp`, `WaveHeight = 10.dp`, `ActiveWaveWavelength = 40.dp`,
+ *    `IndeterminateActiveWaveWavelength = 20.dp`, `TrackActiveSpace = 4.dp`, `StopSize = 4.dp`)
+ */
+
+export const WAVY_PROGRESS_TOKENS = {
+  defaultWidth: 240,
+  containerHeight: 10,
+  strokeWidth: 4,
+  /** `(containerHeight - strokeWidth) / 2 = 3` so 4px round caps never clip vertically */
+  maxAmplitudePx: 3,
+  determinateWavelength: 40,
+  indeterminateWavelength: 20,
+  /** `1 wavelength / second` (`WavyProgressIndicator.kt` line 95: `waveSpeed = wavelength`) */
+  defaultWaveSpeedPerSec: 1,
+  trackActiveGap: 4,
+  stopIndicatorSize: 4,
+  /** `MotionTokens.DurationLong2 = 500ms` for smooth amplitude ramp up/down */
+  amplitudeTransitionMs: 500,
+  indeterminateCycleMs: 1800,
+} as const;
+
+/**
+ * Exact amplitude rule from AOSP `WavyProgressIndicatorDefaults.indicatorAmplitude`:
+ * - Flat (`0`) when `progress <= 0.10` or `progress >= 0.95`
+ * - Full wave (`1`) when `0.10 < progress < 0.95`
+ */
+export function resolveDeterminateWaveAmplitude(progress: number): number {
+  if (!Number.isFinite(progress)) return 1;
+  if (progress <= 0.1 || progress >= 0.95) {
+    return 0;
+  }
+  return 1;
+}
+
+/**
+ * Builds an exact C1-continuous Hermite cubic Bézier SVG path for
+ * `y(x) = centerY + amplitudePx * sin((2π / wavelength) * (x - phasePx))`
+ * across any `[xStart, xEnd]` interval without endpoint snapping.
+ */
+export function buildSinusoidSvgPath(params: {
+  readonly xStart: number;
+  readonly xEnd: number;
+  readonly centerY: number;
+  readonly amplitudePx: number;
+  readonly wavelength: number;
+  readonly phasePx: number;
+}): string {
+  const { xStart, xEnd, centerY, amplitudePx, wavelength, phasePx } = params;
+  if (xEnd <= xStart + 0.1) {
+    return "";
+  }
+
+  const fmt = (v: number) => Number(v.toFixed(2));
+
+  if (Math.abs(amplitudePx) < 0.02 || wavelength <= 1) {
+    return `M ${fmt(xStart)} ${fmt(centerY)} L ${fmt(xEnd)} ${fmt(centerY)}`;
+  }
+
+  const omega = (2 * Math.PI) / wavelength;
+  const maxStep = wavelength / 4;
+  const span = xEnd - xStart;
+  const segments = Math.max(1, Math.ceil(span / maxStep));
+  const dx = span / segments;
+
+  const yAt = (x: number) => centerY + amplitudePx * Math.sin(omega * (x - phasePx));
+  const dyAt = (x: number) => amplitudePx * omega * Math.cos(omega * (x - phasePx));
+
+  const parts: string[] = [`M ${fmt(xStart)} ${fmt(yAt(xStart))}`];
+  for (let i = 0; i < segments; i++) {
+    const xa = xStart + i * dx;
+    const xb = i === segments - 1 ? xEnd : xa + dx;
+    const segDx = xb - xa;
+    const ya = yAt(xa);
+    const yb = yAt(xb);
+    const dya = dyAt(xa);
+    const dyb = dyAt(xb);
+
+    const c1x = xa + segDx / 3;
+    const c1y = ya + (segDx / 3) * dya;
+    const c2x = xb - segDx / 3;
+    const c2y = yb - (segDx / 3) * dyb;
+
+    parts.push(
+      `C ${fmt(c1x)} ${fmt(c1y)}, ${fmt(c2x)} ${fmt(c2y)}, ${fmt(xb)} ${fmt(yb)}`,
+    );
+  }
+
+  return parts.join(" ");
+}
+
+export interface LinearWavyGeometryOutput {
+  /** Active wavy indicator `<path d="...">` segments (1 for determinate, 1-2 for indeterminate) */
+  readonly activePaths: readonly string[];
+  /** Straight inactive track `<path d="...">` segments separated by `trackActiveGap` */
+  readonly trackPaths: readonly string[];
+  /** Optional trailing stop dot center & radius (determinate mode when `progress < 1`) */
+  readonly stopDot: { readonly cx: number; readonly cy: number; readonly r: number } | null;
+}
+
+/**
+ * Computes complete SVG geometry for Determinate Linear Wavy Progress Indicator.
+ */
+export function buildDeterminateLinearWavyGeometry(params: {
+  readonly width: number;
+  readonly height?: number;
+  readonly progress: number;
+  /** Normalized amplitude `[0..1]` (typically smoothed toward `resolveDeterminateWaveAmplitude(progress)`) */
+  readonly amplitude: number;
+  readonly wavelength?: number;
+  readonly phasePx?: number;
+  readonly strokeWidth?: number;
+  readonly trackGap?: number;
+  readonly stopSize?: number;
+}): LinearWavyGeometryOutput {
+  const {
+    width,
+    height = WAVY_PROGRESS_TOKENS.containerHeight,
+    progress,
+    amplitude,
+    wavelength = WAVY_PROGRESS_TOKENS.determinateWavelength,
+    phasePx = 0,
+    strokeWidth = WAVY_PROGRESS_TOKENS.strokeWidth,
+    trackGap = WAVY_PROGRESS_TOKENS.trackActiveGap,
+    stopSize = WAVY_PROGRESS_TOKENS.stopIndicatorSize,
+  } = params;
+
+  const clamped = Math.max(0, Math.min(1, progress));
+  const halfStroke = strokeWidth / 2;
+  const centerY = height / 2;
+  const usableStart = halfStroke;
+  const usableEnd = Math.max(usableStart, width - halfStroke);
+  const usableSpan = usableEnd - usableStart;
+  const maxAmp = Math.max(0, (height - strokeWidth) / 2);
+  const ampPx = Math.max(0, Math.min(1, amplitude)) * maxAmp;
+
+  const activeEnd = usableStart + usableSpan * clamped;
+  const activePaths: string[] = [];
+
+  if (clamped > 0.002) {
+    const d = buildSinusoidSvgPath({
+      xStart: usableStart,
+      xEnd: Math.max(usableStart + 0.5, activeEnd),
+      centerY,
+      amplitudePx: ampPx,
+      wavelength,
+      phasePx,
+    });
+    if (d) activePaths.push(d);
+  }
+
+  // Track starts after `activeEnd + strokeWidth + trackGap` (accounting for round stroke caps on both sides)
+  const trackStart =
+    clamped <= 0.002
+      ? usableStart
+      : activeEnd + strokeWidth + trackGap;
+
+  const trackPaths: string[] = [];
+  if (trackStart < usableEnd - 0.5) {
+    trackPaths.push(
+      `M ${Number(trackStart.toFixed(2))} ${Number(centerY.toFixed(2))} L ${Number(usableEnd.toFixed(2))} ${Number(centerY.toFixed(2))}`,
+    );
+  }
+
+  const stopRadius = stopSize / 2;
+  const showStopDot = clamped < 0.98 && stopSize > 0 && width >= 32;
+  const stopDot = showStopDot
+    ? {
+        cx: Number((width - stopRadius).toFixed(2)),
+        cy: Number(centerY.toFixed(2)),
+        r: Number(stopRadius.toFixed(2)),
+      }
+    : null;
+
+  return { activePaths, trackPaths, stopDot };
+}
+
+function easeInOutCubic(t: number): number {
+  const x = Math.max(0, Math.min(1, t));
+  return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+}
+
+/**
+ * Computes complete SVG geometry for Indeterminate Linear Wavy Progress Indicator
+ * at normalized `cycleFraction ∈ [0..1)`.
+ */
+export function buildIndeterminateLinearWavyGeometry(params: {
+  readonly width: number;
+  readonly height?: number;
+  readonly cycleFraction: number;
+  readonly amplitude?: number;
+  readonly wavelength?: number;
+  readonly phasePx?: number;
+  readonly strokeWidth?: number;
+  readonly trackGap?: number;
+}): LinearWavyGeometryOutput {
+  const {
+    width,
+    height = WAVY_PROGRESS_TOKENS.containerHeight,
+    cycleFraction,
+    amplitude = 1,
+    wavelength = WAVY_PROGRESS_TOKENS.indeterminateWavelength,
+    phasePx = 0,
+    strokeWidth = WAVY_PROGRESS_TOKENS.strokeWidth,
+    trackGap = WAVY_PROGRESS_TOKENS.trackActiveGap,
+  } = params;
+
+  const t = ((cycleFraction % 1) + 1) % 1;
+  const halfStroke = strokeWidth / 2;
+  const centerY = height / 2;
+  const usableStart = halfStroke;
+  const usableEnd = Math.max(usableStart, width - halfStroke);
+  const usableSpan = usableEnd - usableStart;
+  const maxAmp = Math.max(0, (height - strokeWidth) / 2);
+  const ampPx = Math.max(0, Math.min(1, amplitude)) * maxAmp;
+
+  // Primary expressive indeterminate bar sweeps cleanly across [0..1]
+  const head = easeInOutCubic(Math.min(1, t / 0.72));
+  const tail = t < 0.18 ? 0 : easeInOutCubic(Math.min(1, (t - 0.18) / 0.82));
+
+  const barStart = usableStart + usableSpan * tail;
+  const barEnd = usableStart + usableSpan * head;
+
+  const activePaths: string[] = [];
+  if (barEnd - barStart > 1) {
+    const d = buildSinusoidSvgPath({
+      xStart: barStart,
+      xEnd: barEnd,
+      centerY,
+      amplitudePx: ampPx,
+      wavelength,
+      phasePx,
+    });
+    if (d) activePaths.push(d);
+  }
+
+  const capClearance = strokeWidth + trackGap;
+  const trackPaths: string[] = [];
+
+  const leftTrackEnd = barStart - capClearance;
+  if (leftTrackEnd > usableStart + 1) {
+    trackPaths.push(
+      `M ${Number(usableStart.toFixed(2))} ${Number(centerY.toFixed(2))} L ${Number(leftTrackEnd.toFixed(2))} ${Number(centerY.toFixed(2))}`,
+    );
+  }
+
+  const rightTrackStart = barEnd + capClearance;
+  if (rightTrackStart < usableEnd - 1) {
+    trackPaths.push(
+      `M ${Number(rightTrackStart.toFixed(2))} ${Number(centerY.toFixed(2))} L ${Number(usableEnd.toFixed(2))} ${Number(centerY.toFixed(2))}`,
+    );
+  }
+
+  return { activePaths, trackPaths, stopDot: null };
+}
+
+// ============================================================================
+// Phase 2 Additions: Polar Circular Wavy Progress Geometry
+// ============================================================================
+
+export const CIRCULAR_WAVY_TOKENS = {
+  size: 48,
+  strokeWidth: 4,
+  /** Radial peak-to-center wave amplitude (`1.6dp` from AOSP `CircularProgressIndicatorTokens`) */
+  maxAmplitudePx: 1.6,
+  /** Target arc wavelength (`~15dp` => `N = 9` integer lobes on a `48dp` indicator) */
+  targetWavelength: 15,
+  /** `1 lobe / second` angular phase advance */
+  defaultAngularWaveSpeedRad: 2 * Math.PI,
+  trackActiveGap: 4,
+  indeterminateCycleMs: 2400,
+} as const;
+
+/**
+ * Quantizes circular wave frequency to an integer lobe count `N >= 4` so
+ * `r(θ + 2π) === r(θ)` and `r'(θ + 2π) === r'(θ)` (exact C1 closure with zero seam kink).
+ */
+export function resolveCircularWaveLobes(
+  baseRadius: number,
+  targetWavelength: number = CIRCULAR_WAVY_TOKENS.targetWavelength,
+): number {
+  const circumference = 2 * Math.PI * Math.max(4, baseRadius);
+  return Math.max(4, Math.round(circumference / Math.max(4, targetWavelength)));
+}
+
+/**
+ * Builds an exact C1-continuous polar Hermite cubic Bézier SVG path for
+ * `r(θ) = baseRadius + amplitudePx * sin(lobes * (θ - originAngle) - phaseRad)`
+ * across `[startAngle, endAngle]`. When `amplitudePx === 0`, produces a smooth circular arc.
+ */
+export function buildPolarWavyArcSvgPath(params: {
+  readonly cx: number;
+  readonly cy: number;
+  readonly baseRadius: number;
+  readonly startAngle: number;
+  readonly endAngle: number;
+  readonly amplitudePx: number;
+  readonly lobes: number;
+  readonly phaseRad?: number;
+  readonly originAngle?: number;
+}): string {
+  const {
+    cx,
+    cy,
+    baseRadius,
+    startAngle,
+    endAngle,
+    amplitudePx,
+    lobes,
+    phaseRad = 0,
+    originAngle = -Math.PI / 2,
+  } = params;
+
+  const span = endAngle - startAngle;
+  if (span <= 0.015 || baseRadius <= 1) {
+    return "";
+  }
+
+  const fmt = (v: number) => Number(v.toFixed(2));
+  const effAmp = Math.abs(amplitudePx) < 0.015 ? 0 : amplitudePx;
+  const maxStep =
+    effAmp === 0
+      ? Math.PI / 8
+      : Math.min(Math.PI / 8, Math.PI / (2 * Math.max(4, lobes)));
+  const segments = Math.max(1, Math.ceil(span / maxStep));
+  const dTheta = span / segments;
+
+  const rAt = (theta: number) =>
+    effAmp === 0
+      ? baseRadius
+      : baseRadius + effAmp * Math.sin(lobes * (theta - originAngle) - phaseRad);
+  const drAt = (theta: number) =>
+    effAmp === 0
+      ? 0
+      : effAmp * lobes * Math.cos(lobes * (theta - originAngle) - phaseRad);
+
+  const ptAt = (theta: number) => {
+    const r = rAt(theta);
+    return {
+      x: cx + r * Math.cos(theta),
+      y: cy + r * Math.sin(theta),
+    };
+  };
+
+  const tanAt = (theta: number) => {
+    const r = rAt(theta);
+    const dr = drAt(theta);
+    const cos = Math.cos(theta);
+    const sin = Math.sin(theta);
+    return {
+      dx: dr * cos - r * sin,
+      dy: dr * sin + r * cos,
+    };
+  };
+
+  const p0 = ptAt(startAngle);
+  const parts: string[] = [`M ${fmt(p0.x)} ${fmt(p0.y)}`];
+
+  for (let i = 0; i < segments; i++) {
+    const ta = startAngle + i * dTheta;
+    const tb = i === segments - 1 ? endAngle : ta + dTheta;
+    const h = tb - ta;
+    const pa = ptAt(ta);
+    const pb = ptAt(tb);
+    const da = tanAt(ta);
+    const db = tanAt(tb);
+
+    const c1x = pa.x + (h / 3) * da.dx;
+    const c1y = pa.y + (h / 3) * da.dy;
+    const c2x = pb.x - (h / 3) * db.dx;
+    const c2y = pb.y - (h / 3) * db.dy;
+
+    parts.push(
+      `C ${fmt(c1x)} ${fmt(c1y)}, ${fmt(c2x)} ${fmt(c2y)}, ${fmt(pb.x)} ${fmt(pb.y)}`,
+    );
+  }
+
+  return parts.join(" ");
+}
+
+export interface CircularWavyGeometryOutput {
+  readonly activePath: string;
+  readonly trackPath: string;
+  readonly baseRadius: number;
+  readonly lobes: number;
+}
+
+/**
+ * Determinate Circular Wavy Progress Geometry (`size = 48` default, `12 o'clock` origin).
+ */
+export function buildDeterminateCircularWavyGeometry(params: {
+  readonly size?: number;
+  readonly progress: number;
+  readonly amplitude: number;
+  readonly phaseRad?: number;
+  readonly strokeWidth?: number;
+  readonly maxAmplitudePx?: number;
+  readonly targetWavelength?: number;
+  readonly trackGap?: number;
+}): CircularWavyGeometryOutput {
+  const {
+    size = CIRCULAR_WAVY_TOKENS.size,
+    progress,
+    amplitude,
+    phaseRad = 0,
+    strokeWidth = CIRCULAR_WAVY_TOKENS.strokeWidth,
+    maxAmplitudePx = CIRCULAR_WAVY_TOKENS.maxAmplitudePx,
+    targetWavelength = CIRCULAR_WAVY_TOKENS.targetWavelength,
+    trackGap = CIRCULAR_WAVY_TOKENS.trackActiveGap,
+  } = params;
+
+  const clamped = Math.max(0, Math.min(1, progress));
+  const cx = size / 2;
+  const cy = size / 2;
+  const baseRadius = Math.max(6, (size - strokeWidth) / 2 - maxAmplitudePx);
+  const lobes = resolveCircularWaveLobes(baseRadius, targetWavelength);
+  const ampPx = Math.max(0, Math.min(1, amplitude)) * maxAmplitudePx;
+  const origin = -Math.PI / 2;
+  const activeSweep = 2 * Math.PI * clamped;
+
+  const activePath =
+    clamped <= 0.002
+      ? ""
+      : buildPolarWavyArcSvgPath({
+          cx,
+          cy,
+          baseRadius,
+          startAngle: origin,
+          endAngle: origin + activeSweep,
+          amplitudePx: ampPx,
+          lobes,
+          phaseRad,
+          originAngle: origin,
+        });
+
+  const gapAngle = (strokeWidth + trackGap) / baseRadius;
+  let trackPath = "";
+  if (clamped <= 0.002) {
+    trackPath = buildPolarWavyArcSvgPath({
+      cx,
+      cy,
+      baseRadius,
+      startAngle: origin,
+      endAngle: origin + 2 * Math.PI,
+      amplitudePx: 0,
+      lobes,
+    });
+  } else if (clamped < 0.995) {
+    const trackStart = origin + activeSweep + gapAngle;
+    const trackEnd = origin + 2 * Math.PI - gapAngle;
+    if (trackEnd > trackStart + 0.03) {
+      trackPath = buildPolarWavyArcSvgPath({
+        cx,
+        cy,
+        baseRadius,
+        startAngle: trackStart,
+        endAngle: trackEnd,
+        amplitudePx: 0,
+        lobes,
+      });
+    }
+  }
+
+  return { activePath, trackPath, baseRadius, lobes };
+}
+
+/**
+ * Indeterminate Circular Wavy Progress Geometry at normalized `cycleFraction ∈ [0..1)`.
+ */
+export function buildIndeterminateCircularWavyGeometry(params: {
+  readonly size?: number;
+  readonly cycleFraction: number;
+  readonly amplitude?: number;
+  readonly phaseRad?: number;
+  readonly strokeWidth?: number;
+  readonly maxAmplitudePx?: number;
+  readonly targetWavelength?: number;
+  readonly trackGap?: number;
+}): CircularWavyGeometryOutput {
+  const {
+    size = CIRCULAR_WAVY_TOKENS.size,
+    cycleFraction,
+    amplitude = 1,
+    phaseRad = 0,
+    strokeWidth = CIRCULAR_WAVY_TOKENS.strokeWidth,
+    maxAmplitudePx = CIRCULAR_WAVY_TOKENS.maxAmplitudePx,
+    targetWavelength = CIRCULAR_WAVY_TOKENS.targetWavelength,
+    trackGap = CIRCULAR_WAVY_TOKENS.trackActiveGap,
+  } = params;
+
+  const t = ((cycleFraction % 1) + 1) % 1;
+  const cx = size / 2;
+  const cy = size / 2;
+  const baseRadius = Math.max(6, (size - strokeWidth) / 2 - maxAmplitudePx);
+  const lobes = resolveCircularWaveLobes(baseRadius, targetWavelength);
+  const ampPx = Math.max(0, Math.min(1, amplitude)) * maxAmplitudePx;
+
+  // Sweep expands from 12% -> 78% on [0..0.5] and contracts 78% -> 12% on [0.5..1]
+  const pulse = t < 0.5 ? easeInOutCubic(t * 2) : easeInOutCubic((1 - t) * 2);
+  const sweepFraction = 0.12 + 0.66 * pulse;
+  const sweepRad = 2 * Math.PI * sweepFraction;
+  // Continuous global rotation + tail catch-up so head & tail alternate smoothly
+  const tailCatchup = t < 0.5 ? 0 : easeInOutCubic((t - 0.5) * 2) * 0.66 * 2 * Math.PI;
+  const startAngle = -Math.PI / 2 + t * 2 * Math.PI + tailCatchup;
+  const endAngle = startAngle + sweepRad;
+
+  const activePath = buildPolarWavyArcSvgPath({
+    cx,
+    cy,
+    baseRadius,
+    startAngle,
+    endAngle,
+    amplitudePx: ampPx,
+    lobes,
+    phaseRad,
+    originAngle: startAngle,
+  });
+
+  const gapAngle = (strokeWidth + trackGap) / baseRadius;
+  const trackStart = endAngle + gapAngle;
+  const trackEnd = startAngle + 2 * Math.PI - gapAngle;
+  const trackPath =
+    trackEnd > trackStart + 0.04
+      ? buildPolarWavyArcSvgPath({
+          cx,
+          cy,
+          baseRadius,
+          startAngle: trackStart,
+          endAngle: trackEnd,
+          amplitudePx: 0,
+          lobes,
+        })
+      : "";
+
+  return { activePath, trackPath, baseRadius, lobes };
+}

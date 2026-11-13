@@ -1,0 +1,78 @@
+{
+  "name": "m3eui",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "Apache-2.0",
+  "description": "All-in-one Material 3 Expressive Web React component library, HCT color & spring physics tokens, key-based i18n, and declarative m3e.json CLI.",
+  "homepage": "https://github.com/boltguo/m3eui#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/boltguo/m3eui.git",
+    "directory": "packages/m3eui"
+  },
+  "bugs": {
+    "url": "https://github.com/boltguo/m3eui/issues"
+  },
+  "bin": {
+    "m3eui": "./dist/cli/bin.js",
+    "m3e": "./dist/cli/bin.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "m3e.schema.json",
+    "README.md",
+    "README.zh-CN.md",
+    "LICENSE"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./styles.css": "./dist/styles.css",
+    "./tokens": {
+      "types": "./dist/tokens/index.d.ts",
+      "import": "./dist/tokens/index.js"
+    },
+    "./tokens.json": "./dist/tokens.json",
+    "./i18n": {
+      "types": "./dist/i18n/index.d.ts",
+      "import": "./dist/i18n/index.js"
+    },
+    "./config": {
+      "types": "./dist/config.d.ts",
+      "import": "./dist/config.js"
+    },
+    "./primitives": {
+      "types": "./dist/primitives.d.ts",
+      "import": "./dist/primitives.js"
+    },
+    "./cli": {
+      "types": "./dist/cli/index.d.ts",
+      "import": "./dist/cli/index.js"
+    },
+    "./m3e.schema.json": "./m3e.schema.json",
+    "./components/*": {
+      "types": "./dist/components/*.d.ts",
+      "import": "./dist/components/*.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/postbuild.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@base-ui/react": "^1.9.0",
+    "@material/material-color-utilities": "^0.3.0",
+    "motion": "^12.0.0"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  }
+}
