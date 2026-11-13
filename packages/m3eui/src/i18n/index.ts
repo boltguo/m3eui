@@ -35,20 +35,12 @@ const RTL_LANG_PREFIXES = new Set([
   "yi",
 ]);
 
-/**
- * Determines whether a BCP 47 locale tag uses a right-to-left script by default.
- */
 export function isRtlLocale(locale: string): boolean {
   const normalized = locale.trim().toLowerCase();
   const primary = normalized.split(/[-_]/)[0] ?? "";
   return RTL_LANG_PREFIXES.has(primary);
 }
 
-/**
- * Resolves the complete M3EMessages dictionary for a given BCP 47 locale,
- * matching exact tags first (`zh-CN`), then primary language subtags (`zh` -> `zh-CN`),
- * falling back to `en-US`, and merging any user-supplied `overrides`.
- */
 export function resolveM3EMessages(
   locale: M3ELocale = "en-US",
   overrides?: M3EMessageOverrides,
@@ -75,9 +67,6 @@ export type M3ETranslateFn = (
   params?: Readonly<Record<string, string | number>>,
 ) => string;
 
-/**
- * Formats a message template by replacing `{token}` placeholders with `params`.
- */
 export function formatM3EMessage(
   template: string,
   params?: Readonly<Record<string, string | number>>,
@@ -89,9 +78,6 @@ export function formatM3EMessage(
   });
 }
 
-/**
- * Creates a bound translator function `t(key, params)` for a locale + overrides.
- */
 export function createM3ETranslator(
   locale: M3ELocale = "en-US",
   overrides?: M3EMessageOverrides,
@@ -100,17 +86,12 @@ export function createM3ETranslator(
   return (key, params) => formatM3EMessage(dict[key], params);
 }
 
-/**
- * Returns 7 narrow weekday labels starting on Monday (`Mon..Sun`) formatted
- * via `Intl.DateTimeFormat` in UTC so there is zero host-timezone drift.
- */
 export function getLocalizedMondayWeekdays(locale: string): readonly string[] {
   try {
     const fmt = new Intl.DateTimeFormat(locale, {
       weekday: "narrow",
       timeZone: "UTC",
     });
-    // 2024-01-01 is Monday in UTC
     return Array.from({ length: 7 }, (_, i) =>
       fmt.format(new Date(Date.UTC(2024, 0, 1 + i, 12, 0, 0))),
     );
@@ -119,9 +100,6 @@ export function getLocalizedMondayWeekdays(locale: string): readonly string[] {
   }
 }
 
-/**
- * Formats `{ year, month }` (1-based month) into a localized Month + Year header.
- */
 export function formatLocalizedMonthYear(
   locale: string,
   year: number,
@@ -138,9 +116,6 @@ export function formatLocalizedMonthYear(
   }
 }
 
-/**
- * Formats `{ year, month, day }` into a localized full date label.
- */
 export function formatLocalizedFullDate(
   locale: string,
   date: { readonly year: number; readonly month: number; readonly day: number },
@@ -157,9 +132,6 @@ export function formatLocalizedFullDate(
   }
 }
 
-/**
- * Formats `{ year, month, day }` into a compact localized Month + Day label (for range headers).
- */
 export function formatLocalizedShortMonthDay(
   locale: string,
   date: { readonly year: number; readonly month: number; readonly day: number },
@@ -175,9 +147,6 @@ export function formatLocalizedShortMonthDay(
   }
 }
 
-/**
- * Formats `{ hour, minute }` into a localized time string respecting 12h/24h mode.
- */
 export function formatLocalizedWallTime(
   locale: string,
   time: { readonly hour: number; readonly minute: number },

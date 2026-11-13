@@ -42,10 +42,6 @@ export { CSPProvider };
 
 export const M3E_COLOR_SCHEME_STORAGE_KEY = "m3e-color-scheme";
 
-/**
- * Minimal synchronous inline `<script>` string for SSR `<head>` placement right after
- * `<meta name="color-scheme" content="light dark">` to eliminate theme FOUC before hydration.
- */
 export function getM3EInitScript(
   storageKey: string = M3E_COLOR_SCHEME_STORAGE_KEY,
 ): string {
@@ -125,16 +121,13 @@ const M3EContext = React.createContext<M3EContextValue>({
 
 export interface M3EProviderProps {
   readonly children: React.ReactNode;
-  /** Declarative `m3e.json` / `defineM3EConfig(...)` project configuration */
   readonly config?: M3EConfig;
   readonly initialSeedHex?: string;
   readonly initialSchemeVariant?: ColorSchemeVariant;
   readonly initialContrastLevel?: number;
   readonly initialColorMode?: ColorMode;
   readonly initialLocale?: M3ELocale;
-  /** Controlled locale override */
   readonly locale?: M3ELocale;
-  /** Custom translation key overrides merged over the active locale pack */
   readonly messages?: M3EMessageOverrides;
   readonly initialDirection?: M3EDirectionSetting;
   readonly initialMotionScheme?: MotionSchemeName;
@@ -185,7 +178,6 @@ export function M3EProvider({
         return saved;
       }
     } catch {
-      // Ignore storage access errors in restricted frames
     }
     return fallbackColorMode;
   });
@@ -247,7 +239,6 @@ export function M3EProvider({
     return () => mq.removeEventListener("change", onChange);
   }, []);
 
-  // Keep color-scheme override synced across browser tabs per `dark-mode-toggle`
   React.useEffect(() => {
     if (!syncDocumentRoot || typeof window === "undefined") return;
     const onStorage = (e: StorageEvent) => {
@@ -299,7 +290,6 @@ export function M3EProvider({
     } as Record<string, string>;
   }, [themeTokens, motionScheme, playbackRate]);
 
-  // Sync <meta name="color-scheme"> and remove localStorage key when returning to "system"
   React.useEffect(() => {
     if (!syncDocumentRoot || typeof document === "undefined") return;
     const metaContent = colorMode === "system" ? "light dark" : colorMode;
@@ -320,11 +310,9 @@ export function M3EProvider({
         window.localStorage.setItem(M3E_COLOR_SCHEME_STORAGE_KEY, colorMode);
       }
     } catch {
-      // Ignore storage errors in sandboxed iframes
     }
   }, [colorMode, syncDocumentRoot]);
 
-  // Sync document root `dir` and `lang` attributes for a11y, Intl, and device translation
   React.useEffect(() => {
     if (!syncDocumentRoot || typeof document === "undefined") return;
     document.documentElement.dir = direction;

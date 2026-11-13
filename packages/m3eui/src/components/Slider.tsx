@@ -165,9 +165,7 @@ export function Slider<Value extends SliderValue = number>({
   const [uncontrolledValues, setUncontrolledValues] = React.useState<number[]>(
     () => normalizeValues(defaultValue, min),
   );
-  // Active pointer press/drag index — cleared immediately on global window pointerup/pointercancel
   const [pressedThumbIdx, setPressedThumbIdx] = React.useState<number | null>(null);
-  // Transient bubble index when stepping via keyboard arrow keys
   const [keyBubbleIdx, setKeyBubbleIdx] = React.useState<number | null>(null);
   const keyBubbleTimerRef = React.useRef<number | null>(null);
 
@@ -183,7 +181,6 @@ export function Slider<Value extends SliderValue = number>({
   const p0 = clamp01((values[0] - min) / span);
   const p1 = isRange ? clamp01((values[1] - min) / span) : p0;
 
-  // Guarantee immediate release even when pointerup occurs outside the thumb/track
   React.useEffect(() => {
     if (pressedThumbIdx === null) return;
     const clearPointer = () => {
@@ -219,7 +216,6 @@ export function Slider<Value extends SliderValue = number>({
   const handleControlPointerDown = React.useCallback(
     (e: React.PointerEvent<HTMLElement>) => {
       if (disabled || e.button !== 0) return;
-      // If pointer landed directly on a thumb, let thumb's handler pick exact index
       const thumbEl = (e.target as HTMLElement | null)?.closest?.("[data-index]");
       if (thumbEl) {
         const attr = Number(thumbEl.getAttribute("data-index"));
@@ -345,7 +341,6 @@ export function Slider<Value extends SliderValue = number>({
           className="m3e-slider__track"
           style={{ height: `${spec.trackHeight}px` }}
         >
-          {/* Hidden native BaseSlider.Indicator for ARIA/form sync while rendering M3E gapped track segments */}
           <BaseSlider.Indicator className="m3e-slider__sr-indicator" />
 
           {!isRange ? (

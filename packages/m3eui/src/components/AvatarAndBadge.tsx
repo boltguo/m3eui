@@ -16,7 +16,6 @@ export interface M3EAvatarProps {
   readonly alt?: string;
   readonly fallback: React.ReactNode;
   readonly size?: AvatarSize;
-  /** Supports `"circle"`, `"square"`, or any of the 35 official M3E `MaterialShapes` (e.g. `"cookie9Sided"`, `"clover4Leaf"`, `"sunny"`) */
   readonly shape?: AvatarShape;
   readonly className?: string;
   readonly style?: React.CSSProperties;

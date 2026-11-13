@@ -102,7 +102,6 @@ export function ExtendedFAB({
   const { isPressed, pressHandlers } = usePressHoldState(disabled);
   const spec = EXTENDED_FAB_SPECS[size];
 
-  // Measure natural label width so we can spring-interpolate exact container width!
   const labelRef = React.useRef<HTMLSpanElement | null>(null);
   const [labelWidth, setLabelWidth] = React.useState<number>(72);
 

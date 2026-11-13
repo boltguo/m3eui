@@ -39,9 +39,6 @@ function CloseGlyph() {
   );
 }
 
-/**
- * Internal M3E Snackbar / Toast viewport rendered automatically inside `<M3EProvider>`.
- */
 export function M3EToastViewportHost(): React.JSX.Element {
   const { t } = useM3EI18n();
   const { toasts, close } = BaseToast.useToastManager<M3EToastData>();
@@ -111,9 +108,6 @@ export function M3EToastViewportHost(): React.JSX.Element {
   );
 }
 
-/**
- * Imperative hook for dispatching M3E Snackbars / Toasts anywhere inside `<M3EProvider>`.
- */
 export function useM3EToast() {
   const manager = BaseToast.useToastManager<M3EToastData>();
 

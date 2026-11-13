@@ -15,9 +15,6 @@ import {
   getLocalizedMondayWeekdays,
 } from "../i18n/index.js";
 
-/**
- * Location-agnostic ISO plain calendar date (`YYYY-MM-DD`) — avoids `Date` UTC/timezone off-by-one bugs!
- */
 export type PlainDateString = `${number}-${string}-${string}` | string;
 
 export interface PlainDateRange {
@@ -27,8 +24,8 @@ export interface PlainDateRange {
 
 interface ParsedPlainDate {
   readonly year: number;
-  readonly month: number; // 1..12
-  readonly day: number; // 1..31
+  readonly month: number;
+  readonly day: number;
 }
 
 export function parsePlainDate(iso: string | undefined): ParsedPlainDate | null {
@@ -67,7 +64,6 @@ function getDaysInMonth(year: number, month: number): number {
 }
 
 function getFirstWeekdayOfMonth(year: number, month: number): number {
-  // 0 = Sunday .. 6 = Saturday; convert to Monday-first (0 = Mon .. 6 = Sun)
   const jsDay = new Date(year, month - 1, 1).getDay();
   return (jsDay + 6) % 7;
 }
@@ -336,10 +332,6 @@ export interface M3EDateRangePickerProps {
   readonly style?: React.CSSProperties;
 }
 
-/**
- * M3E DateRangePicker — Continuous `secondary-container` range highlight strip
- * connecting `primary` capsule start & end dates, with live hover range preview.
- */
 export function DateRangePicker({
   value: controlledRange,
   defaultValue,
@@ -368,7 +360,6 @@ export function DateRangePicker({
     );
   const activeRange = controlledRange ?? uncontrolledRange;
 
-  // When non-null, user clicked the first anchor and is picking the second endpoint
   const [draftAnchor, setDraftAnchor] = React.useState<string | null>(null);
   const [hoverIso, setHoverIso] = React.useState<string | null>(null);
 
@@ -393,7 +384,6 @@ export function DateRangePicker({
     setViewYear(nextY);
   };
 
-  // Effective displayed range (uses draftAnchor..hoverIso while mid-selection)
   const effectiveRange = React.useMemo<PlainDateRange>(() => {
     if (draftAnchor) {
       const target = hoverIso ?? draftAnchor;

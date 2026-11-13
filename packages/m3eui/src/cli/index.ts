@@ -125,10 +125,6 @@ export function scaffoldM3ELocalePack(
   const source = [
     `import type { M3EMessages } from "m3eui/i18n";`,
     ``,
-    `/**`,
-    ` * Custom M3E locale dictionary for "${localeCode}".`,
-    ` * Pass to <M3EProvider locale="${localeCode}" messages={${safeIdent}}>`,
-    ` */`,
     `export const ${safeIdent}: M3EMessages = {`,
     entries,
     `};`,
@@ -268,7 +264,6 @@ export function runM3EDoctor(
     });
   }
 
-  // Workspace source guard when executed inside the M3E monorepo
   const reactSrcDir = resolve(cwd, "packages/m3eui/src");
   if (existsSync(reactSrcDir)) {
     const offenders = scanHardcodedCjkFiles(
@@ -369,7 +364,7 @@ export function runM3ECli(
 
     log(
       [
-        "m3eui v0.1.0 — Material 3 Expressive Project Configuration CLI",
+        "m3eui v0.1.0",
         "",
         "Usage:",
         "  npx m3eui init [--seed #6750A4] [--variant expressive] [--locale zh-CN] [--output src/styles/m3e-theme.css] [--force]",

@@ -11,7 +11,6 @@ export interface CarouselItemSpec {
   readonly title: string;
   readonly subtitle?: string;
   readonly badge?: string;
-  /** Optional custom visual/gradient background or media node */
   readonly background?: string;
   readonly content?: React.ReactNode;
 }
@@ -51,13 +50,6 @@ function ChevronSvg({ direction }: { readonly direction: "prev" | "next" }) {
   );
 }
 
-/**
- * M3E Horizontal Multi-Browse & Centered Hero Carousel (`Carousel.kt` 1.5.0).
- *
- * Combines AOSP's dynamic focal-width & corner morphing (`28px` focal -> `16px` peek,
- * zero-sum total row width conservation) with accessible HTML prev/next/marker controls
- * and polite settled status announcements (`modern-web-guidance` `carousel`).
- */
 export function Carousel({
   items,
   "aria-label": ariaLabel,
@@ -80,7 +72,6 @@ export function Carousel({
     Math.min(count - 1, controlledIndex ?? uncontrolledIdx),
   );
 
-  // Polite status region stays silent on initial mount and updates after user navigation settles
   const [announcement, setAnnouncement] = React.useState<string>("");
 
   const selectIndex = React.useCallback(

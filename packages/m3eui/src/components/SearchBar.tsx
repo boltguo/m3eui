@@ -25,7 +25,6 @@ export interface M3ESearchBarProps {
   readonly "aria-label"?: string;
   readonly trailingSlot?: React.ReactNode;
   readonly emptyText?: React.ReactNode;
-  /** `"md"` (`56px`, standard M3E search bar) or `"sm"` (`40px`, compact app-bar embedded search) */
   readonly size?: "md" | "sm";
   readonly disabled?: boolean;
   readonly className?: string;
@@ -152,7 +151,6 @@ export function SearchBar({
     React.useState<string>(defaultValue);
   const query = controlledValue ?? uncontrolledVal;
 
-  // Safari WebKit IME compositionend -> keydown timestamp inversion guard (per modern-web-guidance `ime-safe-enter-submit`)
   const lastCompositionEndAtRef = React.useRef<number | null>(null);
   const formRef = React.useRef<HTMLFormElement | null>(null);
 
@@ -163,7 +161,6 @@ export function SearchBar({
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      // Block premature submission while CJK IME is confirming candidate conversion
       if (e.nativeEvent.isComposing || e.keyCode === 229) {
         return;
       }
@@ -173,7 +170,6 @@ export function SearchBar({
       ) {
         return;
       }
-      // If no popup item is highlighted, submit the search form cleanly
       const activeOption = e.currentTarget.getAttribute("aria-activedescendant");
       if (!activeOption) {
         e.preventDefault();

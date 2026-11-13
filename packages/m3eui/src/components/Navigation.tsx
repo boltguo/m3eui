@@ -22,12 +22,9 @@ export interface NavigationDestination<Value extends string = string> {
   readonly activeIcon?: React.ReactNode;
   readonly badgeCount?: number;
   readonly badgeDot?: boolean;
-  /** Optional short status/version pill label (e.g. `"v1.0"` or `"New"`) in `WideNavigationRail` / `NavigationDrawer` */
   readonly badgeLabel?: React.ReactNode;
-  /** Optional link href (`#section` or URL); renders semantic `<a>` in `WideNavigationRail` / `NavigationDrawer` */
   readonly href?: string;
   readonly disabled?: boolean;
-  /** Optional section group heading used by `NavigationDrawer` */
   readonly section?: string;
 }
 
@@ -161,10 +158,6 @@ export function NavigationRail<Value extends string = string>({
     </nav>
   );
 }
-
-/* =========================================================================
-   WideNavigationRail (M3E Collapsible Rail: 84px <-> 228px)
-   ========================================================================= */
 
 export interface M3EWideNavigationRailProps<Value extends string = string> {
   readonly items: readonly NavigationDestination<Value>[];
@@ -382,19 +375,11 @@ export function WideNavigationRail<Value extends string = string>({
   );
 }
 
-/* =========================================================================
-   NavigationDrawer (Permanent & Modal Drawer)
-   ========================================================================= */
-
 export interface M3ENavigationDrawerProps<Value extends string = string> {
   readonly items: readonly NavigationDestination<Value>[];
   readonly value: Value;
   readonly onValueChange: (value: Value) => void;
   readonly variant?: "permanent" | "modal";
-  /**
-   * Automatically tracks fragment targets (`href="#..."`) via CSS `scroll-target-group: auto`
-   * + `:target-current` with `IntersectionObserver` fallback and `aria-current="true"` sync.
-   */
   readonly scrollSpy?: boolean;
   readonly open?: boolean;
   readonly defaultOpen?: boolean;
@@ -655,10 +640,6 @@ export function NavigationDrawer<Value extends string = string>({
   );
 }
 
-/* =========================================================================
-   NavigationSuite (Adaptive M3E Responsive Navigation Shell)
-   ========================================================================= */
-
 export type NavigationSuiteLayout = "auto" | "bar" | "rail" | "wide-rail";
 
 export interface M3ENavigationSuiteProps<Value extends string = string> {
@@ -673,14 +654,6 @@ export interface M3ENavigationSuiteProps<Value extends string = string> {
   readonly style?: React.CSSProperties;
 }
 
-/**
- * M3E NavigationSuite (`NavigationSuiteScaffold`)
- *
- * Automatically measures its own inline container width via `ResizeObserver`:
- * - `< 640px` (`compact`): bottom `NavigationBar`
- * - `640px .. 1023px` (`medium`): side `NavigationRail`
- * - `>= 1024px` (`expanded`): collapsible `WideNavigationRail`
- */
 export function NavigationSuite<Value extends string = string>({
   items,
   value,

@@ -1,17 +1,6 @@
-/**
- * Material 3 Expressive — Native Semantic Stylesheet (Zero Tailwind)
- *
- * Designed as a cross-platform readable CSS specification:
- * - Semantic HCT color tokens via native `light-dark()` + media query fallback
- * - Explicit `[data-*]` state contracts (`[data-pressed]`, `[data-selected]`, `[data-size]`)
- * - Critically damped `effects` transitions (`ease-out` fallback before `linear()`)
- * - Spatial geometry (`border-radius`, `width`) driven by physical spring state
- */
-
 :root {
   color-scheme: light dark;
 
-  /* Default Expressive Violet (#6750A4) Light Palette Fallback */
   --m3e-color-primary: #65558f;
   --m3e-color-on-primary: #ffffff;
   --m3e-color-primary-container: #e9ddff;
@@ -47,7 +36,6 @@
   --m3e-color-shadow: #000000;
   --m3e-color-scrim: #000000;
 
-  /* Effects spring defaults (critically damped ζ = 1.0, zero overshoot) */
   --m3e-effects-fast-duration: 140ms;
   --m3e-effects-fast-easing: ease-out;
   --m3e-effects-default-duration: 210ms;
@@ -91,7 +79,6 @@
   }
 }
 
-/* Native light-dark() upgrade where supported */
 @supports (color: light-dark(white, black)) {
   :root {
     --m3e-color-primary: light-dark(#65558f, #cfbdfe);
@@ -115,17 +102,12 @@
   }
 }
 
-/* Explicit user toggle synced via <meta name="color-scheme"> */
 :root:has(> head > meta[name="color-scheme"][content="dark"]) {
   color-scheme: dark;
 }
 :root:has(> head > meta[name="color-scheme"][content="light"]) {
   color-scheme: light;
 }
-
-/* =========================================================================
-   1. M3E Button & ToggleButton
-   ========================================================================= */
 
 .m3e-button {
   position: relative;
@@ -140,7 +122,6 @@
   cursor: pointer;
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
-  /* Critically damped effects spring (ease-out fallback precedes linear()) */
   transition-property: background-color, color, border-color, box-shadow;
   transition-duration: var(--m3e-effects-fast-duration, 140ms);
   transition-timing-function: ease-out;
@@ -158,7 +139,6 @@
   pointer-events: none;
 }
 
-/* Color Variants */
 .m3e-button[data-variant="filled"] {
   background-color: var(--m3e-color-primary);
   color: var(--m3e-color-on-primary);
@@ -219,7 +199,6 @@
   background-color: color-mix(in srgb, var(--m3e-color-primary) 10%, transparent);
 }
 
-/* ToggleButton Selected Overrides (never color-only: pairs with shape morph + optional checkmark) */
 .m3e-button[data-toggle][data-variant="tonal"]:not([data-selected]) {
   background-color: var(--m3e-color-surface-container-highest);
   color: var(--m3e-color-on-surface-variant);
@@ -246,10 +225,6 @@
   text-overflow: ellipsis;
 }
 
-/* =========================================================================
-   2. M3E ButtonGroup (Standard & Connected)
-   ========================================================================= */
-
 .m3e-button-group {
   position: relative;
   display: inline-flex;
@@ -271,7 +246,6 @@
   overflow: hidden;
 }
 
-/* Matches AOSP ButtonGroup.kt L1210: TextOverflow.Visible — padding absorbs squish, label never ellipsizes */
 .m3e-button-group__item .m3e-button__label {
   flex-shrink: 0;
   overflow: visible;
@@ -283,17 +257,13 @@
   z-index: 2;
 }
 
-/* =========================================================================
-   3. M3E SegmentedList & SegmentedListItem
-   ========================================================================= */
-
 .m3e-segmented-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px; /* Exact ListTokens.SegmentedGap = 2.0.dp */
+  gap: 2px;
   width: 100%;
 }
 
@@ -406,10 +376,6 @@
   gap: 6px;
 }
 
-/* =========================================================================
-   4. M3E LoadingIndicator & WavyProgressIndicator
-   ========================================================================= */
-
 .m3e-loading-indicator {
   display: inline-flex;
   align-items: center;
@@ -436,10 +402,6 @@
   width: 100%;
   overflow: visible;
 }
-
-/* =========================================================================
-   5. M3E IconButton & IconToggleButton (5×3 Matrix)
-   ========================================================================= */
 
 .m3e-icon-button {
   position: relative;
@@ -517,7 +479,6 @@
   background-color: color-mix(in srgb, var(--m3e-color-on-surface) 8%, transparent);
 }
 
-/* Toggle unselected/selected overrides */
 .m3e-icon-button[data-toggle][data-variant="filled"]:not([data-selected]) {
   background-color: var(--m3e-color-surface-container-highest);
   color: var(--m3e-color-primary);
@@ -540,10 +501,6 @@
   color: var(--m3e-color-primary);
 }
 
-/* =========================================================================
-   6. M3E SplitButton & Segmented Menu
-   ========================================================================= */
-
 .m3e-split-button {
   display: inline-flex;
   align-items: center;
@@ -560,7 +517,6 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  /* Identity transform baseline on resting element */
   translate: 0px 0px;
   rotate: 0deg;
   scale: 1;
@@ -670,10 +626,6 @@
   color: var(--m3e-color-on-surface-variant);
 }
 
-/* =========================================================================
-   7. M3E FloatingToolbar & FABMenu (ToggleFAB)
-   ========================================================================= */
-
 .m3e-floating-toolbar-layout {
   display: inline-flex;
   align-items: center;
@@ -759,7 +711,6 @@
   height: 22px;
 }
 
-/* Drawn with border (not background alone) so forced-colors preserves toolbar separators */
 .m3e-floating-toolbar__separator {
   flex-shrink: 0;
   inline-size: 0;
@@ -805,7 +756,6 @@
   cursor: pointer;
   box-shadow: 0 3px 10px color-mix(in srgb, var(--m3e-color-shadow) 14%, transparent);
   transform-origin: bottom right;
-  /* Identity transform baseline */
   translate: 0px 0px;
   scale: 1;
   rotate: 0deg;
@@ -869,7 +819,6 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  /* Identity transform baseline */
   translate: 0px 0px;
   rotate: 0deg;
   scale: 1;
@@ -886,10 +835,6 @@
   display: inline-block;
   flex-shrink: 0;
 }
-
-/* =========================================================================
-   8. Shared Control Row & M3E Switch / Checkbox / RadioGroup
-   ========================================================================= */
 
 .m3e-control-row {
   display: inline-flex;
@@ -933,7 +878,6 @@
   color: var(--m3e-color-on-surface-variant);
 }
 
-/* M3E Switch (52×32 track, 16 -> 24 -> 28px spring handle) */
 .m3e-switch {
   position: relative;
   display: inline-flex;
@@ -954,7 +898,6 @@
   transition-timing-function: var(--m3e-effects-fast-easing, ease-out);
 }
 
-/* Invisible 44px vertical touch target expansion when rendered standalone */
 .m3e-switch::before {
   content: "";
   position: absolute;
@@ -987,7 +930,6 @@
   justify-content: center;
   background-color: var(--m3e-color-outline);
   color: var(--m3e-color-surface-container-highest);
-  /* Identity transform baseline */
   translate: 8px -50%;
   scale: 1;
   transition-property: background-color, color, box-shadow;
@@ -1019,7 +961,6 @@
   line-height: 1;
 }
 
-/* M3E Checkbox & CheckboxGroup */
 .m3e-checkbox-group {
   display: flex;
   flex-direction: column;
@@ -1094,7 +1035,6 @@
   scale: 1;
 }
 
-/* M3E RadioGroup & Radio */
 .m3e-radio-group {
   display: flex;
   flex-direction: column;
@@ -1140,7 +1080,6 @@
 .m3e-radio__dot {
   border-radius: 9999px;
   background-color: var(--m3e-color-primary);
-  /* Explicit identity baseline at rest */
   scale: 0;
   transition: scale var(--m3e-spatial-fast-duration, 260ms) var(--m3e-spatial-fast-easing, ease-out);
 }
@@ -1148,10 +1087,6 @@
 .m3e-radio[data-checked] .m3e-radio__dot {
   scale: 1;
 }
-
-/* =========================================================================
-   9. M3E Slider (Tall Track + Vertical Handle Bar + 6px Gap + Value Bubble)
-   ========================================================================= */
 
 .m3e-slider {
   display: flex;
@@ -1288,10 +1223,6 @@
   box-shadow: 0 2px 8px color-mix(in srgb, var(--m3e-color-shadow) 22%, transparent);
 }
 
-/* =========================================================================
-   10. M3E Tabs (Single-Row Scroll + Border Indicator + Stable Dimensions)
-   ========================================================================= */
-
 .m3e-tabs {
   display: flex;
   flex-direction: column;
@@ -1312,7 +1243,6 @@
   display: none;
 }
 
-/* Tab never changes font-weight or padding across states so dimensions stay 100% stationary */
 .m3e-tabs__tab {
   position: relative;
   flex: 1 0 auto;
@@ -1392,7 +1322,6 @@
   font-weight: 600;
 }
 
-/* Drawn with border-block-end so Windows High Contrast / forced-colors preserves the active indicator */
 .m3e-tabs__indicator {
   position: absolute;
   inset-block-end: 0;
@@ -1428,10 +1357,6 @@
 .m3e-tabs__panel-content {
   padding-top: 16px;
 }
-
-/* =========================================================================
-   11. M3E Select (Outlined & Filled Triggers + Unified Concentric Dropdown)
-   ========================================================================= */
 
 .m3e-select-field {
   display: flex;
@@ -1652,10 +1577,6 @@
   flex-shrink: 0;
 }
 
-/* =========================================================================
-   12. M3E Dialog & AlertDialog (28px ExtraLarge Surface + Overscroll Contain)
-   ========================================================================= */
-
 .m3e-dialog__backdrop {
   position: fixed;
   inset: 0;
@@ -1757,10 +1678,6 @@
   flex-wrap: wrap;
   margin-top: 6px;
 }
-
-/* =========================================================================
-   13. M3E Tooltip (Plain & Rich) & Toast / Snackbar
-   ========================================================================= */
 
 .m3e-tooltip__positioner {
   z-index: 90;
@@ -1941,10 +1858,6 @@
   background-color: color-mix(in srgb, var(--m3e-color-inverse-on-surface) 12%, transparent);
 }
 
-/* =========================================================================
-   14. M3E TextField, TextareaField, NumberField & Combobox
-   ========================================================================= */
-
 .m3e-field {
   display: flex;
   flex-direction: column;
@@ -2032,7 +1945,6 @@
   border-block-end-color: var(--m3e-color-primary);
 }
 
-/* Post-interaction error styling (:user-invalid / [data-invalid]) so untouched required fields never flash red */
 .m3e-text-field__shell[data-variant="outlined"]:is([data-invalid], :has(:is(:user-invalid, [data-invalid]))) {
   border-color: var(--m3e-color-error);
 }
@@ -2128,7 +2040,6 @@
   color: var(--m3e-color-error);
 }
 
-/* NumberField (Connected Asymmetric Half-Pill Steppers) */
 .m3e-number-field {
   display: inline-flex;
   flex-direction: column;
@@ -2211,7 +2122,6 @@
   cursor: not-allowed;
 }
 
-/* Combobox */
 .m3e-combobox {
   display: flex;
   flex-direction: column;
@@ -2269,10 +2179,6 @@
 .m3e-combobox__empty:empty {
   display: none;
 }
-
-/* =========================================================================
-   15. M3E Segmented Accordion (Detaching Cards + Neighbor Seam Rounding)
-   ========================================================================= */
 
 .m3e-accordion {
   display: flex;
@@ -2399,10 +2305,6 @@
   line-height: 22px;
   color: var(--m3e-color-on-surface-variant);
 }
-
-/* =========================================================================
-   16. M3E Sheet (BottomSheet & SideSheet), Popover, DropdownMenu & ContextMenu
-   ========================================================================= */
 
 .m3e-sheet__backdrop {
   position: fixed;
@@ -2572,7 +2474,6 @@
   border-block-start: 1px solid var(--m3e-color-outline-variant);
 }
 
-/* Popover */
 .m3e-popover__positioner {
   z-index: 86;
 }
@@ -2627,7 +2528,6 @@
   gap: 10px;
 }
 
-/* Menu Separator (drawn via border so forced-colors preserves menu group dividers) */
 .m3e-menu__separator {
   inline-size: calc(100% - 8px);
   block-size: 0;
@@ -2648,10 +2548,6 @@
 .m3e-context-menu__trigger {
   display: block;
 }
-
-/* =========================================================================
-   17. M3E Chip, Avatar (Polygon Clipped), Badge, Card & NavigationBar / Rail
-   ========================================================================= */
 
 .m3e-chip {
   display: inline-flex;
@@ -2752,7 +2648,6 @@
   outline: 2px solid var(--m3e-color-primary);
 }
 
-/* Avatar & Badge */
 .m3e-avatar-wrap {
   position: relative;
   display: inline-flex;
@@ -2846,7 +2741,6 @@
   right: -10px;
 }
 
-/* Card */
 .m3e-card {
   box-sizing: border-box;
   display: flex;
@@ -2936,7 +2830,6 @@
   padding-top: 6px;
 }
 
-/* NavigationBar & NavigationRail */
 .m3e-nav-bar {
   display: flex;
   align-items: center;
@@ -3052,10 +2945,6 @@
   font-weight: 600;
 }
 
-/* =========================================================================
-   18. Geometry Debug Overlay & Accessibility Media Queries
-   ========================================================================= */
-
 .m3e-debug-badge {
   position: absolute;
   top: -9px;
@@ -3086,13 +2975,6 @@
   border: 0;
 }
 
-/* =========================================================================
-   19. Phase 5: FAB & ExtendedFAB, SearchBar, Carousel, TopAppBar,
-       Flat Progress & Meter, OTPField, DatePicker, PreviewCard,
-       Divider & ScrollArea
-   ========================================================================= */
-
-/* --- 19.1 FAB & ExtendedFAB --- */
 .m3e-fab,
 .m3e-extended-fab {
   position: relative;
@@ -3202,7 +3084,6 @@
   line-height: 1.2;
 }
 
-/* --- 19.2 SearchBar (Autocomplete) --- */
 .m3e-search-bar-form {
   width: 100%;
   max-width: 520px;
@@ -3397,7 +3278,6 @@
   flex-shrink: 0;
 }
 
-/* --- 19.3 Carousel (Multi-Browse & Hero) --- */
 .m3e-carousel {
   display: flex;
   flex-direction: column;
@@ -3559,7 +3439,6 @@
   text-overflow: ellipsis;
 }
 
-/* --- 19.4 TopAppBar (Flexible) --- */
 .m3e-top-app-bar {
   display: flex;
   flex-direction: column;
@@ -3649,7 +3528,6 @@
   white-space: nowrap;
 }
 
-/* --- 19.5 Flat LinearProgressIndicator, CircularProgressIndicator & Meter --- */
 .m3e-linear-progress,
 .m3e-meter {
   display: flex;
@@ -3826,7 +3704,6 @@
   background-color: var(--m3e-color-secondary-container);
 }
 
-/* --- 19.6 OTPField --- */
 .m3e-otp-field-wrap {
   display: flex;
   flex-direction: column;
@@ -3897,7 +3774,6 @@
   user-select: none;
 }
 
-/* --- 19.7 DatePicker & DatePickerField --- */
 .m3e-date-picker {
   display: flex;
   flex-direction: column;
@@ -4095,7 +3971,6 @@
   translate: 0px -4px;
 }
 
-/* --- 19.8 PreviewCard, Divider & ScrollArea --- */
 .m3e-preview-card__positioner {
   z-index: 65;
   outline: none;
@@ -4248,13 +4123,6 @@
   background-color: var(--m3e-color-primary);
 }
 
-/* =========================================================================
-   20. Phase 6 Additions: DateRangePicker, TimePicker, Form & Fieldset,
-       WideNavigationRail / NavigationDrawer / NavigationSuite,
-       Nested Submenu & Menubar, DataTable & Skeleton
-   ========================================================================= */
-
-/* Visually hidden utility for screen-reader captions & polite sort status */
 .m3e-sr-only {
   position: absolute;
   width: 1px;
@@ -4267,7 +4135,6 @@
   border: 0;
 }
 
-/* --- 20.1 DateRangePicker continuous range highlight strip --- */
 .m3e-date-picker__cell {
   position: relative;
   width: 100%;
@@ -4321,7 +4188,6 @@
   padding-inline-start: 4px;
 }
 
-/* --- 20.2 M3E TimePicker (Analog Clock Dial + Digital Keyboard Mode) --- */
 .m3e-time-picker {
   box-sizing: border-box;
   width: min(100%, 316px);
@@ -4549,7 +4415,6 @@
   color: var(--m3e-color-on-surface-variant);
 }
 
-/* --- 20.3 M3E Form & Fieldset --- */
 .m3e-form {
   display: flex;
   flex-direction: column;
@@ -4638,7 +4503,6 @@
   gap: 14px;
 }
 
-/* --- 20.4 WideNavigationRail, NavigationDrawer & NavigationSuite --- */
 .m3e-wide-rail {
   box-sizing: border-box;
   display: flex;
@@ -4908,7 +4772,6 @@
   gap: 12px;
 }
 
-/* --- 20.5 Nested Submenu & Application Menubar --- */
 .m3e-segmented-menu__submenu-caret {
   display: inline-flex;
   align-items: center;
@@ -4922,7 +4785,6 @@
   color: var(--m3e-color-on-secondary-container);
 }
 
-/* Single continuous capsule strip per `app-menus` (no separate disconnected buttons) */
 .m3e-menubar {
   display: inline-flex;
   align-items: center;
@@ -4972,12 +4834,10 @@
   cursor: not-allowed;
 }
 
-/* Instant switching between open menus inside Menubar (`app-menus`) */
 .m3e-menubar__popup[data-instant] {
   transition: none;
 }
 
-/* --- 20.6 Sortable & Responsive DataTable + Skeleton --- */
 .m3e-data-table-shell {
   width: 100%;
   box-sizing: border-box;
@@ -5140,7 +5000,6 @@ th.m3e-data-table__td {
   color: var(--m3e-color-on-surface-variant);
 }
 
-/* Container-responsive compact padding inside narrow panels (`responsive-table`) */
 @container (max-width: 520px) {
   .m3e-data-table__th,
   .m3e-data-table__td {
@@ -5149,7 +5008,6 @@ th.m3e-data-table__td {
   }
 }
 
-/* Skeleton tonal shimmer */
 .m3e-skeleton {
   display: inline-block;
   flex-shrink: 0;
@@ -5200,10 +5058,6 @@ th.m3e-data-table__td {
     opacity: 0.48;
   }
 }
-
-/* =========================================================================
-   26. M3E Collapsible, Accordion Expand-All, Dialog Close & NavigationMenu
-   ========================================================================= */
 
 .m3e-dialog__popup {
   position: relative;
@@ -5279,7 +5133,6 @@ th.m3e-data-table__td {
   cursor: not-allowed;
 }
 
-/* Collapsible */
 .m3e-collapsible {
   box-sizing: border-box;
   display: flex;
@@ -5385,7 +5238,6 @@ th.m3e-data-table__td {
   color: var(--m3e-color-on-secondary-container);
 }
 
-/* Keep [hidden="until-found"] free of padding/borders/display:none per search-hidden-content */
 .m3e-collapsible__panel {
   overflow: hidden;
   height: var(--collapsible-panel-height, auto);
@@ -5406,7 +5258,6 @@ th.m3e-data-table__td {
   padding-block-start: 12px;
 }
 
-/* Site NavigationMenu (Top-level links & Mega-menu Viewport) */
 .m3e-nav-menu {
   position: relative;
   width: 100%;
@@ -5481,7 +5332,6 @@ th.m3e-data-table__td {
   color: var(--m3e-color-on-secondary-container);
 }
 
-/* [aria-current="page"] indicator uses both tonal pill + bottom bar (not color alone, >= 3:1 contrast) */
 .m3e-nav-menu__link[aria-current="page"] {
   background-color: var(--m3e-color-secondary-container);
   color: var(--m3e-color-on-secondary-container);

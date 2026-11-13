@@ -113,56 +113,56 @@ const SEED_PRESETS = [
 ] as const;
 
 const COMPONENT_SEARCH_OPTIONS: readonly ComboboxOption[] = [
-  { value: "button-group", label: "ButtonGroup 按钮组", description: "零和宽度挤压与 Connected 分段圆角" },
-  { value: "slider", label: "Slider 宽轨滑块", description: "竖条手柄 + 6px 两侧留白切口" },
-  { value: "accordion", label: "Accordion 分段手风琴", description: "展开独立脱出 [16,16,16,16] + 邻项联动圆角" },
-  { value: "sheet", label: "BottomSheet & SideSheet", description: "28px 抽屉表面 + 手势拖拽关闭" },
-  { value: "avatar", label: "Avatar 多边形头像", description: "支持 35 种官方 MaterialShapes 矢量裁剪" },
-  { value: "wavy", label: "WavyProgressIndicator", description: "极坐标 N=9 整波瓣闭合波浪进度" },
+  { value: "button-group", label: "ButtonGroup", description: "按钮组" },
+  { value: "slider", label: "Slider", description: "滑块" },
+  { value: "accordion", label: "Accordion", description: "手风琴" },
+  { value: "sheet", label: "BottomSheet & SideSheet", description: "抽屉面板" },
+  { value: "avatar", label: "Avatar", description: "多边形头像" },
+  { value: "wavy", label: "WavyProgressIndicator", description: "波浪进度条" },
 ];
 
 const SEARCH_SUGGESTIONS: readonly SearchSuggestion[] = [
-  { value: "carousel", label: "Carousel 焦点轮播", category: "M3E 1.5", description: "零和容器宽度守恒 + 28px/20px/16px 动态焦点圆角" },
-  { value: "otp-field", label: "OTPField 验证码框", category: "Base UI 1.9", description: "Connected 分段圆角 + 聚焦自动独立脱出 [16,16,16,16]" },
-  { value: "top-app-bar", label: "TopAppBar 弹性应用栏", category: "M3E 1.5", description: "LargeFlexible 双行副标题滚动折叠插值" },
-  { value: "progress", label: "LinearProgressIndicator", category: "M3E 1.5", description: "标志性 4px 轨道裂隙 (Track Gap) + 4px 终点止动圆点" },
-  { value: "date-picker", label: "DockedDatePicker 日历", category: "M3E 1.5", description: "28px 容器表面 + 年份速切网格 + 按压圆角形变" },
+  { value: "carousel", label: "Carousel", category: "展示", description: "轮播容器" },
+  { value: "otp-field", label: "OTPField", category: "表单", description: "验证码输入" },
+  { value: "top-app-bar", label: "TopAppBar", category: "导航", description: "顶部应用栏" },
+  { value: "progress", label: "LinearProgressIndicator", category: "反馈", description: "线性进度条" },
+  { value: "date-picker", label: "DockedDatePicker", category: "表单", description: "日期选择器" },
 ];
 
 const CAROUSEL_DEMO_ITEMS: readonly CarouselItemSpec[] = [
   {
     id: "aurora",
-    badge: "Multi-Browse 01",
-    title: "空间物理弹簧系统",
-    subtitle: "ζ = 0.6 · k = 380 欠阻尼丝滑回弹",
+    badge: "01",
+    title: "物理弹簧",
+    subtitle: "Spatial & Effects",
     background: "linear-gradient(135deg, #4f378b 0%, #9a82db 100%)",
   },
   {
     id: "emerald",
-    badge: "Multi-Browse 02",
-    title: "HCT 五级动态表面",
-    subtitle: "Lowest → Highest 零投影清晰层级",
+    badge: "02",
+    title: "HCT 色彩",
+    subtitle: "Dynamic Tonal Palette",
     background: "linear-gradient(135deg, #005142 0%, #26a689 100%)",
   },
   {
     id: "ocean",
-    badge: "Multi-Browse 03",
-    title: "35 种归一化多边形",
-    subtitle: "任意形状 1:1 闭合三次贝塞尔插值",
+    badge: "03",
+    title: "矢量多边形",
+    subtitle: "35 MaterialShapes",
     background: "linear-gradient(135deg, #0b57d0 0%, #5b9bf8 100%)",
   },
   {
     id: "crimson",
-    badge: "Multi-Browse 04",
-    title: "零和容器宽度守恒",
-    subtitle: "焦点扩张与邻项压缩严丝合缝无抖动",
+    badge: "04",
+    title: "圆角拓扑",
+    subtitle: "Dynamic Corner Morph",
     background: "linear-gradient(135deg, #8c1d18 0%, #e46962 100%)",
   },
   {
     id: "plum",
-    badge: "Multi-Browse 05",
-    title: "Base UI 1.9 无障碍原语",
-    subtitle: "完整 ARIA、键盘焦点环与浮层定位",
+    badge: "05",
+    title: "无障碍原语",
+    subtitle: "Built on Base UI",
     background: "linear-gradient(135deg, #633b48 0%, #b58392 100%)",
   },
 ];
@@ -171,7 +171,7 @@ const NAV_GROUPS = [
   {
     title: "入门与配置",
     items: [
-      { id: "theme-setup", label: "m3e.json 主题与国际化", tag: "v1.0" },
+      { id: "theme-setup", label: "主题与国际化" },
     ],
   },
   {
@@ -179,73 +179,69 @@ const NAV_GROUPS = [
     items: [
       { id: "button", label: "Button & ToggleButton" },
       { id: "icon-split", label: "IconButton & SplitButton" },
-      { id: "button-group", label: "ButtonGroup 按钮组" },
+      { id: "button-group", label: "ButtonGroup" },
       { id: "toolbar-fab", label: "FloatingToolbar & FABMenu" },
-      { id: "fab-extended", label: "FAB & ExtendedFAB", tag: "New" },
+      { id: "fab-extended", label: "FAB & ExtendedFAB" },
     ],
   },
   {
     title: "表单控件",
     items: [
-      { id: "search-bar", label: "SearchBar 搜索栏", tag: "New" },
-      { id: "otp-field", label: "OTPField 验证码", tag: "New" },
-      { id: "date-picker", label: "DatePicker 日历选择", tag: "New" },
+      { id: "search-bar", label: "SearchBar" },
+      { id: "otp-field", label: "OTPField" },
+      { id: "date-picker", label: "DatePicker" },
       { id: "textfield", label: "TextField & Textarea" },
       { id: "number-combobox", label: "NumberField & Combobox" },
-      { id: "switch", label: "Switch 开关" },
-      { id: "slider", label: "Slider 滑块" },
+      { id: "switch", label: "Switch" },
+      { id: "slider", label: "Slider" },
       { id: "checkbox-radio", label: "Checkbox & Radio" },
-      { id: "select", label: "Select 选择器" },
+      { id: "select", label: "Select" },
     ],
   },
   {
     title: "数据展示与容器",
     items: [
-      { id: "carousel", label: "Carousel 焦点轮播", tag: "New" },
-      { id: "chips", label: "Chip 标签族" },
+      { id: "carousel", label: "Carousel" },
+      { id: "chips", label: "Chip" },
       { id: "avatar-badge", label: "Avatar & Badge" },
-      { id: "cards", label: "Card 卡片容器" },
-      { id: "accordion", label: "Accordion 分段手风琴" },
-      { id: "preview-scroll-divider", label: "PreviewCard & ScrollArea", tag: "New" },
+      { id: "cards", label: "Card" },
+      { id: "accordion", label: "Accordion" },
+      { id: "preview-scroll-divider", label: "PreviewCard & ScrollArea" },
     ],
   },
   {
     title: "导航与列表",
     items: [
-      { id: "top-app-bar", label: "TopAppBar 弹性应用栏", tag: "New" },
+      { id: "top-app-bar", label: "TopAppBar" },
       { id: "navigation", label: "NavigationBar & Rail" },
-      { id: "tabs", label: "Tabs 标签页" },
-      { id: "segmented-list", label: "SegmentedList 分段列表" },
+      { id: "tabs", label: "Tabs" },
+      { id: "segmented-list", label: "SegmentedList" },
     ],
   },
   {
-    title: "浮层、反馈与图形",
+    title: "浮层与反馈",
     items: [
       { id: "sheets", label: "BottomSheet & SideSheet" },
-      { id: "popover-menu", label: "Popover & Menu (右键)" },
+      { id: "popover-menu", label: "Popover & Menu" },
       { id: "dialog", label: "Dialog & AlertDialog" },
       { id: "tooltip-toast", label: "Tooltip & Toast" },
-      { id: "flat-progress-meter", label: "Progress & Meter 裂隙条", tag: "New" },
+      { id: "flat-progress-meter", label: "Progress & Meter" },
       { id: "progress", label: "Loading & WavyProgress" },
-      { id: "shapes", label: "MaterialShapeView (35)" },
+      { id: "shapes", label: "MaterialShapeView" },
     ],
   },
   {
-    title: "高阶复合套件",
+    title: "复合组件",
     items: [
-      { id: "site-nav-collapsible", label: "NavigationMenu & Collapsible", tag: "v1.0" },
-      { id: "time-date-range", label: "TimePicker & 区间日历", tag: "New" },
-      { id: "form-fieldset", label: "Form & Fieldset 校验", tag: "New" },
-      { id: "navigation-suite", label: "NavigationSuite & 抽屉", tag: "New" },
-      { id: "menubar-submenu", label: "Menubar & 多级子菜单", tag: "New" },
-      { id: "data-table-skeleton", label: "DataTable & Skeleton", tag: "New" },
+      { id: "site-nav-collapsible", label: "NavigationMenu & Collapsible" },
+      { id: "time-date-range", label: "TimePicker & DateRangePicker" },
+      { id: "form-fieldset", label: "Form & Fieldset" },
+      { id: "navigation-suite", label: "NavigationSuite & Drawer" },
+      { id: "menubar-submenu", label: "Menubar & DropdownMenu" },
+      { id: "data-table-skeleton", label: "DataTable & Skeleton" },
     ],
   },
 ] as const;
-
-/* =========================================================================
-   Minimal Inline SVG Icons
-   ========================================================================= */
 
 function SparkleIcon() {
   return (
@@ -440,7 +436,6 @@ const NAV_DRAWER_ITEMS: readonly NavigationDestination<string>[] =
       href: `#${item.id}`,
       section: group.title,
       icon: <NavCategoryGlyph index={groupIdx} />,
-      badgeLabel: "tag" in item && item.tag ? item.tag : undefined,
     })),
   );
 
@@ -485,10 +480,6 @@ function SeedSwatchDot({ hex }: { readonly hex: string }) {
     />
   );
 }
-
-/* =========================================================================
-   1. Sticky Compact TopAppBar (Built 100% with m3eui)
-   ========================================================================= */
 
 function DocsHeader({
   onOpenMobileNav,
@@ -574,7 +565,7 @@ function DocsHeader({
             className="docs-brand__chip"
             onClick={() => onJumpToSection("theme-setup")}
           >
-            v1.0 · m3e.json
+            v0.1.0
           </AssistChip>
         </div>
       }
@@ -596,8 +587,8 @@ function DocsHeader({
               }
             }}
             onSearchSubmit={resolveAndJump}
-            placeholder="快速跳转 48+ 组件与规范 (如 Button, DatePicker, Tabs)…"
-            aria-label="全局搜索并跳转组件章节"
+            placeholder="搜索组件 (如 Button, DatePicker, Tabs)…"
+            aria-label="搜索组件"
           />
         </div>
       }
@@ -607,7 +598,7 @@ function DocsHeader({
             variant="connected"
             size="xs"
             selectionMode="single"
-            aria-label="国际化语言 (i18n)"
+            aria-label="语言"
             items={LOCALE_GROUP_ITEMS}
             value={[locale]}
             onValueChange={(vals) => {
@@ -636,15 +627,14 @@ function DocsHeader({
 
           <Popover
             align="end"
-            title="HCT 动态主题与对比度"
-            description="实时切换种子色、调色板算法与无障碍对比度层级"
+            title="主题设置"
             trigger={
               <Button
                 size="xs"
                 variant="outlined"
                 leadingIcon={<SeedSwatchDot hex={seedHex} />}
               >
-                主题调色
+                主题
               </Button>
             }
           >
@@ -729,10 +719,6 @@ function DocsHeader({
   );
 }
 
-/* =========================================================================
-   2. SideSheet Theme & Physics Studio (Built 100% with m3eui)
-   ========================================================================= */
-
 function ThemeStudioSheet({
   open,
   onOpenChange,
@@ -770,8 +756,7 @@ function ThemeStudioSheet({
       open={open}
       onOpenChange={onOpenChange}
       side={direction === "rtl" ? "left" : "right"}
-      title="M3E 主题与双轨物理工作台"
-      description="所有参数实时联动全站 48+ 组件，并自动序列化为项目级 m3e.json 声明式配置。"
+      title="主题与动效工作台"
       footer={
         <div className="demo-row" style={{ justifyContent: "space-between", width: "100%" }}>
           <Button
@@ -781,9 +766,8 @@ function ThemeStudioSheet({
               try {
                 await navigator.clipboard.writeText(exportConfigJson());
               } catch {
-                // Ignore clipboard restriction
               }
-              toast({ title: "已复制实时 m3e.json 配置" });
+              toast({ title: "已复制 m3e.json" });
             }}
           >
             复制 m3e.json
@@ -800,10 +784,7 @@ function ThemeStudioSheet({
     >
       <ScrollArea maxHeight="calc(100dvh - 210px)">
         <div className="docs-studio-sheet-content">
-          <Fieldset
-            legend="HCT 动态色彩与对比度"
-            description="基于 CAM16 + CIELAB 感知均匀空间实时计算浅/深双套色阶"
-          >
+          <Fieldset legend="色彩与对比度">
             <div className="demo-row" style={{ gap: 8 }}>
               {SEED_PRESETS.map((preset) => (
                 <FilterChip
@@ -820,7 +801,7 @@ function ThemeStudioSheet({
             </div>
 
             <Select
-              label="调色板变体 (schemeVariant)"
+              label="调色板变体"
               value={schemeVariant}
               onValueChange={(v) => {
                 if (v) {
@@ -830,20 +811,20 @@ function ThemeStudioSheet({
                 }
               }}
               options={[
-                { value: "expressive", label: "Expressive (高表现力色相偏移)" },
-                { value: "tonalSpot", label: "Tonal Spot (温和色调焦点)" },
-                { value: "vibrant", label: "Vibrant (高饱和活力)" },
-                { value: "neutral", label: "Neutral (低饱和中性)" },
+                { value: "expressive", label: "Expressive" },
+                { value: "tonalSpot", label: "Tonal Spot" },
+                { value: "vibrant", label: "Vibrant" },
+                { value: "neutral", label: "Neutral" },
               ]}
             />
 
             <div className="docs-studio-field">
-              <span className="docs-studio-field__label">对比度层级</span>
+              <span className="docs-studio-field__label">对比度</span>
               <ButtonGroup
                 variant="connected"
                 size="xs"
                 selectionMode="single"
-                aria-label="工作台对比度层级"
+                aria-label="对比度"
                 items={CONTRAST_GROUP_ITEMS}
                 value={[String(contrastLevel)]}
                 onValueChange={(vals) => {
@@ -858,7 +839,7 @@ function ThemeStudioSheet({
                 variant="connected"
                 size="xs"
                 selectionMode="single"
-                aria-label="工作台明暗模式"
+                aria-label="明暗模式"
                 items={COLOR_MODE_GROUP_ITEMS}
                 value={[colorMode]}
                 onValueChange={(vals) => {
@@ -869,15 +850,12 @@ function ThemeStudioSheet({
             </div>
           </Fieldset>
 
-          <Fieldset
-            legend="国际化语言与排版方向"
-            description="78 个强类型文案 Key，切换到阿拉伯语时自动开启全局 RTL 镜像"
-          >
+          <Fieldset legend="语言与方向">
             <ButtonGroup
               variant="connected"
               size="xs"
               selectionMode="single"
-              aria-label="工作台国际化语言"
+              aria-label="语言"
               items={LOCALE_GROUP_ITEMS}
               value={[locale]}
               onValueChange={(vals) => {
@@ -893,11 +871,11 @@ function ThemeStudioSheet({
               variant="connected"
               size="xs"
               selectionMode="single"
-              aria-label="书写方向模式"
+              aria-label="书写方向"
               items={[
                 { value: "auto", label: `自动 (${direction.toUpperCase()})` },
-                { value: "ltr", label: "强制 LTR →" },
-                { value: "rtl", label: "强制 ← RTL" },
+                { value: "ltr", label: "LTR →" },
+                { value: "rtl", label: "← RTL" },
               ]}
               value={[directionMode]}
               onValueChange={(vals) => {
@@ -912,26 +890,23 @@ function ThemeStudioSheet({
             />
           </Fieldset>
 
-          <Fieldset
-            legend="双轨物理弹簧与几何调试"
-            description="空间轨迹支持 ζ=0.6 弹性回弹，颜色/不透明度严格临界阻尼 ζ=1.0"
-          >
+          <Fieldset legend="动效与调试">
             <Switch
               checked={motionSchemeName === "expressive"}
               onCheckedChange={(checked) =>
                 setMotionSchemeName(checked ? "expressive" : "standard")
               }
-              label="启用 Expressive 欠阻尼弹性弹簧"
+              label="Expressive 弹性弹簧"
             />
             <Switch
               checked={playbackRate < 1}
               onCheckedChange={(checked) => setPlaybackRate(checked ? 0.25 : 1)}
-              label="0.25x 物理慢动作检查 (观察圆角与挤压插值)"
+              label="0.25x 慢动作"
             />
             <Switch
               checked={debugGeometry}
               onCheckedChange={setDebugGeometry}
-              label="显示实时圆角半径与零和宽度几何标尺"
+              label="几何标尺"
             />
           </Fieldset>
         </div>
@@ -939,10 +914,6 @@ function ThemeStudioSheet({
     </SideSheet>
   );
 }
-
-/* =========================================================================
-   3. Interactive Documentation Body (100% m3eui Shell)
-   ========================================================================= */
 
 function DocsBody() {
   const {
@@ -953,7 +924,6 @@ function DocsBody() {
     contrastLevel,
     setContrastLevel,
     direction,
-    directionMode,
     setDirection,
     motionSchemeName,
     setMotionSchemeName,
@@ -993,14 +963,12 @@ function DocsBody() {
     }
   }, []);
 
-  // Actions state
   const [favSelected, setFavSelected] = React.useState(false);
   const [iconToggleOn, setIconToggleOn] = React.useState(true);
   const [viewPeriod, setViewPeriod] = React.useState("week");
   const [toolbarTheme, setToolbarTheme] = React.useState<"standard" | "vibrant">("vibrant");
   const [toolbarTool, setToolbarTool] = React.useState("brush");
 
-  // Form controls state
   const [wifiOn, setWifiOn] = React.useState(true);
   const [hapticOn, setHapticOn] = React.useState(true);
   const [dndOn, setDndOn] = React.useState(false);
@@ -1016,10 +984,9 @@ function DocsBody() {
   const [modelId, setModelId] = React.useState<string | null>("gemini-2.5-pro");
   const [regionId, setRegionId] = React.useState<string | null>("tokyo");
 
-  // Phase 4 Form, Display, Nav & Sheet state
   const [emailInput, setEmailInput] = React.useState("architect@m3e.dev");
   const [bioInput, setBioInput] = React.useState(
-    "基于 Base UI 1.x 与 M3E 双轨物理弹簧构建的高表现力 Web React 组件库。",
+    "Material 3 Expressive React 组件库。",
   );
   const [stiffnessVal, setStiffnessVal] = React.useState<number | null>(380);
   const [dampingVal, setDampingVal] = React.useState<number | null>(0.6);
@@ -1039,19 +1006,16 @@ function DocsBody() {
   const [unreadCount, setUnreadCount] = React.useState<number>(6);
   const [navDest, setNavDest] = React.useState<string>("explore");
 
-  // Navigation & List state
   const [primaryTab, setPrimaryTab] = React.useState("overview");
   const [secondaryTab, setSecondaryTab] = React.useState("tokens");
   const [selectedListItem, setSelectedListItem] = React.useState<number>(1);
   const [singleListSelected, setSingleListSelected] = React.useState(false);
 
-  // Progress & Shapes state
   const [progressVal, setProgressVal] = React.useState<number>(0.62);
   const [fromShape, setFromShape] = React.useState<M3EShapeName>("cookie9Sided");
   const [toShape, setToShape] = React.useState<M3EShapeName>("heart");
   const [morphProgress, setMorphProgress] = React.useState<number>(0);
 
-  // Phase 5 state: ExtendedFAB, SearchBar, OTPField, DatePicker, Carousel, TopAppBar, Meter
   const [fabExpanded, setFabExpanded] = React.useState<boolean>(true);
   const [searchQuery, setSearchQuery] = React.useState<string>("");
   const [otpCode, setOtpCode] = React.useState<string>("528");
@@ -1097,8 +1061,8 @@ function DocsBody() {
             <NavigationDrawer
               variant="permanent"
               scrollSpy
-              aria-label="组件规范目录"
-              headline="组件规范目录 (34 组)"
+              aria-label="组件目录"
+              headline="组件目录"
               items={NAV_DRAWER_ITEMS}
               value={activeSection}
               onValueChange={setActiveSection}
@@ -1113,23 +1077,17 @@ function DocsBody() {
               <div className="docs-hero__copy">
                 <div className="docs-hero__chips">
                   <AssistChip icon={<SparkleIcon />}>
-                    Material 3 Expressive 1.5
+                    Material 3 Expressive
                   </AssistChip>
-                  <AssistChip>48+ 全量 Web 组件 (v1.0)</AssistChip>
-                  <AssistChip>m3e.json + m3eui</AssistChip>
-                  <AssistChip>100% Key 驱动 i18n · Auto RTL</AssistChip>
+                  <AssistChip>Base UI</AssistChip>
+                  <AssistChip>v0.1.0</AssistChip>
                 </div>
 
                 <h1 className="docs-hero__title">
-                  基于 Base UI 无头原语与真实物理弹簧的 M3E 组件库
+                  Material 3 Expressive React 组件库
                 </h1>
                 <p className="docs-hero__desc">
-                  整站界面同样 100% 由 <code>m3eui</code> 自身组件（
-                  <code>TopAppBar</code>、<code>NavigationDrawer</code>、
-                  <code>SearchBar</code>、<code>Tabs</code>、
-                  <code>ButtonGroup</code>、<code>DataTable</code>、
-                  <code>SideSheet</code>、<code>Card</code>）构建：底层基于{" "}
-                  <code>@base-ui/react</code> 1.9 处理完整键盘焦点与无障碍语义，视觉严格还原动态圆角拓扑、双轨物理弹簧与 HCT 五级表面色阶。
+                  基于 <code>@base-ui/react</code> 构建，内置 HCT 动态色彩、物理弹簧动效、<code>m3e.json</code> 主题配置与多语言支持。
                 </p>
 
                 <div className="demo-row">
@@ -1138,25 +1096,25 @@ function DocsBody() {
                     leadingIcon={<SparkleIcon />}
                     onClick={() => scrollToSection("theme-setup")}
                   >
-                    快速上手 m3e.json
+                    快速上手
                   </Button>
                   <Button
                     variant="tonal"
                     leadingIcon={<SlidersStudioIcon />}
                     onClick={() => setStudioOpen(true)}
                   >
-                    打开主题与物理工作台
+                    主题工作台
                   </Button>
                   <Button
                     variant="outlined"
                     onClick={() => scrollToSection("site-nav-collapsible")}
                   >
-                    浏览 v1.0 新增原语
+                    复合组件
                   </Button>
                 </div>
               </div>
 
-              <Tooltip content="点击切换 M3E 归一化多边形徽章">
+              <Tooltip content="切换多边形">
                 <Card
                   interactive
                   variant="outlined"
@@ -1266,29 +1224,13 @@ function DocsBody() {
             </div>
           </Card>
 
-          {/* ===============================================================
-              1. 入门、m3e.json 配置与国际化
-              =============================================================== */}
           <div className="docs-category">
-            <DocsCategoryHeader
-              indexLabel="01"
-              title="入门、m3e.json 配置与国际化"
-              countLabel="工程基石"
-              subtitle={
-                <>
-                  对标 <code>shadcn/ui</code> 的声明式工程配置：根目录{" "}
-                  <code>m3e.json</code> 统一收敛主题色、调色板、对比度、物理阻尼与默认语言（支持自动 RTL），配合{" "}
-                  <code>m3eui</code> 零闪烁同步静态 CSS 变量。
-                </>
-              }
-            />
+            <DocsCategoryHeader indexLabel="01" title="主题与国际化" />
 
             <ShowcaseCard
               id="theme-setup"
-              title="m3e.json 工程配置 · M3EProvider · Key 驱动国际化"
-              primitive="m3eui/config · m3eui/i18n · m3eui"
-              description={`当前种子色 ${seedHex}（${schemeVariant} · 对比度 ${contrastLevel}），当前语言 ${locale}（书写方向 ${direction.toUpperCase()} / 模式 ${directionMode}）。组件内部零硬编码文案，全部通过 t(key) 与 Intl API 实时响应切换。`}
-              code={`import "./m3e-theme.generated.css"; // m3e sync 静态生成，首屏零闪烁
+              title="m3e.json · M3EProvider · i18n"
+              code={`import "./m3e-theme.generated.css";
 import "m3eui/styles.css";
 import { M3EProvider, Button } from "m3eui";
 import m3eConfig from "./m3e.json";
@@ -1296,7 +1238,7 @@ import m3eConfig from "./m3e.json";
 export function App() {
   return (
     <M3EProvider config={m3eConfig}>
-      <Button variant="filled">开始构建</Button>
+      <Button variant="filled">开始使用</Button>
     </M3EProvider>
   );
 }`}
@@ -1327,7 +1269,7 @@ export function App() {
                   title={
                     <div className="docs-inline-card-head">
                       <span>
-                        实时生成的 <code>m3e.json</code> 配置
+                        <code>m3e.json</code> 配置
                       </span>
                       <Button
                         size="xs"
@@ -1340,12 +1282,11 @@ export function App() {
                             setCopiedConfig(true);
                             setTimeout(() => setCopiedConfig(false), 1600);
                           } catch {
-                            // Ignore clipboard restriction
                           }
-                          toast({ title: "已复制当前 m3e.json 配置" });
+                          toast({ title: "已复制 m3e.json" });
                         }}
                       >
-                        {copiedConfig ? "已复制 m3e.json" : "复制 m3e.json"}
+                        {copiedConfig ? "已复制" : "复制"}
                       </Button>
                     </div>
                   }
@@ -1364,12 +1305,12 @@ export function App() {
                   variant="outlined"
                   title={
                     <span>
-                      国际化字典实时映射 (<code>{locale}</code> ·{" "}
+                      多语言词条 (<code>{locale}</code> ·{" "}
                       <code>dir=&quot;{direction}&quot;</code>)
                     </span>
                   }
                 >
-                  <SegmentedList aria-label="国际化字典实时映射示例">
+                  <SegmentedList aria-label="多语言词条示例">
                     <SegmentedListItem
                       headline={<strong>{t("datePicker.title")}</strong>}
                       supportingText="Key: datePicker.title"
@@ -1396,32 +1337,22 @@ export function App() {
                     />
                   </SegmentedList>
                   <div className="demo-row" style={{ marginTop: 10, gap: 6 }}>
-                    <AssistChip>pnpm m3e init</AssistChip>
-                    <AssistChip>pnpm m3e sync</AssistChip>
-                    <AssistChip>pnpm m3e locale fr-FR</AssistChip>
-                    <AssistChip>pnpm m3e doctor</AssistChip>
+                    <AssistChip>npx m3eui init</AssistChip>
+                    <AssistChip>npx m3eui sync</AssistChip>
+                    <AssistChip>npx m3eui locale fr-FR</AssistChip>
+                    <AssistChip>npx m3eui doctor</AssistChip>
                   </div>
                 </Card>
               </div>
             </ShowcaseCard>
           </div>
 
-          {/* ===============================================================
-              2. 动作与工具栏
-              =============================================================== */}
           <div className="docs-category">
-            <DocsCategoryHeader
-              indexLabel="02"
-              title="动作与工具栏 (Actions)"
-              countLabel="5 组规范"
-              subtitle="五档尺寸按钮、按压圆角收缩、非对称分裂按钮、零和宽度挤压按钮组与悬浮胶囊工具栏。"
-            />
+            <DocsCategoryHeader indexLabel="02" title="动作与工具栏" />
 
           <ShowcaseCard
             id="button"
             title="Button & ToggleButton"
-            primitive="@base-ui/react/button · @base-ui/react/toggle"
-            description="支持 xs–xl 五档尺寸与 5 种色彩变体；按压时空间弹簧收缩圆角，ToggleButton 选中时由胶囊切换为方圆角。"
             code={`import { Button, ToggleButton } from "m3eui";
 
 <Button variant="filled" leadingIcon={<SparkleIcon />}>主要操作</Button>
@@ -1432,17 +1363,17 @@ export function App() {
   pressed={pressed}
   onPressedChange={setPressed}
 >
-  收藏文章
+  收藏
 </ToggleButton>`}
           >
             <div className="demo-row">
               <Button variant="filled" leadingIcon={<SparkleIcon />}>
-                Filled 填充
+                Filled
               </Button>
-              <Button variant="tonal">Tonal 色调</Button>
-              <Button variant="elevated">Elevated 浮起</Button>
-              <Button variant="outlined">Outlined 描边</Button>
-              <Button variant="text">Text 文本</Button>
+              <Button variant="tonal">Tonal</Button>
+              <Button variant="elevated">Elevated</Button>
+              <Button variant="outlined">Outlined</Button>
+              <Button variant="text">Text</Button>
               <ToggleButton
                 variant="tonal"
                 pressed={favSelected}
@@ -1463,9 +1394,7 @@ export function App() {
 
           <ShowcaseCard
             id="icon-split"
-            title="IconButton (5×3) & SplitButton"
-            primitive="@base-ui/react/button · @base-ui/react/menu"
-            description="IconButton 提供 narrow / default / wide 三种宽高比；SplitButton 具备 2px 非对称内缝、光学居中偏移与同心圆分段菜单。"
+            title="IconButton & SplitButton"
             code={`import { IconButton, IconToggleButton, SplitButton } from "m3eui";
 
 <IconButton aria-label="通知" variant="tonal" widthVariant="narrow" icon={<BellIcon />} />
@@ -1512,23 +1441,23 @@ export function App() {
               <SplitButton
                 variant="filled"
                 leadingIcon={<SendIcon />}
-                onClick={() => toast({ title: "邮件已立即发送" })}
+                onClick={() => toast({ title: "已发送" })}
                 menuItems={[
                   {
                     id: "now",
                     label: "立即发送",
                     shortcut: "⌘↵",
                     selected: true,
-                    onSelect: () => toast({ title: "邮件已立即发送" }),
+                    onSelect: () => toast({ title: "已发送" }),
                   },
                   {
                     id: "schedule",
-                    label: "明早 09:00 定时发送",
-                    onSelect: () => toast({ title: "已排期至明早 09:00" }),
+                    label: "明早 09:00 发送",
+                    onSelect: () => toast({ title: "已设置定时发送" }),
                   },
                   {
                     id: "draft",
-                    label: "保存为模板草稿",
+                    label: "存为草稿",
                     onSelect: () => toast({ title: "已存入草稿箱" }),
                   },
                 ]}
@@ -1540,27 +1469,24 @@ export function App() {
 
           <ShowcaseCard
             id="button-group"
-            title="ButtonGroup 按钮组 (Standard 挤压 vs Connected 分段)"
-            primitive="@base-ui/react/toggle-group · @base-ui/react/toolbar"
-            description="Connected 模式保持页签宽度恒定并通过 8px → 4px → 胶囊形变表达交互；Standard 动作栏按压时展开 15% 并零和压缩邻项。"
+            title="ButtonGroup"
             code={`import { ButtonGroup } from "m3eui";
 
-{/* Connected 分段选择器（宽度恒定，圆角形变） */}
 <ButtonGroup
   variant="connected"
   selectionMode="single"
   value={[period]}
   onValueChange={(vals) => setPeriod(vals[0] ?? "week")}
   items={[
-    { value: "day", label: "日视图" },
-    { value: "week", label: "周视图" },
-    { value: "month", label: "月度概览" },
-    { value: "year", label: "全年" },
+    { value: "day", label: "日" },
+    { value: "week", label: "周" },
+    { value: "month", label: "月" },
+    { value: "year", label: "年" },
   ]}
 />`}
           >
             <div className="demo-panel">
-              <span className="demo-panel__label">Connected 分段切换（宽度锁定，内缝圆角弹簧过渡）</span>
+              <span className="demo-panel__label">Connected</span>
               <ButtonGroup
                 variant="connected"
                 selectionMode="single"
@@ -1571,21 +1497,21 @@ export function App() {
                 items={[
                   { value: "day", label: "日视图" },
                   { value: "week", label: "周视图" },
-                  { value: "month", label: "月度概览" },
-                  { value: "year", label: "全年" },
+                  { value: "month", label: "月视图" },
+                  { value: "year", label: "年视图" },
                 ]}
               />
             </div>
 
             <div className="demo-panel">
-              <span className="demo-panel__label">Standard 动作组（按压享 15% 零和宽度挤压，总宽不变）</span>
+              <span className="demo-panel__label">Standard</span>
               <ButtonGroup
                 variant="standard"
                 buttonVariant="tonal"
                 items={[
                   { value: "reply", label: "回复" },
-                  { value: "forward", label: "转发同事" },
-                  { value: "archive", label: "归档会话" },
+                  { value: "forward", label: "转发" },
+                  { value: "archive", label: "归档" },
                 ]}
               />
             </div>
@@ -1594,13 +1520,11 @@ export function App() {
           <ShowcaseCard
             id="toolbar-fab"
             title="FloatingToolbar & FABMenu"
-            primitive="@base-ui/react/toolbar"
-            description="64px 外胶囊嵌套 48px 同心圆动作项（32 - 8 = 24px），右侧可伴随 ToggleFAB 展开级联胶囊菜单。"
             code={`import { FloatingToolbar, FABMenu } from "m3eui";
 
 <FloatingToolbar
   theme="vibrant"
-  aria-label="编辑工具栏"
+  aria-label="工具栏"
   items={[
     { id: "brush", label: "画笔", icon: <SparkleIcon />, selected: true },
     { id: "like", label: "标记", icon: <HeartIcon /> },
@@ -1611,7 +1535,7 @@ export function App() {
       size="sm"
       items={[
         { id: "doc", label: "新建文档", icon: <SparkleIcon /> },
-        { id: "send", label: "快速分享", icon: <SendIcon /> },
+        { id: "send", label: "分享", icon: <SendIcon /> },
       ]}
     />
   }
@@ -1620,25 +1544,25 @@ export function App() {
             <div className="demo-row" style={{ justifyContent: "space-between" }}>
               <FloatingToolbar
                 theme={toolbarTheme}
-                aria-label="画布悬浮工具栏"
+                aria-label="悬浮工具栏"
                 items={[
                   {
                     id: "brush",
-                    label: "智能润色",
+                    label: "润色",
                     icon: <SparkleIcon />,
                     selected: toolbarTool === "brush",
                     onClick: () => setToolbarTool("brush"),
                   },
                   {
                     id: "fav",
-                    label: "收藏图层",
+                    label: "收藏",
                     icon: <HeartIcon filled={toolbarTool === "fav"} />,
                     selected: toolbarTool === "fav",
                     onClick: () => setToolbarTool("fav"),
                   },
                   {
                     id: "notify",
-                    label: "提醒协作者",
+                    label: "提醒",
                     icon: <BellIcon />,
                     separatorBefore: true,
                     selected: toolbarTool === "notify",
@@ -1648,19 +1572,19 @@ export function App() {
                 companionFab={
                   <FABMenu
                     size="sm"
-                    triggerLabel="新建操作"
+                    triggerLabel="新建"
                     items={[
                       {
                         id: "ai",
-                        label: "AI 生成草稿",
+                        label: "新建草稿",
                         icon: <SparkleIcon />,
-                        onSelect: () => toast({ title: "已创建 AI 草稿" }),
+                        onSelect: () => toast({ title: "已新建草稿" }),
                       },
                       {
                         id: "share",
-                        label: "发送审阅链接",
+                        label: "复制链接",
                         icon: <SendIcon />,
-                        onSelect: () => toast({ title: "审阅链接已复制" }),
+                        onSelect: () => toast({ title: "链接已复制" }),
                       },
                     ]}
                   />
@@ -1674,25 +1598,23 @@ export function App() {
                   setToolbarTheme((t) => (t === "vibrant" ? "standard" : "vibrant"))
                 }
               >
-                切换 {toolbarTheme === "vibrant" ? "Standard" : "Vibrant"} 主题
+                {toolbarTheme === "vibrant" ? "Standard" : "Vibrant"}
               </Button>
             </div>
           </ShowcaseCard>
 
           <ShowcaseCard
             id="fab-extended"
-            title="FAB & ExtendedFAB (4 档尺寸 + 弹性伸缩悬浮动作按钮)"
-            primitive="@base-ui/react/button · m3eui/tokens"
-            description="对齐 AOSP M3E 1.5 四档 FAB 尺寸（40 / 56 / 80 / 96px）与四色容器变体；ExtendedFAB 展开/收起时通过空间弹簧平滑插值宽度，标签透明度使用临界阻尼零过冲过渡。"
+            title="FAB & ExtendedFAB"
             code={`import { FAB, ExtendedFAB } from "m3eui";
 
-<FAB size="sm" variant="surface" icon={<SparkleIcon />} aria-label="快捷灵感" />
-<FAB size="md" variant="primary" icon={<SendIcon />} aria-label="新建会话" />
-<FAB size="lg" variant="secondary" icon={<HeartIcon />} aria-label="收藏合集" />
-<FAB size="xl" variant="tertiary" icon={<SparkleIcon />} aria-label="创作中心" />
+<FAB size="sm" variant="surface" icon={<SparkleIcon />} aria-label="快捷操作" />
+<FAB size="md" variant="primary" icon={<SendIcon />} aria-label="发送" />
+<FAB size="lg" variant="secondary" icon={<HeartIcon />} aria-label="收藏" />
+<FAB size="xl" variant="tertiary" icon={<SparkleIcon />} aria-label="新建" />
 
 <ExtendedFAB expanded={expanded} icon={<SparkleIcon />} onClick={() => setExpanded(!expanded)}>
-  新建画布工程
+  新建项目
 </ExtendedFAB>`}
           >
             <div className="demo-row" style={{ gap: 16 }}>
@@ -1700,29 +1622,29 @@ export function App() {
                 size="sm"
                 variant="surface"
                 icon={<SparkleIcon />}
-                aria-label="SM Surface FAB"
-                onClick={() => toast({ title: "触发 Small FAB (40px, r=12)" })}
+                aria-label="SM FAB"
+                onClick={() => toast({ title: "SM FAB" })}
               />
               <FAB
                 size="md"
                 variant="primary"
                 icon={<SendIcon />}
-                aria-label="MD Primary FAB"
-                onClick={() => toast({ title: "触发 Baseline FAB (56px, r=16)" })}
+                aria-label="MD FAB"
+                onClick={() => toast({ title: "MD FAB" })}
               />
               <FAB
                 size="lg"
                 variant="secondary"
                 icon={<HeartIcon filled />}
-                aria-label="LG Secondary FAB"
-                onClick={() => toast({ title: "触发 Medium Expressive FAB (80px, r=20)" })}
+                aria-label="LG FAB"
+                onClick={() => toast({ title: "LG FAB" })}
               />
               <FAB
                 size="xl"
                 variant="tertiary"
                 icon={<SparkleIcon />}
-                aria-label="XL Tertiary FAB"
-                onClick={() => toast({ title: "触发 Large Expressive FAB (96px, r=28)" })}
+                aria-label="XL FAB"
+                onClick={() => toast({ title: "XL FAB" })}
               />
             </div>
 
@@ -1734,7 +1656,7 @@ export function App() {
                 icon={<SparkleIcon />}
                 onClick={() => setFabExpanded((v) => !v)}
               >
-                新建画布工程
+                新建项目
               </ExtendedFAB>
 
               <ExtendedFAB
@@ -1744,7 +1666,7 @@ export function App() {
                 icon={<SendIcon />}
                 onClick={() => setFabExpanded((v) => !v)}
               >
-                发起多端评审
+                发起评审
               </ExtendedFAB>
 
               <Button
@@ -1752,40 +1674,25 @@ export function App() {
                 variant="outlined"
                 onClick={() => setFabExpanded((v) => !v)}
               >
-                {fabExpanded ? "收起为纯图标 FAB" : "展开 ExtendedFAB 标签"}
+                {fabExpanded ? "收起标签" : "展开标签"}
               </Button>
             </div>
           </ShowcaseCard>
         </div>
 
-        {/* ===============================================================
-            3. 表单控件 (Form Controls)
-            =============================================================== */}
         <div className="docs-category">
-          <DocsCategoryHeader
-            indexLabel="03"
-            title="表单控件 (Form Controls)"
-            countLabel="9 组规范"
-            subtitle={
-              <>
-                基于 <code>@base-ui/react</code>{" "}
-                原生表单状态构建，完整保留隐藏 input 提交能力、失焦后置校验、键盘方向键与 M3E 空间弹簧微交互。
-              </>
-            }
-          />
+          <DocsCategoryHeader indexLabel="03" title="表单控件" />
 
           <ShowcaseCard
             id="search-bar"
-            title="SearchBar 自动补全搜索栏 (IME 输入法安全提交)"
-            primitive="@base-ui/react/autocomplete"
-            description="56px 全胶囊高容器表面搜索栏，展开 28px 同心圆建议浮层（20px 内部选项胶囊），内置中文/日文输入法组词期间（isComposing / Safari timestamp）Enter 防误触提交保护。"
+            title="SearchBar"
             code={`import { SearchBar } from "m3eui";
 
 <SearchBar
   value={query}
   onValueChange={setQuery}
   suggestions={SEARCH_SUGGESTIONS}
-  onSearchSubmit={(q) => console.log("搜索:", q)}
+  onSearchSubmit={(q) => console.log(q)}
 />`}
           >
             <div className="demo-row">
@@ -1798,7 +1705,7 @@ export function App() {
                 }
                 onSearchSubmit={(q) => {
                   if (q) {
-                    toast({ title: `执行搜索：${q}` });
+                    toast({ title: `搜索：${q}` });
                   }
                 }}
               />
@@ -1807,37 +1714,34 @@ export function App() {
 
           <ShowcaseCard
             id="otp-field"
-            title="OTPField 分段连接验证码 (聚焦自动独立脱出)"
-            primitive="@base-ui/react/otp-field"
-            description="基于 Base UI 1.9 OTPField 原语：说明文案置顶防软键盘遮挡，支持粘贴自动填充、one-time-code 自动补全与聚焦格 [16, 16, 16, 16] 空间弹簧脱出。"
+            title="OTPField"
             code={`import { OTPField } from "m3eui";
 
 <OTPField
   length={6}
   separatorAfterIndex={2}
-  label="双因素安全验证码"
-  helperText="请输入发送至验证器的 6 位数字动态口令（支持直接粘贴整串数字）"
+  label="双因素验证码"
   value={otpCode}
   onValueChange={setOtpCode}
-  onValueComplete={(code) => console.log("验证完成:", code)}
+  onValueComplete={(code) => console.log(code)}
 />`}
           >
             <div className="demo-grid-2">
               <OTPField
                 length={6}
                 separatorAfterIndex={2}
-                label="双因素安全验证码 (3 + 3 分段拓扑)"
-                helperText="点击任意槽位观察内角 6px → 16px 弹簧脱出，填满 6 位自动点亮容器色"
+                label="双因素验证码"
+                helperText="请输入 6 位数字验证码"
                 value={otpCode}
                 onValueChange={setOtpCode}
                 onValueComplete={(code) =>
-                  toast({ title: `验证码输入完成：${code}` })
+                  toast({ title: `验证完成：${code}` })
                 }
               />
 
               <div className="demo-panel" style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 10 }}>
                 <div style={{ fontSize: 13.5, fontWeight: 600 }}>
-                  当前口令状态：{otpCode ? otpCode : "未输入"}（{otpCode.length} / 6）
+                  当前输入：{otpCode ? otpCode : "—"}（{otpCode.length} / 6）
                 </div>
                 <div className="demo-row">
                   <Button
@@ -1845,17 +1749,17 @@ export function App() {
                     variant="tonal"
                     onClick={() => {
                       setOtpCode("849206");
-                      toast({ title: "已模拟剪贴板整串粘贴 849206" });
+                      toast({ title: "已填入 849206" });
                     }}
                   >
-                    模拟填入 6 位验证码
+                    填入示例
                   </Button>
                   <Button
                     size="xs"
                     variant="outlined"
                     onClick={() => setOtpCode("")}
                   >
-                    清空重填
+                    清空
                   </Button>
                 </div>
               </div>
@@ -1864,34 +1768,30 @@ export function App() {
 
           <ShowcaseCard
             id="date-picker"
-            title="DockedDatePicker & DatePickerField 日历选择器"
-            primitive="@base-ui/react/popover · Plain ISO Date"
-            description="遵循 M3E 28px 高表面日历面板规范：采用无时区偏移风险的 YYYY-MM-DD 纯日期模型，内置年份速切网格与日期圆钮按压圆角收缩（20px → 10px）。"
+            title="DockedDatePicker & DatePickerField"
             code={`import { DockedDatePicker, DatePickerField } from "m3eui";
 
 <DockedDatePicker value={date} onValueChange={setDate} />
-<DatePickerField label="计划发版日期" value={date} onValueChange={setDate} />`}
+<DatePickerField label="发版日期" value={date} onValueChange={setDate} />`}
           >
             <div className="demo-row" style={{ alignItems: "flex-start", gap: 24 }}>
               <DockedDatePicker
-                title="里程碑排期日历"
+                title="选择日期"
                 value={releaseDate}
                 onValueChange={(next) => {
                   setReleaseDate(next);
-                  toast({ title: `已选定排期：${next}` });
+                  toast({ title: `已选：${next}` });
                 }}
               />
 
               <div style={{ display: "flex", flexDirection: "column", gap: 14, minWidth: 240 }}>
                 <DatePickerField
-                  label="弹出式日期输入字段 (Popover DatePicker)"
+                  label="发版日期"
                   value={releaseDate}
                   onValueChange={setReleaseDate}
                 />
-                <div className="demo-panel" style={{ fontSize: 13, lineHeight: 1.6 }}>
-                  当前绑定值：<code>{releaseDate}</code>
-                  <br />
-                  提示：点击日历左上角年份标题可一键展开 15 年速切胶囊网格。
+                <div className="demo-panel" style={{ fontSize: 13 }}>
+                  当前值：<code>{releaseDate}</code>
                 </div>
               </div>
             </div>
@@ -1899,9 +1799,7 @@ export function App() {
 
           <ShowcaseCard
             id="textfield"
-            title="TextField & TextareaField 文本域"
-            primitive="@base-ui/react/field · @base-ui/react/input"
-            description="支持 Outlined 与 Filled 形态、失焦后置校验 (:user-invalid)、前置格式提示、一键清空、密码明文切换按钮与字数统计。"
+            title="TextField & TextareaField"
             code={`import { TextField, TextareaField } from "m3eui";
 
 <TextField
@@ -1909,7 +1807,6 @@ export function App() {
   type="email"
   required
   clearable
-  description="格式示例：architect@m3e.dev（失焦后触发格式校验）"
   value={email}
   onValueChange={setEmail}
 />
@@ -1923,7 +1820,7 @@ export function App() {
 />
 
 <TextareaField
-  label="组件设计备注"
+  label="备注"
   maxLength={160}
   showCharacterCount
   value={bio}
@@ -1933,39 +1830,38 @@ export function App() {
             <div className="demo-grid-2">
               <div className="demo-panel">
                 <TextField
-                  label="工作邮箱 (Outlined · Clearable)"
+                  label="工作邮箱"
                   type="email"
                   name="work_email"
                   autoComplete="email"
                   required
                   clearable
-                  description="格式示例：architect@m3e.dev（清空或输入非法邮箱并失焦可观察 :user-invalid 校验态）"
-                  errorMessage="请输入格式正确的邮箱地址，例如 architect@m3e.dev。"
+                  description="architect@m3e.dev"
+                  errorMessage="请输入有效的邮箱地址。"
                   value={emailInput}
                   onValueChange={setEmailInput}
                 />
 
                 <TextField
-                  label="访问令牌密码 (Filled · 明文切换)"
+                  label="访问密钥"
                   variant="filled"
                   type="password"
                   name="api_secret"
                   autoComplete="current-password"
                   minLength={8}
                   defaultValue="m3e-expressive-2026"
-                  description="至少 8 位字符，右侧内置 aria-pressed 明文预览切换按钮"
-                  errorMessage="访问令牌密码长度不能少于 8 位字符。"
+                  description="至少 8 位字符"
+                  errorMessage="密钥长度不能少于 8 位。"
                 />
               </div>
 
               <div className="demo-panel">
                 <TextareaField
-                  label="架构说明备注 (保留原生纵向拖拽缩放)"
+                  label="项目简介"
                   name="design_note"
                   rows={4}
                   maxLength={160}
                   showCharacterCount
-                  description="支持实时字数统计，字号保持 ≥16px 防止移动端聚焦自动缩放"
                   value={bioInput}
                   onValueChange={setBioInput}
                 />
@@ -1975,13 +1871,11 @@ export function App() {
 
           <ShowcaseCard
             id="number-combobox"
-            title="NumberField 数值步进器 & Combobox 搜索选择器"
-            primitive="@base-ui/react/number-field · @base-ui/react/combobox"
-            description="NumberField 采用 M3E 非对称半胶囊步进按钮（按压内缝圆角 8px → 4px 收缩 + Scrub 标签拖拽）；Combobox 支持实时关键词过滤与同心圆弹出层。"
+            title="NumberField & Combobox"
             code={`import { NumberField, Combobox } from "m3eui";
 
 <NumberField
-  label="空间弹簧刚度 (Stiffness)"
+  label="刚度"
   min={100}
   max={1200}
   step={20}
@@ -1990,7 +1884,7 @@ export function App() {
 />
 
 <Combobox
-  label="快速检索 M3E 组件"
+  label="选择组件"
   options={COMPONENT_SEARCH_OPTIONS}
   value={selected}
   onValueChange={setSelected}
@@ -1998,10 +1892,10 @@ export function App() {
           >
             <div className="demo-grid-2">
               <div className="demo-panel">
-                <span className="demo-panel__label">M3E 连接式半胶囊 NumberField（支持按住标签左右拖拽调节）</span>
+                <span className="demo-panel__label">NumberField</span>
                 <div className="demo-row" style={{ gap: 20 }}>
                   <NumberField
-                    label="弹簧刚度 Stiffness"
+                    label="刚度 k"
                     min={100}
                     max={1200}
                     step={20}
@@ -2009,7 +1903,7 @@ export function App() {
                     onValueChange={setStiffnessVal}
                   />
                   <NumberField
-                    label="阻尼比 Damping ζ"
+                    label="阻尼 ζ"
                     min={0.2}
                     max={1.2}
                     step={0.05}
@@ -2022,14 +1916,14 @@ export function App() {
 
               <div className="demo-panel">
                 <Combobox
-                  label="检索组件规范 (实时过滤 + 清空按钮)"
-                  placeholder="输入 Slider / Avatar / Sheet…"
+                  label="检索组件"
+                  placeholder="输入组件名称…"
                   options={COMPONENT_SEARCH_OPTIONS}
                   value={selectedCombo}
                   onValueChange={setSelectedCombo}
                 />
                 <span className="demo-panel__label">
-                  当前选中：{selectedCombo ? `${selectedCombo.label} (${selectedCombo.value})` : "未选择"}
+                  当前选中：{selectedCombo ? selectedCombo.label : "未选择"}
                 </span>
               </div>
             </div>
@@ -2037,19 +1931,16 @@ export function App() {
 
           <ShowcaseCard
             id="switch"
-            title="Switch 开关"
-            primitive="@base-ui/react/switch"
-            description="52×32px 胶囊轨道；滑块直径在未选中 16px、选中 24px、按压膨胀 28px 之间以空间弹簧平滑过渡，整行满足 ≥44px 触控热区。"
+            title="Switch"
             code={`import { Switch } from "m3eui";
 
 <Switch
-  label="自适应无线网络"
-  description="信号较弱时自动切换至低延迟频段"
+  label="无线网络"
   checked={wifiOn}
   onCheckedChange={setWifiOn}
 />
 <Switch
-  label="物理触感反馈"
+  label="状态图标"
   showIcons
   checked={hapticOn}
   onCheckedChange={setHapticOn}
@@ -2058,28 +1949,28 @@ export function App() {
             <div className="demo-grid-2">
               <div className="demo-panel">
                 <Switch
-                  label="自适应无线网络"
-                  description="信号较弱时自动切换至低延迟频段"
+                  label="无线网络"
+                  description="自动连接可用频段"
                   checked={wifiOn}
                   onCheckedChange={setWifiOn}
                 />
                 <Switch
-                  label="空间弹簧触感图标 (showIcons)"
-                  description="滑块内置 ✓ / ✕ 状态符号，未选中直径 24px"
+                  label="状态图标"
+                  description="显示开启与关闭符号"
                   showIcons
                   checked={hapticOn}
                   onCheckedChange={setHapticOn}
                 />
                 <Switch
                   label="勿扰模式"
-                  description="静音所有非紧急通知横幅"
+                  description="静音通知提醒"
                   checked={dndOn}
                   onCheckedChange={setDndOn}
                 />
               </div>
 
               <div className="demo-panel" style={{ justifyContent: "center" }}>
-                <span className="demo-panel__label">独立无标签用法 & 禁用态</span>
+                <span className="demo-panel__label">独立开关与禁用态</span>
                 <div className="demo-row" style={{ gap: 20 }}>
                   <Switch
                     aria-label="独立开关"
@@ -2101,12 +1992,9 @@ export function App() {
 
           <ShowcaseCard
             id="slider"
-            title="Slider 滑块 (单值 / 区间 / 离散刻度)"
-            primitive="@base-ui/react/slider"
-            description="标志性 M3E 宽轨道 (16 / 24 / 40px) + 竖条手柄 (4px → 拖拽收窄至 2px) + 手柄两侧 6px 留白切口与弹簧数值气泡。"
+            title="Slider"
             code={`import { Slider } from "m3eui";
 
-{/* 标准连续滑块 */}
 <Slider
   label="媒体音量"
   showValue
@@ -2115,7 +2003,6 @@ export function App() {
   formatValue={(v) => \`\${v}%\`}
 />
 
-{/* 双手柄区间滑块 */}
 <Slider
   size="md"
   label="预算区间"
@@ -2129,7 +2016,7 @@ export function App() {
               <div className="demo-panel">
                 <Slider
                   size="sm"
-                  label="媒体音量 (SM · 16px 轨道)"
+                  label="媒体音量 (SM)"
                   showValue
                   value={volume}
                   onValueChange={setVolume}
@@ -2137,7 +2024,7 @@ export function App() {
                 />
                 <Slider
                   size="md"
-                  label="屏幕亮度 · 离散刻度 (MD · 24px 轨道)"
+                  label="屏幕亮度 (MD · 刻度)"
                   step={10}
                   showTicks
                   showValue
@@ -2150,7 +2037,7 @@ export function App() {
               <div className="demo-panel">
                 <Slider
                   size="md"
-                  label="双滑块价格区间 (Range Slider)"
+                  label="价格区间 (Range)"
                   min={0}
                   max={100}
                   minStepsBetweenValues={8}
@@ -2161,7 +2048,7 @@ export function App() {
                 />
                 <Slider
                   size="lg"
-                  label="高表现力巨型滑块 (LG · 40px 轨道)"
+                  label="增益调节 (LG)"
                   defaultValue={72}
                   showValue
                   formatValue={(v) => `${v} dB`}
@@ -2173,8 +2060,6 @@ export function App() {
           <ShowcaseCard
             id="checkbox-radio"
             title="CheckboxGroup & RadioGroup"
-            primitive="@base-ui/react/checkbox · @base-ui/react/radio-group"
-            description="支持父级全选 / 半选 (indeterminate) 联动，以及单选圆点 0 → 1 空间弹簧缩放。"
             code={`import { Checkbox, CheckboxGroup, Radio, RadioGroup } from "m3eui";
 
 <CheckboxGroup
@@ -2182,69 +2067,45 @@ export function App() {
   allValues={["read", "write", "deploy"]}
   onValueChange={setSelectedPerms}
 >
-  <Checkbox parent label="授予全部仓库权限" />
-  <Checkbox value="read" label="读取代码与分支" />
-  <Checkbox value="write" label="推送提交与合并请求" />
-  <Checkbox value="deploy" label="触发生产环境部署" />
+  <Checkbox parent label="全部权限" />
+  <Checkbox value="read" label="读取代码" />
+  <Checkbox value="write" label="推送提交" />
+  <Checkbox value="deploy" label="生产部署" />
 </CheckboxGroup>
 
 <RadioGroup value={channel} onValueChange={setChannel}>
-  <Radio value="push" label="移动端即时推送" />
-  <Radio value="email" label="每日邮件摘要" />
+  <Radio value="push" label="即时推送" />
+  <Radio value="email" label="邮件摘要" />
 </RadioGroup>`}
           >
             <div className="demo-grid-2">
               <div className="demo-panel">
-                <span className="demo-panel__label">CheckboxGroup（含父级 Indeterminate 联动）</span>
+                <span className="demo-panel__label">CheckboxGroup</span>
                 <CheckboxGroup
-                  aria-label="仓库权限设置"
+                  aria-label="仓库权限"
                   value={selectedPerms}
                   allValues={[...ALL_PERMS]}
                   onValueChange={setSelectedPerms}
                 >
-                  <Checkbox parent label="授予全部仓库权限" />
+                  <Checkbox parent label="全部权限" />
                   <div style={{ paddingInlineStart: 20, display: "flex", flexDirection: "column" }}>
-                    <Checkbox
-                      value="read"
-                      label="读取代码与分支"
-                      description="允许克隆与浏览提交历史"
-                    />
-                    <Checkbox
-                      value="write"
-                      label="推送提交与合并请求"
-                      description="允许向受保护分支发起 PR"
-                    />
-                    <Checkbox
-                      value="deploy"
-                      label="触发生产环境部署"
-                      description="高危操作需二次审批"
-                    />
+                    <Checkbox value="read" label="读取代码" description="克隆与查看记录" />
+                    <Checkbox value="write" label="推送提交" description="创建分支与合并请求" />
+                    <Checkbox value="deploy" label="生产部署" description="触发发布流水线" />
                   </div>
                 </CheckboxGroup>
               </div>
 
               <div className="demo-panel">
-                <span className="demo-panel__label">RadioGroup（方向键循环切换 + 弹簧圆点）</span>
+                <span className="demo-panel__label">RadioGroup</span>
                 <RadioGroup
-                  aria-label="通知投递渠道"
+                  aria-label="通知渠道"
                   value={notifyChannel}
                   onValueChange={setNotifyChannel}
                 >
-                  <Radio
-                    value="push"
-                    label="移动端即时推送"
-                    description="毫秒级实时送达在线设备"
-                  />
-                  <Radio
-                    value="email"
-                    label="每日邮件摘要"
-                    description="每天 18:00 汇总发送一次"
-                  />
-                  <Radio
-                    value="none"
-                    label="仅在应用内展示"
-                    description="不发送任何外部打扰提醒"
-                  />
+                  <Radio value="push" label="即时推送" description="实时送达在线设备" />
+                  <Radio value="email" label="邮件摘要" description="每日 18:00 汇总发送" />
+                  <Radio value="none" label="仅站内信" description="不发送外部通知" />
                 </RadioGroup>
               </div>
             </div>
@@ -2252,25 +2113,23 @@ export function App() {
 
           <ShowcaseCard
             id="select"
-            title="Select 选择器 (Outlined & Filled)"
-            primitive="@base-ui/react/select"
-            description="遵循 M3E ExposedDropdownMenu 规范：统一 SurfaceContainer 浮层（16px 外圆角 - 6px 内边距 = 10px 同心圆选项），未选中项透明呼吸留白，选中项采用 12px 二级容器色圆角胶囊且与悬停态同色系平滑过渡。"
+            title="Select"
             code={`import { Select } from "m3eui";
 
 <Select
-  label="推理模型"
+  label="模型"
   variant="outlined"
   value={model}
   onValueChange={setModel}
   options={[
-    { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro", description: "深度推理与复杂编码" },
-    { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash", description: "低延迟高吞吐响应" },
+    { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
+    { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
   ]}
 />`}
           >
             <div className="demo-grid-2">
               <Select
-                label="推理模型 (Outlined · 双行说明)"
+                label="模型 (Outlined)"
                 variant="outlined"
                 value={modelId}
                 onValueChange={setModelId}
@@ -2278,23 +2137,23 @@ export function App() {
                   {
                     value: "gemini-2.5-pro",
                     label: "Gemini 2.5 Pro",
-                    description: "适合复杂架构设计与推理",
+                    description: "复杂推理与编码",
                   },
                   {
                     value: "gemini-2.5-flash",
                     label: "Gemini 2.5 Flash",
-                    description: "平衡响应速度与多模态能力",
+                    description: "均衡速度与多模态",
                   },
                   {
                     value: "gemini-2.5-lite",
                     label: "Gemini 2.5 Flash-Lite",
-                    description: "极低成本实时批处理",
+                    description: "轻量低延迟批处理",
                   },
                 ]}
               />
 
               <Select
-                label="部署可用区 (Filled · 平底激活指示线)"
+                label="可用区 (Filled)"
                 variant="filled"
                 value={regionId}
                 onValueChange={setRegionId}
@@ -2309,26 +2168,16 @@ export function App() {
           </ShowcaseCard>
         </div>
 
-        {/* ===============================================================
-            4. 数据展示与容器 (Data Display & Containers)
-            =============================================================== */}
         <div className="docs-category">
-          <DocsCategoryHeader
-            indexLabel="04"
-            title="数据展示与容器 (Data Display & Containers)"
-            countLabel="6 组规范"
-            subtitle="零和焦点轮播、圆角弹簧标签族、支持 35 种官方 M3E 多边形矢量裁剪的头像与徽标、三态卡片容器与分段手风琴。"
-          />
+          <DocsCategoryHeader indexLabel="04" title="数据展示与容器" />
 
           <ShowcaseCard
             id="carousel"
-            title="Carousel 焦点形变轮播 (Multi-Browse & Centered Hero)"
-            primitive="m3eui/tokens · resolveCarouselLayout"
-            description="复刻 AOSP Carousel.kt 零和容器宽度守恒算法：主焦点卡片扩张至 28px 大圆角，次级与窥视卡片平滑压缩为 20px / 16px，整行总宽度恒定零抖动。"
+            title="Carousel"
             code={`import { Carousel } from "m3eui";
 
 <Carousel
-  aria-label="M3E 核心视觉特性"
+  aria-label="精选内容"
   variant="multi-browse"
   items={CAROUSEL_DEMO_ITEMS}
 />`}
@@ -2339,19 +2188,19 @@ export function App() {
                 variant={carouselVariant === "multi-browse" ? "filled" : "outlined"}
                 onClick={() => setCarouselVariant("multi-browse")}
               >
-                Multi-Browse 多级浏览模式
+                Multi-Browse
               </Button>
               <Button
                 size="xs"
                 variant={carouselVariant === "hero" ? "filled" : "outlined"}
                 onClick={() => setCarouselVariant("hero")}
               >
-                Centered Hero 聚光灯模式
+                Hero
               </Button>
             </div>
 
             <Carousel
-              aria-label="M3E 核心特性焦点轮播"
+              aria-label="精选轮播"
               variant={carouselVariant}
               items={CAROUSEL_DEMO_ITEMS}
               height={224}
@@ -2360,14 +2209,12 @@ export function App() {
 
           <ShowcaseCard
             id="chips"
-            title="Chip 标签族 (AssistChip / FilterChip / InputChip)"
-            primitive="@base-ui/react/button · @base-ui/react/toggle"
-            description="FilterChip 静息态 8px 圆角，选中时以空间弹簧形变为 16px 胶囊并浮现勾选符（按压收缩至 4px）；InputChip 内置头像槽位与无障碍移除按钮。"
+            title="Chip"
             code={`import { AssistChip, FilterChip, InputChip, Avatar } from "m3eui";
 
-<AssistChip icon={<SparkleIcon />}>生成设计令牌</AssistChip>
+<AssistChip icon={<SparkleIcon />}>导出配置</AssistChip>
 <FilterChip selected={selected} onSelectedChange={setSelected}>
-  空间物理弹簧
+  物理弹簧
 </FilterChip>
 <InputChip
   avatar={<Avatar size="xs" shape="cookie9Sided" fallback="T" />}
@@ -2378,13 +2225,13 @@ export function App() {
           >
             <div className="demo-grid-2">
               <div className="demo-panel">
-                <span className="demo-panel__label">FilterChip（点击观察 8px → 16px 胶囊弹簧形变）& AssistChip</span>
+                <span className="demo-panel__label">FilterChip & AssistChip</span>
                 <div className="demo-row">
                   {[
-                    { id: "spring", label: "空间物理弹簧" },
-                    { id: "hct", label: "HCT 动态色阶" },
-                    { id: "a11y", label: "Base UI 无障碍" },
-                    { id: "shapes", label: "35 种多边形" },
+                    { id: "spring", label: "物理弹簧" },
+                    { id: "hct", label: "HCT 色彩" },
+                    { id: "a11y", label: "Base UI" },
+                    { id: "shapes", label: "多边形" },
                   ].map((chip) => {
                     const isSel = selectedFilters.includes(chip.id);
                     return (
@@ -2407,22 +2254,22 @@ export function App() {
                 <div className="demo-row">
                   <AssistChip
                     icon={<SparkleIcon />}
-                    onClick={() => toast({ title: "已执行智能主题配色建议" })}
+                    onClick={() => toast({ title: "已生成配色" })}
                   >
-                    AI 配色建议
+                    生成配色
                   </AssistChip>
                   <AssistChip
                     elevated
                     icon={<SendIcon />}
-                    onClick={() => toast({ title: "已复制当前设计令牌 JSON" })}
+                    onClick={() => toast({ title: "已导出 JSON" })}
                   >
-                    Elevated 导出令牌
+                    导出 JSON
                   </AssistChip>
                 </div>
               </div>
 
               <div className="demo-panel">
-                <span className="demo-panel__label">InputChip（带多边形微缩头像与移除交互）</span>
+                <span className="demo-panel__label">InputChip</span>
                 <div className="demo-row">
                   {inputTags.map((tag, i) => (
                     <InputChip
@@ -2450,7 +2297,7 @@ export function App() {
                         setInputTags(["m3eui/tokens", "m3eui", "@base-ui/react"])
                       }
                     >
-                      恢复默认标签
+                      恢复默认
                     </Button>
                   ) : null}
                 </div>
@@ -2460,9 +2307,7 @@ export function App() {
 
           <ShowcaseCard
             id="avatar-badge"
-            title="Avatar 多边形裁剪头像 & Badge 计数徽标"
-            primitive="@base-ui/react/avatar · MaterialShapes SVG ClipPath"
-            description="Avatar 除 circle / square 外，可直接传入任意 35 种官方 MaterialShapes（如 cookie9Sided、clover4Leaf、sunny、arch）实现高表现力裁剪。"
+            title="Avatar & Badge"
             code={`import { Avatar, Badge, IconButton } from "m3eui";
 
 <Avatar size="lg" shape="cookie9Sided" fallback="M3" />
@@ -2470,12 +2315,12 @@ export function App() {
 <Avatar size="lg" shape="sunny" fallback="EX" />
 
 <Badge count={unreadCount}>
-  <IconButton aria-label="未读通知" variant="tonal" icon={<BellIcon />} />
+  <IconButton aria-label="通知" variant="tonal" icon={<BellIcon />} />
 </Badge>`}
           >
             <div className="demo-grid-2">
               <div className="demo-panel">
-                <span className="demo-panel__label">M3E 官方多边形矢量裁剪头像 (circle / cookie9Sided / clover4Leaf / sunny / arch / gem)</span>
+                <span className="demo-panel__label">Avatar</span>
                 <div className="demo-row" style={{ gap: 14 }}>
                   {(
                     [
@@ -2488,7 +2333,7 @@ export function App() {
                       ["gem", "GM"],
                     ] as const
                   ).map(([shapeName, initials]) => (
-                    <Tooltip key={shapeName} content={`shape="${shapeName}"`}>
+                    <Tooltip key={shapeName} content={shapeName}>
                       <span>
                         <Avatar size="lg" shape={shapeName} fallback={initials} />
                       </span>
@@ -2498,11 +2343,11 @@ export function App() {
               </div>
 
               <div className="demo-panel">
-                <span className="demo-panel__label">Badge 徽标（支持圆点、数字封顶 99+ 与多种语义色）</span>
+                <span className="demo-panel__label">Badge</span>
                 <div className="demo-row" style={{ gap: 20 }}>
                   <Badge count={unreadCount}>
                     <IconButton
-                      aria-label="消息通知"
+                      aria-label="通知"
                       variant="tonal"
                       icon={<BellIcon />}
                       onClick={() => setUnreadCount((c) => c + 1)}
@@ -2519,7 +2364,7 @@ export function App() {
                     variant="outlined"
                     onClick={() => setUnreadCount((c) => c + 5)}
                   >
-                    +5 未读
+                    +5
                   </Button>
                   <Button
                     size="xs"
@@ -2535,120 +2380,103 @@ export function App() {
 
           <ShowcaseCard
             id="cards"
-            title="Card 卡片容器 (Elevated / Filled / Outlined & Interactive)"
-            primitive="@base-ui/react/button · M3E Surface Roles"
-            description="提供三种 M3E 标准容器层级；开启 interactive 后卡片获得完整键盘焦点与 16px → 悬停 20px → 按压 12px 空间弹簧圆角。"
-            code={`import { Card, Button } from "m3eui";
+            title="Card"
+            code={`import { Card } from "m3eui";
 
 <Card
   variant="filled"
   interactive
-  title="交互式弹性卡片"
-  subtitle="悬停圆角扩张至 20px，按压收紧至 12px"
-  onClick={() => toast({ title: "已打开卡片详情" })}
+  title="项目概览"
+  subtitle="最近更新于 5 分钟前"
+  onClick={() => toast({ title: "已打开详情" })}
 >
-  点击或按压体验 M3E 卡片容器的实时空间圆角反馈。
+  卡片内容区域。
 </Card>`}
           >
             <div className="demo-grid-3">
               <Card
                 variant="elevated"
-                title="Elevated 浮起卡片"
-                subtitle="Surface Container Low + 柔和双层阴影"
+                title="Elevated"
+                subtitle="带柔和阴影"
                 actions={
                   <Button
                     size="xs"
                     variant="tonal"
-                    onClick={() => toast({ title: "已查看双轨物理文档" })}
+                    onClick={() => toast({ title: "已打开详情" })}
                   >
-                    查看详情
+                    详情
                   </Button>
                 }
               >
-                适合在浅色画布上承载独立模块摘要与关键指标概览。
+                用于突出展示独立内容块。
               </Card>
 
               <Card
                 variant="outlined"
-                title="Outlined 描边卡片"
-                subtitle="Surface Container Lowest + Outline Variant"
+                title="Outlined"
+                subtitle="描边容器"
                 actions={
                   <Button
                     size="xs"
                     variant="outlined"
-                    onClick={() => toast({ title: "已固定至仪表盘" })}
+                    onClick={() => toast({ title: "已固定" })}
                   >
-                    固定面板
+                    固定
                   </Button>
                 }
               >
-                信息边界清晰克制，适合高密度后台设置页与并列对比视图。
+                适合并列信息分组与设置面板。
               </Card>
 
               <Card
                 variant="filled"
                 interactive
-                title="Filled 交互式弹簧卡片 ✦"
-                subtitle="点击或按住观察 16 → 20 → 12px 圆角形变"
-                onClick={() =>
-                  toast({
-                    title: "触发交互式 Card 点击事件",
-                    description: "支持回车 / 空格键无障碍触发",
-                  })
-                }
+                title="Interactive"
+                subtitle="可点击卡片"
+                onClick={() => toast({ title: "已触发点击" })}
               >
-                开启 <code>interactive</code> 后由 Base UI Button 驱动，自带键盘可访问性与按压物理形变。
+                支持鼠标点击与键盘回车触发。
               </Card>
             </div>
           </ShowcaseCard>
 
           <ShowcaseCard
             id="accordion"
-            title="Accordion 分段脱出式手风琴"
-            primitive="@base-ui/react/accordion"
-            description="折叠时保持 2px 紧凑分段堆栈；展开项自动独立脱出为四角 16px 并撑开上下间距，相邻折叠项接缝同步圆化为 16px。"
+            title="Accordion"
             code={`import { Accordion } from "m3eui";
 
 <Accordion
-  defaultValue={["physics"]}
+  defaultValue={["theme"]}
   items={[
-    {
-      value: "physics",
-      title: "为什么 M3E 严格区分空间弹簧与效果弹簧？",
-      subtitle: "Spatial vs Effects Dual-Track Motion",
-      content: "位移、尺寸与圆角允许欠阻尼回弹；颜色与不透明度使用临界阻尼杜绝过冲闪烁。",
-    },
-    { value: "topology", title: "相邻分段圆角如何联动？", content: "..." },
+    { value: "theme", title: "主题配置", content: "通过 m3e.json 配置种子色与对比度。" },
+    { value: "i18n", title: "多语言支持", content: "内置中、英、日、阿四套语言包。" },
   ]}
 />`}
           >
             <Accordion
-              aria-label="M3E 架构常见问题"
-              defaultValue={["physics"]}
+              aria-label="常见问题"
+              defaultValue={["theme"]}
               items={[
                 {
-                  value: "physics",
+                  value: "theme",
                   leading: <SparkleIcon />,
-                  title: "为什么 M3E 严格区分空间弹簧 (Spatial) 与效果弹簧 (Effects)？",
-                  subtitle: "双轨物理系统核心准则",
-                  content:
-                    "空间属性（位置、尺寸、圆角拓扑）使用 ζ < 1 的欠阻尼弹簧，赋予界面真实物理弹性；而颜色、阴影与透明度必须使用 ζ = 1 的临界阻尼弹簧，防止过冲导致色彩溢出或背景频闪。",
+                  title: "如何自定义主题色？",
+                  subtitle: "m3e.json",
+                  content: "修改 m3e.json 中的 theme.seed 字段，或向 M3EProvider 传入 initialSeedHex。",
                 },
                 {
-                  value: "topology",
+                  value: "i18n",
                   leading: <HeartIcon />,
-                  title: "展开手风琴子项时，上下相邻卡片的圆角发生了什么变化？",
-                  subtitle: "resolveAccordionItemCorners 邻项联动拓扑",
-                  content:
-                    "当中间某一项展开时，不仅自身四角变为 [16, 16, 16, 16] 并增加纵向呼吸间距，它上方的卡片底角会自动变为 [..., 16, 16]，下方的卡片顶角自动变为 [16, 16, ...]，避免裸露生硬的 4px 内缝直角。",
+                  title: "如何扩展自定义语言包？",
+                  subtitle: "m3eui/i18n",
+                  content: "执行 npx m3eui locale fr-FR 生成词条模板，并通过 M3EProvider 的 messages 属性传入。",
                 },
                 {
-                  value: "baseui",
+                  value: "ssr",
                   leading: <BellIcon />,
-                  title: "为什么默认开启非互斥多开 (multiple = true) 与 hiddenUntilFound？",
-                  subtitle: "遵循现代 Web 可用性与页内搜索规范",
-                  content:
-                    "允许用户同时展开多个章节以便上下对照阅读，避免互斥折叠造成视口跳动；同时支持浏览器 Ctrl/Cmd+F 页内检索直接命中并自动展开隐藏面板。",
+                  title: "是否支持服务端渲染 (SSR)？",
+                  subtitle: "Next.js / Remix",
+                  content: "支持。可在 head 中注入 getM3EInitScript() 同步明暗模式状态。",
                 },
               ]}
             />
@@ -2656,22 +2484,20 @@ export function App() {
 
           <ShowcaseCard
             id="preview-scroll-divider"
-            title="PreviewCard, ScrollArea & Divider 容器辅助原语"
-            primitive="@base-ui/react/preview-card · scroll-area · separator"
-            description="悬停触发的 24px 富资料预览卡、带胶囊自适应滚动条的可控滚动视口，以及支持水平/垂直与居中副标题的语义化分割线。"
+            title="PreviewCard, ScrollArea & Divider"
             code={`import { PreviewCard, ScrollArea, Divider } from "m3eui";
 
 <PreviewCard trigger={<a href="#shapes">m3eui/tokens</a>}>
-  <div>纯数学 M3E 物理弹簧、HCT 色阶与 35 种归一化矢量多边形引擎</div>
+  <div>色彩、弹簧与多边形计算模块</div>
 </PreviewCard>
 
-<Divider label="最近变更日志" />
+<Divider label="模块列表" />
 <ScrollArea maxHeight={160}>...</ScrollArea>`}
           >
             <div className="demo-grid-2">
               <div className="demo-panel" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 <div style={{ fontSize: 13.5, lineHeight: 1.7 }}>
-                  将鼠标悬停在链接{" "}
+                  悬停查看{" "}
                   <PreviewCard
                     trigger={
                       <a
@@ -2683,7 +2509,7 @@ export function App() {
                           textUnderlineOffset: "3px",
                         }}
                       >
-                        m3eui/tokens 设计物理引擎
+                        m3eui/tokens
                       </a>
                     }
                   >
@@ -2691,70 +2517,60 @@ export function App() {
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         <Avatar size="sm" shape="sunny" fallback="TK" />
                         <div>
-                          <div style={{ fontWeight: 700, fontSize: 14 }}>m3eui/tokens v0.1.0</div>
+                          <div style={{ fontWeight: 700, fontSize: 14 }}>m3eui/tokens</div>
                           <div style={{ fontSize: 12, color: "var(--m3e-color-on-surface-variant)" }}>
-                            零 DOM 纯数学几何与物理契约层
+                            v0.1.0
                           </div>
                         </div>
                       </div>
                       <Divider />
                       <div style={{ fontSize: 12.5, lineHeight: 1.55, color: "var(--m3e-color-on-surface-variant)" }}>
-                        内置 HCT 色彩空间生成、双轨谐振子弹簧求解器、按钮组与轮播零和宽度守恒公式及 35 种归一化闭合多边形。
+                        提供 HCT 色板生成、弹簧参数换算与 35 种归一化矢量多边形。
                       </div>
                     </div>
                   </PreviewCard>{" "}
-                  上即可唤出 24px 高表面悬浮资料卡。
+                  模块信息。
                 </div>
 
-                <Divider label="带副标题语义分割线 (Separator)" />
+                <Divider label="分割线" />
 
                 <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 13 }}>
-                  <span>Spatial Spring</span>
+                  <span>Tokens</span>
                   <Divider orientation="vertical" />
-                  <span>Effects Spring</span>
+                  <span>Components</span>
                   <Divider orientation="vertical" />
-                  <span>HCT Surface</span>
+                  <span>CLI</span>
                 </div>
               </div>
 
               <ScrollArea maxHeight={156}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: 13 }}>
-                  <div style={{ fontWeight: 700 }}>ScrollArea 胶囊滚动视口（悬停右侧查看自定义滑块）</div>
-                  <div>1. `ButtonGroup` — 15% 按压膨胀与零和邻项宽度守恒</div>
-                  <div>2. `SegmentedList` — 单条 [16,16,16,16] 与多条首尾圆角拓扑</div>
-                  <div>3. `Select & Combobox` — 同心圆单层 SurfaceContainer 浮层</div>
-                  <div>4. `Slider` — 宽轨切口 + 全局 pointerup 手柄即时回弹</div>
-                  <div>5. `Carousel` — Multi-Browse / Hero 连续焦点圆角形变</div>
-                  <div>6. `OTPField` — Base UI 1.9 验证码聚焦格独立脱出</div>
-                  <div>7. `Progress & Meter` — 4px 标志性轨道裂隙与阈值计量</div>
+                  <div style={{ fontWeight: 700 }}>子路径导出</div>
+                  <div>1. m3eui — 组件与 Hooks</div>
+                  <div>2. m3eui/styles.css — 核心样式表</div>
+                  <div>3. m3eui/tokens — 色彩与物理令牌</div>
+                  <div>4. m3eui/i18n — 多语言字典</div>
+                  <div>5. m3eui/config — m3e.json 配置解析</div>
+                  <div>6. m3eui/primitives — Base UI 无头原语</div>
+                  <div>7. m3eui/cli — 命令行编程接口</div>
                 </div>
               </ScrollArea>
             </div>
           </ShowcaseCard>
         </div>
 
-        {/* ===============================================================
-            5. 导航与列表
-            =============================================================== */}
         <div className="docs-category">
-          <DocsCategoryHeader
-            indexLabel="05"
-            title="导航与列表 (Navigation & Lists)"
-            countLabel="4 组规范"
-            subtitle="弹性双行折叠顶部应用栏、带 56×32px 空间弹簧胶囊指示器的底栏/侧边导航轨、横向滚动标签页与分段列表。"
-          />
+          <DocsCategoryHeader indexLabel="05" title="导航与列表" />
 
           <ShowcaseCard
             id="top-app-bar"
-            title="TopAppBar 弹性折叠顶部应用栏 (Flexible Two-Row)"
-            primitive="@base-ui/react/toolbar · resolveTopAppBarGeometry"
-            description="对齐 AOSP M3E 1.5 MediumFlexible / LargeFlexible 规范：支持双行主副标题随滚动比例（0% → 100%）平滑收缩高度与字号，并自动切换 SurfaceContainer 抬升色阶。"
+            title="TopAppBar"
             code={`import { TopAppBar, IconButton } from "m3eui";
 
 <TopAppBar
   variant="large-flexible"
-  title="设计系统审计工作台"
-  subtitle="45 个 Web 原语已同步至最新 Expressive 色盘"
+  title="项目工作台"
+  subtitle="最近同步于刚刚"
   collapsedFraction={scrollRatio}
   navigationIcon={<IconButton variant="standard" icon={<SparkleIcon />} aria-label="导航" />}
 />`}
@@ -2762,9 +2578,9 @@ export function App() {
             <div className="demo-row" style={{ marginBottom: 10 }}>
               {(
                 [
-                  ["large-flexible", "Large Flexible (148→64px)"],
-                  ["medium-flexible", "Medium Flexible (112→64px)"],
-                  ["center-aligned", "Center Aligned (64px)"],
+                  ["large-flexible", "Large Flexible"],
+                  ["medium-flexible", "Medium Flexible"],
+                  ["center-aligned", "Center Aligned"],
                 ] as const
               ).map(([v, label]) => (
                 <Button
@@ -2788,8 +2604,8 @@ export function App() {
               <TopAppBar
                 variant={appBarVariant}
                 collapsedFraction={appBarCollapse / 100}
-                title="Material 3 Expressive 工作台"
-                subtitle="向下滚动时双行标题平滑收拢为紧凑单行顶栏，并点亮容器底色"
+                title="项目工作台"
+                subtitle="概览与构建状态"
                 navigationIcon={
                   <IconButton
                     size="sm"
@@ -2804,13 +2620,13 @@ export function App() {
                       size="sm"
                       variant="standard"
                       icon={<BellIcon />}
-                      aria-label="通知中心"
+                      aria-label="通知"
                     />
                     <IconButton
                       size="sm"
                       variant="tonal"
                       icon={<SendIcon />}
-                      aria-label="发布构建"
+                      aria-label="发布"
                     />
                   </>
                 }
@@ -2819,7 +2635,7 @@ export function App() {
 
             <Slider
               size="sm"
-              label="拖动模拟页面滚动折叠比例 (collapsedFraction)"
+              label="折叠进度"
               min={0}
               max={100}
               showValue
@@ -2831,9 +2647,7 @@ export function App() {
 
           <ShowcaseCard
             id="navigation"
-            title="NavigationBar & NavigationRail 响应式导航栏/导航轨"
-            primitive="m3eui/Navigation · Badge"
-            description="激活态药丸指示器（56×32px）以横向空间弹簧（0.35 → 1.0）平滑舒展，原生集成未读计数与圆点徽标。"
+            title="NavigationBar & NavigationRail"
             code={`import { NavigationBar, NavigationRail } from "m3eui";
 
 <NavigationBar
@@ -2852,11 +2666,11 @@ export function App() {
                 onValueChange={setNavDest}
                 header={
                   <IconButton
-                    aria-label="快速新建"
+                    aria-label="新建"
                     variant="filled"
                     size="sm"
                     icon={<SparkleIcon />}
-                    onClick={() => toast({ title: "从 NavigationRail 发起快速新建" })}
+                    onClick={() => toast({ title: "已新建" })}
                   />
                 }
                 items={[
@@ -2883,20 +2697,8 @@ export function App() {
                 style={{ flex: "1 1 320px", justifyContent: "space-between" }}
               >
                 <span className="demo-panel__label">
-                  移动端 / 紧凑视口底部 NavigationBar（与左侧 NavigationRail 共享状态：<code>{navDest}</code>）
+                  NavigationBar（当前：<code>{navDest}</code>）
                 </span>
-                <div
-                  style={{
-                    padding: "16px",
-                    borderRadius: 14,
-                    backgroundColor: "var(--m3e-color-surface-container-lowest)",
-                    border: "1px solid var(--m3e-color-outline-variant)",
-                    fontSize: 13.5,
-                    color: "var(--m3e-color-on-surface-variant)",
-                  }}
-                >
-                  切换底部或左侧导航项，观察 56×32px 二级容器色胶囊的横向空间弹簧展开动画与 <code>aria-current="page"</code> 状态同步。
-                </div>
                 <NavigationBar
                   value={navDest}
                   onValueChange={setNavDest}
@@ -2924,9 +2726,7 @@ export function App() {
 
           <ShowcaseCard
             id="tabs"
-            title="Tabs 标签页 (Primary & Secondary)"
-            primitive="@base-ui/react/tabs"
-            description="单行不换行横向滚动、选中态不改变字重/内边距以杜绝抖动，指示条使用 border 绘制兼容高对比度模式。"
+            title="Tabs"
             code={`import { Tabs, TabsList, Tab, TabsPanel } from "m3eui";
 
 <Tabs variant="primary" value={tab} onValueChange={setTab}>
@@ -2935,18 +2735,18 @@ export function App() {
     <Tab value="activity" icon={<BellIcon />} badge={3}>动态</Tab>
     <Tab value="messages" icon={<SendIcon />}>消息</Tab>
   </TabsList>
-  <TabsPanel value="overview">概览面板内容</TabsPanel>
+  <TabsPanel value="overview">概览内容</TabsPanel>
 </Tabs>`}
           >
             <div className="demo-grid-2">
               <div className="demo-panel">
-                <span className="demo-panel__label">Primary Tabs（顶部圆角胶囊短划线指示器）</span>
+                <span className="demo-panel__label">Primary</span>
                 <Tabs
                   variant="primary"
                   value={primaryTab}
                   onValueChange={setPrimaryTab}
                 >
-                  <TabsList aria-label="主导航标签">
+                  <TabsList aria-label="主标签">
                     <Tab value="overview" icon={<SparkleIcon />}>
                       概览
                     </Tab>
@@ -2954,52 +2754,52 @@ export function App() {
                       通知
                     </Tab>
                     <Tab value="favorites" icon={<HeartIcon />}>
-                      收藏夹
+                      收藏
                     </Tab>
                   </TabsList>
                   <TabsPanel value="overview">
                     <div style={{ fontSize: 13.5, color: "var(--m3e-color-on-surface-variant)" }}>
-                      Primary 变体指示条内缩 16px 并以 3px 顶部圆角呈现，切换时平滑跟随 <code>--active-tab-left</code>。
+                      项目运行状态正常。
                     </div>
                   </TabsPanel>
                   <TabsPanel value="alerts">
                     <div style={{ fontSize: 13.5, color: "var(--m3e-color-on-surface-variant)" }}>
-                      当前共有 3 条未读构建通知等待确认。
+                      3 条未读通知。
                     </div>
                   </TabsPanel>
                   <TabsPanel value="favorites">
                     <div style={{ fontSize: 13.5, color: "var(--m3e-color-on-surface-variant)" }}>
-                      已置顶常用主题配置与组件预设。
+                      已收藏的常用预设。
                     </div>
                   </TabsPanel>
                 </Tabs>
               </div>
 
               <div className="demo-panel">
-                <span className="demo-panel__label">Secondary Tabs（等宽 2px 底部指示线，适合容器内二级切换）</span>
+                <span className="demo-panel__label">Secondary</span>
                 <Tabs
                   variant="secondary"
                   value={secondaryTab}
                   onValueChange={setSecondaryTab}
                 >
-                  <TabsList aria-label="二级规格标签">
-                    <Tab value="tokens">设计令牌</Tab>
-                    <Tab value="a11y">无障碍键盘</Tab>
-                    <Tab value="motion">物理曲线</Tab>
+                  <TabsList aria-label="二级标签">
+                    <Tab value="tokens">令牌</Tab>
+                    <Tab value="a11y">键盘</Tab>
+                    <Tab value="motion">动效</Tab>
                   </TabsList>
                   <TabsPanel value="tokens">
                     <div style={{ fontSize: 13.5, color: "var(--m3e-color-on-surface-variant)" }}>
-                      全部颜色、圆角与弹簧常量均来自类型安全的 <code>m3eui/tokens</code>。
+                      色板与圆角参数配置。
                     </div>
                   </TabsPanel>
                   <TabsPanel value="a11y">
                     <div style={{ fontSize: 13.5, color: "var(--m3e-color-on-surface-variant)" }}>
-                      支持 Home / End / 左右方向键导航与自动焦点激活。
+                      支持方向键与 Home / End 切换。
                     </div>
                   </TabsPanel>
                   <TabsPanel value="motion">
                     <div style={{ fontSize: 13.5, color: "var(--m3e-color-on-surface-variant)" }}>
-                      指示条位移采用空间弹簧，背景高亮采用临界阻尼零过冲过渡。
+                      弹簧阻尼与刚度配置。
                     </div>
                   </TabsPanel>
                 </Tabs>
@@ -3009,35 +2809,33 @@ export function App() {
 
           <ShowcaseCard
             id="segmented-list"
-            title="SegmentedList 分段列表"
-            primitive="m3eui/SegmentedList"
-            description="单条自动四角 16px；多条首项 [16,16,4,4]、中项 [4,4,4,4]、末项 [4,4,16,16]，2px 间距，选中或按压独立脱出为 [16,16,16,16]。"
+            title="SegmentedList"
             code={`import { SegmentedList, SegmentedListItem } from "m3eui";
 
 <SegmentedList aria-label="构建流水线">
-  <SegmentedListItem headline="类型检查与单元测试" supportingText="15/15 通过" trailing="43ms" />
-  <SegmentedListItem selected headline="构建 m3eui 产物" supportingText="ESM + d.ts" trailing="进行中" />
-  <SegmentedListItem headline="部署文档预览站点" supportingText="Cloud CDN" trailing="排队中" />
+  <SegmentedListItem headline="单元测试" supportingText="56/56 通过" trailing="43ms" />
+  <SegmentedListItem selected headline="构建产物" supportingText="ESM + d.ts" trailing="进行中" />
+  <SegmentedListItem headline="部署预览" supportingText="Cloudflare Pages" trailing="排队中" />
 </SegmentedList>`}
           >
             <div className="demo-grid-2">
               <div className="demo-panel">
-                <span className="demo-panel__label">多条分组 (count = 3 · 2px 缝隙，悬停保持 4px 内缝不破相)</span>
-                <SegmentedList aria-label="工作区流水线">
+                <span className="demo-panel__label">多项分段列表</span>
+                <SegmentedList aria-label="构建流水线">
                   {[
                     {
-                      title: "设计令牌校验 (m3eui/tokens)",
-                      desc: "HCT 色彩与物理弹簧单元测试",
+                      title: "类型检查",
+                      desc: "tsc --noEmit",
                       meta: "通过",
                     },
                     {
-                      title: "无头组件编译 (m3eui)",
-                      desc: "Base UI 1.x 原语与语义 CSS 绑定",
-                      meta: "当前项",
+                      title: "组件构建",
+                      desc: "packages/m3eui",
+                      meta: "进行中",
                     },
                     {
-                      title: "浏览器交互回归测试",
-                      desc: "焦点环、键盘导航与零控制台报错",
+                      title: "静态站点打包",
+                      desc: "apps/playground",
                       meta: "就绪",
                     },
                   ].map((row, idx) => (
@@ -3056,15 +2854,15 @@ export function App() {
               </div>
 
               <div className="demo-panel">
-                <span className="demo-panel__label">独立单条 (count = 1 · 自动四角全圆 16px)</span>
-                <SegmentedList aria-label="独立设置项">
+                <span className="demo-panel__label">单项列表</span>
+                <SegmentedList aria-label="单项设置">
                   <SegmentedListItem
                     lines={2}
                     selected={singleListSelected}
                     onClick={() => setSingleListSelected((v) => !v)}
                     leading={<BellIcon />}
-                    headline="发布版本变更订阅"
-                    supportingText="点击切换选中态，观察单条列表始终维持 [16, 16, 16, 16] 圆角"
+                    headline="版本更新通知"
+                    supportingText="新版本发布时接收邮件提醒"
                     trailing={singleListSelected ? "已开启" : "未开启"}
                   />
                 </SegmentedList>
@@ -3073,28 +2871,17 @@ export function App() {
           </ShowcaseCard>
         </div>
 
-        {/* ===============================================================
-            6. 浮层、反馈与图形
-            =============================================================== */}
         <div className="docs-category">
-          <DocsCategoryHeader
-            indexLabel="06"
-            title="浮层、反馈与多边形图形 (Overlays & Feedback)"
-            countLabel="7 组规范"
-            subtitle="手势抽屉面板、同心圆菜单/右键菜单、模态对话框、轻/富文本提示、全局 Snackbar 队列，以及 AOSP 35 种归一化多边形形变与波浪进度条。"
-          />
+          <DocsCategoryHeader indexLabel="06" title="浮层与反馈" />
 
           <ShowcaseCard
             id="sheets"
-            title="BottomSheet & SideSheet 手势抽屉面板"
-            primitive="@base-ui/react/drawer"
-            description="28px 内侧圆角、底部抽屉自带 32×4px 拖拽手柄，基于 --drawer-swipe-movement-x/y 支持丝滑跟手拖拽关闭与临界阻尼遮罩。"
+            title="BottomSheet & SideSheet"
             code={`import { BottomSheet, SideSheet, SheetClose, Button } from "m3eui";
 
 <BottomSheet
   trigger={<Button variant="filled">打开 BottomSheet</Button>}
-  title="快速分享与导出选项"
-  description="向下拖拽面板或按 Esc 键即可关闭"
+  title="导出选项"
   footer={<SheetClose render={<Button variant="tonal">完成</Button>} />}
 >
   ...
@@ -3102,17 +2889,17 @@ export function App() {
 
 <SideSheet
   side="right"
-  trigger={<Button variant="tonal">打开右侧 SideSheet</Button>}
-  title="令牌实时检查器"
+  trigger={<Button variant="tonal">打开 SideSheet</Button>}
+  title="属性面板"
 >
   ...
 </SideSheet>`}
           >
             <div className="demo-row">
               <BottomSheet
-                trigger={<Button variant="filled">打开 BottomSheet (底部抽屉)</Button>}
-                title="快速导出 M3E 主题令牌"
-                description="顶部 28px 圆角 + 32×4px 拖拽胶囊手柄，支持指针/触控向下拖拽关闭。"
+                trigger={<Button variant="filled">BottomSheet</Button>}
+                title="导出主题配置"
+                description="选择要导出的样式格式"
                 footer={
                   <>
                     <SheetClose render={<Button variant="text">取消</Button>} />
@@ -3120,11 +2907,9 @@ export function App() {
                       render={
                         <Button
                           variant="filled"
-                          onClick={() =>
-                            toast({ title: "已复制 CSS Custom Properties 主题快照" })
-                          }
+                          onClick={() => toast({ title: "已复制 CSS 变量" })}
                         >
-                          复制 CSS 变量
+                          复制 CSS
                         </Button>
                       }
                     />
@@ -3132,29 +2917,24 @@ export function App() {
                 }
               >
                 <div className="demo-row">
-                  <FilterChip defaultSelected>包含浅/深色 light-dark()</FilterChip>
-                  <FilterChip defaultSelected>包含双轨弹簧时长变量</FilterChip>
-                  <FilterChip>压缩单行输出</FilterChip>
+                  <FilterChip defaultSelected>light-dark() 变量</FilterChip>
+                  <FilterChip defaultSelected>弹簧时间变量</FilterChip>
+                  <FilterChip>压缩输出</FilterChip>
                 </div>
               </BottomSheet>
 
               <SideSheet
                 side="right"
-                trigger={<Button variant="tonal">打开右侧 SideSheet</Button>}
-                title="组件设计检查器 (SideSheet)"
-                description="右侧抽屉左侧上下角均为 28px，支持向右滑动手势收起。"
+                trigger={<Button variant="tonal">右侧 SideSheet</Button>}
+                title="属性面板"
                 footer={
-                  <SheetClose render={<Button variant="filled">应用更改</Button>} />
+                  <SheetClose render={<Button variant="filled">完成</Button>} />
                 }
               >
-                <Switch
-                  label="实时同步 HCT 色相旋转"
-                  description="Expressive 变体自动为三级色注入高表现力色相偏移"
-                  defaultChecked
-                />
+                <Switch label="同步色相偏移" defaultChecked />
                 <Slider
                   size="sm"
-                  label="抽屉内嵌连续滑块预览"
+                  label="不透明度"
                   defaultValue={70}
                   showValue
                 />
@@ -3162,14 +2942,13 @@ export function App() {
 
               <SideSheet
                 side="left"
-                trigger={<Button variant="outlined">打开左侧导航抽屉</Button>}
-                title="工作区导航抽屉"
-                description="side='left' 模式右侧上下角自动应用 28px 圆角。"
+                trigger={<Button variant="outlined">左侧 SideSheet</Button>}
+                title="快捷导航"
               >
-                <SegmentedList aria-label="抽屉快捷入口">
-                  <SegmentedListItem headline="设计系统总览" trailing="⌘1" />
-                  <SegmentedListItem selected headline="Base UI 组件矩阵" trailing="⌘2" />
-                  <SegmentedListItem headline="物理弹簧实验室" trailing="⌘3" />
+                <SegmentedList aria-label="快捷入口">
+                  <SegmentedListItem headline="总览" trailing="⌘1" />
+                  <SegmentedListItem selected headline="组件列表" trailing="⌘2" />
+                  <SegmentedListItem headline="主题设置" trailing="⌘3" />
                 </SegmentedList>
               </SideSheet>
             </div>
@@ -3177,14 +2956,12 @@ export function App() {
 
           <ShowcaseCard
             id="popover-menu"
-            title="Popover 气泡卡片、DropdownMenu & ContextMenu 右键菜单"
-            primitive="@base-ui/react/popover · @base-ui/react/menu · @base-ui/react/context-menu"
-            description="DropdownMenu 与 ContextMenu 共享 M3E 同心圆分段拓扑（外框 16px、首尾 12px、内缝 4px、悬停独立变圆为 12px，危险操作高亮为 Error Container）。"
+            title="Popover, DropdownMenu & ContextMenu"
             code={`import { Popover, DropdownMenu, ContextMenu, Button } from "m3eui";
 
 <Popover
-  trigger={<Button variant="tonal">物理参数微调</Button>}
-  title="空间弹簧速查"
+  trigger={<Button variant="tonal">打开气泡</Button>}
+  title="提示信息"
 >
   ...
 </Popover>
@@ -3192,49 +2969,49 @@ export function App() {
 <DropdownMenu
   trigger={<Button variant="outlined">更多操作 ▾</Button>}
   items={[
-    { id: "copy", label: "复制组件引用", shortcut: "⌘C" },
-    { id: "delete", label: "移除预设", danger: true, separatorBefore: true },
+    { id: "copy", label: "复制引用", shortcut: "⌘C" },
+    { id: "delete", label: "删除", danger: true, separatorBefore: true },
   ]}
 />`}
           >
             <div className="demo-grid-2">
               <div className="demo-panel">
-                <span className="demo-panel__label">Popover 非模态浮层 & DropdownMenu 同心圆菜单</span>
+                <span className="demo-panel__label">Popover & DropdownMenu</span>
                 <div className="demo-row">
                   <Popover
-                    trigger={<Button variant="tonal">打开 Popover 浮层</Button>}
-                    title="HCT 表面色阶提示"
-                    description="M3E 废弃传统阴影叠加，改用 Surface Container 五级明度表达深度。"
+                    trigger={<Button variant="tonal">Popover</Button>}
+                    title="表面色阶"
+                    description="使用五级 Surface Container 区分容器层级。"
                   >
                     <div className="demo-row" style={{ justifyContent: "flex-end" }}>
-                      <PopoverClose render={<Button size="xs" variant="filled">知道了</Button>} />
+                      <PopoverClose render={<Button size="xs" variant="filled">关闭</Button>} />
                     </div>
                   </Popover>
 
                   <DropdownMenu
-                    trigger={<Button variant="outlined">组件更多操作 ▾</Button>}
+                    trigger={<Button variant="outlined">更多操作 ▾</Button>}
                     items={[
                       {
                         id: "tsx",
-                        label: "复制 TSX 示例代码",
+                        label: "复制代码",
                         icon: <SparkleIcon />,
                         shortcut: "⌘C",
-                        onSelect: () => toast({ title: "已复制 TSX 代码片段" }),
+                        onSelect: () => toast({ title: "已复制代码" }),
                       },
                       {
                         id: "share",
-                        label: "生成预览分享链接",
+                        label: "分享链接",
                         icon: <SendIcon />,
                         shortcut: "⇧⌘L",
-                        onSelect: () => toast({ title: "分享链接已生成" }),
+                        onSelect: () => toast({ title: "链接已生成" }),
                       },
                       {
                         id: "reset",
-                        label: "删除自定义快照",
+                        label: "删除快照",
                         icon: <TrashIcon />,
                         danger: true,
                         separatorBefore: true,
-                        onSelect: () => toast({ title: "已删除自定义快照" }),
+                        onSelect: () => toast({ title: "已删除" }),
                       },
                     ]}
                   />
@@ -3245,33 +3022,33 @@ export function App() {
                 items={[
                   {
                     id: "inspect",
-                    label: "切换几何圆角标尺",
+                    label: "切换标尺",
                     icon: <SparkleIcon />,
                     shortcut: "⌥D",
-                    onSelect: () => toast({ title: "右键菜单：已执行检查动作" }),
+                    onSelect: () => toast({ title: "已切换标尺" }),
                   },
                   {
                     id: "duplicate",
-                    label: "克隆当前画布节点",
+                    label: "复制节点",
                     icon: <SendIcon />,
                     shortcut: "⌘D",
-                    onSelect: () => toast({ title: "右键菜单：已克隆节点" }),
+                    onSelect: () => toast({ title: "已复制节点" }),
                   },
                   {
                     id: "remove",
-                    label: "清空选中图层",
+                    label: "清空图层",
                     icon: <TrashIcon />,
                     danger: true,
                     separatorBefore: true,
-                    onSelect: () => toast({ title: "右键菜单：已清空选中图层" }),
+                    onSelect: () => toast({ title: "已清空" }),
                   },
                 ]}
               >
                 <div className="context-canvas">
                   <strong style={{ color: "var(--m3e-color-on-surface)" }}>
-                    在此区域点击鼠标右键（ContextMenu）
+                    右键点击此处
                   </strong>
-                  <span>体验 M3E 同心圆分段右键菜单与键盘方向键高亮</span>
+                  <span>打开 ContextMenu</span>
                 </div>
               </ContextMenu>
             </div>
@@ -3279,30 +3056,28 @@ export function App() {
 
           <ShowcaseCard
             id="dialog"
-            title="Dialog & AlertDialog 模态对话框"
-            primitive="@base-ui/react/dialog · @base-ui/react/alert-dialog"
-            description="28px ExtraLarge 容器圆角、overscroll-behavior: contain 防穿透；遮罩采用临界阻尼纯透明度过渡，弹窗采用空间弹簧缩放。"
+            title="Dialog & AlertDialog"
             code={`import { Dialog, DialogClose, AlertDialog, AlertDialogClose, Button } from "m3eui";
 
 <Dialog
-  trigger={<Button variant="filled">配置主题预设</Button>}
+  trigger={<Button variant="filled">打开弹窗</Button>}
   icon={<SparkleIcon />}
-  title="保存当前主题配置"
-  description="将当前 HCT 种子色与弹簧方案导出为项目默认预设。"
+  title="保存主题配置"
+  description="将当前种子色与动效方案保存为默认配置。"
   actions={
     <>
       <DialogClose render={<Button variant="text">取消</Button>} />
-      <DialogClose render={<Button variant="filled">确认保存</Button>} />
+      <DialogClose render={<Button variant="filled">保存</Button>} />
     </>
   }
 />`}
           >
             <div className="demo-row">
               <Dialog
-                trigger={<Button variant="filled">打开标准 Dialog</Button>}
+                trigger={<Button variant="filled">Dialog</Button>}
                 icon={<SparkleIcon />}
-                title="导出 M3E 主题预设"
-                description="导出后团队成员可直接复用同一套种子色、调色板变体与双轨物理弹簧参数。"
+                title="导出主题配置"
+                description="确认导出当前种子色与调色板配置。"
                 actions={
                   <>
                     <DialogClose render={<Button variant="text">取消</Button>} />
@@ -3312,12 +3087,12 @@ export function App() {
                           variant="filled"
                           onClick={() =>
                             toast({
-                              title: "主题预设已导出",
-                              description: `Seed ${seedHex} · ${schemeVariant}`,
+                              title: "已导出配置",
+                              description: `${seedHex} · ${schemeVariant}`,
                             })
                           }
                         >
-                          确认导出
+                          导出
                         </Button>
                       }
                     />
@@ -3338,20 +3113,20 @@ export function App() {
               </Dialog>
 
               <AlertDialog
-                trigger={<Button variant="tonal">打开危险确认 AlertDialog</Button>}
+                trigger={<Button variant="tonal">AlertDialog</Button>}
                 icon={<TrashIcon />}
-                title="确认重置本地主题缓存？"
-                description="此操作将清除浏览器保存的明暗模式偏好并恢复默认紫罗兰种子色。"
+                title="重置本地设置？"
+                description="此操作将恢复默认种子色与明暗模式设置。"
                 actions={
                   <>
-                    <AlertDialogClose render={<Button variant="text">保留当前设置</Button>} />
+                    <AlertDialogClose render={<Button variant="text">取消</Button>} />
                     <AlertDialogClose
                       render={
                         <Button
                           variant="filled"
                           onClick={() =>
                             toast({
-                              title: "已重置缓存",
+                              title: "已重置",
                               actionLabel: "撤销",
                               onAction: () => {},
                             })
@@ -3369,93 +3144,87 @@ export function App() {
 
           <ShowcaseCard
             id="tooltip-toast"
-            title="Tooltip / RichTooltip & Toast (Snackbar)"
-            primitive="@base-ui/react/tooltip · @base-ui/react/toast"
-            description="M3EProvider 内置全局 Tooltip.Provider 与 Toast 队列宿主，任意子组件调用 useM3EToast() 即可弹出带撤销动作的 Snackbar。"
+            title="Tooltip, RichTooltip & Toast"
             code={`import { Tooltip, RichTooltip, Button, useM3EToast } from "m3eui";
 
 const { toast } = useM3EToast();
 
 <Tooltip content="快捷键 ⌘K">
-  <Button variant="outlined">悬停查看 Plain Tooltip</Button>
+  <Button variant="outlined">Plain Tooltip</Button>
 </Tooltip>
 
-<RichTooltip subhead="空间物理弹簧" content="用于位移、尺寸与圆角形变，允许自然弹性回弹。">
-  <Button variant="tonal">悬停查看 Rich Tooltip</Button>
+<RichTooltip subhead="快捷键" content="按下 ⌘K 打开组件搜索框。">
+  <Button variant="tonal">Rich Tooltip</Button>
 </RichTooltip>
 
-<Button onClick={() => toast({ title: "已归档 3 个会话", actionLabel: "撤销" })}>
-  触发 Snackbar
+<Button onClick={() => toast({ title: "已归档", actionLabel: "撤销" })}>
+  触发通知
 </Button>`}
           >
             <div className="demo-row">
-              <Tooltip content="Plain Tooltip · 反色紧凑提示 (8px 圆角)">
-                <Button variant="outlined">悬停 Plain Tooltip</Button>
+              <Tooltip content="快捷键 ⌘K">
+                <Button variant="outlined">Plain Tooltip</Button>
               </Tooltip>
 
               <RichTooltip
-                subhead="M3E 双轨弹簧准则"
-                content="空间属性（位移、圆角、尺寸）使用欠阻尼弹性弹簧；颜色与透明度严禁使用过冲弹簧。"
+                subhead="主题同步"
+                content="可执行 npx m3eui sync 将 m3e.json 编译为静态 CSS 变量。"
                 action={
                   <Button
                     size="xs"
                     variant="text"
-                    onClick={() => toast({ title: "已复制双轨物理速查说明" })}
+                    onClick={() => toast({ title: "已复制命令" })}
                   >
-                    复制准则
+                    复制命令
                   </Button>
                 }
               >
-                <Button variant="tonal">悬停 Rich Tooltip</Button>
+                <Button variant="tonal">Rich Tooltip</Button>
               </RichTooltip>
 
               <Button
                 variant="filled"
                 onClick={() =>
                   toast({
-                    title: "组件配置已同步至本地",
-                    description: "包含 9 个新增表单与浮层原语",
+                    title: "配置已保存",
                     actionLabel: "撤销",
-                    onAction: () =>
-                      toast({ title: "已撤销刚才的同步操作" }),
+                    onAction: () => toast({ title: "已撤销" }),
                   })
                 }
               >
-                触发 Snackbar 通知
+                触发 Toast
               </Button>
             </div>
           </ShowcaseCard>
 
           <ShowcaseCard
             id="flat-progress-meter"
-            title="LinearProgress, CircularProgress & Meter (4px 轨道裂隙规范)"
-            primitive="@base-ui/react/progress · @base-ui/react/meter"
-            description="除波浪进度条外，M3E 1.5 标准平直进度条与环形进度环同样引入标志性的 4px 激活段/剩余轨道物理裂隙与 4px 末端止动圆点；Meter 支持容量阈值三级变色。"
+            title="Progress & Meter"
             code={`import {
   LinearProgressIndicator,
   CircularProgressIndicator,
   Meter,
 } from "m3eui";
 
-<LinearProgressIndicator label="制品包上传进度" value={76} showValue thickness="thick" />
+<LinearProgressIndicator label="上传进度" value={76} showValue thickness="thick" />
 <CircularProgressIndicator value={76} size="lg" showValue />
-<Meter label="显存负载配额 (VRAM)" value={76} valueText="18.2 / 24 GB" />`}
+<Meter label="显存占用" value={76} valueText="18.2 / 24 GB" />`}
           >
             <div className="demo-grid-2">
               <div className="demo-panel" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <LinearProgressIndicator
-                  label="标准平直进度条 (4px 裂隙 + 末端止动点)"
+                  label="标准进度条"
                   value={gpuUsage}
                   showValue
                 />
                 <LinearProgressIndicator
-                  label="高表现力加粗轨道 (8px Thick)"
+                  label="加粗进度条 (Thick)"
                   thickness="thick"
                   value={gpuUsage}
                   showValue
                 />
                 <LinearProgressIndicator
-                  label="不确定态双段追逐动画 (Indeterminate)"
+                  label="不确定态 (Indeterminate)"
                   indeterminate
                 />
               </div>
@@ -3469,7 +3238,7 @@ const { toast } = useM3EToast();
                 </div>
 
                 <Meter
-                  label="集群显存配额负载 (≥70% 预警色 / ≥90% 告警色)"
+                  label="显存占用"
                   value={gpuUsage}
                   valueText={`${gpuUsage}% · ${(gpuUsage * 0.24).toFixed(1)} / 24 GB`}
                 />
@@ -3478,7 +3247,7 @@ const { toast } = useM3EToast();
 
             <Slider
               size="sm"
-              label="拖动调节进度与配额负载（观察 4px 裂隙与 70% / 90% 计量条变色）"
+              label="数值调节"
               min={0}
               max={100}
               showValue
@@ -3491,8 +3260,6 @@ const { toast } = useM3EToast();
           <ShowcaseCard
             id="progress"
             title="LoadingIndicator & WavyProgressIndicator"
-            primitive="@base-ui/react/progress · SVG Parametric Curves"
-            description="7 阶段连续多边形形变加载器，以及端点自动收平的线性与极坐标整波瓣闭合（N=9）环形波浪进度条。"
             code={`import {
   LoadingIndicator,
   ContainedLoadingIndicator,
@@ -3520,7 +3287,7 @@ const { toast } = useM3EToast();
             </div>
             <Slider
               size="sm"
-              label="拖动调节确定性波浪进度（观察 ≤10% 与 ≥95% 端点振幅自动平滑收平）"
+              label="波浪进度"
               min={0}
               max={100}
               showValue
@@ -3532,9 +3299,7 @@ const { toast } = useM3EToast();
 
           <ShowcaseCard
             id="shapes"
-            title="MaterialShapeView (全量 35 种官方形状与任意形变)"
-            primitive="m3eui/tokens · MaterialShapes"
-            description="内置 AOSP MaterialShapes 全部 35 个 [0..1] 归一化闭合三次贝塞尔多边形，支持任意两形状 1:1 实时弹簧插值。"
+            title="MaterialShapeView"
             code={`import { MaterialShapeView } from "m3eui";
 
 <MaterialShapeView
@@ -3554,7 +3319,7 @@ const { toast } = useM3EToast();
               <div style={{ flex: "1 1 260px" }}>
                 <Slider
                   size="sm"
-                  label={`形变插值: ${fromShape} → ${toShape}`}
+                  label={`${fromShape} → ${toShape}`}
                   min={0}
                   max={100}
                   showValue
@@ -3614,16 +3379,13 @@ const { toast } = useM3EToast();
             <div className="docs-footer__brand">
               <MaterialShapeView shape="cookie9Sided" size={28} />
               <div>
-                <strong>m3eui v1.0.0</strong>
+                <strong>m3eui v0.1.0</strong>
                 <div className="docs-footer__sub">
-                  Material 3 Expressive 1.5 · Built on @base-ui/react 1.9 · Zero Tailwind
+                  Apache-2.0 · Built on @base-ui/react
                 </div>
               </div>
             </div>
             <div className="demo-row" style={{ gap: 8 }}>
-              <AssistChip>m3eui/tokens</AssistChip>
-              <AssistChip>m3eui</AssistChip>
-              <AssistChip>m3eui</AssistChip>
               <Button
                 size="xs"
                 variant="tonal"

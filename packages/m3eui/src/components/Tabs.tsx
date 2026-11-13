@@ -157,7 +157,6 @@ export function TabsPanel<Value extends string | number = string>({
       keepMounted={keepMounted}
       className="m3e-tabs__panel"
     >
-      {/* Visual padding/background lives on an inner wrapper per modern-web-guidance tabs spec */}
       <div
         className={
           className

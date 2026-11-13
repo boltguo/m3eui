@@ -25,7 +25,6 @@ export interface M3EButtonProps {
   readonly className?: string;
   readonly style?: React.CSSProperties;
   readonly "aria-label"?: string;
-  /** Internal override used by ButtonGroup to coordinate corners & width */
   readonly cornerOverride?: CornerTuple;
   readonly onPressStateChange?: (pressed: boolean) => void;
 }
@@ -201,7 +200,6 @@ export const ToggleButton = React.forwardRef<HTMLButtonElement, M3EToggleButtonP
       onPointerPressChange?.(isPointerPressed);
     }, [isPointerPressed, onPointerPressChange]);
 
-    // M3E ToggleButton swaps round <-> square corner radii upon selection
     const unselectedRadius =
       shape === "square" ? spec.squareCornerRadius : spec.restCornerRadius;
     const selectedRadius =

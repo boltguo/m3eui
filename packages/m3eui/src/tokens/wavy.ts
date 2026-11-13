@@ -1,35 +1,17 @@
-/**
- * Material 3 Expressive — Parametric Wavy Progress Geometry
- *
- * Upstream Source of Truth:
- * - AOSP `WavyProgressIndicator.kt` (`WavyProgressIndicatorDefaults`)
- * - AOSP `LinearProgressIndicatorTokens.kt`
- *   (`ActiveThickness = 4.dp`, `WaveHeight = 10.dp`, `ActiveWaveWavelength = 40.dp`,
- *    `IndeterminateActiveWaveWavelength = 20.dp`, `TrackActiveSpace = 4.dp`, `StopSize = 4.dp`)
- */
-
 export const WAVY_PROGRESS_TOKENS = {
   defaultWidth: 240,
   containerHeight: 10,
   strokeWidth: 4,
-  /** `(containerHeight - strokeWidth) / 2 = 3` so 4px round caps never clip vertically */
   maxAmplitudePx: 3,
   determinateWavelength: 40,
   indeterminateWavelength: 20,
-  /** `1 wavelength / second` (`WavyProgressIndicator.kt` line 95: `waveSpeed = wavelength`) */
   defaultWaveSpeedPerSec: 1,
   trackActiveGap: 4,
   stopIndicatorSize: 4,
-  /** `MotionTokens.DurationLong2 = 500ms` for smooth amplitude ramp up/down */
   amplitudeTransitionMs: 500,
   indeterminateCycleMs: 1800,
 } as const;
 
-/**
- * Exact amplitude rule from AOSP `WavyProgressIndicatorDefaults.indicatorAmplitude`:
- * - Flat (`0`) when `progress <= 0.10` or `progress >= 0.95`
- * - Full wave (`1`) when `0.10 < progress < 0.95`
- */
 export function resolveDeterminateWaveAmplitude(progress: number): number {
   if (!Number.isFinite(progress)) return 1;
   if (progress <= 0.1 || progress >= 0.95) {
@@ -38,11 +20,6 @@ export function resolveDeterminateWaveAmplitude(progress: number): number {
   return 1;
 }
 
-/**
- * Builds an exact C1-continuous Hermite cubic Bézier SVG path for
- * `y(x) = centerY + amplitudePx * sin((2π / wavelength) * (x - phasePx))`
- * across any `[xStart, xEnd]` interval without endpoint snapping.
- */
 export function buildSinusoidSvgPath(params: {
   readonly xStart: number;
   readonly xEnd: number;
@@ -95,22 +72,15 @@ export function buildSinusoidSvgPath(params: {
 }
 
 export interface LinearWavyGeometryOutput {
-  /** Active wavy indicator `<path d="...">` segments (1 for determinate, 1-2 for indeterminate) */
   readonly activePaths: readonly string[];
-  /** Straight inactive track `<path d="...">` segments separated by `trackActiveGap` */
   readonly trackPaths: readonly string[];
-  /** Optional trailing stop dot center & radius (determinate mode when `progress < 1`) */
   readonly stopDot: { readonly cx: number; readonly cy: number; readonly r: number } | null;
 }
 
-/**
- * Computes complete SVG geometry for Determinate Linear Wavy Progress Indicator.
- */
 export function buildDeterminateLinearWavyGeometry(params: {
   readonly width: number;
   readonly height?: number;
   readonly progress: number;
-  /** Normalized amplitude `[0..1]` (typically smoothed toward `resolveDeterminateWaveAmplitude(progress)`) */
   readonly amplitude: number;
   readonly wavelength?: number;
   readonly phasePx?: number;
@@ -154,7 +124,6 @@ export function buildDeterminateLinearWavyGeometry(params: {
     if (d) activePaths.push(d);
   }
 
-  // Track starts after `activeEnd + strokeWidth + trackGap` (accounting for round stroke caps on both sides)
   const trackStart =
     clamped <= 0.002
       ? usableStart
@@ -185,10 +154,6 @@ function easeInOutCubic(t: number): number {
   return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
 }
 
-/**
- * Computes complete SVG geometry for Indeterminate Linear Wavy Progress Indicator
- * at normalized `cycleFraction ∈ [0..1)`.
- */
 export function buildIndeterminateLinearWavyGeometry(params: {
   readonly width: number;
   readonly height?: number;
@@ -219,7 +184,6 @@ export function buildIndeterminateLinearWavyGeometry(params: {
   const maxAmp = Math.max(0, (height - strokeWidth) / 2);
   const ampPx = Math.max(0, Math.min(1, amplitude)) * maxAmp;
 
-  // Primary expressive indeterminate bar sweeps cleanly across [0..1]
   const head = easeInOutCubic(Math.min(1, t / 0.72));
   const tail = t < 0.18 ? 0 : easeInOutCubic(Math.min(1, (t - 0.18) / 0.82));
 
@@ -259,27 +223,16 @@ export function buildIndeterminateLinearWavyGeometry(params: {
   return { activePaths, trackPaths, stopDot: null };
 }
 
-// ============================================================================
-// Phase 2 Additions: Polar Circular Wavy Progress Geometry
-// ============================================================================
-
 export const CIRCULAR_WAVY_TOKENS = {
   size: 48,
   strokeWidth: 4,
-  /** Radial peak-to-center wave amplitude (`1.6dp` from AOSP `CircularProgressIndicatorTokens`) */
   maxAmplitudePx: 1.6,
-  /** Target arc wavelength (`~15dp` => `N = 9` integer lobes on a `48dp` indicator) */
   targetWavelength: 15,
-  /** `1 lobe / second` angular phase advance */
   defaultAngularWaveSpeedRad: 2 * Math.PI,
   trackActiveGap: 4,
   indeterminateCycleMs: 2400,
 } as const;
 
-/**
- * Quantizes circular wave frequency to an integer lobe count `N >= 4` so
- * `r(θ + 2π) === r(θ)` and `r'(θ + 2π) === r'(θ)` (exact C1 closure with zero seam kink).
- */
 export function resolveCircularWaveLobes(
   baseRadius: number,
   targetWavelength: number = CIRCULAR_WAVY_TOKENS.targetWavelength,
@@ -288,11 +241,6 @@ export function resolveCircularWaveLobes(
   return Math.max(4, Math.round(circumference / Math.max(4, targetWavelength)));
 }
 
-/**
- * Builds an exact C1-continuous polar Hermite cubic Bézier SVG path for
- * `r(θ) = baseRadius + amplitudePx * sin(lobes * (θ - originAngle) - phaseRad)`
- * across `[startAngle, endAngle]`. When `amplitudePx === 0`, produces a smooth circular arc.
- */
 export function buildPolarWavyArcSvgPath(params: {
   readonly cx: number;
   readonly cy: number;
@@ -390,9 +338,6 @@ export interface CircularWavyGeometryOutput {
   readonly lobes: number;
 }
 
-/**
- * Determinate Circular Wavy Progress Geometry (`size = 48` default, `12 o'clock` origin).
- */
 export function buildDeterminateCircularWavyGeometry(params: {
   readonly size?: number;
   readonly progress: number;
@@ -469,9 +414,6 @@ export function buildDeterminateCircularWavyGeometry(params: {
   return { activePath, trackPath, baseRadius, lobes };
 }
 
-/**
- * Indeterminate Circular Wavy Progress Geometry at normalized `cycleFraction ∈ [0..1)`.
- */
 export function buildIndeterminateCircularWavyGeometry(params: {
   readonly size?: number;
   readonly cycleFraction: number;
@@ -500,11 +442,9 @@ export function buildIndeterminateCircularWavyGeometry(params: {
   const lobes = resolveCircularWaveLobes(baseRadius, targetWavelength);
   const ampPx = Math.max(0, Math.min(1, amplitude)) * maxAmplitudePx;
 
-  // Sweep expands from 12% -> 78% on [0..0.5] and contracts 78% -> 12% on [0.5..1]
   const pulse = t < 0.5 ? easeInOutCubic(t * 2) : easeInOutCubic((1 - t) * 2);
   const sweepFraction = 0.12 + 0.66 * pulse;
   const sweepRad = 2 * Math.PI * sweepFraction;
-  // Continuous global rotation + tail catch-up so head & tail alternate smoothly
   const tailCatchup = t < 0.5 ? 0 : easeInOutCubic((t - 0.5) * 2) * 0.66 * 2 * Math.PI;
   const startAngle = -Math.PI / 2 + t * 2 * Math.PI + tailCatchup;
   const endAngle = startAngle + sweepRad;

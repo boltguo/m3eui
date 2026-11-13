@@ -15,7 +15,6 @@ import {
 } from "../hooks/useM3ESpring.js";
 import { formatLocalizedWallTime } from "../i18n/index.js";
 
-/** Plain wall-clock time string (`HH:MM`, 24-hour `00:00`..`23:59`). */
 export type PlainTimeString = `${string}:${string}` | string;
 
 export function parsePlainTime(raw: string | undefined): {
@@ -165,13 +164,6 @@ function KeyboardIconSvg() {
   );
 }
 
-/**
- * M3E TimePicker (`TimePicker.kt` 1.5.0)
- *
- * - Supports 12-hour (`AM/PM` vertical connected toggle) and 24-hour (concentric outer `00..11` + inner `12..23` rings).
- * - Spring-animated clock hand (`fastSpatial`) with shortest-arc unwrapping (`55 -> 05` sweeps `+30°` smoothly across 12 o'clock).
- * - Toggleable keyboard digital entry mode (`defaultInputMode="dial" | "keyboard"`).
- */
 export function TimePicker({
   value: controlledValue,
   defaultValue = "09:30",
@@ -220,7 +212,6 @@ export function TimePicker({
     use24Hour,
   });
 
-  // Shortest-arc angle unwrapping so crossing 12 o'clock never spins 300° backwards
   const cumulativeAngleRef = React.useRef<number>(handTarget.angleDeg);
   const targetUnwrappedDeg = React.useMemo(() => {
     const prev = cumulativeAngleRef.current;
@@ -472,7 +463,6 @@ export function TimePicker({
               pickFromDialPointer(e.clientX, e.clientY, true);
             }}
           >
-            {/* Clock hand SVG overlay */}
             <svg
               width={TIME_PICKER_TOKENS.dialSize}
               height={TIME_PICKER_TOKENS.dialSize}

@@ -11,22 +11,15 @@ import {
 import { useM3EI18n } from "../context/M3EProvider.js";
 import { Checkbox } from "./Checkbox.js";
 
-/* =========================================================================
-   1. M3E Sortable & Responsive DataTable
-   ========================================================================= */
-
 export type SortDirection = "ascending" | "descending";
 
 export interface M3EDataTableColumn<Row> {
   readonly id: string;
   readonly header: React.ReactNode;
-  /** Plain-text label used in screen-reader sort announcements (defaults to `String(header)` if string) */
   readonly headerLabel?: string;
   readonly align?: "start" | "center" | "end";
   readonly sortable?: boolean;
-  /** Marks the row's primary identifying column (`<th scope="row">`) */
   readonly isRowHeader?: boolean;
-  /** Extracts primitive value for `Intl.Collator` / numeric sorting */
   readonly sortAccessor?: (row: Row) => string | number;
   readonly cell: (row: Row, index: number) => React.ReactNode;
 }
@@ -37,9 +30,7 @@ export interface M3EDataTableSortState {
 }
 
 export interface M3EDataTableProps<Row> {
-  /** Mandatory accessible caption describing the table dataset */
   readonly caption: React.ReactNode;
-  /** Visually hides `<caption>` while preserving `aria-labelledby` on the scrollable region */
   readonly hideCaption?: boolean;
   readonly columns: readonly M3EDataTableColumn<Row>[];
   readonly rows: readonly Row[];
@@ -88,16 +79,6 @@ function SortArrowSvg({
   );
 }
 
-/**
- * M3E DataTable
- *
- * Implements `modern-web-guidance` `sortable-table` & `responsive-table`:
- * - Keyboard-focusable horizontal scroll container (`tabIndex={0}`, `role="region"`, `aria-labelledby={captionId}`, `container-type: inline-size`).
- * - `<button type="button">` inside sortable `<th scope="col">` (never clickable `<th>`).
- * - `aria-sort="ascending" | "descending"` set ONLY on the active sorted column (never `aria-sort="none"`).
- * - `Intl.Collator` (`numeric: true, sensitivity: 'base'`) for text + numeric subtraction for numbers.
- * - Polite visually hidden `role="status"` sort announcer outside `<table>`.
- */
 export function DataTable<Row>({
   caption,
   hideCaption = false,
@@ -371,13 +352,8 @@ export function DataTable<Row>({
   );
 }
 
-/* =========================================================================
-   2. M3E Tonal Shimmer Skeleton (Supports Standard & 35 Expressive Shapes!)
-   ========================================================================= */
-
 export interface M3ESkeletonProps {
   readonly variant?: "text" | "rectangular" | "rounded" | "circular";
-  /** Optional M3E 35-polygon shape mask (e.g. `"Cookie9Sided"`, `"Clover4Leaf"`, `"SoftBurst"`) */
   readonly shape?: M3EShapeName;
   readonly width?: number | string;
   readonly height?: number | string;

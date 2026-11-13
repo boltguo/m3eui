@@ -1,5 +1,3 @@
-// @vitest-environment happy-dom
-
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { extname, join, resolve } from "node:path";
 import * as React from "react";
@@ -88,7 +86,6 @@ import {
 } from "./index.js";
 import * as Primitives from "./primitives.js";
 
-// Enable React 19 act() environment flag for clean synchronous DOM tests
 (globalThis as Record<string, unknown>).IS_REACT_ACT_ENVIRONMENT = true;
 
 function PausedWrapper({
@@ -309,7 +306,6 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     );
     expect(JSON.parse(exportedJson).theme.contrastLevel).toBe(0.5);
 
-    // Switch dynamically to Japanese -> dir automatically flips back to ltr!
     act(() => {
       switchLocale?.("ja-JP");
     });
@@ -405,7 +401,6 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(ltrChevron?.style.rotate).toBe("-90.0deg");
     expect(rtlChevron?.style.rotate).toBe("90.0deg");
 
-    // Click trigger to expand
     const trigger = container.querySelector<HTMLButtonElement>(
       '[data-testid="ltr-col"] .m3e-collapsible__trigger',
     );
@@ -436,7 +431,6 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
       ".m3e-accordion__expand-all",
     );
     expect(expandBtn).not.toBeNull();
-    // Mixed state (1 of 2 open) -> aria-expanded="false" and reads "Expand all"
     expect(expandBtn!.getAttribute("aria-expanded")).toBe("false");
     expect(expandBtn!.textContent).toBe("Expand all");
 
@@ -568,11 +562,9 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     });
     expect(textVal).toBe("");
 
-    // OTPField renders 4 digit slots
     const otpSlots = container.querySelectorAll(".m3e-otp-field__slot");
     expect(otpSlots.length).toBe(4);
 
-    // SearchBar uses localized aria-labels
     expect(
       container.querySelector('button[aria-label="Clear search query"]'),
     ).not.toBeNull();
@@ -664,7 +656,6 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     const track = container.querySelector<HTMLElement>(".m3e-carousel__track");
     expect(track).not.toBeNull();
 
-    // In RTL, ArrowLeft advances to the next slide (index 1)!
     act(() => {
       track!.dispatchEvent(
         new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }),

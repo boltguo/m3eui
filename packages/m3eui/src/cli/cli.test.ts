@@ -48,7 +48,6 @@ describe("m3eui CLI — Declarative m3e.json & Theme Sync CLI Suite", () => {
     expect(cfg.theme.schemeVariant).toBe("vibrant");
     expect(cfg.i18n.locale).toBe("ja-JP");
 
-    // Second init without --force fails safely
     const code2 = runM3ECli(["init"], {
       cwd: tempDir,
       log: () => {},
@@ -61,7 +60,6 @@ describe("m3eui CLI — Declarative m3e.json & Theme Sync CLI Suite", () => {
   it("detects stale CSS or invalid seed/contrast in doctor and passes after sync", () => {
     runM3ECli(["init"], { cwd: tempDir, log: () => {}, error: () => {} });
 
-    // Mutate m3e.json without running sync -> doctor reports stale CSS
     const configPath = join(tempDir, "m3e.json");
     const parsed = JSON.parse(readFileSync(configPath, "utf8"));
     parsed.theme.seed = "#1A73E8";
@@ -73,7 +71,6 @@ describe("m3eui CLI — Declarative m3e.json & Theme Sync CLI Suite", () => {
       staleReport.checks.find((c) => c.name === "static-theme-css-sync")?.passed,
     ).toBe(false);
 
-    // Run m3e sync -> doctor passes!
     const syncCode = runM3ECli(["sync"], {
       cwd: tempDir,
       log: () => {},
@@ -113,7 +110,6 @@ describe("m3eui CLI — Declarative m3e.json & Theme Sync CLI Suite", () => {
 
   it("passes full workspace m3e doctor audit on the repository root", () => {
     const repoRoot = resolve(__dirname, "../../../..");
-    // Sync first so generated CSS matches root m3e.json
     const syncCode = runM3ECli(["sync"], {
       cwd: repoRoot,
       log: () => {},

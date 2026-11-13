@@ -13,7 +13,6 @@ import {
 
 export interface M3EOTPFieldProps {
   readonly length?: number;
-  /** Optional index after which a group separator `-` is inserted (e.g. `3` for `3 + 3` layout) */
   readonly separatorAfterIndex?: number;
   readonly value?: string;
   readonly defaultValue?: string;
@@ -85,14 +84,6 @@ function OTPSlotCell({
   );
 }
 
-/**
- * M3E Connected OTP Verification Field (`@base-ui/react/otp-field` v1.9.0).
- *
- * - Instructional helper text is placed **above** the inputs (`aria-describedby`) per
- *   `modern-web-guidance` (`sms-otp-form`) so autofill popovers & virtual keyboards never obscure it.
- * - Uses `autoComplete="one-time-code"` + `inputMode="numeric"` + optional progressive WebOTP
- *   (`OTPCredential`) listener managed with an `AbortController`.
- */
 export function OTPField({
   length = 6,
   separatorAfterIndex = 2,
@@ -116,7 +107,6 @@ export function OTPField({
   );
   const currentVal = controlledValue ?? uncontrolledVal;
 
-  // Progressive WebOTP API integration (`if ('OTPCredential' in window)`) with clean AbortController lifecycle
   React.useEffect(() => {
     if (
       !enableWebOTP ||
@@ -132,7 +122,6 @@ export function OTPField({
     const ac = new AbortController();
     navigator.credentials
       .get({
-        // Cast WebOTP transport options cleanly without global DOM type pollution
         ...({ otp: { transport: ["sms"] }, signal: ac.signal } as CredentialRequestOptions),
       })
       .then((cred) => {
@@ -171,7 +160,6 @@ export function OTPField({
         </label>
       ) : null}
 
-      {/* Place instructional hint ABOVE the input row per `sms-otp-form` */}
       {helperText ? (
         <p id={hintId} className="m3e-otp-field__hint">
           {helperText}

@@ -20,7 +20,7 @@ import { PROPS_CATALOG, type PropDocRow } from "../data/propsCatalog";
 export interface DocsCategoryHeaderProps {
   readonly indexLabel: string;
   readonly title: React.ReactNode;
-  readonly subtitle: React.ReactNode;
+  readonly subtitle?: React.ReactNode;
   readonly countLabel?: string;
 }
 
@@ -44,7 +44,7 @@ export function DocsCategoryHeader({
           </AssistChip>
         ) : null}
       </div>
-      <p className="docs-category__subtitle">{subtitle}</p>
+      {subtitle ? <p className="docs-category__subtitle">{subtitle}</p> : null}
     </div>
   );
 }
@@ -52,8 +52,8 @@ export function DocsCategoryHeader({
 export interface ShowcaseCardProps {
   readonly id: string;
   readonly title: string;
-  readonly primitive: string;
-  readonly description: string;
+  readonly primitive?: string;
+  readonly description?: string;
   readonly code: string;
   readonly propsRows?: readonly PropDocRow[];
   readonly children: React.ReactNode;
@@ -100,8 +100,8 @@ function CopyCodeIcon() {
 const PROP_COLUMNS: readonly M3EDataTableColumn<PropDocRow>[] = [
   {
     id: "name",
-    header: "属性 (Prop)",
-    headerLabel: "属性名",
+    header: "属性",
+    headerLabel: "属性",
     isRowHeader: true,
     sortable: true,
     sortAccessor: (row) => row.name,
@@ -109,7 +109,7 @@ const PROP_COLUMNS: readonly M3EDataTableColumn<PropDocRow>[] = [
   },
   {
     id: "type",
-    header: "类型 (Type)",
+    header: "类型",
     headerLabel: "类型",
     cell: (row) => <code className="docs-api-type">{row.type}</code>,
   },
@@ -123,8 +123,8 @@ const PROP_COLUMNS: readonly M3EDataTableColumn<PropDocRow>[] = [
   },
   {
     id: "description",
-    header: "规范说明",
-    headerLabel: "规范说明",
+    header: "说明",
+    headerLabel: "说明",
     cell: (row) => <span>{row.description}</span>,
   },
 ];
@@ -149,10 +149,8 @@ export function ShowcaseCard({
       await navigator.clipboard.writeText(code);
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
-    } catch {
-      // Ignore clipboard failures in restricted webviews
-    }
-    toast({ title: `已复制 ${title} 示例代码` });
+    } catch {}
+    toast({ title: `已复制 ${title} 代码` });
   };
 
   const handleCopyAnchor = async () => {
@@ -160,10 +158,8 @@ export function ShowcaseCard({
     window.history.replaceState(null, "", `#${id}`);
     try {
       await navigator.clipboard.writeText(hashUrl);
-    } catch {
-      // Ignore clipboard failures in restricted webviews
-    }
-    toast({ title: `已复制锚点 #${id}` });
+    } catch {}
+    toast({ title: `已复制链接 #${id}` });
   };
 
   return (
@@ -173,21 +169,25 @@ export function ShowcaseCard({
           <div className="docs-card__meta">
             <div className="docs-card__title-row">
               <h3 className="docs-card__title">{title}</h3>
-              <AssistChip
-                className="docs-primitive-chip"
-                onClick={handleCopyAnchor}
-              >
-                {primitive}
-              </AssistChip>
+              {primitive ? (
+                <AssistChip
+                  className="docs-primitive-chip"
+                  onClick={handleCopyAnchor}
+                >
+                  {primitive}
+                </AssistChip>
+              ) : null}
             </div>
-            <p className="docs-card__desc">{description}</p>
+            {description ? (
+              <p className="docs-card__desc">{description}</p>
+            ) : null}
           </div>
 
-          <Tooltip content={`复制 #${id} 章节链接`}>
+          <Tooltip content={`复制 #${id} 链接`}>
             <IconButton
               size="xs"
               variant="standard"
-              aria-label={`复制 ${title} 章节链接`}
+              aria-label={`复制 ${title} 链接`}
               icon={<LinkAnchorIcon />}
               onClick={handleCopyAnchor}
             />
@@ -209,7 +209,7 @@ export function ShowcaseCard({
             <Tab value="code">代码</Tab>
             {resolvedProps.length > 0 ? (
               <Tab value="api" badge={resolvedProps.length}>
-                API 参数
+                API
               </Tab>
             ) : null}
           </TabsList>
@@ -227,7 +227,7 @@ export function ShowcaseCard({
                 leadingIcon={<CopyCodeIcon />}
                 onClick={handleCopyCode}
               >
-                {copied ? "已复制" : "复制 TSX"}
+                {copied ? "已复制" : "复制"}
               </Button>
             </div>
             <ScrollArea maxHeight={420} orientation="both">
@@ -240,7 +240,7 @@ export function ShowcaseCard({
           {resolvedProps.length > 0 ? (
             <TabsPanel value="api" className="docs-api-wrap">
               <DataTable
-                caption={`${title} API 参数表`}
+                caption={`${title} API`}
                 hideCaption
                 density="compact"
                 columns={PROP_COLUMNS}

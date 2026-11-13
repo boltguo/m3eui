@@ -2,11 +2,9 @@
 
 **English** | [简体中文](./README.zh-CN.md)
 
-All-in-one **Material 3 Expressive (`1.5.0`)** React component library, HCT color & 5-platform spring physics engine, 100% key-driven internationalization with automatic RTL mirroring, and built-in `m3e.json` CLI — built on `@base-ui/react` (`1.9.0`) and native semantic CSS (`light-dark()`).
+Material 3 Expressive React component library built on `@base-ui/react`, with HCT color generation, spring motion tokens, `m3e.json` CLI, and built-in i18n/RTL support.
 
 ## Install
-
-Everything ships in **one single package** (`m3eui` — components, styles, math tokens, and CLI):
 
 ```bash
 pnpm add m3eui
@@ -19,7 +17,6 @@ Peer dependencies: `react >= 18.0.0`, `react-dom >= 18.0.0`.
 ## Quick Start
 
 ```bash
-# Optional: generate m3e.json + zero-JS-flash static theme CSS
 npx m3eui init --seed "#6750A4" --variant expressive --locale en-US
 ```
 
@@ -40,18 +37,18 @@ export function App() {
 }
 ```
 
-## Subpath Exports & Built-in CLI
+## Subpath Exports & CLI
 
-- `m3eui` — All 60+ components, hooks, `M3EProvider`, `CSPProvider`, `getM3EInitScript`, config & design tokens
-- `m3eui/styles.css` — Core semantic stylesheet (`--m3e-*` custom properties + `light-dark()`)
-- `m3eui/tokens` & `m3eui/tokens.json` — Zero-React HCT color math, 5-platform spring solver, corner topology & 35 `MaterialShapes`
-- `m3eui/i18n` — Built-in `en-US` / `zh-CN` / `ja-JP` / `ar-SA` dictionaries & 78 typed `M3EMessageKey`s
+- `m3eui` — Components, hooks, `M3EProvider`, `CSPProvider`, `getM3EInitScript`, config, and tokens
+- `m3eui/styles.css` — Component stylesheet (`--m3e-*` custom properties + `light-dark()`)
+- `m3eui/tokens` & `m3eui/tokens.json` — HCT color synthesis, spring solver, corner topology, and 35 `MaterialShapes`
+- `m3eui/i18n` — `en-US`, `zh-CN`, `ja-JP`, `ar-SA` dictionaries and `M3EMessageKey` types
 - `m3eui/config` — `defineM3EConfig`, `resolveM3EConfig`, `serializeM3EConfig`, `generateM3EStaticThemeCss`
-- `m3eui/primitives` — Re-exported `@base-ui/react` headless primitives
-- `m3eui/m3e.schema.json` — JSON Schema for `m3e.json` IDE autocompletion
-- `m3eui/components/*` — Granular per-module imports (e.g. `m3eui/components/Button`)
-- **Built-in CLI (`npx m3eui` / `npx m3e`)**: `init`, `sync`, `locale`, `doctor`
+- `m3eui/primitives` — Re-exported `@base-ui/react` primitives
+- `m3eui/m3e.schema.json` — JSON Schema for `m3e.json`
+- `m3eui/components/*` — Individual component modules
+- **CLI (`npx m3eui` / `npx m3e`)**: `init`, `sync`, `locale`, `doctor`
 
 ## License
 
-Apache-2.0
+[Apache-2.0](./LICENSE)

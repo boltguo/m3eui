@@ -176,7 +176,6 @@ export const TextField = React.forwardRef<HTMLInputElement, M3ETextFieldProps>(
     const isPassword = type === "password";
     const effectiveType = isPassword && showPassword ? "text" : type;
 
-    // Turn off auto-correction on identifier fields per modern-web-guidance forms spec
     const isIdentifierField =
       type === "email" || type === "url" || type === "search" || isPassword;
 
@@ -223,7 +222,6 @@ export const TextField = React.forwardRef<HTMLInputElement, M3ETextFieldProps>(
           ) : null}
         </div>
 
-        {/* Format hints sit above the input so mobile keyboards & autofill popovers never cover them */}
         {description ? (
           <BaseField.Description className="m3e-field__description">
             {description}

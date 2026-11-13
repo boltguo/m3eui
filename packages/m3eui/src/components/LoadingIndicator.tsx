@@ -10,19 +10,14 @@ import {
 import { useM3E } from "../context/M3EProvider.js";
 
 export interface LoadingIndicatorProps {
-  /** Logical pixel size (default `48` matching `LoadingIndicatorTokens.ContainerWidth`) */
   readonly size?: number;
-  /** Optional determinate progress `[0..1]`. Omit for indeterminate 7-shape morph loop. */
   readonly progress?: number;
-  /** Optional custom morph sequence */
   readonly morphSequence?: readonly MorphPair[];
-  /** Override pause state */
   readonly paused?: boolean;
   readonly contained?: boolean;
   readonly "aria-label"?: string;
   readonly className?: string;
   readonly style?: React.CSSProperties;
-  /** Optional live frame callback for Playground inspector */
   readonly onFrameInfo?: (info: {
     readonly morphIndex: number;
     readonly fromShape: string;
@@ -56,7 +51,6 @@ export function LoadingIndicator({
 
   const scaleFactor = LOADING_INDICATOR_TOKENS.effectiveScaleFactor;
 
-  // Compute initial path synchronously so SSR / first paint is never empty
   const initialD = React.useMemo(() => {
     const pair = morphSequence[0];
     if (!pair) return "";
@@ -65,7 +59,6 @@ export function LoadingIndicator({
     return cubicsToSvgPath(cubics, size, scaleFactor);
   }, [morphSequence, size, scaleFactor, isDeterminate, determinateProgress]);
 
-  // Determinate mode update
   React.useEffect(() => {
     if (!isDeterminate || morphSequence.length === 0) return;
     const clamped = Math.max(0, Math.min(1, determinateProgress ?? 0));
@@ -95,7 +88,6 @@ export function LoadingIndicator({
     });
   }, [isDeterminate, determinateProgress, morphSequence, size, scaleFactor]);
 
-  // Indeterminate rAF physics loop matching AOSP LoadingIndicator.kt lines 407-498
   React.useEffect(() => {
     if (isDeterminate || morphSequence.length === 0) return;
 

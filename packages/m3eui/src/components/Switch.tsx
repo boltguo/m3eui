@@ -15,7 +15,6 @@ export interface M3ESwitchProps {
   readonly id?: string;
   readonly label?: React.ReactNode;
   readonly description?: React.ReactNode;
-  /** Shows M3E standard check (`✓`) and close (`✕`) icons inside the handle */
   readonly showIcons?: boolean;
   readonly checkedIcon?: React.ReactNode;
   readonly uncheckedIcon?: React.ReactNode;

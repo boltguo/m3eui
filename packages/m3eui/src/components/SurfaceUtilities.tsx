@@ -8,10 +8,6 @@ import {
   SCROLL_AREA_TOKENS,
 } from "../tokens/index.js";
 
-/* =========================================================================
-   1. M3E PreviewCard (`@base-ui/react/preview-card` — Hover Link / Profile Card)
-   ========================================================================= */
-
 export interface M3EPreviewCardProps {
   readonly trigger: React.ReactElement;
   readonly children: React.ReactNode;
@@ -68,10 +64,6 @@ export function PreviewCard({
   );
 }
 
-/* =========================================================================
-   2. M3E Divider (`@base-ui/react/separator` — Horizontal / Vertical / Subheader)
-   ========================================================================= */
-
 export interface M3EDividerProps {
   readonly orientation?: "horizontal" | "vertical";
   readonly inset?: boolean;
@@ -121,10 +113,6 @@ export function Divider({
     />
   );
 }
-
-/* =========================================================================
-   3. M3E ScrollArea (`@base-ui/react/scroll-area` — Custom Expressive Pill Scrollbars)
-   ========================================================================= */
 
 export interface M3EScrollAreaProps {
   readonly children: React.ReactNode;

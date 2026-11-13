@@ -24,9 +24,7 @@ export interface M3EAccordionProps {
   readonly value?: string[];
   readonly defaultValue?: string[];
   readonly onValueChange?: (value: string[]) => void;
-  /** Defaults to `true` (non-exclusive) so users can compare multiple expanded sections simultaneously */
   readonly multiple?: boolean;
-  /** Shows a localized Expand/Collapse All button synced via `aria-expanded` for non-exclusive accordions */
   readonly showExpandAll?: boolean;
   readonly hiddenUntilFound?: boolean;
   readonly disabled?: boolean;

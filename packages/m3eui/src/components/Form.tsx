@@ -7,30 +7,17 @@ import { useM3EI18n } from "../context/M3EProvider.js";
 
 export interface M3EFormProps
   extends Omit<React.FormHTMLAttributes<HTMLFormElement>, "onSubmit"> {
-  /** External / server-side field validation errors keyed by field `name` */
   readonly errors?: Record<string, string | string[]>;
-  /**
-   * Validation timing strategy (`"onSubmit"` default avoids premature red text while typing,
-   * then re-validates invalid fields on change after first submit).
-   */
   readonly validationMode?: "onSubmit" | "onBlur" | "onChange";
   readonly onFormSubmit?: (
     formValues: Record<string, unknown>,
     eventDetails: { readonly event: SubmitEvent },
   ) => void;
   readonly onSubmit?: React.FormEventHandler<HTMLFormElement>;
-  /** Renders an accessible summary banner when `errors` contains messages */
   readonly showErrorSummary?: boolean;
   readonly children: React.ReactNode;
 }
 
-/**
- * M3E Form (`@base-ui/react/form`)
- *
- * Coordinates native + external (`errors`) field validation across `TextField`, `NumberField`,
- * `Select`, `Combobox`, `Checkbox`, `RadioGroup`, and `Switch`, moving focus automatically
- * to the first invalid control on submit.
- */
 export function Form({
   errors,
   validationMode = "onSubmit",
@@ -84,7 +71,6 @@ export function Form({
 }
 
 export interface M3EFieldsetProps {
-  /** Mandatory accessible legend rendered as the first child of `<fieldset>` */
   readonly legend: React.ReactNode;
   readonly description?: React.ReactNode;
   readonly disabled?: boolean;
@@ -94,12 +80,6 @@ export interface M3EFieldsetProps {
   readonly style?: React.CSSProperties;
 }
 
-/**
- * M3E Fieldset (`@base-ui/react/fieldset`)
- *
- * Enforces `<Fieldset.Legend>` as the first child of `<Fieldset.Root>` so screen readers
- * announce group context cleanly across grouped controls.
- */
 export function Fieldset({
   legend,
   description,

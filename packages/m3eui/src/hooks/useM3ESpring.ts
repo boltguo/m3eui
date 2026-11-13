@@ -7,9 +7,6 @@ import {
 } from "../tokens/index.js";
 import { useM3E } from "../context/M3EProvider.js";
 
-/**
- * Animates a single scalar with exact M3E harmonic spring physics & mid-flight velocity preservation.
- */
 export function useM3EScalarSpring(
   target: number,
   tokenKey: MotionTokenKey = "fastSpatial",
@@ -32,7 +29,6 @@ export function useM3EScalarSpring(
       return;
     }
     const baseSpec = motionScheme[tokenKey];
-    // Under prefers-reduced-motion, dampen bounce to critical damping (1.0) rather than zeroing all motion
     const effectiveSpec = prefersReducedMotion
       ? { ...baseSpec, dampingRatio: 1.0, stiffness: Math.max(baseSpec.stiffness, 900) }
       : baseSpec;
@@ -53,10 +49,6 @@ export function useM3EScalarSpring(
   return current;
 }
 
-/**
- * Animates `[topLeft, topRight, bottomRight, bottomLeft]` corner radii simultaneously
- * with velocity-preserving M3E spatial spring physics.
- */
 export function useM3ECornerSpring(
   target: CornerTuple,
   tokenKey: MotionTokenKey = "fastSpatial",
@@ -137,10 +129,6 @@ export function useM3ECornerSpring(
   return { corners, borderRadiusCss };
 }
 
-/**
- * Tracks interactive press state with AOSP's minimum quick-tap hold visibility (~90ms)
- * so fast clicks still visibly exhibit M3E corner morphing and neighbor width squish.
- */
 export function usePressHoldState(disabled = false, baseMinHoldMs = 95) {
   const { playbackRate } = useM3E();
   const [isPressed, setIsPressed] = React.useState(false);

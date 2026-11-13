@@ -1,19 +1,3 @@
-/**
- * Material 3 Expressive — Normalized RoundedPolygon Shapes & Pre-Paired Cubic Morphs
- *
- * Upstream Source of Truth:
- * - AOSP `androidx.compose.material3.MaterialShapes` (`MaterialShapes.kt`)
- * - AOSP `androidx.compose.material3.LoadingIndicator` (`LoadingIndicator.kt`, `LoadingIndicatorTokens.kt`)
- * - AOSP `androidx.graphics.shapes` (`RoundedPolygon`, `CornerRounding`, `Morph`)
- *
- * Cross-Platform Guarantee:
- * Instead of requiring every target platform (Web, SwiftUI, Flutter) to reimplement
- * `androidx.graphics.shapes`, this module exports deterministic normalized `[0..1]`
- * cubic Bézier loops and pre-aligned 1:1 morph pairs (`startCubics.length === endCubics.length`).
- * Any platform renders the exact same morph with a single linear loop:
- * `c[i] = start[i] + (end[i] - start[i]) * progress`.
- */
-
 export type CubicTuple = readonly [
   x0: number,
   y0: number,
@@ -67,20 +51,15 @@ export type M3EShapeName = (typeof M3E_ALL_SHAPE_NAMES)[number];
 
 export interface NormalizedShapeData {
   readonly name: M3EShapeName;
-  /** Closed loop of cubic Béziers normalized inside `[0..1] × [0..1]` centered at `(0.5, 0.5)`, starting at 3 o'clock CW */
   readonly cubics: readonly CubicTuple[];
-  /** Axis-aligned bounding box `[left, top, right, bottom]` */
   readonly bounds: readonly [number, number, number, number];
-  /** Maximum radial distance from `(0.5, 0.5)` during 360° rotation */
   readonly maxRadialDistance: number;
-  /** Ready-to-render 100×100 viewBox SVG `<path d="...">` */
   readonly previewSvgPath: string;
 }
 
 export interface MorphPair {
   readonly from: M3EShapeName;
   readonly to: M3EShapeName;
-  /** Guaranteed `startCubics.length === endCubics.length` */
   readonly startCubics: readonly CubicTuple[];
   readonly endCubics: readonly CubicTuple[];
 }
@@ -132,9 +111,6 @@ function rotateVertices(
   }));
 }
 
-/**
- * Exact port of `MaterialShapes.doRepeat` (`MaterialShapes.kt` lines 722-756).
- */
 function doRepeat(
   points: RawVertex[],
   reps: number,
@@ -304,10 +280,6 @@ function reverseCubic(c: CubicTuple): CubicTuple {
   return [c[6], c[7], c[4], c[5], c[2], c[3], c[0], c[1]];
 }
 
-/**
- * Converts rounded polygon vertices into a closed piecewise-cubic loop
- * matching `androidx.graphics.shapes.RoundedPolygon`.
- */
 function buildRoundedPolygonCubics(vertices: RawVertex[]): CubicTuple[] {
   const n = vertices.length;
   interface CornerGeo {
@@ -397,7 +369,6 @@ function buildRoundedPolygonCubics(vertices: RawVertex[]): CubicTuple[] {
     });
   }
 
-  // Compute edge budget scaling so adjacent cuts on edge (i -> i+1) never overlap
   const edgeScale: number[] = [];
   for (let i = 0; i < n; i++) {
     const cA = corners[i];
@@ -433,7 +404,6 @@ function buildRoundedPolygonCubics(vertices: RawVertex[]): CubicTuple[] {
 
     const roundCut = c.expectedRoundCut * ratio;
     const effRadius = roundCut * c.tanHalf;
-    // Circular arc handle length blended smoothly when smoothing > 0
     const arcHandle = (4 / 3) * Math.tan(c.sweepAngle / 4) * effRadius;
     const smoothExtra = ((actualCut - roundCut) * 2) / 3;
     const handleDist = Math.min(actualCut * 0.95, arcHandle + smoothExtra);
@@ -449,9 +419,7 @@ function buildRoundedPolygonCubics(vertices: RawVertex[]): CubicTuple[] {
       end.y,
     ];
 
-    // Split wide corners (> 90°) into two cubics for sub-pixel circular fidelity
     if (c.sweepAngle > Math.PI / 2 && c.smoothing === 0) {
-      // Exact two-half circular arc around the corner bisector
       const halfSweep = c.sweepAngle / 2;
       const halfHandle = (4 / 3) * Math.tan(halfSweep / 4) * effRadius;
       const bisX = c.u1.x + c.u2.x;
@@ -465,7 +433,6 @@ function buildRoundedPolygonCubics(vertices: RawVertex[]): CubicTuple[] {
         const cy = c.v.y + buy * centerDist;
         const midX = cx - bux * effRadius;
         const midY = cy - buy * effRadius;
-        // Unit tangent at midpoint (perpendicular to bisector, pointing from start -> end)
         const dirSign =
           (end.x - start.x) * -buy + (end.y - start.y) * bux >= 0 ? 1 : -1;
         const tx = -buy * dirSign;
@@ -528,15 +495,10 @@ function buildRoundedPolygonCubics(vertices: RawVertex[]): CubicTuple[] {
   return cubics;
 }
 
-/**
- * Normalizes a closed cubic loop into `[0..1] × [0..1]` centered at `(0.5, 0.5)`,
- * enforces clockwise screen winding, and aligns cubic `[0]` at `0 rad` (`3 o'clock`).
- */
 function normalizeAndOrientShape(
   name: M3EShapeName,
   rawCubics: CubicTuple[],
 ): NormalizedShapeData {
-  // 1. Sample bounds densely for normalization
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
@@ -572,7 +534,6 @@ function normalizeAndOrientShape(
     ty(c[7]),
   ]);
 
-  // 2. Enforce clockwise winding in screen coordinates (+x right, +y down => signedArea > 0)
   let signedArea2 = 0;
   for (const c of cubics) {
     let prev = { x: c[0], y: c[1] };
@@ -586,7 +547,6 @@ function normalizeAndOrientShape(
     cubics = cubics.slice().reverse().map(reverseCubic);
   }
 
-  // 3. Find the point on the loop at angle 0 rad (ray from (0.5, 0.5) toward +x)
   let bestIdx = 0;
   let bestT = 0;
   let bestScore = Infinity;
@@ -618,7 +578,6 @@ function normalizeAndOrientShape(
     cubics = [...cubics.slice(bestIdx), ...cubics.slice(0, bestIdx)];
   }
 
-  // Ensure exact endpoint closure
   if (cubics.length > 0) {
     const first = cubics[0];
     const last = cubics[cubics.length - 1];
@@ -634,7 +593,6 @@ function normalizeAndOrientShape(
     ];
   }
 
-  // 4. Compute normalized bounds & maxRadialDistance for rotational scaleFactor
   let bLeft = Infinity;
   let bTop = Infinity;
   let bRight = -Infinity;
@@ -715,10 +673,6 @@ function subdivideAtArcMilestones(
   return out;
 }
 
-/**
- * Pairs any two normalized shapes into identical-length cubic Bézier arrays
- * using exact arc-length union De Casteljau subdivision (`Morph`).
- */
 export function createMorphPair(
   startShape: NormalizedShapeData,
   endShape: NormalizedShapeData,
@@ -747,9 +701,6 @@ export function createMorphPair(
   };
 }
 
-/**
- * Linearly interpolates a `MorphPair` at `progress` (supports overshoot > 1 or < 0).
- */
 export function interpolateMorphCubics(
   pair: MorphPair,
   progress: number,
@@ -774,10 +725,6 @@ export function interpolateMorphCubics(
   return out;
 }
 
-/**
- * Converts normalized `[0..1]` cubics into a centered SVG path `d` string
- * matching AOSP `LoadingIndicator.processPath(path, size, scaleFactor)`.
- */
 export function cubicsToSvgPath(
   cubics: readonly CubicTuple[],
   viewportSize = 48,
@@ -786,7 +733,6 @@ export function cubicsToSvgPath(
   if (cubics.length === 0) return "";
 
   const scaled = viewportSize * scaleFactor;
-  // Compute current cubic endpoint bounds so dynamic morph centers cleanly like AOSP `processPath`
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
@@ -818,10 +764,6 @@ export function cubicsToSvgPath(
   parts.push("Z");
   return parts.join(" ");
 }
-
-// ---------------------------------------------------------------------------
-// Exact AOSP `MaterialShapes.kt` Definitions
-// ---------------------------------------------------------------------------
 
 const cornerRound15: CornerRounding = { radius: 0.15 };
 const cornerRound20: CornerRounding = { radius: 0.2 };
@@ -1251,9 +1193,6 @@ export const MATERIAL_SHAPES: Record<M3EShapeName, NormalizedShapeData> =
 
 const MORPH_PAIR_CACHE = new Map<string, MorphPair>();
 
-/**
- * Memoized `MorphPair` lookup between ANY two of the 35 official `MaterialShapes`.
- */
 export function getShapeMorphPair(
   from: M3EShapeName,
   to: M3EShapeName,
@@ -1266,9 +1205,6 @@ export function getShapeMorphPair(
   return pair;
 }
 
-/**
- * Exact 7-shape loop from AOSP `LoadingIndicatorDefaults.IndeterminateIndicatorPolygons`.
- */
 export const LOADING_INDICATOR_SHAPE_SEQUENCE: readonly M3EShapeName[] = [
   "softBurst",
   "cookie9Sided",
@@ -1279,10 +1215,6 @@ export const LOADING_INDICATOR_SHAPE_SEQUENCE: readonly M3EShapeName[] = [
   "oval",
 ] as const;
 
-/**
- * Exact port of AOSP `LoadingIndicator.calculateScaleFactor(indicatorPolygons)`
- * so rotated shapes never clip inside the container.
- */
 export function calculateIndicatorScaleFactor(
   shapeNames: readonly M3EShapeName[] = LOADING_INDICATOR_SHAPE_SEQUENCE,
 ): number {
@@ -1309,13 +1241,11 @@ export const LOADING_INDICATOR_TOKENS = {
   containerSize: 48,
   activeIndicatorSize: 38,
   activeIndicatorScale: 38 / 48,
-  /** Combined `calculateScaleFactor * ActiveIndicatorScale` (`LoadingIndicator.kt` line 396) */
   effectiveScaleFactor:
     calculateIndicatorScaleFactor(LOADING_INDICATOR_SHAPE_SEQUENCE) * (38 / 48),
   morphIntervalMs: 650,
   globalRotationDurationMs: 4666,
   quarterRotationDeg: 90,
-  /** Exact spring from `LoadingIndicator.kt` line 408 */
   morphSpring: {
     dampingRatio: 0.6,
     stiffness: 200,

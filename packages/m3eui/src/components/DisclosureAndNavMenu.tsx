@@ -15,11 +15,6 @@ export interface M3ECollapsibleProps {
   readonly open?: boolean;
   readonly defaultOpen?: boolean;
   readonly onOpenChange?: (open: boolean) => void;
-  /**
-   * Uses `hidden="until-found"` so collapsed content remains discoverable via
-   * browser Find-in-Page (`Ctrl/Cmd + F`) and auto-expands on match.
-   * @default true
-   */
   readonly hiddenUntilFound?: boolean;
   readonly disabled?: boolean;
   readonly variant?: CollapsibleVariant;
@@ -69,7 +64,6 @@ export const Collapsible = React.forwardRef<HTMLDivElement, M3ECollapsibleProps>
       React.useState<boolean>(defaultOpen);
     const isOpen = controlledOpen ?? uncontrolledOpen;
 
-    // Closed points toward inline-end (-90deg LTR / +90deg RTL); open rotates to 0deg (down)
     const closedAngle = direction === "rtl" ? 90 : -90;
     const chevronAngle = useM3EScalarSpring(
       isOpen ? 0 : closedAngle,
@@ -122,7 +116,6 @@ export const Collapsible = React.forwardRef<HTMLDivElement, M3ECollapsibleProps>
           ) : null}
         </BaseCollapsible.Trigger>
 
-        {/* Per search-hidden-content guidance: keep [hidden="until-found"] free of padding/borders; style nested wrapper */}
         <BaseCollapsible.Panel
           hiddenUntilFound={hiddenUntilFound}
           className="m3e-collapsible__panel"
@@ -158,14 +151,10 @@ export interface NavigationMenuItemSpec {
   readonly value: string;
   readonly label: React.ReactNode;
   readonly icon?: React.ReactNode;
-  /** Direct navigation href when this item has no mega-menu `links` */
   readonly href?: string;
-  /** Marks top-level link with `aria-current="page"` */
   readonly active?: boolean;
   readonly onClick?: React.MouseEventHandler<HTMLAnchorElement>;
-  /** Mega-menu card links rendered inside the animated M3E viewport popup */
   readonly links?: readonly NavigationMenuCardLinkSpec[];
-  /** Optional featured highlight card inside the mega-menu panel */
   readonly featured?: NavigationMenuFeaturedSpec;
 }
 

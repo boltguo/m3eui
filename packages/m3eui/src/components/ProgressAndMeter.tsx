@@ -9,12 +9,7 @@ import {
 import { useM3EI18n } from "../context/M3EProvider.js";
 import { useM3EScalarSpring } from "../hooks/useM3ESpring.js";
 
-/* =========================================================================
-   1. M3E Flat LinearProgressIndicator (4px Active-Track Split Gap + Stop Dot)
-   ========================================================================= */
-
 export interface M3ELinearProgressIndicatorProps {
-  /** `0..100` for determinate, or `null` / `undefined` when `indeterminate` is true */
   readonly value?: number | null;
   readonly indeterminate?: boolean;
   readonly thickness?: "standard" | "thick";
@@ -116,10 +111,6 @@ export function LinearProgressIndicator({
   );
 }
 
-/* =========================================================================
-   2. M3E Flat CircularProgressIndicator (4px Arc Seam Clearance + Center Slot)
-   ========================================================================= */
-
 export interface M3ECircularProgressIndicatorProps {
   readonly value?: number | null;
   readonly indeterminate?: boolean;
@@ -216,10 +207,6 @@ export function CircularProgressIndicator({
     </BaseProgress.Root>
   );
 }
-
-/* =========================================================================
-   3. M3E Meter (`@base-ui/react/meter` — Quota / Capacity / Telemetry Gauge)
-   ========================================================================= */
 
 export interface M3EMeterProps {
   readonly value: number;

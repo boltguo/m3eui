@@ -52,7 +52,6 @@ describe("m3eui/tokens — Motion Physics & Cross-Platform Springs", () => {
         const resolved = resolveCrossPlatformSpring(spec);
         expect(resolved.peakOvershoot).toBe(0);
 
-        // Verify analytical displacement never exceeds 1.0
         for (let ms = 0; ms <= 500; ms += 5) {
           const x = evaluateSpringDisplacement(spec, ms / 1000);
           expect(x).toBeLessThanOrEqual(1.0);
@@ -68,12 +67,10 @@ describe("m3eui/tokens — Motion Physics & Cross-Platform Springs", () => {
     expect(fastSpatial.stiffness).toBe(800);
 
     const resolved = resolveCrossPlatformSpring(fastSpatial, 1);
-    // c = 2 * 0.6 * sqrt(800) ≈ 33.9411
     expect(resolved.dampingCoefficient).toBeCloseTo(2 * 0.6 * Math.sqrt(800), 4);
     expect(resolved.peakOvershoot).toBeGreaterThan(0.08);
     expect(resolved.cssLinear.easing.startsWith("linear(")).toBe(true);
 
-    // Slow-motion 0.2x scales stiffness by 0.04 while keeping peakOvershoot identical
     const slowMo = resolveCrossPlatformSpring(fastSpatial, 0.2);
     expect(slowMo.stiffness).toBeCloseTo(800 * 0.04, 4);
     expect(slowMo.peakOvershoot).toBeCloseTo(resolved.peakOvershoot, 4);
@@ -82,15 +79,12 @@ describe("m3eui/tokens — Motion Physics & Cross-Platform Springs", () => {
 
 describe("m3eui/tokens — Group Topology & Zero-Sum Width Squish", () => {
   it("resolves SegmentedList corners accurately for single vs multi-item & interactive states", () => {
-    // Single item: all 16
     expect(resolveSegmentedListCorners({ index: 0, count: 1 })).toEqual([16, 16, 16, 16]);
 
-    // Multi-item (count = 3)
     expect(resolveSegmentedListCorners({ index: 0, count: 3 })).toEqual([16, 16, 4, 4]);
     expect(resolveSegmentedListCorners({ index: 1, count: 3 })).toEqual([4, 4, 4, 4]);
     expect(resolveSegmentedListCorners({ index: 2, count: 3 })).toEqual([4, 4, 16, 16]);
 
-    // Hover preserves 4px inner seam geometry (only surface color changes on hover)
     expect(resolveSegmentedListCorners({ index: 0, count: 3, isHovered: true })).toEqual([
       16, 16, 4, 4,
     ]);
@@ -98,7 +92,6 @@ describe("m3eui/tokens — Group Topology & Zero-Sum Width Squish", () => {
       4, 4, 4, 4,
     ]);
 
-    // Selected or pressed detaches to full [16, 16, 16, 16]
     expect(resolveSegmentedListCorners({ index: 1, count: 3, isSelected: true })).toEqual([
       16, 16, 16, 16,
     ]);
@@ -120,7 +113,6 @@ describe("m3eui/tokens — Group Topology & Zero-Sum Width Squish", () => {
     expect(
       resolveConnectedGroupCorners({ index: 1, count: 3, height: 40, isChecked: true }),
     ).toEqual([20, 20, 20, 20]);
-    // Per AOSP ToggleButton.kt L1714, `pressed` overrides `checked` during active press
     expect(
       resolveConnectedGroupCorners({
         index: 1,
@@ -140,7 +132,6 @@ describe("m3eui/tokens — Group Topology & Zero-Sum Width Squish", () => {
       }),
     ).toEqual([20, 4, 4, 20]);
     expect(BUTTON_SIZE_SPECS.xl.height).toBe(136);
-    // StandardButtonGroup defaults to 0.15 squish; ConnectedButtonGroup defaults to 0 (stationary tab widths)
     expect(BUTTON_GROUP_TOKENS.standardExpandedRatio).toBe(0.15);
     expect(BUTTON_GROUP_TOKENS.connectedExpandedRatio).toBe(0);
   });
@@ -150,11 +141,11 @@ describe("m3eui/tokens — Group Topology & Zero-Sum Width Squish", () => {
     const baseSum = baseWidths.reduce((a, b) => a + b, 0);
 
     const testVectors = [
-      [1, 0, 0, 0], // First item pressed
-      [0, 1, 0, 0], // Middle item pressed
-      [0, 0, 1.12, 0], // Middle item with spring overshoot
-      [0, 0, 0, 1], // Last item pressed
-      [0.4, 0.8, 0, 0], // Overlapping transition
+      [1, 0, 0, 0],
+      [0, 1, 0, 0],
+      [0, 0, 1.12, 0],
+      [0, 0, 0, 1],
+      [0.4, 0.8, 0, 0],
     ];
 
     for (const pressProgress of testVectors) {
@@ -163,7 +154,6 @@ describe("m3eui/tokens — Group Topology & Zero-Sum Width Squish", () => {
       expect(Math.abs(sum - baseSum)).toBeLessThan(1e-6);
     }
 
-    // Pressing middle item expands it by ~15% (120 * 0.15 = 18 => 138) and shrinks neighbors by 9 each
     const midPressed = computeButtonGroupWidths({
       baseWidths,
       pressProgress: [0, 1, 0, 0],
@@ -192,7 +182,6 @@ describe("m3eui/tokens — Normalized Polygon Morphs & Wavy Progress", () => {
       expect(path.endsWith("Z")).toBe(true);
       expect(path.includes("NaN")).toBe(false);
 
-      // Verify closure of normalized shapes
       const shape = MATERIAL_SHAPES[pair.from];
       const first = shape.cubics[0];
       const last = shape.cubics[shape.cubics.length - 1];
@@ -246,19 +235,16 @@ describe("m3eui/tokens — Normalized Polygon Morphs & Wavy Progress", () => {
       expect(shape.cubics.length).toBeGreaterThanOrEqual(4);
       expect(shape.previewSvgPath.startsWith("M ")).toBe(true);
       expect(shape.previewSvgPath.includes("NaN")).toBe(false);
-      // Normalized inside [0..1] × [0..1] with small tolerance
       expect(shape.bounds[0]).toBeGreaterThanOrEqual(-0.02);
       expect(shape.bounds[1]).toBeGreaterThanOrEqual(-0.02);
       expect(shape.bounds[2]).toBeLessThanOrEqual(1.02);
       expect(shape.bounds[3]).toBeLessThanOrEqual(1.02);
-      // Endpoint loop closure
       const first = shape.cubics[0];
       const last = shape.cubics[shape.cubics.length - 1];
       expect(first[0]).toBeCloseTo(last[6], 5);
       expect(first[1]).toBeCloseTo(last[7], 5);
     }
 
-    // Arbitrary shape morph pairs (including pixel & organic shapes)
     const pairsToCheck: Array<[typeof M3E_ALL_SHAPE_NAMES[number], typeof M3E_ALL_SHAPE_NAMES[number]]> = [
       ["heart", "pixelCircle"],
       ["puffy", "softBoom"],
@@ -285,7 +271,6 @@ describe("m3eui/tokens — Normalized Polygon Morphs & Wavy Progress", () => {
     expect(det.activePath.includes("C ")).toBe(true);
     expect(det.trackPath.startsWith("M ")).toBe(true);
 
-    // At 100% progress with wave amplitude 1, start point === end point (seamless C1 closure!)
     const full = buildDeterminateCircularWavyGeometry({
       size: 48,
       progress: 1,
@@ -307,7 +292,7 @@ describe("m3eui/tokens — Normalized Polygon Morphs & Wavy Progress", () => {
   });
 });
 
-describe("m3eui/tokens — Phase 2 IconButton (5×3), SplitButton & FloatingToolbar/FABMenu", () => {
+describe("m3eui/tokens — IconButton, SplitButton & FloatingToolbar", () => {
   it("resolves exact 5×3 IconButton aspect widths and pressed > selected > rest corner priority", () => {
     expect(ICON_BUTTON_SIZE_SPECS.xs.widths).toEqual({ narrow: 28, default: 32, wide: 40 });
     expect(ICON_BUTTON_SIZE_SPECS.sm.widths).toEqual({ narrow: 32, default: 40, wide: 52 });
@@ -315,7 +300,6 @@ describe("m3eui/tokens — Phase 2 IconButton (5×3), SplitButton & FloatingTool
     expect(ICON_BUTTON_SIZE_SPECS.lg.widths).toEqual({ narrow: 64, default: 96, wide: 128 });
     expect(ICON_BUTTON_SIZE_SPECS.xl.widths).toEqual({ narrow: 104, default: 136, wide: 184 });
 
-    // Round SM: rest=20, selected=12, pressed=8 (even when selected!)
     expect(resolveIconButtonGeometry({ size: "sm", widthVariant: "wide" })).toMatchObject({
       width: 52,
       height: 40,
@@ -352,7 +336,6 @@ describe("m3eui/tokens — Phase 2 IconButton (5×3), SplitButton & FloatingTool
   });
 
   it("enforces FloatingToolbar concentric geometry and ToggleFAB 0 -> 1 spring morph", () => {
-    // 32px outer radius - 8px padding === 24px inner item pill radius (48px height / 2)
     expect(
       FLOATING_TOOLBAR_TOKENS.containerRadius - FLOATING_TOOLBAR_TOKENS.containerPadding,
     ).toBe(FLOATING_TOOLBAR_TOKENS.itemSize / 2);
@@ -375,18 +358,16 @@ describe("m3eui/tokens — Phase 2 IconButton (5×3), SplitButton & FloatingTool
   });
 });
 
-describe("m3eui/tokens — Phase 3 Switch & Slider Geometry", () => {
+describe("m3eui/tokens — Switch, Slider & Accordion Geometry", () => {
   it("resolves exact M3E Switch handle diameters (16 -> 24 -> 28px) and outer track offsets", () => {
     expect(SWITCH_TOKENS.trackWidth).toBe(52);
     expect(SWITCH_TOKENS.trackHeight).toBe(32);
 
-    // Unchecked rest (no icon): 16px diameter, 8px inset
     expect(resolveSwitchGeometry({ checked: false, isPressed: false })).toEqual({
       thumbSize: 16,
       thumbOffsetPx: 8,
     });
 
-    // Unchecked rest with icon: 24px diameter, 4px inset
     expect(
       resolveSwitchGeometry({ checked: false, isPressed: false, hasUncheckedIcon: true }),
     ).toEqual({
@@ -394,13 +375,11 @@ describe("m3eui/tokens — Phase 3 Switch & Slider Geometry", () => {
       thumbOffsetPx: 4,
     });
 
-    // Checked rest: 24px diameter, 52 - 24 - 4 = 24px offset
     expect(resolveSwitchGeometry({ checked: true, isPressed: false })).toEqual({
       thumbSize: 24,
       thumbOffsetPx: 24,
     });
 
-    // Pressed swells handle to 28px on both unchecked (2px) and checked (22px)
     expect(resolveSwitchGeometry({ checked: false, isPressed: true })).toEqual({
       thumbSize: 28,
       thumbOffsetPx: 2,
@@ -427,14 +406,12 @@ describe("m3eui/tokens — Phase 3 Switch & Slider Geometry", () => {
   });
 
   it("resolves M3E Segmented Accordion corner detachment including neighbor rounding", () => {
-    // Closed 3-item stack: [16,16,4,4], [4,4,4,4], [4,4,16,16]
     expect(resolveAccordionItemCorners({ index: 0, count: 3, isOpen: false })).toEqual([
       16, 16, 4, 4,
     ]);
     expect(resolveAccordionItemCorners({ index: 1, count: 3, isOpen: false })).toEqual([
       4, 4, 4, 4,
     ]);
-    // When middle item (index 1) opens: it becomes [16,16,16,16], AND index 0's bottom & index 2's top also round to 16!
     expect(resolveAccordionItemCorners({ index: 1, count: 3, isOpen: true })).toEqual([
       16, 16, 16, 16,
     ]);
@@ -447,7 +424,7 @@ describe("m3eui/tokens — Phase 3 Switch & Slider Geometry", () => {
   });
 });
 
-describe("m3eui/tokens — Phase 5 Carousel, FAB, OTPField, TopAppBar & Track-Gap Progress", () => {
+describe("m3eui/tokens — Carousel, FAB, OTPField, TopAppBar & Progress", () => {
   it("preserves exact zero-sum container width in Carousel across fractional spring focal positions", () => {
     const containerWidth = 720;
     const gap = 8;
@@ -463,7 +440,6 @@ describe("m3eui/tokens — Phase 5 Carousel, FAB, OTPField, TopAppBar & Track-Ga
       const totalWidth = items.reduce((acc, item) => acc + item.width, 0) + (count - 1) * gap;
       expect(Math.abs(totalWidth - containerWidth)).toBeLessThan(1e-6);
     }
-    // Focal card at index 2 gets 28px corner radius
     const settled = resolveCarouselLayout({
       count,
       containerWidth,
@@ -477,7 +453,6 @@ describe("m3eui/tokens — Phase 5 Carousel, FAB, OTPField, TopAppBar & Track-Ga
   });
 
   it("resolves multi-segment SegmentedMenu & OTPField slot corners cleanly", () => {
-    // Segmented menu item right before a separator (`isLastInGroup: true` even at index 2 of 4)
     expect(
       resolveSegmentedMenuItemCorners({
         index: 2,
@@ -486,7 +461,6 @@ describe("m3eui/tokens — Phase 5 Carousel, FAB, OTPField, TopAppBar & Track-Ga
         isLastInGroup: true,
       }),
     ).toEqual([4, 4, 12, 12]);
-    // Single-item isolated segment after separator (`isFirstInGroup && isLastInGroup`)
     expect(
       resolveSegmentedMenuItemCorners({
         index: 3,
@@ -496,7 +470,6 @@ describe("m3eui/tokens — Phase 5 Carousel, FAB, OTPField, TopAppBar & Track-Ga
       }),
     ).toEqual([12, 12, 12, 12]);
 
-    // OTP connected group: leading [16,6,6,16], middle [6,6,6,6], focused middle detaches to [16,16,16,16]
     expect(resolveOtpSlotCorners({ index: 0, count: 6 })).toEqual([16, 6, 6, 16]);
     expect(resolveOtpSlotCorners({ index: 2, count: 6 })).toEqual([6, 6, 6, 6]);
     expect(resolveOtpSlotCorners({ index: 2, count: 6, isFocused: true })).toEqual([
@@ -527,7 +500,7 @@ describe("m3eui/tokens — Phase 5 Carousel, FAB, OTPField, TopAppBar & Track-Ga
   });
 });
 
-describe("m3eui/tokens — Phase 6 RTL Corner Mirroring & TimePicker Clock Geometry", () => {
+describe("m3eui/tokens — RTL Corner Mirroring & Clock Geometry", () => {
   it("mirrors physical [TL, TR, BR, BL] corner tuples horizontally for RTL layouts", () => {
     expect(flipCornersHorizontal([20, 8, 8, 20])).toEqual([8, 20, 20, 8]);
     expect(flipCornersHorizontal([4, 20, 20, 4])).toEqual([20, 4, 4, 20]);

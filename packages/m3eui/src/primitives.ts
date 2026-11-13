@@ -1,10 +1,5 @@
 "use client";
 
-/**
- * `m3eui/primitives` — Headless compound namespaces re-exported from `@base-ui/react`
- * so advanced consumers can compose custom M3E layouts alongside `m3eui` components
- * without installing or version-syncing `@base-ui/react` separately.
- */
 export { Accordion as AccordionPrimitives } from "@base-ui/react/accordion";
 export { AlertDialog as AlertDialogPrimitives } from "@base-ui/react/alert-dialog";
 export { Autocomplete as AutocompletePrimitives } from "@base-ui/react/autocomplete";

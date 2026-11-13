@@ -134,7 +134,6 @@ export function FilterChip({
   const isSelected = controlledSelected ?? uncontrolledSelected;
   const { isPressed, pressHandlers } = usePressHoldState(disabled);
 
-  // Rest 8px -> Selected 16px capsule; pressing pinches to 4px
   const targetRadius = isPressed
     ? CHIP_TOKENS.pressedRadius
     : isSelected

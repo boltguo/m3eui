@@ -17,19 +17,13 @@ import { Button, type ButtonVariant, ToggleButton } from "./Button.js";
 export interface ButtonGroupOption {
   readonly value: string;
   readonly label: React.ReactNode;
-  /** Optional constant-width leading icon (unchecked state) */
   readonly icon?: React.ReactNode;
-  /** Optional constant-width leading icon when checked (swaps in-place with zero width jump) */
   readonly checkedIcon?: React.ReactNode;
   readonly disabled?: boolean;
 }
 
 export interface M3EButtonGroupProps {
   readonly items: readonly ButtonGroupOption[];
-  /**
-   * `"standard"` (12px gap + default 15% zero-sum neighbor squish) or
-   * `"connected"` (2px gap + inner corner matrix + default 0% width change so tab labels stay stationary)
-   */
   readonly variant?: "standard" | "connected";
   readonly selectionMode?: "none" | "single" | "multiple";
   readonly value?: readonly string[];
@@ -38,11 +32,6 @@ export interface M3EButtonGroupProps {
   readonly onAction?: (value: string) => void;
   readonly size?: ButtonSize;
   readonly buttonVariant?: Exclude<ButtonVariant, "text">;
-  /**
-   * Press width expansion ratio (`0` = fixed width, `0.15` = 15% expansion with zero-sum neighbor compression).
-   * Defaults to `0.15` for `variant="standard"` and `0` for `variant="connected"` (matching AOSP `ButtonGroup.kt` L118
-   * & `SingleSelectConnectedButtonGroupSample`).
-   */
   readonly expandedRatio?: number;
   readonly "aria-label"?: string;
   readonly className?: string;
@@ -102,7 +91,6 @@ export function ButtonGroup({
   const spec = BUTTON_SIZE_SPECS[size];
   const itemKeySignature = items.map((i) => `${i.value}:${Boolean(i.icon)}`).join("|");
 
-  // Synchronously measure natural rest widths before paint ONLY when item roster or size tier changes
   React.useLayoutEffect(() => {
     const measured = items.map((_, idx) => {
       const el = itemRefs.current[idx];
@@ -142,7 +130,6 @@ export function ButtonGroup({
   const liveWidths = React.useMemo(() => {
     if (baseWidths.length !== items.length) return [];
     if (expandedRatio <= 0) return baseWidths;
-    // Limit compression to at most 75% of one-side horizontal padding so centered text always has breathing room
     const maxSafeSquish = Math.max(8, Math.floor(spec.paddingHorizontal * 0.75));
     const compressionLimits = items.map(() => maxSafeSquish);
     return computeButtonGroupWidths({
@@ -181,8 +168,6 @@ export function ButtonGroup({
         ? flipCornersHorizontal(rawCornerOverride)
         : rawCornerOverride;
 
-    // Crucial CSS rule: once explicit width is locked, set paddingInline: 0 so justify-content: center
-    // lets horizontal whitespace absorb 100% of neighbor compression without ever truncating label text!
     const lockedWidthStyle: React.CSSProperties | undefined = hasMeasuredWidths
       ? {
           width: `${liveWidths[idx].toFixed(2)}px`,
@@ -222,8 +207,6 @@ export function ButtonGroup({
       );
     }
 
-    // If item defines an icon, swap icon <-> checkedIcon in the exact same fixed-size icon slot;
-    // if item is text-only, keep showCheckIcon={false} so selection never causes a +32px width jump!
     const hasIconSlot = Boolean(item.icon);
     const activeIcon = isChecked ? (item.checkedIcon ?? item.icon) : item.icon;
 

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "type": "module",
   "license": "Apache-2.0",
-  "description": "All-in-one Material 3 Expressive Web React component library, HCT color & spring physics tokens, key-based i18n, and declarative m3e.json CLI.",
+  "description": "Material 3 Expressive React component library built on @base-ui/react.",
   "homepage": "https://github.com/boltguo/m3eui#readme",
   "repository": {
     "type": "git",

@@ -41,7 +41,7 @@ function FloatingToolbarActionButton({
 }) {
   const { debugGeometry } = useM3E();
   const { isPressed, pressHandlers } = usePressHoldState(Boolean(item.disabled));
-  const pill = FLOATING_TOOLBAR_TOKENS.itemSize / 2; // 24px concentric with 32 - 8
+  const pill = FLOATING_TOOLBAR_TOKENS.itemSize / 2;
   const targetRadius = isPressed ? 10 : item.selected ? 14 : pill;
   const { corners, borderRadiusCss } = useM3ECornerSpring(
     [targetRadius, targetRadius, targetRadius, targetRadius],
@@ -195,7 +195,6 @@ function StaggeredFabMenuItem({
 
   React.useEffect(() => {
     const rate = Math.max(0.1, playbackRate);
-    // Bottom-up on open (item closest to ToggleFAB leads), top-down on close
     const rawDelayMs = isOpen
       ? (count - 1 - index) * FAB_MENU_TOKENS.staggerStepMs
       : index * 25;
@@ -211,7 +210,6 @@ function StaggeredFabMenuItem({
     return () => clearTimeout(timer);
   }, [isOpen, index, count, playbackRate]);
 
-  // Spatial spring (allows physical bounce) vs Effects spring (critically damped ζ=1.0, zero opacity overshoot!)
   const spatialProgress = useM3EScalarSpring(
     itemActive ? 1 : 0,
     "defaultSpatial",

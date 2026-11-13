@@ -20,7 +20,6 @@ const cssDest = join(distDir, "styles.css");
 mkdirSync(distDir, { recursive: true });
 copyFileSync(cssSrc, cssDest);
 
-// 1. Prepend "use client" to browser React modules while preserving CLI shebang & server-safe tokens
 const NON_CLIENT_PREFIXES = ["cli/", "cli\\", "tokens/", "tokens\\"];
 
 function prependUseClient(dir) {
@@ -49,13 +48,11 @@ function prependUseClient(dir) {
 
 prependUseClient(distDir);
 
-// 2. Ensure CLI binary is executable
 const cliBinPath = join(distDir, "cli", "bin.js");
 if (existsSync(cliBinPath)) {
   chmodSync(cliBinPath, 0o755);
 }
 
-// 3. Emit static dist/tokens.json for cross-platform pipelines (Swift, Kotlin, Figma)
 const tokens = await import(join(distDir, "tokens", "index.js"));
 
 function resolveSchemeMap(scheme) {

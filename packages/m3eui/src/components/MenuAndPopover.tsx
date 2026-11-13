@@ -18,10 +18,6 @@ import {
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
 
-/* =========================================================================
-   1. M3E Popover
-   ========================================================================= */
-
 export interface M3EPopoverProps {
   readonly open?: boolean;
   readonly defaultOpen?: boolean;
@@ -108,10 +104,6 @@ export function Popover({
   );
 }
 
-/* =========================================================================
-   2. M3E DropdownMenu, Nested Submenu, ContextMenu & Application Menubar
-   ========================================================================= */
-
 export interface M3EMenuItemSpec {
   readonly id: string;
   readonly label: React.ReactNode;
@@ -120,13 +112,8 @@ export interface M3EMenuItemSpec {
   readonly danger?: boolean;
   readonly disabled?: boolean;
   readonly separatorBefore?: boolean;
-  /** Optional checkable menu item state (`role="menuitemcheckbox"`) */
   readonly checked?: boolean;
   readonly onCheckedChange?: (checked: boolean) => void;
-  /**
-   * Optional nested child submenu (`BaseMenu.SubmenuRoot` + `SubmenuTrigger`).
-   * Per `modern-web-guidance` (`menu`), submenu triggers open their nested menu ONLY and never invoke `onSelect`.
-   */
   readonly submenu?: readonly M3EMenuItemSpec[];
   readonly onSelect?: () => void;
 }
@@ -264,7 +251,6 @@ function DropdownSegmentedItem({
     },
   };
 
-  // 1. Nested Submenu item (never invokes onSelect; opens child popup)
   if (item.submenu && item.submenu.length > 0) {
     return (
       <>
@@ -316,7 +302,6 @@ function DropdownSegmentedItem({
     );
   }
 
-  // 2. Checkable menu item (`menuitemcheckbox`)
   if (item.checked !== undefined) {
     return (
       <>
@@ -351,7 +336,6 @@ function DropdownSegmentedItem({
     );
   }
 
-  // 3. Standard command menu item (`menuitem`)
   return (
     <>
       {item.separatorBefore ? (
@@ -615,10 +599,6 @@ export function ContextMenu({
   );
 }
 
-/* =========================================================================
-   3. M3E Application Menubar (`@base-ui/react/menubar`)
-   ========================================================================= */
-
 export interface M3EMenubarMenuSpec {
   readonly id: string;
   readonly label: React.ReactNode;
@@ -684,12 +664,6 @@ function MenubarTopTrigger({
   );
 }
 
-/**
- * M3E Application Menubar (`@base-ui/react/menubar`)
- *
- * Styled as one continuous tonal capsule bar (`role="menubar"`, single `Tab` stop,
- * `ArrowLeft`/`ArrowRight` & pointer-hover instant switching across menus, nested submenus).
- */
 export function Menubar({
   menus,
   disabled = false,

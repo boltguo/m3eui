@@ -11,11 +11,8 @@ import {
 import { useM3E } from "../context/M3EProvider.js";
 
 export interface M3EMaterialShapeViewProps {
-  /** Current shape (changing this prop smoothly spring-morphs from the previous shape!) */
   readonly shape: M3EShapeName;
-  /** Optional explicit target shape when driving morph manually via `morphProgress` */
   readonly toShape?: M3EShapeName;
-  /** Optional manual scrubber `[0..1]` when `toShape` is provided */
   readonly morphProgress?: number;
   readonly size?: number;
   readonly scaleFactor?: number;

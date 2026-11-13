@@ -1,13 +1,3 @@
-/**
- * Material 3 Expressive — Group Topology, Shape Scale & Zero-Sum Width Squish
- *
- * Upstream Source of Truth:
- * - AOSP `ShapeTokens.kt` (v14_1_0)
- * - AOSP `ListTokens.kt` (v29.0.0) & `ListItem.kt` (`segmentedShapes`, `SegmentedGap = 2.dp`)
- * - AOSP `ButtonGroup.kt` (`ExpandedRatio = 0.15f`, `ConnectedButtonGroupSmallTokens`)
- */
-
-/** Logical pixel values (1:1 across Web `px`, SwiftUI `pt`, Android `dp`, Flutter `lp`). */
 export const SHAPE_CORNER_TOKENS = {
   none: 0,
   extraSmall: 4,
@@ -39,20 +29,12 @@ export interface ButtonSizeSpec {
   readonly fontSize: number;
   readonly lineHeight: number;
   readonly fontWeight: number;
-  /** Default corner radius in round shape variant (pill = height / 2) */
   readonly restCornerRadius: number;
-  /** Default corner radius in square shape variant */
   readonly squareCornerRadius: number;
-  /** Pressed corner radius (tightens corners on press) */
   readonly pressedCornerRadius: number;
-  /** Selected corner radius for ToggleButton (round <-> square swap) */
   readonly selectedCornerRadius: number;
 }
 
-/**
- * M3E 5-tier Expressive Button Sizing Scale
- * Aligned with Compose Material 3 Expressive ButtonDefaults (XS 32 -> XL 136).
- */
 export const BUTTON_SIZE_SPECS: Record<ButtonSize, ButtonSizeSpec> = {
   xs: {
     size: "xs",
@@ -136,12 +118,11 @@ export interface SegmentedListCornerInput {
 }
 
 export const SEGMENTED_LIST_TOKENS = {
-  /** Exact gap from `ListTokens.SegmentedGap = 2.0.dp` */
   gap: 2,
-  outerRadius: SHAPE_CORNER_TOKENS.large, // 16
-  innerRadius: SHAPE_CORNER_TOKENS.extraSmall, // 4
-  hoveredInnerRadius: SHAPE_CORNER_TOKENS.medium, // 12
-  activeRadius: SHAPE_CORNER_TOKENS.large, // 16
+  outerRadius: SHAPE_CORNER_TOKENS.large,
+  innerRadius: SHAPE_CORNER_TOKENS.extraSmall,
+  hoveredInnerRadius: SHAPE_CORNER_TOKENS.medium,
+  activeRadius: SHAPE_CORNER_TOKENS.large,
   oneLineMinHeight: 56,
   twoLineMinHeight: 72,
   threeLineMinHeight: 88,
@@ -150,23 +131,6 @@ export const SEGMENTED_LIST_TOKENS = {
   internalGap: 12,
 } as const;
 
-/**
- * Deterministic corner radius matrix `[topLeft, topRight, bottomRight, bottomLeft]`
- * for M3E `SegmentedListItem` (`count = 1` single item vs `count > 1` grouped items).
- *
- * Cross-Platform Spec Correction over raw AOSP `ListItemDefaults.segmentedShapes`:
- * - AOSP `ListItemDefaults.kt` (L449–521) only overrode `shape` (rest) and accidentally left
- *   `hoveredShape = CornerMedium (12dp)` from flat unsegmented lists, which on pointer devices
- *   causes top outer corners to shrink `16 -> 12` and bottom inner corners to open an asymmetric
- *   `12px vs 4px` wedge notch across the `2px` seam.
- * - Consistent with `ConnectedButtonGroup` (`ButtonGroup.kt` L251–277), passive `hover` MUST
- *   preserve seam geometry (changing only container surface color):
- *   - `count === 1`: all 4 corners use outer radius `16`
- *   - `index === 0` (first): `[16, 16, 4, 4]` (rest & hover)
- *   - middle: `[4, 4, 4, 4]` (rest & hover)
- *   - `index === count - 1` (last): `[4, 4, 16, 16]` (rest & hover)
- *   - `pressed | selected | expanded`: detaches visually to `[16, 16, 16, 16]`
- */
 export function resolveSegmentedListCorners(
   input: SegmentedListCornerInput,
 ): CornerTuple {
@@ -202,39 +166,15 @@ export interface ConnectedGroupCornerInput {
 }
 
 export const BUTTON_GROUP_TOKENS = {
-  /** Standard ButtonGroup spacing (`ButtonGroupSmallTokens.BetweenSpace = 12.0.dp`) */
   standardGap: 12,
-  /** Connected ButtonGroup spacing (`ConnectedButtonGroupSmallTokens.BetweenSpace = 2.0.dp`) */
   connectedGap: 2,
-  /** Default width expansion ratio for StandardButtonGroup (`ButtonGroupDefaults.ExpandedRatio = 0.15f`) */
   expandedRatio: 0.15,
-  /** Alias for StandardButtonGroup default press width expansion (`0.15`) */
   standardExpandedRatio: 0.15,
-  /**
-   * ConnectedButtonGroup default press width expansion (`0`).
-   * Per AOSP `SingleSelectConnectedButtonGroupSample` / `MultiSelectConnectedButtonGroupSample`
-   * (`ButtonGroupSamples.kt` L158–252) & `ButtonGroup.kt` L118, segmented selectors express press
-   * & selection purely via corner morphing (`8 -> 4 -> pill`) + constant-slot icon swap, keeping
-   * tab widths 100% stationary unless `expandedRatio` is explicitly opted in.
-   */
   connectedExpandedRatio: 0,
-  /** Inner corner in rest state (`ShapeTokens.CornerValueSmall = 8.0.dp`) */
   connectedInnerRadius: SHAPE_CORNER_TOKENS.small,
-  /** Inner corner in pressed state (`ShapeTokens.CornerValueExtraSmall = 4.0.dp`) */
   connectedPressedInnerRadius: SHAPE_CORNER_TOKENS.extraSmall,
 } as const;
 
-/**
- * Deterministic corner radius matrix `[topLeft, topRight, bottomRight, bottomLeft]`
- * for M3E `ConnectedButtonGroup` (replaces legacy M3 SegmentedButton).
- *
- * Matches AOSP `ButtonGroupDefaults.connected*ButtonShapes`:
- * - Checked item: all 4 corners become full pill (`height / 2`)
- * - Single item (`count === 1`): full pill (`pressed` tightens to `pressedCornerRadius`)
- * - Leading item (`index === 0`): left corners full pill, right inner corners `8` (`4` when pressed)
- * - Middle item: all 4 corners `8` (`4` when pressed)
- * - Trailing item (`index === count - 1`): left inner corners `8` (`4` when pressed), right corners full pill
- */
 export function resolveConnectedGroupCorners(
   input: ConnectedGroupCornerInput,
 ): CornerTuple {
@@ -251,11 +191,6 @@ export function resolveConnectedGroupCorners(
     ? BUTTON_GROUP_TOKENS.connectedPressedInnerRadius
     : BUTTON_GROUP_TOKENS.connectedInnerRadius;
 
-  // Per AOSP `ToggleButton.kt` L1714 (`shapeByInteraction`):
-  // `if (pressed) shapes.pressedShape else if (checked) shapes.checkedShape else shapes.shape`
-  // `isPressed` MUST take priority over `isChecked` so:
-  // 1) Pressing an already-selected pill (`[20, 20, 20, 20]`) pinches to `pressedShape` (`4px` inner)
-  // 2) Quick taps hold the `4px` press pinch for the full `MinHold` window before blooming to `pill`!
   if (!isPressed && isChecked) {
     return [pill, pill, pill, pill];
   }
@@ -274,28 +209,12 @@ export function resolveConnectedGroupCorners(
 }
 
 export interface ButtonGroupWidthInput {
-  /** Rest (unpressed) widths of each item in logical pixels */
   readonly baseWidths: readonly number[];
-  /**
-   * Current press progress per item (`0` = rest, `1` = fully pressed; may exceed `1` slightly
-   * during underdamped spring overshoot).
-   */
   readonly pressProgress: readonly number[];
-  /** Default `0.15` (15%) from AOSP `ButtonGroupDefaults.ExpandedRatio` */
   readonly expandedRatio?: number;
-  /**
-   * Maximum squish allowed on each item (defaults to `paddingHorizontal`, e.g. `16..24`),
-   * matching AOSP `ButtonGroup.kt` `compressionLimit` so neighbor labels never clip.
-   */
   readonly compressionLimits?: readonly number[];
 }
 
-/**
- * Exact port of AOSP `ButtonGroup.kt` zero-sum width expansion & neighbor compression.
- *
- * Guarantees `sum(outputWidths) === sum(baseWidths)` for any press state, preventing
- * row-level layout jitter while creating fluid neighbor squish.
- */
 export function computeButtonGroupWidths(
   input: ButtonGroupWidthInput,
 ): number[] {
@@ -322,7 +241,6 @@ export function computeButtonGroupWidths(
     let actualGrowth = 0;
 
     if (index > 0 && index < count - 1) {
-      // Middle item: split growth across left and right neighbors
       const maxPerSide = Math.min(
         (expandedRatio * widths[index]) / 2,
         limitAt(index - 1),
@@ -335,14 +253,12 @@ export function computeButtonGroupWidths(
       widths[index + 1] -= growthRight;
       actualGrowth = growthLeft + growthRight;
     } else if (index === 0) {
-      // First item: borrow entirely from right neighbor
       const maxGrowth = Math.min(expandedRatio * widths[index], limitAt(1));
       const targetGrowth = progress * maxGrowth;
       const growthRight = Math.min(targetGrowth, Math.max(0, widths[1] - 24));
       widths[1] -= growthRight;
       actualGrowth = growthRight;
     } else {
-      // Last item: borrow entirely from left neighbor
       const prev = count - 2;
       const maxGrowth = Math.min(expandedRatio * widths[index], limitAt(prev));
       const targetGrowth = progress * maxGrowth;
@@ -357,11 +273,6 @@ export function computeButtonGroupWidths(
   return widths;
 }
 
-// ============================================================================
-// Phase 2 Additions: IconButton (5×3), SplitButton + SegmentedMenu,
-// FloatingToolbar & FABMenu (ToggleFAB)
-// ============================================================================
-
 export type IconButtonWidthVariant = "narrow" | "default" | "wide";
 export type IconButtonVariant = "filled" | "tonal" | "outlined" | "standard";
 
@@ -369,27 +280,16 @@ export interface IconButtonSizeSpec {
   readonly size: ButtonSize;
   readonly height: number;
   readonly iconSize: number;
-  /** Horizontal padding on each side per width aspect ratio (`width = iconSize + 2 * pad`) */
   readonly paddingByWidth: Record<IconButtonWidthVariant, number>;
-  /** Resulting container width in logical pixels (`narrow / default / wide`) */
   readonly widths: Record<IconButtonWidthVariant, number>;
-  /** Default corner radius in `"round"` shape (full capsule = `height / 2`) */
   readonly roundCornerRadius: number;
-  /** Default corner radius in `"square"` shape */
   readonly squareCornerRadius: number;
-  /** Corner radius while actively pressed (`pressed > selected > rest`) */
   readonly pressedCornerRadius: number;
-  /** Selected corner radius when base shape is `"round"` (morphs to square-ish) */
   readonly selectedRoundCornerRadius: number;
-  /** Selected corner radius when base shape is `"square"` (morphs to full round) */
   readonly selectedSquareCornerRadius: number;
-  /** Border width for `"outlined"` variant */
   readonly outlineWidth: number;
 }
 
-/**
- * Exact 5-size × 3-width matrix from AOSP `{XSmall,Small,Medium,Large,XLarge}IconButtonTokens.kt`.
- */
 export const ICON_BUTTON_SIZE_SPECS: Record<ButtonSize, IconButtonSizeSpec> = {
   xs: {
     size: "xs",
@@ -476,10 +376,6 @@ export interface IconButtonGeometryOutput {
   readonly corners: CornerTuple;
 }
 
-/**
- * Resolves exact dimensions & corner radii for M3E `IconButton` / `IconToggleButton`.
- * Enforces AOSP `shapeByInteraction` priority: `isPressed > isSelected > rest`.
- */
 export function resolveIconButtonGeometry(
   input: IconButtonGeometryInput = {},
 ): IconButtonGeometryOutput {
@@ -533,15 +429,10 @@ export interface SplitButtonSizeSpec {
 }
 
 export const SPLIT_BUTTON_TOKENS = {
-  /** Exact seam gap (`SplitButtonSmallTokens.BetweenSpace = 2.0.dp`) */
   gap: 2,
-  /** Optical center coefficient (`SplitButton.kt` `MaxDistanceCoefficient = 0.11f`) */
   opticalCenterCoefficient: 0.11,
 } as const;
 
-/**
- * Exact 5-tier specs from AOSP `SplitButton{XSmall,Small,Medium,Large,XLarge}Tokens.kt`.
- */
 export const SPLIT_BUTTON_SPECS: Record<ButtonSize, SplitButtonSizeSpec> = {
   xs: {
     size: "xs",
@@ -632,14 +523,7 @@ export interface SplitButtonGeometryOutput {
   readonly gap: number;
   readonly leadingCorners: CornerTuple;
   readonly trailingCorners: CornerTuple;
-  /**
-   * Horizontal optical centering shift in logical pixels (`<= 0`) for the trailing chevron icon.
-   * Per AOSP `Modifier.horizontalCenterOptically`, asymmetric half-pills (`left=4, right=20`)
-   * shift content toward the straight inner seam by `-0.11 * (rightRadius - leftRadius)` (`-1.76px` on `sm`),
-   * returning smoothly to `0px` when `isExpanded` makes the trailing trigger symmetric `[20, 20, 20, 20]`.
-   */
   readonly trailingOpticalOffsetPx: number;
-  /** Target rotation of the trailing chevron (`0` closed -> `180` expanded, driven by `fastSpatial`) */
   readonly chevronRotationDeg: number;
 }
 
@@ -656,8 +540,6 @@ export function resolveSplitButtonGeometry(
   const spec = SPLIT_BUTTON_SPECS[size];
   const pill = Math.round(spec.height / 2);
 
-  // Unlike ConnectedButtonGroup (which pinches 8 -> 4), SplitButton softens its 4px inner seam
-  // on press (4 -> 12 on SM/MD) while outer corners remain anchored at `pill`.
   const leadInner = isLeadingPressed ? spec.innerActiveRadius : spec.innerRestRadius;
   const leadingCorners: CornerTuple = [pill, leadInner, leadInner, pill];
 
@@ -688,20 +570,16 @@ export function resolveSplitButtonGeometry(
 }
 
 export const SEGMENTED_MENU_TOKENS = {
-  containerRadius: SHAPE_CORNER_TOKENS.large, // 16
+  containerRadius: SHAPE_CORNER_TOKENS.large,
   containerPadding: 4,
   itemGap: 2,
-  itemOuterRadius: SHAPE_CORNER_TOKENS.medium, // 12 (concentric with 16 - 4 = 12!)
-  itemInnerRadius: SHAPE_CORNER_TOKENS.extraSmall, // 4
-  itemPressedRadius: SHAPE_CORNER_TOKENS.small, // 8
+  itemOuterRadius: SHAPE_CORNER_TOKENS.medium,
+  itemInnerRadius: SHAPE_CORNER_TOKENS.extraSmall,
+  itemPressedRadius: SHAPE_CORNER_TOKENS.small,
   itemHeight: 44,
   itemPaddingInline: 14,
 } as const;
 
-/**
- * Concentric corner topology for M3E Segmented Dropdown Menus (`16px` popup - `4px` pad = `12px` outer item radius).
- * Supports multi-segment menus split by separators (`isFirstInGroup` / `isLastInGroup`).
- */
 export function resolveSegmentedMenuItemCorners(input: {
   readonly index: number;
   readonly count: number;
@@ -739,10 +617,6 @@ export function resolveSegmentedMenuItemCorners(input: {
 
 export type FloatingToolbarTheme = "standard" | "vibrant";
 
-/**
- * Exact geometry from AOSP `FloatingToolbarTokens.kt`.
- * Concentric capsule geometry: `32px` outer radius - `8px` padding = `24px` inner action radius (`48px` button height).
- */
 export const FLOATING_TOOLBAR_TOKENS = {
   containerCrossSize: 64,
   containerRadius: 32,
@@ -765,10 +639,6 @@ export interface ToggleFabSizeSpec {
   readonly expandedIconSize: number;
 }
 
-/**
- * Exact specs from AOSP `FabBaselineTokens`, `FabMediumTokens`, `FabLargeTokens`
- * & `FabMenuBaselineTokens` (`CloseButtonContainer = 56dp`, `CornerFull = 28dp`, `CloseButtonIconSize = 20dp`).
- */
 export const TOGGLE_FAB_SPECS: Record<ToggleFabSize, ToggleFabSizeSpec> = {
   sm: {
     size: "sm",
@@ -814,13 +684,9 @@ export interface ToggleFabGeometryOutput {
   readonly containerSize: number;
   readonly cornerRadius: number;
   readonly iconSize: number;
-  /** Rotates `+` by `45°` into `×` (`0° -> 45°`, supports underdamped spring overshoot) */
   readonly iconRotationDeg: number;
 }
 
-/**
- * Continuous spring-interpolated geometry for M3E `ToggleFAB` (`progress: 0` collapsed -> `1` expanded close circle).
- */
 export function resolveToggleFabGeometry(
   size: ToggleFabSize = "md",
   progress = 0,
@@ -836,14 +702,6 @@ export function resolveToggleFabGeometry(
   };
 }
 
-// ============================================================================
-// Phase 3 Additions: Switch, Slider, Checkbox, Radio, Tabs, Dialog, Select,
-// Tooltip & Toast / Snackbar
-// ============================================================================
-
-/**
- * Exact M3E Switch parameters from AOSP `SwitchTokens.kt` & `Switch.kt` (L283–306).
- */
 export const SWITCH_TOKENS = {
   trackWidth: 52,
   trackHeight: 32,
@@ -865,16 +723,9 @@ export interface SwitchGeometryInput {
 
 export interface SwitchGeometryOutput {
   readonly thumbSize: number;
-  /** Distance from the outer inline-start edge of the 52px track */
   readonly thumbOffsetPx: number;
 }
 
-/**
- * Resolves exact handle diameter & horizontal offset for M3E `Switch`:
- * - Unchecked rest: `16px` (`offset = 8px`), or `24px` (`offset = 4px`) when `hasUncheckedIcon`
- * - Checked rest: `24px` (`offset = 24px`)
- * - Pressed: swells to `28px` (`offset = 2px` unchecked, `22px` checked)
- */
 export function resolveSwitchGeometry(
   input: SwitchGeometryInput = {},
 ): SwitchGeometryOutput {
@@ -894,7 +745,7 @@ export function resolveSwitchGeometry(
   } = SWITCH_TOKENS;
 
   if (isPressed) {
-    const pad = (trackHeight - pressedThumbSize) / 2; // 2px
+    const pad = (trackHeight - pressedThumbSize) / 2;
     return {
       thumbSize: pressedThumbSize,
       thumbOffsetPx: checked ? trackWidth - pressedThumbSize - pad : pad,
@@ -902,15 +753,15 @@ export function resolveSwitchGeometry(
   }
 
   if (checked) {
-    const pad = (trackHeight - checkedThumbSize) / 2; // 4px
+    const pad = (trackHeight - checkedThumbSize) / 2;
     return {
       thumbSize: checkedThumbSize,
-      thumbOffsetPx: trackWidth - checkedThumbSize - pad, // 24px
+      thumbOffsetPx: trackWidth - checkedThumbSize - pad,
     };
   }
 
   const size = hasUncheckedIcon ? uncheckedIconThumbSize : uncheckedThumbSize;
-  const pad = (trackHeight - size) / 2; // 4px or 8px
+  const pad = (trackHeight - size) / 2;
   return {
     thumbSize: size,
     thumbOffsetPx: pad,
@@ -927,10 +778,6 @@ export interface SliderSizeSpec {
   readonly thumbHeight: number;
 }
 
-/**
- * Exact M3E Slider parameters from AOSP `SliderTokens.kt` & `Slider.kt`
- * (Tall track + vertical bar handle + `6px` clear gap around handle + `4px` stop dots).
- */
 export const SLIDER_TOKENS = {
   thumbRestWidth: 4,
   thumbActiveWidth: 2,
@@ -1008,7 +855,7 @@ export const TABS_TOKENS = {
 } as const;
 
 export const DIALOG_TOKENS = {
-  containerRadius: SHAPE_CORNER_TOKENS.extraLarge, // 28
+  containerRadius: SHAPE_CORNER_TOKENS.extraLarge,
   padding: 24,
   minWidth: 280,
   maxWidth: 520,
@@ -1019,21 +866,21 @@ export const DIALOG_TOKENS = {
 export const SELECT_TOKENS = {
   filledHeight: 52,
   outlinedHeight: 48,
-  outlinedRadius: SHAPE_CORNER_TOKENS.medium, // 12
-  filledTopRadius: SHAPE_CORNER_TOKENS.medium, // 12
-  filledBottomRadius: SHAPE_CORNER_TOKENS.none, // 0 — keeps 2px bottom indicator straight & crisp
+  outlinedRadius: SHAPE_CORNER_TOKENS.medium,
+  filledTopRadius: SHAPE_CORNER_TOKENS.medium,
+  filledBottomRadius: SHAPE_CORNER_TOKENS.none,
   paddingInline: 16,
-  popupRadius: SHAPE_CORNER_TOKENS.large, // 16
-  popupPadding: 6, // Concentric: 16px popup - 6px inset = 10px item radius
+  popupRadius: SHAPE_CORNER_TOKENS.large,
+  popupPadding: 6,
   itemRadius: 10,
-  itemSelectedRadius: SHAPE_CORNER_TOKENS.medium, // 12
+  itemSelectedRadius: SHAPE_CORNER_TOKENS.medium,
   itemPressedRadius: 6,
   itemGap: 2,
 } as const;
 
 export const TOOLTIP_TOKENS = {
-  plainRadius: SHAPE_CORNER_TOKENS.small, // 8
-  richRadius: SHAPE_CORNER_TOKENS.large, // 16
+  plainRadius: SHAPE_CORNER_TOKENS.small,
+  richRadius: SHAPE_CORNER_TOKENS.large,
   plainPaddingBlock: 6,
   plainPaddingInline: 10,
   richPaddingBlock: 12,
@@ -1042,7 +889,7 @@ export const TOOLTIP_TOKENS = {
 } as const;
 
 export const SNACKBAR_TOKENS = {
-  containerRadius: SHAPE_CORNER_TOKENS.medium, // 12
+  containerRadius: SHAPE_CORNER_TOKENS.medium,
   minHeight: 48,
   maxWidth: 420,
   paddingBlock: 12,
@@ -1050,24 +897,19 @@ export const SNACKBAR_TOKENS = {
   viewportGap: 10,
 } as const;
 
-// ============================================================================
-// Phase 4 Additions: TextField, NumberField, Combobox, Accordion, Sheet,
-// Popover, Chip, Avatar, Badge, Card & NavigationBar / NavigationRail
-// ============================================================================
-
 export const TEXT_FIELD_TOKENS = {
   outlinedHeight: 48,
   filledHeight: 52,
-  outlinedRadius: SHAPE_CORNER_TOKENS.medium, // 12
-  filledTopRadius: SHAPE_CORNER_TOKENS.medium, // 12
-  filledBottomRadius: SHAPE_CORNER_TOKENS.none, // 0 — keeps 2px bottom indicator straight & crisp
+  outlinedRadius: SHAPE_CORNER_TOKENS.medium,
+  filledTopRadius: SHAPE_CORNER_TOKENS.medium,
+  filledBottomRadius: SHAPE_CORNER_TOKENS.none,
   paddingInline: 14,
-  minFontSize: 16, // Prevents iOS Safari auto-zoom on focus
+  minFontSize: 16,
 } as const;
 
 export const NUMBER_FIELD_TOKENS = {
   height: 44,
-  outerRadius: 22, // Full pill outer ends
+  outerRadius: 22,
   innerRestRadius: 4,
   innerPressedRadius: 10,
   seamGap: 2,
@@ -1077,8 +919,8 @@ export const NUMBER_FIELD_TOKENS = {
 export const ACCORDION_TOKENS = {
   collapsedGap: 2,
   expandedMarginBlock: 6,
-  outerRadius: SHAPE_CORNER_TOKENS.large, // 16
-  innerRadius: SHAPE_CORNER_TOKENS.extraSmall, // 4
+  outerRadius: SHAPE_CORNER_TOKENS.large,
+  innerRadius: SHAPE_CORNER_TOKENS.extraSmall,
   headerMinHeight: 56,
   paddingInline: 18,
 } as const;
@@ -1097,14 +939,13 @@ export function resolveAccordionItemCorners(input: {
     return [outer, outer, outer, outer];
   }
 
-  // When an adjacent item detaches (opens), the neighbor's facing edge also rounds cleanly!
   const topR = index <= 0 || prevOpen ? outer : inner;
   const bottomR = index >= count - 1 || nextOpen ? outer : inner;
   return [topR, topR, bottomR, bottomR];
 }
 
 export const SHEET_TOKENS = {
-  cornerRadius: SHAPE_CORNER_TOKENS.extraLarge, // 28
+  cornerRadius: SHAPE_CORNER_TOKENS.extraLarge,
   dragHandleWidth: 32,
   dragHandleHeight: 4,
   bottomMaxWidth: 640,
@@ -1113,16 +954,16 @@ export const SHEET_TOKENS = {
 } as const;
 
 export const POPOVER_TOKENS = {
-  containerRadius: SHAPE_CORNER_TOKENS.largeIncreased, // 20
+  containerRadius: SHAPE_CORNER_TOKENS.largeIncreased,
   padding: 16,
   maxWidth: 340,
 } as const;
 
 export const CHIP_TOKENS = {
   height: 32,
-  restRadius: SHAPE_CORNER_TOKENS.small, // 8
-  selectedRadius: 16, // Full pill on selected FilterChip
-  pressedRadius: SHAPE_CORNER_TOKENS.extraSmall, // 4
+  restRadius: SHAPE_CORNER_TOKENS.small,
+  selectedRadius: 16,
+  pressedRadius: SHAPE_CORNER_TOKENS.extraSmall,
   paddingInline: 12,
   iconSize: 18,
 } as const;
@@ -1145,9 +986,9 @@ export const BADGE_TOKENS = {
 } as const;
 
 export const CARD_TOKENS = {
-  restRadius: SHAPE_CORNER_TOKENS.large, // 16
-  hoverRadius: SHAPE_CORNER_TOKENS.largeIncreased, // 20
-  pressedRadius: SHAPE_CORNER_TOKENS.medium, // 12
+  restRadius: SHAPE_CORNER_TOKENS.large,
+  hoverRadius: SHAPE_CORNER_TOKENS.largeIncreased,
+  pressedRadius: SHAPE_CORNER_TOKENS.medium,
   padding: 20,
 } as const;
 
@@ -1158,12 +999,6 @@ export const NAVIGATION_TOKENS = {
   indicatorHeight: 32,
   indicatorRadius: 16,
 } as const;
-
-// ============================================================================
-// Phase 5 Additions: FAB & ExtendedFAB, Carousel (MultiBrowse / Hero),
-// SearchBar, TopAppBar (Flexible), Flat Progress & Meter, OTPField,
-// DatePicker, PreviewCard, Divider & ScrollArea
-// ============================================================================
 
 export type FabSize = "sm" | "md" | "lg" | "xl";
 export type FabColorVariant = "primary" | "secondary" | "tertiary" | "surface";
@@ -1176,10 +1011,6 @@ export interface FabSizeSpec {
   readonly iconSize: number;
 }
 
-/**
- * Exact 4-tier M3E FAB specs from AOSP `FabSmallTokens`, `FabBaselineTokens`,
- * `FabMediumTokens`, and `FabLargeTokens` (`androidx.compose.material3` 1.5.0).
- */
 export const FAB_SIZE_SPECS: Record<FabSize, FabSizeSpec> = {
   sm: {
     size: "sm",
@@ -1241,9 +1072,6 @@ export interface ExtendedFabSpec {
   readonly fontSize: number;
 }
 
-/**
- * Exact M3E ExtendedFAB specs (`ExtendedFabSmallTokens` 56dp, `ExtendedFabMediumTokens` 80dp, `ExtendedFabLargeTokens` 96dp).
- */
 export const EXTENDED_FAB_SPECS: Record<ExtendedFabSize, ExtendedFabSpec> = {
   sm: {
     size: "sm",
@@ -1277,14 +1105,11 @@ export const EXTENDED_FAB_SPECS: Record<ExtendedFabSize, ExtendedFabSpec> = {
   },
 };
 
-/**
- * M3E Carousel (`Carousel.kt` — `HorizontalMultiBrowseCarousel` & `HorizontalCenteredHeroCarousel`).
- */
 export const CAROUSEL_TOKENS = {
   gap: 8,
-  focalRadius: SHAPE_CORNER_TOKENS.extraLarge, // 28
-  mediumRadius: SHAPE_CORNER_TOKENS.largeIncreased, // 20
-  peekRadius: SHAPE_CORNER_TOKENS.large, // 16
+  focalRadius: SHAPE_CORNER_TOKENS.extraLarge,
+  mediumRadius: SHAPE_CORNER_TOKENS.largeIncreased,
+  peekRadius: SHAPE_CORNER_TOKENS.large,
   minPeekWidth: 48,
 } as const;
 
@@ -1292,21 +1117,12 @@ export interface CarouselItemMetric {
   readonly index: number;
   readonly width: number;
   readonly cornerRadius: number;
-  /** Normalized prominence (`0` compressed peek .. `1` primary focal card) */
   readonly prominence: number;
 }
 
-/**
- * Deterministic Zero-Sum Keyline Width Solver for M3E `Carousel`.
- *
- * Guarantees `sum(items.map(i => i.width)) + (count - 1) * gap === containerWidth`
- * for ANY continuous `focalPosition` (including fractional spring overshoot states!),
- * so cards expand/compress fluidly inside a rock-solid container frame.
- */
 export function resolveCarouselLayout(input: {
   readonly count: number;
   readonly containerWidth: number;
-  /** Continuous focal index (`0 .. count - 1`, supports smooth spring values) */
   readonly focalPosition: number;
   readonly variant?: "multi-browse" | "hero";
   readonly gap?: number;
@@ -1334,9 +1150,6 @@ export function resolveCarouselLayout(input: {
     ];
   }
 
-  // Gaussian-like prominence falloff from `focalPosition`:
-  // - `hero`: sharp single focal spotlight with symmetric compact peeks on both sides
-  // - `multi-browse`: wide focal card + medium secondary neighbor + compact peeks
   const falloff = variant === "hero" ? 1.85 : 1.05;
   const baseWeight = variant === "hero" ? 0.14 : 0.2;
 
@@ -1373,7 +1186,7 @@ export const SEARCH_BAR_TOKENS = {
   radius: 28,
   popupRadius: 28,
   popupPadding: 8,
-  itemRadius: 20, // Concentric: 28 - 8 = 20px!
+  itemRadius: 20,
   itemPressedRadius: 10,
   horizontalPadding: 16,
   iconSize: 22,
@@ -1403,12 +1216,8 @@ export const TOP_APP_BAR_SPECS = {
   horizontalPadding: 16,
 } as const;
 
-/**
- * Continuous scroll-collapse interpolation for M3E Flexible `TopAppBar` (`AppBar.kt` 1.5.0).
- */
 export function resolveTopAppBarGeometry(input: {
   readonly variant?: TopAppBarVariant;
-  /** `0` = fully expanded at top of scroll, `1` = fully collapsed */
   readonly collapsedFraction?: number;
   readonly scrolled?: boolean;
 } = {}): TopAppBarGeometryOutput {
@@ -1449,10 +1258,6 @@ export function resolveTopAppBarGeometry(input: {
   };
 }
 
-/**
- * Standard M3E Flat Progress & Meter tokens (`ProgressIndicatorTokens.kt` 1.5.0).
- * Signature M3E detail: `4px` physical gap between active indicator and remaining track + `4px` stop dot!
- */
 export const PROGRESS_TOKENS = {
   linearHeight: 4,
   linearThickHeight: 8,
@@ -1472,12 +1277,8 @@ export const METER_TOKENS = {
   criticalThreshold: 0.9,
 } as const;
 
-/**
- * Resolves exact SVG stroke-dasharray / stroke-dashoffset with M3E `4px` arc gap + round-cap compensation
- * for flat `CircularProgressIndicator`.
- */
 export function resolveCircularProgressArcs(input: {
-  readonly progress: number; // 0..1
+  readonly progress: number;
   readonly size: number;
   readonly strokeWidth: number;
   readonly trackGap?: number;
@@ -1518,7 +1319,6 @@ export function resolveCircularProgressArcs(input: {
     };
   }
 
-  // Round stroke caps extend by `strokeWidth / 2` on each end, so clear visual gap requires `trackGap + strokeWidth` center-to-center clearance on each seam (2 seams total).
   const seamClearance = trackGap + strokeWidth;
   const activeDashLength = Math.max(
     1,
@@ -1544,11 +1344,11 @@ export const OTP_FIELD_TOKENS = {
   slotWidth: 46,
   slotHeight: 54,
   slotGap: 4,
-  outerRadius: SHAPE_CORNER_TOKENS.large, // 16
+  outerRadius: SHAPE_CORNER_TOKENS.large,
   innerRadius: 6,
-  activeRadius: SHAPE_CORNER_TOKENS.large, // 16 (focused slot detaches into full rounded rectangle!)
+  activeRadius: SHAPE_CORNER_TOKENS.large,
   pressedRadius: 10,
-  minFontSize: 18, // >= 16px per modern-web-guidance sms-otp-form
+  minFontSize: 18,
 } as const;
 
 export function resolveOtpSlotCorners(input: {
@@ -1591,7 +1391,7 @@ export function resolveOtpSlotCorners(input: {
 }
 
 export const DATE_PICKER_TOKENS = {
-  containerRadius: SHAPE_CORNER_TOKENS.extraLarge, // 28
+  containerRadius: SHAPE_CORNER_TOKENS.extraLarge,
   dayCellSize: 40,
   daySelectedRadius: 20,
   dayPressedRadius: 10,
@@ -1615,22 +1415,12 @@ export const SCROLL_AREA_TOKENS = {
   thumbRadius: 9999,
 } as const;
 
-// ============================================================================
-// Phase 6 Additions: RTL Corner Mirroring, TimePicker Clock Geometry,
-// WideNavigationRail / NavigationDrawer / NavigationSuite, Menubar,
-// DataTable & Skeleton
-// ============================================================================
-
-/**
- * Mirrors a physical CSS `[topLeft, topRight, bottomRight, bottomLeft]` corner tuple
- * horizontally (`TL <-> TR`, `BR <-> BL`) for `dir="rtl"` bidirectional layouts.
- */
 export function flipCornersHorizontal(corners: CornerTuple): CornerTuple {
   return [corners[1], corners[0], corners[3], corners[2]];
 }
 
 export const TIME_PICKER_TOKENS = {
-  containerRadius: SHAPE_CORNER_TOKENS.extraLarge, // 28
+  containerRadius: SHAPE_CORNER_TOKENS.extraLarge,
   padding: 22,
   dialSize: 248,
   outerRingRadius: 92,
@@ -1640,30 +1430,22 @@ export const TIME_PICKER_TOKENS = {
   selectorTrackWidth: 2,
   fieldWidth: 88,
   fieldHeight: 68,
-  fieldRadius: SHAPE_CORNER_TOKENS.medium, // 12
-  fieldPressedRadius: SHAPE_CORNER_TOKENS.small, // 8
+  fieldRadius: SHAPE_CORNER_TOKENS.medium,
+  fieldPressedRadius: SHAPE_CORNER_TOKENS.small,
   periodWidth: 52,
   periodHeight: 68,
-  periodOuterRadius: SHAPE_CORNER_TOKENS.medium, // 12
-  periodInnerRadius: SHAPE_CORNER_TOKENS.extraSmall, // 4
+  periodOuterRadius: SHAPE_CORNER_TOKENS.medium,
+  periodInnerRadius: SHAPE_CORNER_TOKENS.extraSmall,
 } as const;
 
 export interface ClockHandGeometry {
-  /** Clockwise angle in degrees where `0°` points straight up (12 o'clock) */
   readonly angleDeg: number;
-  /** Radial distance from dial center in logical pixels */
   readonly radius: number;
-  /** Whether the active hour sits on the 24-hour inner ring (`12..23`) */
   readonly isInnerRing: boolean;
-  /** Target center X relative to dial center (`+` right) */
   readonly offsetX: number;
-  /** Target center Y relative to dial center (`+` down) */
   readonly offsetY: number;
 }
 
-/**
- * Computes exact polar & Cartesian clock-hand geometry for M3E `TimePicker` (`TimePicker.kt`).
- */
 export function resolveClockHandGeometry(input: {
   readonly mode: "hour" | "minute";
   readonly value: number;
@@ -1716,7 +1498,7 @@ export const WIDE_NAVIGATION_RAIL_TOKENS = {
 
 export const NAVIGATION_DRAWER_TOKENS = {
   width: 280,
-  cornerRadius: SHAPE_CORNER_TOKENS.extraLarge, // 28
+  cornerRadius: SHAPE_CORNER_TOKENS.extraLarge,
   itemHeight: 48,
   itemRadius: 24,
   itemPressedRadius: 12,
@@ -1724,7 +1506,6 @@ export const NAVIGATION_DRAWER_TOKENS = {
 } as const;
 
 export const NAVIGATION_SUITE_TOKENS = {
-  /** `< 640px`: Bottom `NavigationBar`; `640..1023px`: collapsed `NavigationRail`; `>= 1024px`: `WideNavigationRail` */
   compactMaxWidth: 640,
   mediumMaxWidth: 1024,
 } as const;
@@ -1740,7 +1521,7 @@ export const MENUBAR_TOKENS = {
 } as const;
 
 export const DATA_TABLE_TOKENS = {
-  containerRadius: SHAPE_CORNER_TOKENS.large, // 16
+  containerRadius: SHAPE_CORNER_TOKENS.large,
   headerHeight: 48,
   rowHeight: 52,
   compactRowHeight: 40,
@@ -1749,6 +1530,6 @@ export const DATA_TABLE_TOKENS = {
 
 export const SKELETON_TOKENS = {
   textRadius: 6,
-  roundedRadius: SHAPE_CORNER_TOKENS.medium, // 12
-  rectangularRadius: SHAPE_CORNER_TOKENS.extraSmall, // 4
+  roundedRadius: SHAPE_CORNER_TOKENS.medium,
+  rectangularRadius: SHAPE_CORNER_TOKENS.extraSmall,
 } as const;

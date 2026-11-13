@@ -12,11 +12,8 @@ import {
 import { useM3E } from "../context/M3EProvider.js";
 
 export interface WavyProgressIndicatorProps {
-  /** `0..100` for determinate mode, or `null` / `undefined` for indeterminate mode */
   readonly value?: number | null;
-  /** Optional explicit amplitude override `[0..1]`. Omit to use M3E auto-flattening (`<=10%` & `>=95%`). */
   readonly amplitude?: number;
-  /** Optional wavelength in logical pixels (`40` determinate default, `20` indeterminate default) */
   readonly wavelength?: number;
   readonly strokeWidth?: number;
   readonly trackGap?: number;
@@ -95,7 +92,6 @@ export function WavyProgressIndicator({
 
       const prev = stateRef.current;
 
-      // Smoothly approach targetProgress & targetAmplitude (~500ms time constant)
       const alpha = isPaused
         ? 0.35
         : Math.min(1, dtMs / (140 / Math.max(0.1, rate)));
@@ -106,7 +102,6 @@ export function WavyProgressIndicator({
       const nextAmplitude =
         prev.amplitude + (targetAmplitude - prev.amplitude) * alpha;
 
-      // Advance wave phase at 1 wavelength per second
       const nextPhase =
         (prev.phasePx + (dtScaledMs / 1000) * effectiveWavelength) %
         Math.max(1, effectiveWavelength);
@@ -223,7 +218,6 @@ export function WavyProgressIndicator({
 export const LinearWavyProgressIndicator = WavyProgressIndicator;
 
 export interface CircularWavyProgressIndicatorProps {
-  /** `0..100` for determinate mode, or `null` / `undefined` for indeterminate mode */
   readonly value?: number | null;
   readonly size?: number;
   readonly strokeWidth?: number;

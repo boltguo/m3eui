@@ -1,11 +1,3 @@
-/**
- * Material 3 Expressive — HCT Dynamic Color & Surface Container Hierarchy
- *
- * Powered by Google's `@material/material-color-utilities` (`DynamicScheme`, `Hct`).
- * Produces platform-neutral semantic palettes (`light` + `dark`), CSS `light-dark()`
- * custom property maps, and multi-platform token exports.
- */
-
 import {
   DynamicScheme,
   Hct,
@@ -64,7 +56,6 @@ export interface M3EThemeTokens {
   readonly contrastLevel: number;
   readonly light: M3ESemanticColorRoles;
   readonly dark: M3ESemanticColorRoles;
-  /** CSS Custom Property declarations using native `light-dark(lightHex, darkHex)` */
   readonly cssLightDarkVars: Record<string, string>;
 }
 
@@ -139,9 +130,6 @@ export function roleKeyToCssVarName(role: SemanticColorRoleKey): string {
   return `--m3e-color-${kebab}`;
 }
 
-/**
- * Generates paired Light & Dark M3E Dynamic Color tokens from a seed hex color.
- */
 export function generateM3EThemeTokens(options?: {
   seedHex?: string;
   variant?: ColorSchemeVariant;

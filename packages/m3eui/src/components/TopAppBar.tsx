@@ -14,19 +14,12 @@ export interface M3ETopAppBarProps {
   readonly variant?: TopAppBarVariant;
   readonly navigationIcon?: React.ReactNode;
   readonly actions?: React.ReactNode;
-  /** `0` = expanded, `1` = collapsed (auto-computed when paired with `scrollContainerRef`) */
   readonly collapsedFraction?: number;
   readonly scrolled?: boolean;
   readonly className?: string;
   readonly style?: React.CSSProperties;
 }
 
-/**
- * M3E Flexible TopAppBar (`AppBar.kt` 1.5.0: `Small`, `CenterAligned`, `MediumFlexible`, `LargeFlexible`).
- *
- * Smoothly interpolates container height (`148px / 112px -> 64px`), title font-size (`28px / 24px -> 20px`),
- * subtitle visibility, and automatic `surface -> surface-container` tonal elevation shift.
- */
 export function TopAppBar({
   title,
   subtitle,

@@ -8,14 +8,12 @@ export interface M3EDialogProps {
   readonly open?: boolean;
   readonly defaultOpen?: boolean;
   readonly onOpenChange?: (open: boolean) => void;
-  /** Element rendered as the dialog trigger via Base UI `render` composition */
   readonly trigger?: React.ReactElement;
   readonly icon?: React.ReactNode;
   readonly title: React.ReactNode;
   readonly description?: React.ReactNode;
   readonly children?: React.ReactNode;
   readonly actions?: React.ReactNode;
-  /** Optional top-end close icon button labeled via `dialog.close` i18n key */
   readonly showCloseButton?: boolean;
   readonly className?: string;
   readonly style?: React.CSSProperties;
