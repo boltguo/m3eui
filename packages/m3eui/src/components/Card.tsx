@@ -1,14 +1,14 @@
+"use client";
+
 import * as React from "react";
 import { Button as BaseButton } from "@base-ui/react/button";
 import { CARD_TOKENS } from "../tokens/index.js";
-import {
-  useM3EScalarSpring,
-  usePressHoldState,
-} from "../hooks/useM3ESpring.js";
+import { usePressHoldState } from "../hooks/useM3ESpring.js";
 
 export type CardVariant = "elevated" | "filled" | "outlined";
 
-export interface M3ECardProps {
+export interface M3ECardProps
+  extends Omit<React.HTMLAttributes<HTMLElement>, "title"> {
   readonly children: React.ReactNode;
   readonly variant?: CardVariant;
   readonly title?: React.ReactNode;
@@ -16,6 +16,11 @@ export interface M3ECardProps {
   readonly media?: React.ReactNode;
   readonly actions?: React.ReactNode;
   readonly interactive?: boolean;
+  readonly disabled?: boolean;
+  readonly href?: string;
+  readonly target?: string;
+  readonly rel?: string;
+  readonly render?: React.ReactElement<Record<string, unknown>>;
   readonly onClick?: React.MouseEventHandler<HTMLElement>;
   readonly className?: string;
   readonly style?: React.CSSProperties;
@@ -29,25 +34,25 @@ export const Card = React.forwardRef<HTMLElement, M3ECardProps>(function Card(
     subtitle,
     media,
     actions,
-    interactive = false,
+    interactive,
+    disabled = false,
+    href,
+    target,
+    rel,
+    render,
     onClick,
     className,
     style,
+    "aria-label": ariaLabel,
+    ...restProps
   },
   ref,
 ) {
-  const [hovered, setHovered] = React.useState(false);
-  const { isPressed, pressHandlers } = usePressHoldState(!interactive);
-
-  const targetRadius = interactive
-    ? isPressed
-      ? CARD_TOKENS.pressedRadius
-      : hovered
-        ? CARD_TOKENS.hoverRadius
-        : CARD_TOKENS.restRadius
-    : CARD_TOKENS.restRadius;
-
-  const springRadius = useM3EScalarSpring(targetRadius, "fastSpatial");
+  const isInteractive = Boolean(interactive || onClick || href || render);
+  const { isPressed, pressHandlers } = usePressHoldState(
+    !isInteractive || disabled,
+  );
+  const restRadiusCss = `${CARD_TOKENS.restRadius}px`;
 
   const inner = (
     <>
@@ -70,32 +75,103 @@ export const Card = React.forwardRef<HTMLElement, M3ECardProps>(function Card(
     </>
   );
 
-  if (interactive) {
+  if (isInteractive && actions) {
+    const overlayRender =
+      render ??
+      (href && !disabled ? <a href={href} target={target} rel={rel} /> : undefined);
+    const resolvedOverlayLabel =
+      ariaLabel ?? (typeof title === "string" ? title : undefined);
+
+    return (
+      <article
+        ref={ref}
+        {...restProps}
+        className={
+          className
+            ? `m3e-card m3e-card--interactive m3e-card--compound ${className}`
+            : "m3e-card m3e-card--interactive m3e-card--compound"
+        }
+        data-variant={variant}
+        data-pressed={isPressed ? "" : undefined}
+        data-disabled={disabled ? "" : undefined}
+        style={{
+          borderRadius: restRadiusCss,
+          ...style,
+        }}
+      >
+        <BaseButton
+          type={!overlayRender ? "button" : undefined}
+          nativeButton={!overlayRender}
+          render={overlayRender}
+          disabled={disabled}
+          aria-label={resolvedOverlayLabel}
+          onClick={onClick}
+          onPointerDown={pressHandlers.onPointerDown}
+          onPointerUp={pressHandlers.onPointerUp}
+          onPointerLeave={pressHandlers.onPointerLeave}
+          onPointerCancel={pressHandlers.onPointerCancel}
+          onKeyDown={pressHandlers.onKeyDown}
+          onKeyUp={pressHandlers.onKeyUp}
+          onBlur={pressHandlers.onBlur}
+          className="m3e-card__overlay-action"
+        />
+        {inner}
+      </article>
+    );
+  }
+
+  if (isInteractive) {
+    const cardRender =
+      render ??
+      (href && !disabled ? <a href={href} target={target} rel={rel} /> : <div />);
+
     return (
       <BaseButton
         ref={ref}
         nativeButton={false}
-        render={<div />}
+        render={cardRender}
+        disabled={disabled}
+        aria-label={ariaLabel}
+        {...restProps}
         onClick={onClick}
-        onPointerEnter={() => setHovered(true)}
-        onPointerLeave={() => {
-          setHovered(false);
+        onPointerLeave={(e) => {
           pressHandlers.onPointerLeave();
+          restProps.onPointerLeave?.(e);
         }}
-        onPointerDown={pressHandlers.onPointerDown}
-        onPointerUp={pressHandlers.onPointerUp}
-        onPointerCancel={pressHandlers.onPointerCancel}
-        onKeyDown={pressHandlers.onKeyDown}
-        onKeyUp={pressHandlers.onKeyUp}
-        onBlur={pressHandlers.onBlur}
+        onPointerDown={(e) => {
+          pressHandlers.onPointerDown(e);
+          restProps.onPointerDown?.(e);
+        }}
+        onPointerUp={(e) => {
+          pressHandlers.onPointerUp();
+          restProps.onPointerUp?.(e);
+        }}
+        onPointerCancel={(e) => {
+          pressHandlers.onPointerCancel();
+          restProps.onPointerCancel?.(e);
+        }}
+        onKeyDown={(e) => {
+          pressHandlers.onKeyDown(e);
+          restProps.onKeyDown?.(e);
+        }}
+        onKeyUp={(e) => {
+          pressHandlers.onKeyUp(e);
+          restProps.onKeyUp?.(e);
+        }}
+        onBlur={(e) => {
+          pressHandlers.onBlur();
+          restProps.onBlur?.(e);
+        }}
         className={
           className
             ? `m3e-card m3e-card--interactive ${className}`
             : "m3e-card m3e-card--interactive"
         }
         data-variant={variant}
+        data-pressed={isPressed ? "" : undefined}
+        data-disabled={disabled ? "" : undefined}
         style={{
-          borderRadius: `${Math.max(4, springRadius).toFixed(1)}px`,
+          borderRadius: restRadiusCss,
           ...style,
         }}
       >
@@ -106,7 +182,9 @@ export const Card = React.forwardRef<HTMLElement, M3ECardProps>(function Card(
 
   return (
     <article
-      ref={ref as React.Ref<HTMLElement>}
+      ref={ref}
+      aria-label={ariaLabel}
+      {...restProps}
       className={className ? `m3e-card ${className}` : "m3e-card"}
       data-variant={variant}
       style={{

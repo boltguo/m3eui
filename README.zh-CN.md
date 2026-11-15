@@ -68,12 +68,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
 | 路径 | 说明 |
 | :--- | :--- |
-| `m3eui` | 组件、Hooks、`M3EProvider`、配置、国际化与令牌 |
+| `m3eui` | 兼容 RSC 的组件、Hooks、`M3EProvider`、`M3EPortal`、配置、国际化与令牌入口 |
 | `m3eui/styles.css` | 组件样式表（`--m3e-*` 变量 + `light-dark()`） |
-| `m3eui/tokens` | HCT 色阶计算、弹簧求解、圆角拓扑与 35 种 `MaterialShapes` |
+| `m3eui/tokens` | 纯函数兼容 RSC 的 61 语义角色 HCT 色阶计算（含 `success`/`warning` 调和）、弹簧求解、圆角拓扑、`parseShortcutKeys` 与 35 种 `MaterialShapes`（`getMaterialShape`） |
 | `m3eui/tokens.json` | 预计算的静态令牌与多边形 JSON |
-| `m3eui/i18n` | `zh-CN`、`en-US`、`ja-JP`、`ar-SA` 词典与 `M3EMessageKey` 类型 |
-| `m3eui/config` | `defineM3EConfig`、`resolveM3EConfig`、`serializeM3EConfig`、`generateM3EStaticThemeCss` |
+| `m3eui/i18n` | 兼容 RSC 的 `zh-CN`、`en-US`、`ja-JP`、`ar-SA` 词典与 `M3EMessageKey` 类型 |
+| `m3eui/config` | 兼容 RSC 的 `defineM3EConfig`、`resolveM3EConfig`（默认 `colorMode: "system"`）、`serializeM3EConfig`、`generateM3EStaticThemeCss` |
 | `m3eui/primitives` | 透出的 `@base-ui/react` 无头原语 |
 | `m3eui/cli` | CLI 编程接口 |
 | `m3eui/m3e.schema.json` | `m3e.json` JSON Schema |
@@ -93,12 +93,12 @@ npx m3eui doctor
 
 | 分类 | 导出项 |
 | :--- | :--- |
-| **容器与配置** | `M3EProvider`, `CSPProvider`, `useM3E`, `useM3EI18n`, `getM3EInitScript`, `defineM3EConfig`, `resolveM3EConfig`, `serializeM3EConfig`, `generateM3EStaticThemeCss`, `useM3EScalarSpring`, `useM3ECornerSpring`, `usePressHoldState` |
-| **动作与工具栏** | `Button`, `ToggleButton`, `IconButton`, `IconToggleButton`, `SplitButton`, `ButtonGroup`, `FloatingToolbar`, `FABMenu`, `FAB`, `ExtendedFAB` |
-| **表单与选择器** | `Form`, `Fieldset`, `SearchBar`, `OTPField`, `DockedDatePicker`, `DatePickerField`, `DateRangePicker`, `TimePicker`, `TimePickerField`, `TextField`, `TextareaField`, `NumberField`, `Combobox`, `Select`, `Switch`, `Slider`, `Checkbox`, `CheckboxGroup`, `Radio`, `RadioGroup` |
-| **数据展示与表面** | `Collapsible`, `Accordion`, `Carousel`, `DataTable`, `Skeleton`, `AssistChip`, `FilterChip`, `InputChip`, `Avatar`, `Badge`, `Card`, `SegmentedList`, `SegmentedListItem`, `PreviewCard`, `ScrollArea`, `Divider` |
-| **导航** | `NavigationMenu`, `TopAppBar`, `NavigationBar`, `NavigationRail`, `WideNavigationRail`, `NavigationDrawer`, `NavigationSuite`, `Menubar`, `Tabs`, `TabsList`, `Tab`, `TabsPanel` |
-| **浮层与反馈** | `Sheet`, `BottomSheet`, `SideSheet`, `SheetClose`, `Popover`, `PopoverClose`, `DropdownMenu`, `ContextMenu`, `Dialog`, `DialogClose`, `AlertDialog`, `AlertDialogClose`, `Tooltip`, `RichTooltip`, `useM3EToast`, `LinearProgressIndicator`, `CircularProgressIndicator`, `Meter`, `LoadingIndicator`, `ContainedLoadingIndicator`, `WavyProgressIndicator`, `LinearWavyProgressIndicator`, `CircularWavyProgressIndicator`, `MaterialShapeView` |
+| **容器与配置** | `M3EProvider`, `M3EPortal`, `CSPProvider`, `useM3E`, `useM3EI18n`, `useM3EPortalContainer`, `getM3EInitScript`, `defineM3EConfig`, `resolveM3EConfig`, `serializeM3EConfig`, `generateM3EStaticThemeCss`, `useM3EScalarSpring`, `useM3ECornerSpring`, `useM3ECornerSpringRef`, `usePressHoldState` |
+| **动作与工具栏** | `Button`, `ToggleButton`, `IconButton`, `IconToggleButton`, `SplitButton`, `ButtonGroup`, `FloatingToolbar`, `DockedToolbar`, `FABMenu`, `FAB`（`xs`/`sm`/`md`/`lg`，默认 `sm`）, `ExtendedFAB`, `CopyButton` |
+| **表单与选择** | `Form`, `Fieldset`, `TextField`, `TextareaField`, `NumberField`, `OTPField`, `Select`, `MultiSelect`, `Combobox`, `MultiCombobox`, `FileUpload`, `FileUploadDropzone`, `ColorPicker`, `ColorPickerField`, `ColorSwatch`, `DockedDatePicker`, `DatePickerField`, `DateRangePicker`, `DateRangePickerField`, `DatePickerDialog`, `ModalDatePicker`, `DateTimePickerField`, `TimePicker`, `TimePickerField`, `TimePickerDialog`, `ModalTimePicker`（完整支持 `disabled`/`readOnly`/`invalid`）, `Switch`, `Slider`, `Checkbox`, `CheckboxGroup`, `Radio`, `RadioGroup` |
+| **数据展示与表面** | `Card`, `DataTable`, `Skeleton`, `SegmentedList`, `SegmentedListItem`, `List`, `ListItem`, `Chip`, `AssistChip`, `FilterChip`, `InputChip`, `SuggestionChip`, `Avatar`, `AvatarGroup`, `Badge`, `Carousel`, `Empty`, `Kbd`, `Snippet`, `Collapsible`, `Accordion`, `PreviewCard`, `ScrollArea`, `Divider`, `DragHandle`, `VerticalDragHandle`, `MaterialShapeView` |
+| **导航** | `NavigationSuite`, `NavigationBar`, `NavigationRail`, `WideNavigationRail`, `NavigationDrawer`, `NavigationMenu`, `TopAppBar`, `BottomAppBar`, `AppBarRow`, `SearchBar`, `SearchView`, `CommandPalette`, `Breadcrumb`, `Pagination`, `Menubar`, `Tabs`, `TabsList`, `Tab`, `TabsPanel` |
+| **浮层与反馈** | `Alert`（受控/非受控 `open`）, `Dialog`, `DialogClose`, `AlertDialog`, `AlertDialogClose`, `Sheet`, `BottomSheet`, `SideSheet`, `SheetClose`, `Popover`, `PopoverClose`, `DropdownMenu`, `ContextMenu`, `Tooltip`, `RichTooltip`（键盘触发自动聚焦 `action`）, `useM3EToast`, `PullToRefresh`, `PullToRefreshBox`, `LinearProgressIndicator`, `CircularProgressIndicator`, `Meter`, `LoadingIndicator`, `ContainedLoadingIndicator`, `WavyProgressIndicator`, `LinearWavyProgressIndicator`, `CircularWavyProgressIndicator` |
 
 ## 本地开发
 

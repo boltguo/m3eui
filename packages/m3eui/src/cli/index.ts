@@ -8,32 +8,70 @@ import {
 } from "node:fs";
 import { dirname, extname, join, resolve } from "node:path";
 import {
+  type M3EColorModeSetting,
   type M3EConfig,
+  type M3EDirectionSetting,
   generateM3EStaticThemeCss,
   resolveM3EConfig,
   serializeM3EConfig,
 } from "../config.js";
 import { M3E_BUILT_IN_LOCALES, enUSMessages } from "../i18n/index.js";
 import {
+  type ColorPlatform,
   type ColorSchemeVariant,
-  type ColorSpecVersion,
   M3E_COLOR_SCHEME_VARIANTS,
-  M3E_COLOR_SPEC_VERSIONS,
   type MotionSchemeName,
 } from "../tokens/index.js";
+import { M3E_PACKAGE_VERSION } from "../version.js";
 
 export const VALID_SCHEME_VARIANTS: readonly ColorSchemeVariant[] =
   M3E_COLOR_SCHEME_VARIANTS;
-
-export const VALID_SPEC_VERSIONS: readonly ColorSpecVersion[] =
-  M3E_COLOR_SPEC_VERSIONS;
 
 export const VALID_MOTION_SCHEMES: readonly MotionSchemeName[] = [
   "expressive",
   "standard",
 ];
 
+const VALID_STYLES: readonly NonNullable<M3EConfig["style"]>[] = [
+  "expressive",
+  "standard",
+];
+const VALID_PLATFORMS: readonly ColorPlatform[] = ["phone", "watch"];
+const VALID_COLOR_MODES: readonly M3EColorModeSetting[] = [
+  "light",
+  "dark",
+  "system",
+];
+const VALID_DIRECTIONS: readonly M3EDirectionSetting[] = [
+  "auto",
+  "ltr",
+  "rtl",
+];
+
+const ALLOWED_ROOT_KEYS = new Set([
+  "$schema",
+  "style",
+  "theme",
+  "i18n",
+  "csp",
+  "css",
+  "aliases",
+]);
+const ALLOWED_THEME_KEYS = new Set([
+  "seed",
+  "schemeVariant",
+  "platform",
+  "colorMode",
+  "contrastLevel",
+  "motionScheme",
+]);
+const ALLOWED_I18N_KEYS = new Set(["locale", "direction", "messages"]);
+const ALLOWED_CSP_KEYS = new Set(["nonce", "disableStyleElements"]);
+const ALLOWED_CSS_KEYS = new Set(["output"]);
+const ALLOWED_ALIASES_KEYS = new Set(["components", "tokens", "i18n"]);
+
 const HEX_SEED_RE = /^#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
+const BCP47_TAG_RE = /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{1,8})*$/;
 const CJK_RE = /[\u3400-\u9FFF\uF900-\uFAFF]/;
 
 export interface DoctorCheckResult {
@@ -49,16 +87,242 @@ export interface InitProjectOptions {
   readonly cwd: string;
   readonly seedHex?: string;
   readonly schemeVariant?: ColorSchemeVariant;
-  readonly specVersion?: ColorSpecVersion;
   readonly locale?: string;
   readonly cssOutput?: string;
   readonly schemaUrl?: string;
   readonly force?: boolean;
 }
 
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isValidBcp47Tag(locale: unknown): locale is string {
+  if (typeof locale !== "string") return false;
+  const cleaned = locale.trim().replace(/_/g, "-");
+  if (!BCP47_TAG_RE.test(cleaned)) return false;
+  try {
+    return Intl.getCanonicalLocales(cleaned).length > 0;
+  } catch {
+    return false;
+  }
+}
+
+function collectSchemaStructuralErrors(raw: Record<string, unknown>): string[] {
+  const errors: string[] = [];
+
+  for (const key of Object.keys(raw)) {
+    if (!ALLOWED_ROOT_KEYS.has(key)) {
+      errors.push(`Unknown top-level key "${key}"`);
+    }
+  }
+
+  if (raw.$schema !== undefined && typeof raw.$schema !== "string") {
+    errors.push(`"$schema" must be a string`);
+  }
+  if (
+    raw.style !== undefined &&
+    (typeof raw.style !== "string" ||
+      !VALID_STYLES.includes(raw.style as NonNullable<M3EConfig["style"]>))
+  ) {
+    errors.push(
+      `Invalid "style": "${String(raw.style)}" (expected "expressive" or "standard")`,
+    );
+  }
+
+  if (raw.theme !== undefined) {
+    if (!isPlainRecord(raw.theme)) {
+      errors.push(`"theme" must be an object`);
+    } else {
+      for (const k of Object.keys(raw.theme)) {
+        if (!ALLOWED_THEME_KEYS.has(k)) {
+          errors.push(`Unknown key "theme.${k}"`);
+        }
+      }
+      if (
+        raw.theme.platform !== undefined &&
+        (typeof raw.theme.platform !== "string" ||
+          !VALID_PLATFORMS.includes(raw.theme.platform as ColorPlatform))
+      ) {
+        errors.push(
+          `Invalid "theme.platform": "${String(raw.theme.platform)}" (expected "phone" or "watch")`,
+        );
+      }
+      if (
+        raw.theme.colorMode !== undefined &&
+        (typeof raw.theme.colorMode !== "string" ||
+          !VALID_COLOR_MODES.includes(
+            raw.theme.colorMode as M3EColorModeSetting,
+          ))
+      ) {
+        errors.push(
+          `Invalid "theme.colorMode": "${String(raw.theme.colorMode)}" (expected "light", "dark", or "system")`,
+        );
+      }
+    }
+  }
+
+  if (raw.i18n !== undefined) {
+    if (!isPlainRecord(raw.i18n)) {
+      errors.push(`"i18n" must be an object`);
+    } else {
+      for (const k of Object.keys(raw.i18n)) {
+        if (!ALLOWED_I18N_KEYS.has(k)) {
+          errors.push(`Unknown key "i18n.${k}"`);
+        }
+      }
+      if (
+        raw.i18n.direction !== undefined &&
+        (typeof raw.i18n.direction !== "string" ||
+          !VALID_DIRECTIONS.includes(
+            raw.i18n.direction as M3EDirectionSetting,
+          ))
+      ) {
+        errors.push(
+          `Invalid "i18n.direction": "${String(raw.i18n.direction)}" (expected "auto", "ltr", or "rtl")`,
+        );
+      }
+      if (raw.i18n.messages !== undefined) {
+        if (!isPlainRecord(raw.i18n.messages)) {
+          errors.push(`"i18n.messages" must be a string map`);
+        } else {
+          for (const [mk, mv] of Object.entries(raw.i18n.messages)) {
+            if (typeof mv !== "string") {
+              errors.push(`"i18n.messages.${mk}" must be a string`);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (raw.csp !== undefined) {
+    if (!isPlainRecord(raw.csp)) {
+      errors.push(`"csp" must be an object`);
+    } else {
+      for (const k of Object.keys(raw.csp)) {
+        if (!ALLOWED_CSP_KEYS.has(k)) {
+          errors.push(`Unknown key "csp.${k}"`);
+        }
+      }
+      if (raw.csp.nonce !== undefined && typeof raw.csp.nonce !== "string") {
+        errors.push(`"csp.nonce" must be a string`);
+      }
+      if (
+        raw.csp.disableStyleElements !== undefined &&
+        typeof raw.csp.disableStyleElements !== "boolean"
+      ) {
+        errors.push(`"csp.disableStyleElements" must be a boolean`);
+      }
+    }
+  }
+
+  if (raw.css !== undefined) {
+    if (!isPlainRecord(raw.css)) {
+      errors.push(`"css" must be an object`);
+    } else {
+      for (const k of Object.keys(raw.css)) {
+        if (!ALLOWED_CSS_KEYS.has(k)) {
+          errors.push(`Unknown key "css.${k}"`);
+        }
+      }
+      if (
+        raw.css.output !== undefined &&
+        (typeof raw.css.output !== "string" || raw.css.output.trim().length === 0)
+      ) {
+        errors.push(`"css.output" must be a non-empty string`);
+      }
+    }
+  }
+
+  if (raw.aliases !== undefined) {
+    if (!isPlainRecord(raw.aliases)) {
+      errors.push(`"aliases" must be an object`);
+    } else {
+      for (const k of Object.keys(raw.aliases)) {
+        if (!ALLOWED_ALIASES_KEYS.has(k)) {
+          errors.push(`Unknown key "aliases.${k}"`);
+        }
+        if (
+          raw.aliases[k] !== undefined &&
+          typeof raw.aliases[k] !== "string"
+        ) {
+          errors.push(`"aliases.${k}" must be a string`);
+        }
+      }
+    }
+  }
+
+  return errors;
+}
+
+function assertValidM3EConfig(config: M3EConfig, sourceLabel: string): void {
+  const raw = config as unknown as Record<string, unknown>;
+  const issues = collectSchemaStructuralErrors(raw);
+
+  const seed = isPlainRecord(raw.theme) ? raw.theme.seed : undefined;
+  if (seed !== undefined && (typeof seed !== "string" || !HEX_SEED_RE.test(seed))) {
+    issues.push(
+      `Invalid "theme.seed": "${String(seed)}" (expected #RRGGBB or #RRGGBBAA)`,
+    );
+  }
+
+  const variant = isPlainRecord(raw.theme) ? raw.theme.schemeVariant : undefined;
+  if (
+    variant !== undefined &&
+    (typeof variant !== "string" ||
+      !VALID_SCHEME_VARIANTS.includes(variant as ColorSchemeVariant))
+  ) {
+    issues.push(
+      `Invalid "theme.schemeVariant": "${String(variant)}" (expected one of ${VALID_SCHEME_VARIANTS.join(", ")})`,
+    );
+  }
+
+  const contrast = isPlainRecord(raw.theme) ? raw.theme.contrastLevel : undefined;
+  if (
+    contrast !== undefined &&
+    (typeof contrast !== "number" ||
+      !Number.isFinite(contrast) ||
+      contrast < -1 ||
+      contrast > 1)
+  ) {
+    issues.push(
+      `Invalid "theme.contrastLevel": ${String(contrast)} (expected number in [-1, 1])`,
+    );
+  }
+
+  const motion = isPlainRecord(raw.theme) ? raw.theme.motionScheme : undefined;
+  if (
+    motion !== undefined &&
+    (typeof motion !== "string" ||
+      !VALID_MOTION_SCHEMES.includes(motion as MotionSchemeName))
+  ) {
+    issues.push(
+      `Invalid "theme.motionScheme": "${String(motion)}" (expected "expressive" or "standard")`,
+    );
+  }
+
+  const locale = isPlainRecord(raw.i18n) ? raw.i18n.locale : undefined;
+  if (locale !== undefined && !isValidBcp47Tag(locale)) {
+    issues.push(
+      `Invalid "i18n.locale": "${String(locale)}" (expected valid BCP 47 tag)`,
+    );
+  }
+
+  if (issues.length > 0) {
+    throw new Error(`Invalid configuration in ${sourceLabel}: ${issues.join("; ")}`);
+  }
+}
+
 export function loadM3EConfigFile(configFilePath: string): M3EConfig {
   const raw = readFileSync(configFilePath, "utf8");
-  return JSON.parse(raw) as M3EConfig;
+  const parsed: unknown = JSON.parse(raw);
+  if (!isPlainRecord(parsed)) {
+    throw new Error(
+      `Invalid m3e.json at ${configFilePath}: root value must be a JSON object.`,
+    );
+  }
+  return parsed as M3EConfig;
 }
 
 export function initM3EProject(options: InitProjectOptions): {
@@ -72,13 +336,38 @@ export function initM3EProject(options: InitProjectOptions): {
     );
   }
 
+  const seedHex = options.seedHex ?? "#6750A4";
+  if (!HEX_SEED_RE.test(seedHex)) {
+    throw new Error(
+      `Invalid --seed "${seedHex}" (expected #RRGGBB or #RRGGBBAA).`,
+    );
+  }
+
+  const schemeVariant = options.schemeVariant ?? "expressive";
+  if (!VALID_SCHEME_VARIANTS.includes(schemeVariant)) {
+    throw new Error(
+      `Invalid --variant "${String(schemeVariant)}" (expected one of ${VALID_SCHEME_VARIANTS.join(", ")}).`,
+    );
+  }
+
+  const locale = options.locale ?? "en-US";
+  if (!isValidBcp47Tag(locale)) {
+    throw new Error(
+      `Invalid --locale "${locale}" (expected valid BCP 47 tag such as en-US or zh-CN).`,
+    );
+  }
+
+  const cssOutput = options.cssOutput ?? "src/styles/m3e-theme.css";
+  if (typeof cssOutput !== "string" || cssOutput.trim().length === 0) {
+    throw new Error(`Invalid --output (expected non-empty file path).`);
+  }
+
   const jsonContent = serializeM3EConfig({
     schemaUrl: options.schemaUrl,
-    seedHex: options.seedHex ?? "#6750A4",
-    schemeVariant: options.schemeVariant ?? "expressive",
-    specVersion: options.specVersion ?? "2025",
-    locale: options.locale ?? "zh-CN",
-    cssOutput: options.cssOutput ?? "src/styles/m3e-theme.css",
+    seedHex,
+    schemeVariant,
+    locale,
+    cssOutput,
   });
 
   writeFileSync(configPath, jsonContent, "utf8");
@@ -104,6 +393,7 @@ export function syncM3EThemeCss(
   }
 
   const config = loadM3EConfigFile(configPath);
+  assertValidM3EConfig(config, configPath);
   const resolved = resolveM3EConfig(config);
   const cssContent = generateM3EStaticThemeCss(config);
   const cssPath = resolve(dirname(configPath), resolved.cssOutput);
@@ -119,6 +409,14 @@ export function scaffoldM3ELocalePack(
   localeCode: string,
   outputRelPath?: string,
 ): string {
+  if (!isValidBcp47Tag(localeCode)) {
+    throw new Error(
+      `Invalid BCP 47 locale tag "${localeCode}" (expected e.g. fr-FR, de-DE, zh-Hant-TW).`,
+    );
+  }
+  if (outputRelPath !== undefined && outputRelPath.trim().length === 0) {
+    throw new Error(`Invalid --out path: expected a non-empty file path.`);
+  }
   const targetRel = outputRelPath ?? `src/i18n/${localeCode}.ts`;
   const targetAbs = resolve(cwd, targetRel);
   const safeIdent =
@@ -213,6 +511,7 @@ function scanHardcodedUiLiterals(componentsDir: string): string[] {
   }
   return offenders;
 }
+
 function scanHardcodedCjkFiles(dir: string, excludedSegment: string): string[] {
   const offenders: string[] = [];
   if (!existsSync(dir)) return offenders;
@@ -271,18 +570,36 @@ export function runM3EDoctor(
     return { ok: false, checks };
   }
 
-  const seed = config.theme?.seed ?? "#6750A4";
-  const seedValid = HEX_SEED_RE.test(seed);
+  const rawRecord = config as unknown as Record<string, unknown>;
+  const structuralIssues = collectSchemaStructuralErrors(rawRecord);
+  checks.push({
+    name: "config-schema",
+    passed: structuralIssues.length === 0,
+    detail:
+      structuralIssues.length === 0
+        ? "Configuration structure matches m3e.schema.json"
+        : structuralIssues.join("; "),
+  });
+
+  const themeRecord = isPlainRecord(rawRecord.theme)
+    ? rawRecord.theme
+    : undefined;
+  const i18nRecord = isPlainRecord(rawRecord.i18n) ? rawRecord.i18n : undefined;
+
+  const seed = themeRecord?.seed ?? "#6750A4";
+  const seedValid = typeof seed === "string" && HEX_SEED_RE.test(seed);
   checks.push({
     name: "theme-seed-hex",
     passed: seedValid,
     detail: seedValid
       ? `Valid HCT seed ${seed}`
-      : `Invalid hex seed "${seed}" (expected #RRGGBB or #RRGGBBAA)`,
+      : `Invalid hex seed "${String(seed)}" (expected #RRGGBB or #RRGGBBAA)`,
   });
 
-  const variant = config.theme?.schemeVariant ?? "expressive";
-  const variantValid = VALID_SCHEME_VARIANTS.includes(variant);
+  const variant = themeRecord?.schemeVariant ?? "expressive";
+  const variantValid =
+    typeof variant === "string" &&
+    VALID_SCHEME_VARIANTS.includes(variant as ColorSchemeVariant);
   checks.push({
     name: "theme-scheme-variant",
     passed: variantValid,
@@ -291,19 +608,12 @@ export function runM3EDoctor(
       : `Unsupported schemeVariant "${String(variant)}"`,
   });
 
-  const specVersion = config.theme?.specVersion ?? "2025";
-  const specValid = VALID_SPEC_VERSIONS.includes(specVersion);
-  checks.push({
-    name: "theme-spec-version",
-    passed: specValid,
-    detail: specValid
-      ? `AOSP Monet spec version "${specVersion}" supported`
-      : `Unsupported specVersion "${String(specVersion)}"`,
-  });
-
-  const rawContrast = config.theme?.contrastLevel ?? 0;
+  const rawContrast = themeRecord?.contrastLevel ?? 0;
   const contrastValid =
-    typeof rawContrast === "number" && rawContrast >= -1 && rawContrast <= 1;
+    typeof rawContrast === "number" &&
+    Number.isFinite(rawContrast) &&
+    rawContrast >= -1 &&
+    rawContrast <= 1;
   checks.push({
     name: "theme-contrast-range",
     passed: contrastValid,
@@ -312,8 +622,10 @@ export function runM3EDoctor(
       : `Contrast level ${String(rawContrast)} outside [-1, 1]`,
   });
 
-  const motion = config.theme?.motionScheme ?? "expressive";
-  const motionValid = VALID_MOTION_SCHEMES.includes(motion);
+  const motion = themeRecord?.motionScheme ?? "expressive";
+  const motionValid =
+    typeof motion === "string" &&
+    VALID_MOTION_SCHEMES.includes(motion as MotionSchemeName);
   checks.push({
     name: "theme-motion-scheme",
     passed: motionValid,
@@ -322,13 +634,57 @@ export function runM3EDoctor(
       : `Unsupported motionScheme "${String(motion)}"`,
   });
 
-  const resolved = resolveM3EConfig(config);
+  const rawLocale = i18nRecord?.locale ?? "en-US";
+  const localeTagValid = isValidBcp47Tag(rawLocale);
+  const safeConfig: M3EConfig = {
+    style:
+      rawRecord.style === "standard" || rawRecord.style === "expressive"
+        ? rawRecord.style
+        : undefined,
+    theme: {
+      seed: seedValid ? seed : "#6750A4",
+      schemeVariant: variantValid ? (variant as ColorSchemeVariant) : "expressive",
+      platform:
+        themeRecord?.platform === "watch" || themeRecord?.platform === "phone"
+          ? themeRecord.platform
+          : "phone",
+      colorMode:
+        themeRecord?.colorMode === "light" ||
+        themeRecord?.colorMode === "dark" ||
+        themeRecord?.colorMode === "system"
+          ? themeRecord.colorMode
+          : "system",
+      contrastLevel: contrastValid ? rawContrast : 0,
+      motionScheme: motionValid ? (motion as MotionSchemeName) : "expressive",
+    },
+    i18n: {
+      locale: localeTagValid ? rawLocale : "en-US",
+      direction:
+        i18nRecord?.direction === "ltr" ||
+        i18nRecord?.direction === "rtl" ||
+        i18nRecord?.direction === "auto"
+          ? i18nRecord.direction
+          : "auto",
+    },
+    css: {
+      output:
+        isPlainRecord(rawRecord.css) &&
+        typeof rawRecord.css.output === "string" &&
+        rawRecord.css.output.trim().length > 0
+          ? rawRecord.css.output
+          : "src/styles/m3e-theme.css",
+    },
+  };
+
+  const resolved = resolveM3EConfig(safeConfig);
   const builtInLocaleKeys = Object.keys(M3E_BUILT_IN_LOCALES);
   const isBuiltInLocale = builtInLocaleKeys.includes(resolved.locale);
   checks.push({
     name: "i18n-locale-resolution",
-    passed: Boolean(resolved.locale && resolved.locale.trim().length >= 2),
-    detail: `Locale "${resolved.locale}" (${isBuiltInLocale ? "built-in pack" : "custom/fallback pack"}) -> dir="${resolved.resolvedDirection}"`,
+    passed: localeTagValid,
+    detail: localeTagValid
+      ? `Locale "${resolved.locale}" (${isBuiltInLocale ? "built-in pack" : "custom/fallback pack"}) -> dir="${resolved.resolvedDirection}"`
+      : `Invalid BCP 47 locale "${String(rawLocale)}"`,
   });
 
   const parity = validateBuiltInLocaleParity();
@@ -341,14 +697,21 @@ export function runM3EDoctor(
   const cssPath = resolve(dirname(configPath), resolved.cssOutput);
   if (existsSync(cssPath)) {
     const existingCss = readFileSync(cssPath, "utf8");
-    const expectedCss = generateM3EStaticThemeCss(config);
-    const synced = existingCss === expectedCss;
+    const expectedCss = generateM3EStaticThemeCss(safeConfig);
+    const synced =
+      structuralIssues.length === 0 &&
+      seedValid &&
+      variantValid &&
+      contrastValid &&
+      motionValid &&
+      localeTagValid &&
+      existingCss === expectedCss;
     checks.push({
       name: "static-theme-css-sync",
       passed: synced,
       detail: synced
         ? `Static theme CSS up to date at ${resolved.cssOutput}`
-        : `Static theme CSS at ${resolved.cssOutput} is stale; run "m3e sync"`,
+        : `Static theme CSS at ${resolved.cssOutput} is stale or configuration is invalid; run "m3e sync"`,
     });
   } else {
     checks.push({
@@ -392,12 +755,72 @@ export function runM3EDoctor(
   };
 }
 
-function parseFlagValue(argv: readonly string[], flag: string): string | undefined {
-  const idx = argv.indexOf(flag);
-  if (idx >= 0 && idx + 1 < argv.length) {
-    return argv[idx + 1];
+interface ParsedCliArgs {
+  readonly values: Readonly<Record<string, string>>;
+  readonly booleans: ReadonlySet<string>;
+  readonly positionals: readonly string[];
+}
+
+function parseCliArgs(
+  args: readonly string[],
+  spec: {
+    readonly valueFlags?: readonly string[];
+    readonly booleanFlags?: readonly string[];
+    readonly maxPositionals?: number;
+  },
+): ParsedCliArgs {
+  const valueSet = new Set(spec.valueFlags ?? []);
+  const boolSet = new Set(spec.booleanFlags ?? []);
+  const maxPos = spec.maxPositionals ?? 0;
+
+  const values: Record<string, string> = {};
+  const booleans = new Set<string>();
+  const positionals: string[] = [];
+
+  for (let i = 0; i < args.length; i++) {
+    const token = args[i]!;
+    if (token.startsWith("-")) {
+      const eqIdx = token.indexOf("=");
+      if (eqIdx > 0) {
+        const flagName = token.slice(0, eqIdx);
+        const flagVal = token.slice(eqIdx + 1);
+        if (!valueSet.has(flagName)) {
+          throw new Error(`Unknown or unsupported flag "${flagName}".`);
+        }
+        if (!flagVal) {
+          throw new Error(`Flag "${flagName}" requires a non-empty value.`);
+        }
+        values[flagName] = flagVal;
+        continue;
+      }
+
+      if (boolSet.has(token)) {
+        booleans.add(token);
+        continue;
+      }
+
+      if (valueSet.has(token)) {
+        const next = args[i + 1];
+        if (next === undefined || next.startsWith("-")) {
+          throw new Error(
+            `Flag "${token}" requires a value${next ? `, got "${next}"` : ""}.`,
+          );
+        }
+        values[token] = next;
+        i += 1;
+        continue;
+      }
+
+      throw new Error(`Unknown flag "${token}".`);
+    }
+
+    if (positionals.length >= maxPos) {
+      throw new Error(`Unexpected argument "${token}".`);
+    }
+    positionals.push(token);
   }
-  return undefined;
+
+  return { values, booleans, positionals };
 }
 
 export function runM3ECli(
@@ -413,25 +836,30 @@ export function runM3ECli(
   const error = io.error ?? ((line: string) => console.error(line));
 
   const cmd = argv[0] ?? "help";
+  const rest = argv.slice(1);
 
   try {
+    if (cmd === "--version" || cmd === "-v" || cmd === "version") {
+      log(M3E_PACKAGE_VERSION);
+      return 0;
+    }
+
     if (cmd === "init") {
-      const seedHex = parseFlagValue(argv, "--seed");
-      const schemeVariant = parseFlagValue(
-        argv,
-        "--variant",
-      ) as ColorSchemeVariant | undefined;
-      const locale = parseFlagValue(argv, "--locale");
-      const cssOutput = parseFlagValue(argv, "--output");
-      const force = argv.includes("--force");
+      const parsed = parseCliArgs(rest, {
+        valueFlags: ["--seed", "--variant", "--locale", "--output"],
+        booleanFlags: ["--force"],
+        maxPositionals: 0,
+      });
 
       const result = initM3EProject({
         cwd,
-        seedHex,
-        schemeVariant,
-        locale,
-        cssOutput,
-        force,
+        seedHex: parsed.values["--seed"],
+        schemeVariant: parsed.values["--variant"] as
+          | ColorSchemeVariant
+          | undefined,
+        locale: parsed.values["--locale"],
+        cssOutput: parsed.values["--output"],
+        force: parsed.booleans.has("--force"),
       });
       log(`[m3e] Wrote configuration: ${result.configPath}`);
       log(`[m3e] Synced static theme CSS: ${result.cssPath}`);
@@ -439,47 +867,76 @@ export function runM3ECli(
     }
 
     if (cmd === "sync") {
-      const configArg = parseFlagValue(argv, "--config");
-      const result = syncM3EThemeCss(cwd, configArg);
+      const parsed = parseCliArgs(rest, {
+        valueFlags: ["--config"],
+        maxPositionals: 0,
+      });
+      const result = syncM3EThemeCss(cwd, parsed.values["--config"]);
       log(`[m3e] Synced static theme CSS -> ${result.cssPath}`);
       return 0;
     }
 
     if (cmd === "locale") {
-      if (argv.includes("--list") || !argv[1] || argv[1].startsWith("--")) {
+      const parsed = parseCliArgs(rest, {
+        valueFlags: ["--out"],
+        booleanFlags: ["--list"],
+        maxPositionals: 1,
+      });
+      if (parsed.booleans.has("--list")) {
+        if (parsed.positionals.length > 0 || parsed.values["--out"] !== undefined) {
+          throw new Error(`"--list" cannot be combined with a locale tag or "--out".`);
+        }
         log(
           `[m3e] Built-in locales: ${Object.keys(M3E_BUILT_IN_LOCALES).join(", ")} (${Object.keys(enUSMessages).length} keys each)`,
         );
         return 0;
       }
-      const code = argv[1];
-      const out = parseFlagValue(argv, "--out");
-      const filePath = scaffoldM3ELocalePack(cwd, code, out);
+      const code = parsed.positionals[0];
+      if (!code) {
+        if (parsed.values["--out"] !== undefined) {
+          throw new Error(`Missing locale tag for "--out".`);
+        }
+        log(
+          `[m3e] Built-in locales: ${Object.keys(M3E_BUILT_IN_LOCALES).join(", ")} (${Object.keys(enUSMessages).length} keys each)`,
+        );
+        return 0;
+      }
+      const filePath = scaffoldM3ELocalePack(cwd, code, parsed.values["--out"]);
       log(`[m3e] Scaffolded locale pack "${code}" -> ${filePath}`);
       return 0;
     }
 
     if (cmd === "doctor") {
-      const configArg = parseFlagValue(argv, "--config");
-      const report = runM3EDoctor(cwd, configArg);
+      const parsed = parseCliArgs(rest, {
+        valueFlags: ["--config"],
+        maxPositionals: 0,
+      });
+      const report = runM3EDoctor(cwd, parsed.values["--config"]);
       for (const c of report.checks) {
         log(`${c.passed ? "✓" : "✗"} [${c.name}] ${c.detail}`);
       }
       return report.ok ? 0 : 1;
     }
 
-    log(
-      [
-        "m3eui v0.1.0",
-        "",
-        "Usage:",
-        "  npx m3eui init [--seed #6750A4] [--variant expressive] [--locale zh-CN] [--output src/styles/m3e-theme.css] [--force]",
-        "  npx m3eui sync [--config m3e.json]",
-        "  npx m3eui locale --list | npx m3eui locale <bcp47-tag> [--out src/i18n/<tag>.ts]",
-        "  npx m3eui doctor [--config m3e.json]",
-      ].join("\n"),
+    if (cmd === "help" || cmd === "--help" || cmd === "-h") {
+      log(
+        [
+          `m3eui v${M3E_PACKAGE_VERSION}`,
+          "",
+          "Usage:",
+          "  npx m3eui init [--seed #6750A4] [--variant expressive] [--locale zh-CN] [--output src/styles/m3e-theme.css] [--force]",
+          "  npx m3eui sync [--config m3e.json]",
+          "  npx m3eui locale --list | npx m3eui locale <bcp47-tag> [--out src/i18n/<tag>.ts]",
+          "  npx m3eui doctor [--config m3e.json]",
+        ].join("\n"),
+      );
+      return 0;
+    }
+
+    error(
+      `[m3e] Error: Unknown command "${cmd}". Run "m3eui --help" for usage.`,
     );
-    return cmd === "help" || cmd === "--help" || cmd === "-h" ? 0 : 1;
+    return 1;
   } catch (err) {
     error(`[m3e] Error: ${err instanceof Error ? err.message : String(err)}`);
     return 1;

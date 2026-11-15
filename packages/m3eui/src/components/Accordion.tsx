@@ -1,13 +1,16 @@
+"use client";
+
 import * as React from "react";
 import { Accordion as BaseAccordion } from "@base-ui/react/accordion";
 import {
   ACCORDION_TOKENS,
   resolveAccordionItemCorners,
 } from "../tokens/index.js";
-import { useM3EI18n } from "../context/M3EProvider.js";
+import { useM3EI18n } from "../context/M3EContext.js";
 import {
-  useM3ECornerSpring,
-  useM3EScalarSpring,
+  useM3ECornerSpringRef,
+  useM3EScalarSpringEffect,
+  usePressHoldState,
 } from "../hooks/useM3ESpring.js";
 
 export interface AccordionItemSpec {
@@ -68,6 +71,10 @@ function SegmentedAccordionCard({
   prevOpen,
   nextOpen,
 }: SegmentedAccordionCardProps) {
+  const itemRef = React.useRef<HTMLDivElement | null>(null);
+  const { isPressed, pressHandlers } = usePressHoldState(
+    Boolean(item.disabled),
+  );
   const corners = resolveAccordionItemCorners({
     index,
     count,
@@ -75,30 +82,39 @@ function SegmentedAccordionCard({
     prevOpen,
     nextOpen,
   });
-  const { borderRadiusCss } = useM3ECornerSpring(corners, "fastSpatial");
-  const chevronDeg = useM3EScalarSpring(isOpen ? 180 : 0, "fastSpatial");
-  const extraMargin = useM3EScalarSpring(
-    isOpen ? ACCORDION_TOKENS.expandedMarginBlock : 0,
+  const { ref, borderRadiusCss } = useM3ECornerSpringRef<HTMLDivElement>(
+    corners,
     "fastSpatial",
+    itemRef,
   );
+  const targetMargin = isOpen ? ACCORDION_TOKENS.expandedMarginBlock : 0;
+
+  useM3EScalarSpringEffect(targetMargin, "fastSpatial", (val) => {
+    if (itemRef.current) {
+      itemRef.current.style.marginBlock = `${Math.max(0, val).toFixed(1)}px`;
+    }
+  });
 
   return (
     <BaseAccordion.Item
+      ref={ref}
       value={item.value}
       disabled={item.disabled}
       className="m3e-accordion__item"
       style={{
         borderRadius: borderRadiusCss,
-        marginBlock: `${Math.max(0, extraMargin).toFixed(1)}px`,
+        marginBlock: `${targetMargin}px`,
       }}
     >
       <BaseAccordion.Header className="m3e-accordion__header">
         <BaseAccordion.Trigger
           className="m3e-accordion__trigger"
+          data-pressed={isPressed ? "" : undefined}
           style={{
             minHeight: `${ACCORDION_TOKENS.headerMinHeight}px`,
             paddingInline: `${ACCORDION_TOKENS.paddingInline}px`,
           }}
+          {...pressHandlers}
         >
           {item.leading ? (
             <span className="m3e-accordion__leading" aria-hidden="true">
@@ -113,7 +129,7 @@ function SegmentedAccordionCard({
           </span>
           <span
             className="m3e-accordion__chevron"
-            style={{ rotate: `${chevronDeg.toFixed(1)}deg` }}
+            data-open={isOpen ? "" : undefined}
             aria-hidden="true"
           >
             <AccordionChevronSvg />

@@ -57,6 +57,7 @@
       "import": "./dist/cli/index.js"
     },
     "./m3e.schema.json": "./m3e.schema.json",
+    "./components/_*": null,
     "./components/*": {
       "types": "./dist/components/*.d.ts",
       "import": "./dist/components/*.js"

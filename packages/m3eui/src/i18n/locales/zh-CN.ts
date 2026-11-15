@@ -1,7 +1,13 @@
 import type { M3EMessages } from "../types.js";
 
 export const zhCNMessages: M3EMessages = {
+  "alert.close": "关闭提示",
+
   "badge.overflow": "{max}+",
+  "badge.unreadCount": "{count} 条通知",
+
+  "breadcrumb.ariaLabel": "面包屑",
+  "breadcrumb.more": "显示隐藏的上级路径",
 
   "carousel.roleDescription": "轮播",
   "carousel.slideRoleDescription": "卡片",
@@ -15,6 +21,7 @@ export const zhCNMessages: M3EMessages = {
   "carousel.listLabel": "卡片列表",
 
   "chip.remove": "移除标签",
+  "chip.removeItem": "移除 {label}",
 
   "collapsible.expandAll": "展开全部",
   "collapsible.collapseAll": "收起全部",
@@ -22,7 +29,13 @@ export const zhCNMessages: M3EMessages = {
   "combobox.placeholder": "输入关键词搜索…",
   "combobox.empty": "未找到匹配选项",
   "combobox.clear": "清空所选",
+  "combobox.toggle": "展开或收起选项",
+  "command.ariaLabel": "命令面板",
+  "command.placeholder": "输入命令或搜索跳转…",
+  "command.empty": "未找到匹配的命令或结果",
+  "command.navigateHint": "↑↓ 移动 · ↵ 执行 · Esc 关闭",
   "select.placeholder": "请选择…",
+  "select.clear": "清空所选项",
 
   "dataTable.empty": "暂无匹配的数据记录",
   "dataTable.sortedAscending": "已按{column}升序排列",
@@ -35,13 +48,20 @@ export const zhCNMessages: M3EMessages = {
   "datePicker.selectEndPrompt": " · 请选择结束日期",
   "datePicker.prevMonth": "上个月",
   "datePicker.nextMonth": "下个月",
+  "datePicker.prevYears": "上一年份页",
+  "datePicker.nextYears": "下一年份页",
   "datePicker.selectYear": "选择年份",
   "datePicker.calendarLabel": "{monthYear}日历",
   "datePicker.rangeCalendarLabel": "{monthYear}日期范围日历",
 
   "dialog.close": "关闭对话框",
+  "sheet.ariaLabel": "抽屉面板",
   "sheet.close": "关闭抽屉",
   "toast.close": "关闭通知",
+  "toast.viewportLabel": "通知",
+
+  "empty.title": "暂无内容",
+  "empty.description": "当前条件下没有可显示的记录，你可以调整筛选或创建新内容。",
 
   "fabMenu.triggerOpen": "新建快捷操作",
   "fabMenu.triggerClose": "关闭快捷菜单",
@@ -71,12 +91,19 @@ export const zhCNMessages: M3EMessages = {
   "numberField.increment": "增大数值",
   "otpField.digitLabel": "第 {index} 位验证码",
 
+  "pagination.ariaLabel": "分页",
+  "pagination.previous": "上一页",
+  "pagination.next": "下一页",
+  "pagination.page": "第 {page} 页",
+  "pagination.summary": "第 {start}–{end} 条，共 {total} 条",
+
   "searchBar.placeholder": "搜索…",
   "searchBar.ariaLabel": "全局搜索",
   "searchBar.empty": "未找到匹配的搜索建议",
   "searchBar.submit": "执行搜索",
   "searchBar.clear": "清空搜索词",
 
+  "slider.ariaLabel": "滑块",
   "slider.rangeStart": "{label} (起点)",
   "slider.rangeEnd": "{label} (终点)",
 
@@ -101,6 +128,58 @@ export const zhCNMessages: M3EMessages = {
   "timePicker.minuteDial": "分钟表盘",
   "timePicker.am": "上午",
   "timePicker.pm": "下午",
+  "timePicker.confirm": "确定",
+  "timePicker.cancel": "取消",
 
   "topAppBar.actionsLabel": "应用栏快捷操作",
+  "topAppBar.moreActions": "更多操作",
+  "bottomAppBar.ariaLabel": "底部应用栏",
+  "dragHandle.ariaLabel": "调整分栏大小",
+  "pullToRefresh.pulling": "下拉刷新",
+  "pullToRefresh.release": "释放立即刷新",
+  "pullToRefresh.refreshing": "正在刷新",
+
+  "dockedToolbar.ariaLabel": "底部停靠工具栏",
+  "searchView.back": "返回",
+  "searchView.recentHeading": "最近搜索",
+  "searchView.clearRecent": "清空历史",
+  "searchView.suggestionsHeading": "搜索建议",
+
+  "select.selectedCount": "已选 {count} 项",
+
+  "datePicker.switchToInput": "切换为文本日期输入",
+  "datePicker.switchToCalendar": "切换为日历网格选择",
+  "datePicker.confirm": "确定",
+  "datePicker.cancel": "取消",
+  "datePicker.dateInputLabel": "日期 (YYYY-MM-DD)",
+  "datePicker.dateInputPlaceholder": "YYYY-MM-DD",
+
+  "dataTable.expandColumn": "详情",
+  "dataTable.expandRow": "展开第 {index} 行详情",
+  "dataTable.collapseRow": "收起第 {index} 行详情",
+
+  "avatarGroup.overflowLabel": "其余 {count} 位成员",
+
+  "fileUpload.dropPrompt": "将文件拖放到此处，或",
+  "fileUpload.browseButton": "浏览选择文件",
+  "fileUpload.dropHint": "支持点击选择或拖拽上传",
+  "fileUpload.removeFile": "移除文件 {name}",
+  "fileUpload.errorMaxSize": "{name} 超出大小限制 ({max})",
+  "fileUpload.errorMaxFiles": "最多允许上传 {max} 个文件",
+  "fileUpload.errorFileType": "{name} 文件格式不受支持",
+  "fileUpload.uploading": "上传中",
+  "fileUpload.completed": "已完成",
+
+  "copyButton.copy": "复制到剪贴板",
+  "copyButton.copied": "已复制",
+  "copyButton.error": "复制失败",
+
+  "colorPicker.ariaLabel": "颜色选择器",
+  "colorPicker.hexLabel": "HEX 色值",
+  "colorPicker.hue": "色相 (H)",
+  "colorPicker.chroma": "色度 (C)",
+  "colorPicker.tone": "明度 (T)",
+  "colorPicker.swatchesLabel": "预设色板",
+  "colorPicker.derivedTones": "HCT 派生色阶",
+  "colorPicker.toneStop": "色阶 {tone} {hex}",
 };

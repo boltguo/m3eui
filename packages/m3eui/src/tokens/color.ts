@@ -2,6 +2,8 @@ import {
   Blend,
   Cam16,
   Contrast,
+  ContrastCurve,
+  DynamicColor,
   DynamicScheme,
   Hct,
   MaterialDynamicColors,
@@ -16,7 +18,6 @@ import {
   SchemeRainbow,
   SchemeTonalSpot,
   SchemeVibrant,
-  type SpecVersion,
   TonalPalette,
   argbFromHex,
   hexFromArgb,
@@ -62,8 +63,6 @@ export const M3E_COLOR_SCHEME_VARIANTS = [
 
 export type ColorSchemeVariant = (typeof M3E_COLOR_SCHEME_VARIANTS)[number];
 
-export const M3E_COLOR_SPEC_VERSIONS = ["2025", "2021", "2026"] as const;
-export type ColorSpecVersion = SpecVersion;
 export type ColorPlatform = Platform;
 
 export interface M3ESemanticColorRoles {
@@ -100,6 +99,14 @@ export interface M3ESemanticColorRoles {
   readonly onError: string;
   readonly errorContainer: string;
   readonly onErrorContainer: string;
+  readonly success: string;
+  readonly onSuccess: string;
+  readonly successContainer: string;
+  readonly onSuccessContainer: string;
+  readonly warning: string;
+  readonly onWarning: string;
+  readonly warningContainer: string;
+  readonly onWarningContainer: string;
   readonly background: string;
   readonly onBackground: string;
   readonly surface: string;
@@ -128,7 +135,6 @@ export interface M3EThemeTokens {
   readonly seedHex: string;
   readonly variant: ColorSchemeVariant;
   readonly contrastLevel: number;
-  readonly specVersion: ColorSpecVersion;
   readonly platform: ColorPlatform;
   readonly light: M3ESemanticColorRoles;
   readonly dark: M3ESemanticColorRoles;
@@ -143,72 +149,188 @@ export const M3E_SEED_PRESETS = [
   { name: "Amber Spark", hex: "#D97706" },
 ] as const;
 
+const MDC = new MaterialDynamicColors();
+const SUCCESS_ANCHOR_ARGB = 0xff1b6d3d;
+const WARNING_ANCHOR_ARGB = 0xff7d5800;
+
 function buildDynamicScheme(
   hct: Hct,
   variant: ColorSchemeVariant,
   isDark: boolean,
   contrastLevel: number,
-  specVersion: ColorSpecVersion,
   platform: ColorPlatform,
 ): DynamicScheme {
   switch (variant) {
     case "expressive":
-      return new SchemeExpressive(hct, isDark, contrastLevel, specVersion, platform);
+      return new SchemeExpressive(hct, isDark, contrastLevel, "2025", platform);
     case "vibrant":
-      return new SchemeVibrant(hct, isDark, contrastLevel, specVersion, platform);
+      return new SchemeVibrant(hct, isDark, contrastLevel, "2025", platform);
     case "neutral":
-      return new SchemeNeutral(hct, isDark, contrastLevel, specVersion, platform);
+      return new SchemeNeutral(hct, isDark, contrastLevel, "2025", platform);
     case "fidelity":
-      return new SchemeFidelity(hct, isDark, contrastLevel, specVersion, platform);
+      return new SchemeFidelity(hct, isDark, contrastLevel, "2025", platform);
     case "content":
-      return new SchemeContent(hct, isDark, contrastLevel, specVersion, platform);
+      return new SchemeContent(hct, isDark, contrastLevel, "2025", platform);
     case "monochrome":
-      return new SchemeMonochrome(hct, isDark, contrastLevel, specVersion, platform);
+      return new SchemeMonochrome(hct, isDark, contrastLevel, "2025", platform);
     case "rainbow":
-      return new SchemeRainbow(hct, isDark, contrastLevel, specVersion, platform);
+      return new SchemeRainbow(hct, isDark, contrastLevel, "2025", platform);
     case "fruitSalad":
-      return new SchemeFruitSalad(hct, isDark, contrastLevel, specVersion, platform);
+      return new SchemeFruitSalad(hct, isDark, contrastLevel, "2025", platform);
     case "tonalSpot":
     default:
-      return new SchemeTonalSpot(hct, isDark, contrastLevel, specVersion, platform);
+      return new SchemeTonalSpot(hct, isDark, contrastLevel, "2025", platform);
   }
 }
 
-function extractRoles(scheme: DynamicScheme): M3ESemanticColorRoles {
+function resolveDimArgb(
+  scheme: DynamicScheme,
+  palette: TonalPalette,
+  baseArgb: number,
+  rawDimArgb: number,
+): number {
+  if (scheme.specVersion !== "2021" || scheme.isDark) {
+    return rawDimArgb;
+  }
+  const maxDimTone = Math.max(0, Hct.fromInt(baseArgb).tone - 5);
+  const rawDimTone = Hct.fromInt(rawDimArgb).tone;
+  if (rawDimTone <= maxDimTone + 0.05) {
+    return rawDimArgb;
+  }
+  return palette.tone(maxDimTone);
+}
+
+interface SemanticExtensionRoles {
+  readonly role: string;
+  readonly onRole: string;
+  readonly container: string;
+  readonly onContainer: string;
+}
+
+function buildSemanticExtensionPalette(
+  anchorArgb: number,
+  seedArgb: number,
+  seedChroma: number,
+  variant: ColorSchemeVariant,
+): TonalPalette {
+  const harmonizedArgb =
+    seedChroma >= 5 && variant !== "monochrome"
+      ? Blend.harmonize(anchorArgb, seedArgb)
+      : anchorArgb;
+  const hct = Hct.fromInt(harmonizedArgb);
+  return TonalPalette.fromHueAndChroma(hct.hue, Math.max(42, hct.chroma));
+}
+
+function evaluateSemanticExtensionRoles(
+  name: string,
+  palette: TonalPalette,
+  scheme: DynamicScheme,
+): SemanticExtensionRoles {
+  const roleColor = DynamicColor.fromPalette({
+    name,
+    palette: () => palette,
+    tone: (s) => (s.isDark ? 80 : 40),
+    isBackground: true,
+    background: (s) => MDC.highestSurface(s),
+    contrastCurve: () => new ContrastCurve(3, 4.5, 7, 7),
+  });
+  const onRoleColor = DynamicColor.fromPalette({
+    name: `on_${name}`,
+    palette: () => palette,
+    tone: (s) => (s.isDark ? 20 : 100),
+    background: () => roleColor,
+    contrastCurve: () => new ContrastCurve(4.5, 7, 11, 21),
+  });
+  const containerColor = DynamicColor.fromPalette({
+    name: `${name}_container`,
+    palette: () => palette,
+    tone: (s) => (s.isDark ? 30 : 90),
+    isBackground: true,
+    background: (s) => MDC.highestSurface(s),
+    contrastCurve: () => new ContrastCurve(1, 1, 3, 4.5),
+  });
+  const onContainerColor = DynamicColor.fromPalette({
+    name: `on_${name}_container`,
+    palette: () => palette,
+    tone: (s) => (s.isDark ? 90 : 30),
+    background: () => containerColor,
+    contrastCurve: () => new ContrastCurve(3, 4.5, 7, 11),
+  });
+
   return {
-    primary: hexFromArgb(scheme.primary),
-    primaryDim: hexFromArgb(scheme.primaryDim),
+    role: hexFromArgb(roleColor.getArgb(scheme)),
+    onRole: hexFromArgb(onRoleColor.getArgb(scheme)),
+    container: hexFromArgb(containerColor.getArgb(scheme)),
+    onContainer: hexFromArgb(onContainerColor.getArgb(scheme)),
+  };
+}
+
+function extractRoles(
+  scheme: DynamicScheme,
+  fixedScheme: DynamicScheme,
+  successExt: SemanticExtensionRoles,
+  warningExt: SemanticExtensionRoles,
+): M3ESemanticColorRoles {
+  const primaryArgb = scheme.primary;
+  const secondaryArgb = scheme.secondary;
+  const tertiaryArgb = scheme.tertiary;
+  const errorArgb = scheme.error;
+
+  return {
+    primary: hexFromArgb(primaryArgb),
+    primaryDim: hexFromArgb(
+      resolveDimArgb(scheme, scheme.primaryPalette, primaryArgb, scheme.primaryDim),
+    ),
     onPrimary: hexFromArgb(scheme.onPrimary),
     primaryContainer: hexFromArgb(scheme.primaryContainer),
     onPrimaryContainer: hexFromArgb(scheme.onPrimaryContainer),
     inversePrimary: hexFromArgb(scheme.inversePrimary),
-    primaryFixed: hexFromArgb(scheme.primaryFixed),
-    primaryFixedDim: hexFromArgb(scheme.primaryFixedDim),
-    onPrimaryFixed: hexFromArgb(scheme.onPrimaryFixed),
-    onPrimaryFixedVariant: hexFromArgb(scheme.onPrimaryFixedVariant),
-    secondary: hexFromArgb(scheme.secondary),
-    secondaryDim: hexFromArgb(scheme.secondaryDim),
+    primaryFixed: hexFromArgb(fixedScheme.primaryFixed),
+    primaryFixedDim: hexFromArgb(fixedScheme.primaryFixedDim),
+    onPrimaryFixed: hexFromArgb(fixedScheme.onPrimaryFixed),
+    onPrimaryFixedVariant: hexFromArgb(fixedScheme.onPrimaryFixedVariant),
+    secondary: hexFromArgb(secondaryArgb),
+    secondaryDim: hexFromArgb(
+      resolveDimArgb(
+        scheme,
+        scheme.secondaryPalette,
+        secondaryArgb,
+        scheme.secondaryDim,
+      ),
+    ),
     onSecondary: hexFromArgb(scheme.onSecondary),
     secondaryContainer: hexFromArgb(scheme.secondaryContainer),
     onSecondaryContainer: hexFromArgb(scheme.onSecondaryContainer),
-    secondaryFixed: hexFromArgb(scheme.secondaryFixed),
-    secondaryFixedDim: hexFromArgb(scheme.secondaryFixedDim),
-    onSecondaryFixed: hexFromArgb(scheme.onSecondaryFixed),
-    onSecondaryFixedVariant: hexFromArgb(scheme.onSecondaryFixedVariant),
-    tertiary: hexFromArgb(scheme.tertiary),
-    tertiaryDim: hexFromArgb(scheme.tertiaryDim),
+    secondaryFixed: hexFromArgb(fixedScheme.secondaryFixed),
+    secondaryFixedDim: hexFromArgb(fixedScheme.secondaryFixedDim),
+    onSecondaryFixed: hexFromArgb(fixedScheme.onSecondaryFixed),
+    onSecondaryFixedVariant: hexFromArgb(fixedScheme.onSecondaryFixedVariant),
+    tertiary: hexFromArgb(tertiaryArgb),
+    tertiaryDim: hexFromArgb(
+      resolveDimArgb(scheme, scheme.tertiaryPalette, tertiaryArgb, scheme.tertiaryDim),
+    ),
     onTertiary: hexFromArgb(scheme.onTertiary),
     tertiaryContainer: hexFromArgb(scheme.tertiaryContainer),
     onTertiaryContainer: hexFromArgb(scheme.onTertiaryContainer),
-    tertiaryFixed: hexFromArgb(scheme.tertiaryFixed),
-    tertiaryFixedDim: hexFromArgb(scheme.tertiaryFixedDim),
-    onTertiaryFixed: hexFromArgb(scheme.onTertiaryFixed),
-    onTertiaryFixedVariant: hexFromArgb(scheme.onTertiaryFixedVariant),
-    error: hexFromArgb(scheme.error),
-    errorDim: hexFromArgb(scheme.errorDim),
+    tertiaryFixed: hexFromArgb(fixedScheme.tertiaryFixed),
+    tertiaryFixedDim: hexFromArgb(fixedScheme.tertiaryFixedDim),
+    onTertiaryFixed: hexFromArgb(fixedScheme.onTertiaryFixed),
+    onTertiaryFixedVariant: hexFromArgb(fixedScheme.onTertiaryFixedVariant),
+    error: hexFromArgb(errorArgb),
+    errorDim: hexFromArgb(
+      resolveDimArgb(scheme, scheme.errorPalette, errorArgb, scheme.errorDim),
+    ),
     onError: hexFromArgb(scheme.onError),
     errorContainer: hexFromArgb(scheme.errorContainer),
     onErrorContainer: hexFromArgb(scheme.onErrorContainer),
+    success: successExt.role,
+    onSuccess: successExt.onRole,
+    successContainer: successExt.container,
+    onSuccessContainer: successExt.onContainer,
+    warning: warningExt.role,
+    onWarning: warningExt.onRole,
+    warningContainer: warningExt.container,
+    onWarningContainer: warningExt.onContainer,
     background: hexFromArgb(scheme.background),
     onBackground: hexFromArgb(scheme.onBackground),
     surface: hexFromArgb(scheme.surface),
@@ -241,13 +363,11 @@ export function generateM3EThemeTokens(options?: {
   seedHex?: string;
   variant?: ColorSchemeVariant;
   contrastLevel?: number;
-  specVersion?: ColorSpecVersion;
   platform?: ColorPlatform;
 }): M3EThemeTokens {
   const seedHex = options?.seedHex ?? "#6750A4";
   const variant = options?.variant ?? "expressive";
   const contrastLevel = Math.max(-1, Math.min(1, options?.contrastLevel ?? 0));
-  const specVersion: ColorSpecVersion = options?.specVersion ?? "2025";
   const platform: ColorPlatform = options?.platform ?? "phone";
 
   let argb: number;
@@ -258,11 +378,33 @@ export function generateM3EThemeTokens(options?: {
   }
   const hct = Hct.fromInt(argb);
 
+  const lightScheme = buildDynamicScheme(hct, variant, false, contrastLevel, platform);
+  const darkScheme = buildDynamicScheme(hct, variant, true, contrastLevel, platform);
+
+  const successPalette = buildSemanticExtensionPalette(
+    SUCCESS_ANCHOR_ARGB,
+    argb,
+    hct.chroma,
+    variant,
+  );
+  const warningPalette = buildSemanticExtensionPalette(
+    WARNING_ANCHOR_ARGB,
+    argb,
+    hct.chroma,
+    variant,
+  );
+
   const light = extractRoles(
-    buildDynamicScheme(hct, variant, false, contrastLevel, specVersion, platform),
+    lightScheme,
+    lightScheme,
+    evaluateSemanticExtensionRoles("success", successPalette, lightScheme),
+    evaluateSemanticExtensionRoles("warning", warningPalette, lightScheme),
   );
   const dark = extractRoles(
-    buildDynamicScheme(hct, variant, true, contrastLevel, specVersion, platform),
+    darkScheme,
+    lightScheme,
+    evaluateSemanticExtensionRoles("success", successPalette, darkScheme),
+    evaluateSemanticExtensionRoles("warning", warningPalette, darkScheme),
   );
 
   const cssLightDarkVars: Record<string, string> = {};
@@ -277,7 +419,6 @@ export function generateM3EThemeTokens(options?: {
     seedHex,
     variant,
     contrastLevel,
-    specVersion,
     platform,
     light,
     dark,

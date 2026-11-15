@@ -1,7 +1,15 @@
 import * as React from "react";
 import { Toast as BaseToast } from "@base-ui/react/toast";
 import { SNACKBAR_TOKENS } from "../tokens/index.js";
-import { useM3EI18n } from "../context/M3EProvider.js";
+import { useM3EPortalContainer } from "../context/M3EPortal.js";
+import { useM3E, useM3EI18n } from "../context/M3EContext.js";
+
+export type M3EToastType =
+  | "default"
+  | "info"
+  | "success"
+  | "warning"
+  | "error";
 
 export interface M3EToastData {
   readonly actionLabel?: string;
@@ -17,7 +25,7 @@ export interface ShowM3EToastOptions {
   readonly onAction?: () => void;
   readonly showClose?: boolean;
   readonly timeout?: number;
-  readonly type?: "default" | "success" | "error";
+  readonly type?: M3EToastType;
 }
 
 function CloseGlyph() {
@@ -39,13 +47,41 @@ function CloseGlyph() {
   );
 }
 
+export function showM3EToast(
+  manager: Pick<
+    ReturnType<typeof BaseToast.useToastManager<M3EToastData>>,
+    "add"
+  >,
+  options: ShowM3EToastOptions,
+): string {
+  const resolvedType: M3EToastType = options.type ?? "default";
+  return manager.add({
+    id: options.id,
+    title: options.title,
+    description: options.description,
+    priority: resolvedType === "error" ? "high" : "low",
+    timeout: options.timeout ?? (options.actionLabel ? 10000 : 4000),
+    type: resolvedType,
+    data: {
+      actionLabel: options.actionLabel,
+      onAction: options.onAction,
+      showClose: options.showClose ?? true,
+    },
+  });
+}
+
 export function M3EToastViewportHost(): React.JSX.Element {
+  const { direction } = useM3E();
   const { t } = useM3EI18n();
+  const portalContainer = useM3EPortalContainer();
   const { toasts, close } = BaseToast.useToastManager<M3EToastData>();
+  const swipeDirection: ("down" | "left" | "right")[] =
+    direction === "rtl" ? ["down", "left"] : ["down", "right"];
 
   return (
-    <BaseToast.Portal>
+    <BaseToast.Portal container={portalContainer}>
       <BaseToast.Viewport
+        aria-label={t("toast.viewportLabel")}
         className="m3e-toast__viewport"
         style={{ gap: `${SNACKBAR_TOKENS.viewportGap}px` }}
       >
@@ -55,6 +91,7 @@ export function M3EToastViewportHost(): React.JSX.Element {
             <BaseToast.Root
               key={toast.id}
               toast={toast}
+              swipeDirection={swipeDirection}
               className="m3e-snackbar"
               data-type={toast.type ?? "default"}
               style={{
@@ -108,24 +145,13 @@ export function M3EToastViewportHost(): React.JSX.Element {
   );
 }
 
+export const M3EToastViewport = M3EToastViewportHost;
+
 export function useM3EToast() {
   const manager = BaseToast.useToastManager<M3EToastData>();
 
   const toast = React.useCallback(
-    (options: ShowM3EToastOptions): string => {
-      return manager.add({
-        id: options.id,
-        title: options.title,
-        description: options.description,
-        timeout: options.timeout ?? 4200,
-        type: options.type ?? "default",
-        data: {
-          actionLabel: options.actionLabel,
-          onAction: options.onAction,
-          showClose: options.showClose ?? true,
-        },
-      });
-    },
+    (options: ShowM3EToastOptions): string => showM3EToast(manager, options),
     [manager],
   );
 

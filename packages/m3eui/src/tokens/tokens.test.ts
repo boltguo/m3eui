@@ -12,7 +12,6 @@ import {
   Hct,
   M3E_ALL_SHAPE_NAMES,
   M3E_COLOR_SCHEME_VARIANTS,
-  M3E_COLOR_SPEC_VERSIONS,
   M3E_ELEVATION_TOKENS,
   M3E_STATE_LAYER_TOKENS,
   M3E_TYPOGRAPHY_TOKENS,
@@ -31,12 +30,16 @@ import {
   getShapeMorphPair,
   interpolateMorphCubics,
   resolveAccordionItemCorners,
+  resolveCarouselItemFrame,
+  resolveCarouselKeylineStrategy,
   resolveCarouselLayout,
+  resolveCarouselSnapOffset,
   resolveCircularProgressArcs,
   resolveClockHandGeometry,
   resolveConnectedGroupCorners,
   resolveCrossPlatformSpring,
   resolveDeterminateWaveAmplitude,
+  resolveDragHandleGeometry,
   resolveFabGeometry,
   resolveIconButtonGeometry,
   resolveOtpSlotCorners,
@@ -47,9 +50,23 @@ import {
   resolveSwitchGeometry,
   resolveToggleFabGeometry,
   resolveTopAppBarGeometry,
+  BOTTOM_APP_BAR_TOKENS,
+  CHECKBOX_TOKENS,
+  CHIP_TOKENS,
+  DRAG_HANDLE_TOKENS,
+  EXTENDED_FAB_SPECS,
+  FAB_SIZE_SPECS,
+  PULL_TO_REFRESH_TOKENS,
   SLIDER_SIZE_SPECS,
+  SNACKBAR_TOKENS,
+  TOOLTIP_TOKENS,
+  generateM3ESystemCssVars,
+  generateM3ETypographyCssVars,
+  getMaterialShape,
+  parseShortcutKeys,
   stepSpringSimulation,
   SWITCH_TOKENS,
+  VIBRANT_MENU_TOKENS,
 } from "./index.js";
 
 describe("m3eui/tokens — Motion Physics & Cross-Platform Springs", () => {
@@ -410,7 +427,7 @@ describe("m3eui/tokens — Switch, Slider & Accordion Geometry", () => {
     });
     expect(resolveSliderThumbGeometry(true)).toEqual({
       thumbWidth: 2,
-      trackGap: 5,
+      trackGap: 6,
     });
   });
 
@@ -491,16 +508,36 @@ describe("m3eui/tokens — Carousel, FAB, OTPField, TopAppBar & Progress", () =>
       variant: "large-flexible",
       collapsedFraction: 0,
     });
+    const expandedWithSubtitle = resolveTopAppBarGeometry({
+      variant: "large-flexible",
+      collapsedFraction: 0,
+      hasSubtitle: true,
+    });
+    const mediumWithSubtitle = resolveTopAppBarGeometry({
+      variant: "medium-flexible",
+      collapsedFraction: 0,
+      hasSubtitle: true,
+    });
     const collapsed = resolveTopAppBarGeometry({
       variant: "large-flexible",
       collapsedFraction: 1,
     });
-    expect(expanded.height).toBe(148);
+    expect(expanded.height).toBe(120);
+    expect(expandedWithSubtitle.height).toBe(152);
+    expect(mediumWithSubtitle.height).toBe(136);
     expect(collapsed.height).toBe(64);
     expect(collapsed.isElevated).toBe(true);
 
-    expect(resolveFabGeometry({ size: "lg", isPressed: false }).cornerRadius).toBe(20);
-    expect(resolveFabGeometry({ size: "lg", isPressed: true }).cornerRadius).toBe(14);
+    expect(resolveFabGeometry({ size: "xs", isPressed: false }).cornerRadius).toBe(12);
+    expect(resolveFabGeometry({ size: "xs", isPressed: true }).cornerRadius).toBe(8);
+    expect(resolveFabGeometry({ size: "sm", isPressed: false }).cornerRadius).toBe(16);
+    expect(resolveFabGeometry({ size: "sm", isPressed: true }).cornerRadius).toBe(12);
+    expect(resolveFabGeometry({ size: "md", isPressed: false }).cornerRadius).toBe(20);
+    expect(resolveFabGeometry({ size: "md", isPressed: true }).cornerRadius).toBe(14);
+    expect(resolveFabGeometry({ size: "lg", isPressed: false }).cornerRadius).toBe(28);
+    expect(resolveFabGeometry({ size: "lg", isPressed: true }).cornerRadius).toBe(18);
+    expect(FAB_SIZE_SPECS.lg.iconSize).toBe(36);
+    expect(EXTENDED_FAB_SPECS.lg.iconSize).toBe(32);
 
     const arc50 = resolveCircularProgressArcs({ progress: 0.5, size: 48, strokeWidth: 4.5 });
     expect(arc50.activeDashLength).toBeGreaterThan(0);
@@ -567,58 +604,73 @@ describe("m3eui/tokens — AOSP Compose Material 3 Expressive 1.5.0 Parity", () 
     });
   });
 
-  it("supports all 9 AOSP Monet dynamic color scheme variants, SPEC_2025/2021/2026, and outputs all 53 semantic color roles", () => {
+  it("supports all 9 AOSP Monet dynamic color scheme variants on SPEC_2025 and outputs all 61 semantic color roles", () => {
     expect(M3E_COLOR_SCHEME_VARIANTS.length).toBe(9);
-    expect(M3E_COLOR_SPEC_VERSIONS).toEqual(["2025", "2021", "2026"]);
+    const fixedRoleKeys = [
+      "primaryFixed",
+      "primaryFixedDim",
+      "onPrimaryFixed",
+      "onPrimaryFixedVariant",
+      "secondaryFixed",
+      "secondaryFixedDim",
+      "onSecondaryFixed",
+      "onSecondaryFixedVariant",
+      "tertiaryFixed",
+      "tertiaryFixedDim",
+      "onTertiaryFixed",
+      "onTertiaryFixedVariant",
+    ] as const;
+
     for (const variant of M3E_COLOR_SCHEME_VARIANTS) {
       const theme = generateM3EThemeTokens({ seedHex: "#6750A4", variant });
-      expect(theme.specVersion).toBe("2025");
-      expect(Object.keys(theme.light).length).toBe(53);
-      expect(Object.keys(theme.dark).length).toBe(53);
+      expect(Object.keys(theme.light).length).toBe(61);
+      expect(Object.keys(theme.dark).length).toBe(61);
       expect(theme.light.primaryDim).toMatch(/^#[0-9a-f]{6}$/i);
       expect(theme.light.secondaryDim).toMatch(/^#[0-9a-f]{6}$/i);
       expect(theme.light.tertiaryDim).toMatch(/^#[0-9a-f]{6}$/i);
       expect(theme.light.errorDim).toMatch(/^#[0-9a-f]{6}$/i);
-      expect(theme.light.primaryFixed).toMatch(/^#[0-9a-f]{6}$/i);
-      expect(theme.light.primaryFixedDim).toMatch(/^#[0-9a-f]{6}$/i);
-      expect(theme.light.onPrimaryFixed).toMatch(/^#[0-9a-f]{6}$/i);
-      expect(theme.light.onPrimaryFixedVariant).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(theme.light.success).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(theme.light.onSuccess).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(theme.light.successContainer).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(theme.light.onSuccessContainer).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(theme.light.warning).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(theme.light.onWarning).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(theme.light.warningContainer).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(theme.light.onWarningContainer).toMatch(/^#[0-9a-f]{6}$/i);
       expect(theme.light.surfaceTint).toMatch(/^#[0-9a-f]{6}$/i);
       expect(theme.light.background).toMatch(/^#[0-9a-f]{6}$/i);
       expect(theme.light.onBackground).toMatch(/^#[0-9a-f]{6}$/i);
-      // In AOSP SPEC_2025, Fixed roles keep invariant light/dark tone within <= 5 tone units across all 9 variants
-      // (while Expressive/TonalSpot adjust dark-mode palette chroma slightly to prevent OLED bloom).
-      const lightFixedTone = Hct.fromInt(argbFromHex(theme.light.primaryFixed)).tone;
-      const darkFixedTone = Hct.fromInt(argbFromHex(theme.dark.primaryFixed)).tone;
-      expect(Math.abs(lightFixedTone - darkFixedTone)).toBeLessThanOrEqual(5);
-      expect(theme.light.tertiaryFixed).toBe(theme.dark.tertiaryFixed);
+      for (const fixedKey of fixedRoleKeys) {
+        expect(theme.light[fixedKey]).toBe(theme.dark[fixedKey]);
+      }
     }
 
-    // Verify AOSP SPEC_2025 Expressive preserves source violet hue & high-chroma neutral surfaces vs SPEC_2021
+    const legacy2021 = generateM3EThemeTokens({
+      seedHex: "#6750A4",
+      variant: "tonalSpot",
+      specVersion: "2021",
+    });
+    for (const [baseKey, dimKey] of [
+      ["primary", "primaryDim"],
+      ["secondary", "secondaryDim"],
+      ["tertiary", "tertiaryDim"],
+      ["error", "errorDim"],
+    ] as const) {
+      const baseTone = Hct.fromInt(argbFromHex(legacy2021.light[baseKey])).tone;
+      const dimTone = Hct.fromInt(argbFromHex(legacy2021.light[dimKey])).tone;
+      expect(dimTone).toBeLessThanOrEqual(Math.max(0, baseTone - 4.5));
+    }
+
     const exp2025 = generateM3EThemeTokens({
       seedHex: "#6750A4",
       variant: "expressive",
-      specVersion: "2025",
     });
-    const exp2021 = generateM3EThemeTokens({
-      seedHex: "#6750A4",
-      variant: "expressive",
-      specVersion: "2021",
-    });
-    // In SPEC_2021, Fixed roles share identical palette chroma & tone across light and dark modes
-    expect(exp2021.light.primaryFixed).toBe(exp2021.dark.primaryFixed);
-    expect(exp2021.light.secondaryFixed).toBe(exp2021.dark.secondaryFixed);
-    expect(exp2021.light.tertiaryFixed).toBe(exp2021.dark.tertiaryFixed);
-    expect(exp2025.light.primary).not.toBe(exp2021.light.primary);
-    expect(exp2025.light.surfaceContainer).not.toBe(exp2021.light.surfaceContainer);
     const surf2025Chroma = Hct.fromInt(argbFromHex(exp2025.light.surfaceContainerHigh)).chroma;
-    const surf2021Chroma = Hct.fromInt(argbFromHex(exp2021.light.surfaceContainerHigh)).chroma;
-    expect(surf2025Chroma).toBeGreaterThan(surf2021Chroma);
+    expect(surf2025Chroma).toBeGreaterThan(10);
 
     const watchTheme = generateM3EThemeTokens({
       seedHex: "#6750A4",
       variant: "expressive",
-      specVersion: "2025",
       platform: "watch",
     });
     expect(watchTheme.light.surfaceContainer).not.toBe(exp2025.light.surfaceContainer);
@@ -674,7 +726,141 @@ describe("m3eui/tokens — AOSP Compose Material 3 Expressive 1.5.0 Parity", () 
       fontSize: 14,
       lineHeight: 20,
       iconSize: 20,
-      iconGap: 8,
+      iconGap: 4,
+      outlineWidth: 1,
+    });
+    expect(BUTTON_SIZE_SPECS.lg.outlineWidth).toBe(2);
+    expect(BUTTON_SIZE_SPECS.xl.outlineWidth).toBe(3);
+  });
+
+  it("verifies dynamic shadow color-mix, em typescale tracking, lazy getMaterialShape, parseShortcutKeys, and AOSP micro-tokens", () => {
+    const elevVars = generateM3ESystemCssVars();
+    expect(elevVars["--m3e-elevation-level1"]).toContain("var(--m3e-color-shadow)");
+    expect(elevVars["--m3e-state-pressed-opacity"]).toBe("10%");
+    expect(elevVars["--m3e-state-press-opacity"]).toBe("var(--m3e-state-pressed-opacity)");
+
+    const typoVars = generateM3ETypographyCssVars();
+    expect(typoVars["--m3e-typescale-label-large-tracking"]).toMatch(/em$/);
+    expect(typoVars["--m3e-typescale-display-large-tracking"]).toMatch(/^-?[0-9.]+em$/);
+
+    expect(CHECKBOX_TOKENS.cornerRadius).toBe(2);
+    expect(CHIP_TOKENS.restRadius).toBe(8);
+    expect(CHIP_TOKENS.selectedRadius).toBe(8);
+    expect(CHIP_TOKENS.pressedRadius).toBe(8);
+    expect(TOOLTIP_TOKENS.plainRadius).toBe(4);
+    expect(TOOLTIP_TOKENS.richRadius).toBe(12);
+    expect(SNACKBAR_TOKENS.containerRadius).toBe(4);
+
+    expect(getMaterialShape("cookie9Sided")).toBe(MATERIAL_SHAPES.cookie9Sided);
+    expect(parseShortcutKeys("⌘K")).toEqual(["⌘", "K"]);
+    expect(parseShortcutKeys("Ctrl+Shift+P")).toEqual(["Ctrl", "Shift", "P"]);
+  });
+
+  it("resolves AOSP Keyline & Clip-Mask Carousel strategy across all 4 variants without squashing 50+ items", () => {
+    const count = 50;
+    const containerWidth = 720;
+    const variants = ["multi-browse", "hero", "centered-hero", "uncontained"] as const;
+
+    for (const variant of variants) {
+      const strategy = resolveCarouselKeylineStrategy({
+        count,
+        containerWidth,
+        variant,
+        preferredItemWidth: 220,
+        gap: 8,
+      });
+      expect(strategy.isValid).toBe(true);
+      expect(strategy.itemMainAxisSize).toBeGreaterThanOrEqual(180);
+
+      const startSnap = resolveCarouselSnapOffset({ strategy, index: 0, count });
+      expect(startSnap).toBe(0);
+      const firstAtStart = resolveCarouselItemFrame({
+        strategy,
+        index: 0,
+        count,
+        scrollOffset: startSnap,
+      });
+      expect(firstAtStart.slotWidth).toBeCloseTo(strategy.itemMainAxisSize, 2);
+      expect(firstAtStart.maskWidth).toBeCloseTo(strategy.itemMainAxisSize, 1);
+      expect(firstAtStart.isFocal).toBe(true);
+
+      const endSnap = resolveCarouselSnapOffset({ strategy, index: count - 1, count });
+      expect(endSnap).toBeGreaterThan(containerWidth * 4);
+      const lastAtEnd = resolveCarouselItemFrame({
+        strategy,
+        index: count - 1,
+        count,
+        scrollOffset: endSnap,
+      });
+      expect(lastAtEnd.maskWidth).toBeCloseTo(strategy.itemMainAxisSize, 1);
+      expect(lastAtEnd.isFocal).toBe(true);
+    }
+
+    const centered = resolveCarouselKeylineStrategy({
+      count,
+      containerWidth,
+      variant: "centered-hero",
+      gap: 8,
+    });
+    const midSnap = resolveCarouselSnapOffset({ strategy: centered, index: 25, count });
+    const midFocal = resolveCarouselItemFrame({
+      strategy: centered,
+      index: 25,
+      count,
+      scrollOffset: midSnap,
+    });
+    const leftPeek = resolveCarouselItemFrame({
+      strategy: centered,
+      index: 24,
+      count,
+      scrollOffset: midSnap,
+    });
+    const rightPeek = resolveCarouselItemFrame({
+      strategy: centered,
+      index: 26,
+      count,
+      scrollOffset: midSnap,
+    });
+    expect(midFocal.maskWidth).toBeCloseTo(centered.itemMainAxisSize, 1);
+    expect(leftPeek.maskWidth).toBeLessThan(midFocal.maskWidth * 0.4);
+    expect(leftPeek.maskWidth).toBeCloseTo(rightPeek.maskWidth, 1);
+  });
+
+  it("resolves DragHandle, BottomAppBar, PullToRefresh, and VibrantMenu token contracts", () => {
+    expect(DRAG_HANDLE_TOKENS).toMatchObject({
+      width: 4,
+      height: 48,
+      pressedWidth: 12,
+      pressedHeight: 52,
+      containerSize: 24,
+      hitTargetSize: 48,
+    });
+    expect(resolveDragHandleGeometry()).toEqual({
+      inlineSize: 4,
+      blockSize: 48,
+      cornerRadius: 9999,
+    });
+    expect(resolveDragHandleGeometry({ isActive: true })).toEqual({
+      inlineSize: 12,
+      blockSize: 52,
+      cornerRadius: 12,
+    });
+    expect(
+      resolveDragHandleGeometry({ isActive: true, orientation: "horizontal" }),
+    ).toEqual({
+      inlineSize: 52,
+      blockSize: 12,
+      cornerRadius: 12,
+    });
+
+    expect(BOTTOM_APP_BAR_TOKENS.height).toBe(80);
+    expect(PULL_TO_REFRESH_TOKENS.positionalThreshold).toBe(80);
+    expect(PULL_TO_REFRESH_TOKENS.dragMultiplier).toBe(0.5);
+    expect(VIBRANT_MENU_TOKENS).toMatchObject({
+      groupGap: 4,
+      groupRadius: 16,
+      itemOuterRadius: 12,
+      itemInnerRadius: 4,
     });
   });
 });

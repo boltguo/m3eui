@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import { Button as BaseButton } from "@base-ui/react/button";
 import { Menu } from "@base-ui/react/menu";
@@ -6,18 +8,29 @@ import {
   type CornerTuple,
   SEGMENTED_MENU_TOKENS,
   flipCornersHorizontal,
+  parseShortcutKeys,
   resolveSegmentedMenuItemCorners,
   resolveSplitButtonGeometry,
 } from "../tokens/index.js";
-import { useM3E } from "../context/M3EProvider.js";
+import { useM3EPortalContainer } from "../context/M3EPortal.js";
+import { useM3E } from "../context/M3EContext.js";
 import {
   useM3ECornerSpringRef,
   useM3EScalarSpring,
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
 import type { ButtonVariant } from "./Button.js";
+import { Kbd } from "./KbdAndSnippet.js";
 
 export type SplitButtonVariant = Exclude<ButtonVariant, "text">;
+
+const SPLIT_BUTTON_TYPESCALE_MAP: Record<ButtonSize, string> = {
+  xs: "label-large",
+  sm: "label-large",
+  md: "title-medium",
+  lg: "headline-small",
+  xl: "headline-large",
+};
 
 export interface SplitButtonMenuItemSpec {
   readonly id: string;
@@ -67,6 +80,69 @@ function formatTupleBadge(c: CornerTuple): string {
   return `${Math.round(c[0])}/${Math.round(c[1])}/${Math.round(c[2])}/${Math.round(c[3])}`;
 }
 
+interface SegmentedMenuItemSurfaceProps {
+  readonly itemProps: React.HTMLAttributes<HTMLDivElement> & {
+    readonly ref?: React.Ref<HTMLDivElement>;
+  };
+  readonly item: SplitButtonMenuItemSpec;
+  readonly index: number;
+  readonly count: number;
+  readonly highlighted: boolean;
+}
+
+function SegmentedMenuItemSurface({
+  itemProps,
+  item,
+  index,
+  count,
+  highlighted,
+}: SegmentedMenuItemSurfaceProps) {
+  const { ref: incomingRef, style: incomingStyle, ...restItemProps } = itemProps;
+  const corners = resolveSegmentedMenuItemCorners({
+    index,
+    count,
+    isHighlighted: highlighted,
+    isSelected: item.selected,
+  });
+  const { ref: itemRef, borderRadiusCss } =
+    useM3ECornerSpringRef<HTMLDivElement>(corners, "fastSpatial", incomingRef);
+
+  return (
+    <div
+      {...restItemProps}
+      ref={itemRef}
+      data-selected={item.selected ? "" : undefined}
+      style={{
+        ...incomingStyle,
+        minHeight: `${SEGMENTED_MENU_TOKENS.itemHeight}px`,
+        paddingInline: `${SEGMENTED_MENU_TOKENS.itemPaddingInline}px`,
+        borderRadius: borderRadiusCss,
+      }}
+    >
+      {item.icon ? (
+        <span className="m3e-segmented-menu__icon" aria-hidden="true">
+          {item.icon}
+        </span>
+      ) : null}
+      <span
+        className="m3e-segmented-menu__label"
+        data-text={typeof item.label === "string" ? item.label : undefined}
+      >
+        {item.label}
+      </span>
+      {item.shortcut ? (
+        <Kbd
+          size="sm"
+          className="m3e-segmented-menu__shortcut"
+          keys={parseShortcutKeys(item.shortcut)}
+        >
+          {item.shortcut}
+        </Kbd>
+      ) : null}
+    </div>
+  );
+}
+
 interface SegmentedMenuItemRowProps {
   readonly item: SplitButtonMenuItemSpec;
   readonly index: number;
@@ -78,49 +154,48 @@ function SegmentedMenuItemRow({
   index,
   count,
 }: SegmentedMenuItemRowProps) {
-  const [highlighted, setHighlighted] = React.useState(false);
-  const corners = resolveSegmentedMenuItemCorners({
-    index,
-    count,
-    isHighlighted: highlighted,
-    isSelected: item.selected,
-  });
-  const { ref: itemRef, borderRadiusCss } =
-    useM3ECornerSpringRef<HTMLDivElement>(corners, "fastSpatial");
+  if (item.selected !== undefined) {
+    return (
+      <Menu.CheckboxItem
+        checked={item.selected}
+        disabled={item.disabled}
+        closeOnClick
+        onClick={() => item.onSelect?.()}
+        className="m3e-segmented-menu__item"
+        render={(props, state) => (
+          <SegmentedMenuItemSurface
+            itemProps={props as SegmentedMenuItemSurfaceProps["itemProps"]}
+            item={item}
+            index={index}
+            count={count}
+            highlighted={state.highlighted}
+          />
+        )}
+      />
+    );
+  }
 
   return (
     <Menu.Item
-      ref={itemRef}
       disabled={item.disabled}
       onClick={() => item.onSelect?.()}
-      onPointerEnter={() => setHighlighted(true)}
-      onPointerLeave={() => setHighlighted(false)}
-      onFocus={() => setHighlighted(true)}
-      onBlur={() => setHighlighted(false)}
       className="m3e-segmented-menu__item"
-      data-selected={item.selected ? "" : undefined}
-      style={{
-        minHeight: `${SEGMENTED_MENU_TOKENS.itemHeight}px`,
-        paddingInline: `${SEGMENTED_MENU_TOKENS.itemPaddingInline}px`,
-        borderRadius: borderRadiusCss,
-      }}
-    >
-      {item.icon ? (
-        <span className="m3e-segmented-menu__icon" aria-hidden="true">
-          {item.icon}
-        </span>
-      ) : null}
-      <span className="m3e-segmented-menu__label">{item.label}</span>
-      {item.shortcut ? (
-        <span className="m3e-segmented-menu__shortcut">{item.shortcut}</span>
-      ) : null}
-    </Menu.Item>
+      render={(props, state) => (
+        <SegmentedMenuItemSurface
+          itemProps={props as SegmentedMenuItemSurfaceProps["itemProps"]}
+          item={item}
+          index={index}
+          count={count}
+          highlighted={state.highlighted}
+        />
+      )}
+    />
   );
 }
 
 export function SplitButton({
   children,
-  menuItems,
+  menuItems = [],
   variant = "filled",
   size = "sm",
   disabled = false,
@@ -134,6 +209,7 @@ export function SplitButton({
   style,
 }: M3ESplitButtonProps): React.JSX.Element {
   const { debugGeometry, direction, t } = useM3E();
+  const portalContainer = useM3EPortalContainer();
   const resolvedMenuTriggerLabel =
     menuTriggerLabel ?? t("splitButton.moreOptions");
   const [uncontrolledOpen, setUncontrolledOpen] =
@@ -175,13 +251,16 @@ export function SplitButton({
   const { ref: trailRef, borderRadiusCss: trailRadiusCss } =
     useM3ECornerSpringRef<HTMLButtonElement>(
       targetTrailCorners,
-      isExpanded ? "fastSpatial" : "defaultEffects",
+      "defaultEffects",
     );
 
   const chevronDeg = useM3EScalarSpring(geo.chevronRotationDeg, "fastSpatial");
-  const opticalX = useM3EScalarSpring(targetOpticalX, "fastSpatial");
+  const opticalX = useM3EScalarSpring(targetOpticalX, "defaultEffects");
 
   const { spec } = geo;
+  const scaleKey = SPLIT_BUTTON_TYPESCALE_MAP[size];
+  const borderWidth =
+    variant === "outlined" ? `${spec.outlineWidth}px` : undefined;
 
   return (
     <div
@@ -207,14 +286,17 @@ export function SplitButton({
           paddingInlineStart: `${spec.leadingPaddingStart}px`,
           paddingInlineEnd: `${spec.leadingPaddingEnd}px`,
           gap: `${spec.leadingIconGap}px`,
-          fontSize: `${spec.fontSize}px`,
-          lineHeight: `${spec.lineHeight}px`,
-          fontWeight: 500,
+          fontFamily: `var(--m3e-typescale-${scaleKey}-font, inherit)`,
+          fontSize: `var(--m3e-typescale-${scaleKey}-size, ${spec.fontSize}px)`,
+          lineHeight: `var(--m3e-typescale-${scaleKey}-line-height, ${spec.lineHeight}px)`,
+          fontWeight: `var(--m3e-typescale-${scaleKey}-weight, 500)` as React.CSSProperties["fontWeight"],
+          letterSpacing: `var(--m3e-typescale-${scaleKey}-tracking, normal)`,
+          borderWidth,
           borderRadius: leadRadiusCss,
         }}
         {...leadingPressHandlers}
-        onPointerEnter={() => {
-          if (!disabled) setIsLeadingHovered(true);
+        onPointerEnter={(e) => {
+          if (!disabled && e.pointerType !== "touch") setIsLeadingHovered(true);
         }}
         onPointerLeave={() => {
           setIsLeadingHovered(false);
@@ -266,11 +348,12 @@ export function SplitButton({
             width: `${spec.trailingWidth}px`,
             height: `${spec.height}px`,
             paddingInline: `${spec.trailingPaddingInline}px`,
+            borderWidth,
             borderRadius: trailRadiusCss,
           }}
           {...trailingPressHandlers}
-          onPointerEnter={() => {
-            if (!disabled) setIsTrailingHovered(true);
+          onPointerEnter={(e) => {
+            if (!disabled && e.pointerType !== "touch") setIsTrailingHovered(true);
           }}
           onPointerLeave={() => {
             setIsTrailingHovered(false);
@@ -296,7 +379,7 @@ export function SplitButton({
           ) : null}
         </Menu.Trigger>
 
-        <Menu.Portal>
+        <Menu.Portal container={portalContainer}>
           <Menu.Positioner side="bottom" align="end" sideOffset={6} className="m3e-segmented-menu__positioner">
             <Menu.Popup
               className="m3e-segmented-menu"

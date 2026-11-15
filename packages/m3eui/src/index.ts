@@ -1,10 +1,9 @@
-"use client";
-
 export * from "./tokens/index.js";
 export * from "./i18n/index.js";
 export * from "./config.js";
 export * from "./primitives.js";
 export * from "./context/M3EProvider.js";
+export * from "./context/M3EPortal.js";
 export * from "./hooks/useM3ESpring.js";
 export * from "./components/Button.js";
 export * from "./components/ButtonGroup.js";
@@ -46,3 +45,14 @@ export * from "./components/Form.js";
 export * from "./components/DataTableAndSkeleton.js";
 export * from "./components/SurfaceUtilities.js";
 export * from "./components/DisclosureAndNavMenu.js";
+export * from "./components/Alert.js";
+export * from "./components/Breadcrumb.js";
+export * from "./components/Pagination.js";
+export * from "./components/Empty.js";
+export * from "./components/CommandPalette.js";
+export * from "./components/FileUpload.js";
+export * from "./components/KbdAndSnippet.js";
+export * from "./components/ColorPicker.js";
+export * from "./components/DragHandle.js";
+export * from "./components/BottomAppBar.js";
+export * from "./components/PullToRefresh.js";

@@ -1,8 +1,14 @@
+"use client";
+
 import * as React from "react";
 import { Collapsible as BaseCollapsible } from "@base-ui/react/collapsible";
 import { NavigationMenu as BaseNavigationMenu } from "@base-ui/react/navigation-menu";
-import { useM3E, useM3EI18n } from "../context/M3EProvider.js";
-import { useM3EScalarSpring } from "../hooks/useM3ESpring.js";
+import { useM3EI18n } from "../context/M3EContext.js";
+import { useM3EPortalContainer } from "../context/M3EPortal.js";
+import {
+  useM3ECornerSpringRef,
+  usePressHoldState,
+} from "../hooks/useM3ESpring.js";
 
 export type CollapsibleVariant = "tonal" | "outlined" | "plain";
 
@@ -59,21 +65,21 @@ export const Collapsible = React.forwardRef<HTMLDivElement, M3ECollapsibleProps>
     },
     ref,
   ) {
-    const { direction } = useM3E();
+    const { isPressed, pressHandlers } = usePressHoldState(disabled);
     const [uncontrolledOpen, setUncontrolledOpen] =
       React.useState<boolean>(defaultOpen);
     const isOpen = controlledOpen ?? uncontrolledOpen;
 
-    const closedAngle = direction === "rtl" ? 90 : -90;
-    const chevronAngle = useM3EScalarSpring(
-      isOpen ? 0 : closedAngle,
+    const targetRadius = isOpen ? 24 : 18;
+    const cornerSpring = useM3ECornerSpringRef<HTMLDivElement>(
+      [targetRadius, targetRadius, targetRadius, targetRadius],
       "fastSpatial",
+      ref,
     );
-    const cornerRadius = useM3EScalarSpring(isOpen ? 24 : 18, "fastSpatial");
 
     return (
       <BaseCollapsible.Root
-        ref={ref}
+        ref={cornerSpring.ref}
         open={controlledOpen}
         defaultOpen={defaultOpen}
         disabled={disabled}
@@ -87,15 +93,20 @@ export const Collapsible = React.forwardRef<HTMLDivElement, M3ECollapsibleProps>
           className ? `m3e-collapsible ${className}` : "m3e-collapsible"
         }
         data-variant={variant}
+        data-open={isOpen ? "" : undefined}
         style={{
-          borderRadius: `${Math.max(8, cornerRadius).toFixed(1)}px`,
+          borderRadius: cornerSpring.borderRadiusCss,
           ...style,
         }}
       >
-        <BaseCollapsible.Trigger className="m3e-collapsible__trigger">
+        <BaseCollapsible.Trigger
+          className="m3e-collapsible__trigger"
+          data-pressed={isPressed ? "" : undefined}
+          {...pressHandlers}
+        >
           <span
             className="m3e-collapsible__chevron"
-            style={{ rotate: `${chevronAngle.toFixed(1)}deg` }}
+            data-open={isOpen ? "" : undefined}
             aria-hidden="true"
           >
             <DisclosureChevronSvg />
@@ -184,6 +195,7 @@ export function NavigationMenu({
   style,
 }: M3ENavigationMenuProps): React.JSX.Element {
   const { t } = useM3EI18n();
+  const portalContainer = useM3EPortalContainer();
 
   return (
     <BaseNavigationMenu.Root
@@ -321,14 +333,13 @@ export function NavigationMenu({
         ) : null}
       </div>
 
-      <BaseNavigationMenu.Portal>
+      <BaseNavigationMenu.Portal container={portalContainer}>
         <BaseNavigationMenu.Positioner
           sideOffset={10}
           collisionPadding={{ top: 12, bottom: 12, left: 16, right: 16 }}
           className="m3e-nav-menu__positioner"
         >
           <BaseNavigationMenu.Popup className="m3e-nav-menu__popup">
-            <BaseNavigationMenu.Arrow className="m3e-nav-menu__arrow" />
             <BaseNavigationMenu.Viewport className="m3e-nav-menu__viewport" />
           </BaseNavigationMenu.Popup>
         </BaseNavigationMenu.Positioner>

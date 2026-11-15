@@ -1286,7 +1286,7 @@ function dedupeVertices(vertices: RawVertex[]): RawVertex[] {
   return out;
 }
 
-function rotateNormalizedShape(
+export function rotateNormalizedShape(
   shape: NormalizedShapeData,
   deg: number,
 ): NormalizedShapeData {
@@ -1296,14 +1296,15 @@ function rotateNormalizedShape(
   return normalizeAndOrientShapeFromFeatures(shape.name, rotatedFeatures);
 }
 
-function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
-  const build = (name: M3EShapeName, vertices: RawVertex[]) =>
-    normalizeAndOrientShapeFromFeatures(name, buildRoundedPolygonFeatures(vertices));
+function buildNamedPolygon(name: M3EShapeName, vertices: RawVertex[]): NormalizedShapeData {
+  return normalizeAndOrientShapeFromFeatures(name, buildRoundedPolygonFeatures(vertices));
+}
 
-  return {
-    circle: build("circle", regularPolygonVertices(10, cornerRound100)),
-    square: build("square", rectangleVertices(1, 1, cornerRound30)),
-    slanted: build(
+const SHAPE_BUILDERS: Record<M3EShapeName, () => NormalizedShapeData> = {
+  circle: () => buildNamedPolygon("circle", regularPolygonVertices(10, cornerRound100)),
+  square: () => buildNamedPolygon("square", rectangleVertices(1, 1, cornerRound30)),
+  slanted: () =>
+    buildNamedPolygon(
       "slanted",
       doRepeat(
         [
@@ -1313,7 +1314,8 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         2,
       ),
     ),
-    arch: build(
+  arch: () =>
+    buildNamedPolygon(
       "arch",
       rotateVertices(
         regularPolygonVertices(4, [
@@ -1325,7 +1327,8 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         -135,
       ),
     ),
-    fan: build(
+  fan: () =>
+    buildNamedPolygon(
       "fan",
       doRepeat(
         [
@@ -1337,7 +1340,8 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         1,
       ),
     ),
-    arrow: build(
+  arrow: () =>
+    buildNamedPolygon(
       "arrow",
       doRepeat(
         [
@@ -1349,7 +1353,8 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         1,
       ),
     ),
-    semiCircle: build(
+  semiCircle: () =>
+    buildNamedPolygon(
       "semiCircle",
       rectangleVertices(1.6, 1.0, [
         cornerRound20,
@@ -1358,14 +1363,16 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         cornerRound100,
       ]),
     ),
-    oval: normalizeAndOrientShapeFromFeatures(
+  oval: () =>
+    normalizeAndOrientShapeFromFeatures(
       "oval",
       transformFeatures(
         buildRoundedPolygonFeatures(regularPolygonVertices(10, cornerRound100)),
         (x, y) => rotatePointDeg({ x, y: y * 0.64 }, -45, { x: 0, y: 0 }),
       ),
     ),
-    pill: build(
+  pill: () =>
+    buildNamedPolygon(
       "pill",
       doRepeat(
         [
@@ -1378,11 +1385,13 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         true,
       ),
     ),
-    triangle: build(
+  triangle: () =>
+    buildNamedPolygon(
       "triangle",
       rotateVertices(regularPolygonVertices(3, cornerRound20), -90),
     ),
-    diamond: build(
+  diamond: () =>
+    buildNamedPolygon(
       "diamond",
       doRepeat(
         [
@@ -1392,7 +1401,8 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         2,
       ),
     ),
-    clamShell: build(
+  clamShell: () =>
+    buildNamedPolygon(
       "clamShell",
       doRepeat(
         [
@@ -1403,7 +1413,8 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         2,
       ),
     ),
-    pentagon: build(
+  pentagon: () =>
+    buildNamedPolygon(
       "pentagon",
       doRepeat(
         [
@@ -1416,7 +1427,8 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         true,
       ),
     ),
-    gem: build(
+  gem: () =>
+    buildNamedPolygon(
       "gem",
       doRepeat(
         [
@@ -1430,8 +1442,9 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         true,
       ),
     ),
-    sunny: build("sunny", starPolygonVertices(8, 0.8, cornerRound15)),
-    verySunny: build(
+  sunny: () => buildNamedPolygon("sunny", starPolygonVertices(8, 0.8, cornerRound15)),
+  verySunny: () =>
+    buildNamedPolygon(
       "verySunny",
       doRepeat(
         [
@@ -1441,7 +1454,8 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         8,
       ),
     ),
-    cookie4Sided: build(
+  cookie4Sided: () =>
+    buildNamedPolygon(
       "cookie4Sided",
       doRepeat(
         [
@@ -1451,7 +1465,8 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         4,
       ),
     ),
-    cookie6Sided: build(
+  cookie6Sided: () =>
+    buildNamedPolygon(
       "cookie6Sided",
       doRepeat(
         [
@@ -1461,19 +1476,23 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         6,
       ),
     ),
-    cookie7Sided: build(
+  cookie7Sided: () =>
+    buildNamedPolygon(
       "cookie7Sided",
       rotateVertices(starPolygonVertices(7, 0.75, cornerRound50), -90),
     ),
-    cookie9Sided: build(
+  cookie9Sided: () =>
+    buildNamedPolygon(
       "cookie9Sided",
       rotateVertices(starPolygonVertices(9, 0.8, cornerRound50), -90),
     ),
-    cookie12Sided: build(
+  cookie12Sided: () =>
+    buildNamedPolygon(
       "cookie12Sided",
       rotateVertices(starPolygonVertices(12, 0.8, cornerRound50), -90),
     ),
-    ghostish: build(
+  ghostish: () =>
+    buildNamedPolygon(
       "ghostish",
       doRepeat(
         [
@@ -1487,7 +1506,8 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         true,
       ),
     ),
-    clover4Leaf: build(
+  clover4Leaf: () =>
+    buildNamedPolygon(
       "clover4Leaf",
       doRepeat(
         [
@@ -1499,7 +1519,8 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         true,
       ),
     ),
-    clover8Leaf: build(
+  clover8Leaf: () =>
+    buildNamedPolygon(
       "clover8Leaf",
       doRepeat(
         [
@@ -1509,7 +1530,8 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         8,
       ),
     ),
-    burst: build(
+  burst: () =>
+    buildNamedPolygon(
       "burst",
       doRepeat(
         [
@@ -1519,7 +1541,8 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         12,
       ),
     ),
-    softBurst: build(
+  softBurst: () =>
+    buildNamedPolygon(
       "softBurst",
       doRepeat(
         [
@@ -1529,7 +1552,8 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         10,
       ),
     ),
-    boom: build(
+  boom: () =>
+    buildNamedPolygon(
       "boom",
       doRepeat(
         [
@@ -1539,7 +1563,8 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         15,
       ),
     ),
-    softBoom: build(
+  softBoom: () =>
+    buildNamedPolygon(
       "softBoom",
       doRepeat(
         [
@@ -1553,7 +1578,8 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         true,
       ),
     ),
-    flower: build(
+  flower: () =>
+    buildNamedPolygon(
       "flower",
       doRepeat(
         [
@@ -1566,7 +1592,8 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         true,
       ),
     ),
-    puffy: normalizeAndOrientShapeFromFeatures(
+  puffy: () =>
+    normalizeAndOrientShapeFromFeatures(
       "puffy",
       transformFeatures(
         buildRoundedPolygonFeatures(
@@ -1592,7 +1619,8 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         (x, y) => ({ x, y: y * 0.742 }),
       ),
     ),
-    puffyDiamond: build(
+  puffyDiamond: () =>
+    buildNamedPolygon(
       "puffyDiamond",
       doRepeat(
         [
@@ -1605,7 +1633,8 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         true,
       ),
     ),
-    pixelCircle: build(
+  pixelCircle: () =>
+    buildNamedPolygon(
       "pixelCircle",
       doRepeat(
         [
@@ -1623,7 +1652,8 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         true,
       ),
     ),
-    pixelTriangle: build(
+  pixelTriangle: () =>
+    buildNamedPolygon(
       "pixelTriangle",
       doRepeat(
         [
@@ -1646,7 +1676,8 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         true,
       ),
     ),
-    bun: build(
+  bun: () =>
+    buildNamedPolygon(
       "bun",
       doRepeat(
         [
@@ -1660,7 +1691,8 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         true,
       ),
     ),
-    heart: build(
+  heart: () =>
+    buildNamedPolygon(
       "heart",
       doRepeat(
         [
@@ -1674,11 +1706,29 @@ function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
         true,
       ),
     ),
-  };
+};
+
+const SHAPE_CACHE = new Map<M3EShapeName, NormalizedShapeData>();
+
+export function getMaterialShape(name: M3EShapeName): NormalizedShapeData {
+  const cached = SHAPE_CACHE.get(name);
+  if (cached) return cached;
+  const builder = SHAPE_BUILDERS[name] ?? SHAPE_BUILDERS.circle;
+  const built = builder();
+  SHAPE_CACHE.set(built.name, built);
+  return built;
+}
+
+function createAllMaterialShapes(): Record<M3EShapeName, NormalizedShapeData> {
+  const out = {} as Record<M3EShapeName, NormalizedShapeData>;
+  for (const name of M3E_ALL_SHAPE_NAMES) {
+    out[name] = getMaterialShape(name);
+  }
+  return out;
 }
 
 export const MATERIAL_SHAPES: Record<M3EShapeName, NormalizedShapeData> =
-  createAllMaterialShapes();
+  /* @__PURE__ */ createAllMaterialShapes();
 
 const MORPH_PAIR_CACHE = new Map<string, MorphPair>();
 
@@ -1689,70 +1739,7 @@ export function getShapeMorphPair(
   const key = `${from}->${to}`;
   const cached = MORPH_PAIR_CACHE.get(key);
   if (cached) return cached;
-  const pair = createMorphPair(MATERIAL_SHAPES[from], MATERIAL_SHAPES[to]);
+  const pair = createMorphPair(getMaterialShape(from), getMaterialShape(to));
   MORPH_PAIR_CACHE.set(key, pair);
   return pair;
 }
-
-export const LOADING_INDICATOR_SHAPE_SEQUENCE: readonly M3EShapeName[] = [
-  "softBurst",
-  "cookie9Sided",
-  "pentagon",
-  "pill",
-  "sunny",
-  "cookie4Sided",
-  "oval",
-] as const;
-
-export const LOADING_INDICATOR_DETERMINATE_SHAPE_SEQUENCE: readonly M3EShapeName[] = [
-  "circle",
-  "softBurst",
-] as const;
-
-export function calculateIndicatorScaleFactor(
-  shapeNames: readonly M3EShapeName[] = LOADING_INDICATOR_SHAPE_SEQUENCE,
-): number {
-  let scaleFactor = 1;
-  for (const name of shapeNames) {
-    const shape = MATERIAL_SHAPES[name];
-    const boundsWidth = shape.bounds[2] - shape.bounds[0];
-    const boundsHeight = shape.bounds[3] - shape.bounds[1];
-    const maxDiameter = Math.max(1e-6, shape.maxRadialDistance * 2);
-    const scaleX = boundsWidth / maxDiameter;
-    const scaleY = boundsHeight / maxDiameter;
-    scaleFactor = Math.min(scaleFactor, Math.max(scaleX, scaleY));
-  }
-  return scaleFactor;
-}
-
-export const LOADING_INDICATOR_MORPH_SEQUENCE: readonly MorphPair[] =
-  LOADING_INDICATOR_SHAPE_SEQUENCE.map((fromName, idx, arr) => {
-    const toName = arr[(idx + 1) % arr.length];
-    return createMorphPair(MATERIAL_SHAPES[fromName], MATERIAL_SHAPES[toName]);
-  });
-
-export const LOADING_INDICATOR_DETERMINATE_MORPH_SEQUENCE: readonly MorphPair[] = [
-  createMorphPair(
-    rotateNormalizedShape(MATERIAL_SHAPES.circle, 360 / 20),
-    MATERIAL_SHAPES.softBurst,
-  ),
-];
-
-export const LOADING_INDICATOR_TOKENS = {
-  containerSize: 48,
-  activeIndicatorSize: 38,
-  activeIndicatorScale: 38 / 48,
-  effectiveScaleFactor:
-    calculateIndicatorScaleFactor(LOADING_INDICATOR_SHAPE_SEQUENCE) * (38 / 48),
-  determinateEffectiveScaleFactor:
-    calculateIndicatorScaleFactor(LOADING_INDICATOR_DETERMINATE_SHAPE_SEQUENCE) *
-    (38 / 48),
-  morphIntervalMs: 650,
-  globalRotationDurationMs: 4666,
-  quarterRotationDeg: 90,
-  morphSpring: {
-    dampingRatio: 0.6,
-    stiffness: 200,
-    visibilityThreshold: 0.1,
-  },
-} as const;

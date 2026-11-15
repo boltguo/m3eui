@@ -29,6 +29,7 @@ export interface ButtonSizeSpec {
   readonly fontSize: number;
   readonly lineHeight: number;
   readonly fontWeight: number;
+  readonly outlineWidth: number;
   readonly restCornerRadius: number;
   readonly squareCornerRadius: number;
   readonly pressedCornerRadius: number;
@@ -41,10 +42,11 @@ export const BUTTON_SIZE_SPECS: Record<ButtonSize, ButtonSizeSpec> = {
     height: 32,
     paddingHorizontal: 12,
     iconSize: 20,
-    iconGap: 8,
+    iconGap: 4,
     fontSize: 14,
     lineHeight: 20,
     fontWeight: 500,
+    outlineWidth: 1,
     restCornerRadius: 16,
     squareCornerRadius: 12,
     pressedCornerRadius: 8,
@@ -59,6 +61,7 @@ export const BUTTON_SIZE_SPECS: Record<ButtonSize, ButtonSizeSpec> = {
     fontSize: 14,
     lineHeight: 20,
     fontWeight: 500,
+    outlineWidth: 1,
     restCornerRadius: 20,
     squareCornerRadius: 12,
     pressedCornerRadius: 8,
@@ -73,6 +76,7 @@ export const BUTTON_SIZE_SPECS: Record<ButtonSize, ButtonSizeSpec> = {
     fontSize: 16,
     lineHeight: 24,
     fontWeight: 500,
+    outlineWidth: 1,
     restCornerRadius: 28,
     squareCornerRadius: 16,
     pressedCornerRadius: 12,
@@ -87,6 +91,7 @@ export const BUTTON_SIZE_SPECS: Record<ButtonSize, ButtonSizeSpec> = {
     fontSize: 24,
     lineHeight: 32,
     fontWeight: 500,
+    outlineWidth: 2,
     restCornerRadius: 48,
     squareCornerRadius: 28,
     pressedCornerRadius: 16,
@@ -101,6 +106,7 @@ export const BUTTON_SIZE_SPECS: Record<ButtonSize, ButtonSizeSpec> = {
     fontSize: 32,
     lineHeight: 40,
     fontWeight: 500,
+    outlineWidth: 3,
     restCornerRadius: 68,
     squareCornerRadius: 28,
     pressedCornerRadius: 16,
@@ -415,6 +421,7 @@ export function resolveIconButtonGeometry(
 export interface SplitButtonSizeSpec {
   readonly size: ButtonSize;
   readonly height: number;
+  readonly outlineWidth: number;
   readonly innerRestRadius: number;
   readonly innerHoverRadius: number;
   readonly innerActiveRadius: number;
@@ -439,13 +446,14 @@ export const SPLIT_BUTTON_SPECS: Record<ButtonSize, SplitButtonSizeSpec> = {
   xs: {
     size: "xs",
     height: 32,
+    outlineWidth: 1,
     innerRestRadius: 4,
     innerHoverRadius: 8,
     innerActiveRadius: 8,
     leadingPaddingStart: 12,
     leadingPaddingEnd: 10,
     leadingIconSize: 20,
-    leadingIconGap: 6,
+    leadingIconGap: 4,
     trailingPaddingInline: 13,
     trailingIconSize: 22,
     trailingWidth: 48,
@@ -455,6 +463,7 @@ export const SPLIT_BUTTON_SPECS: Record<ButtonSize, SplitButtonSizeSpec> = {
   sm: {
     size: "sm",
     height: 40,
+    outlineWidth: 1,
     innerRestRadius: 4,
     innerHoverRadius: 12,
     innerActiveRadius: 12,
@@ -471,6 +480,7 @@ export const SPLIT_BUTTON_SPECS: Record<ButtonSize, SplitButtonSizeSpec> = {
   md: {
     size: "md",
     height: 56,
+    outlineWidth: 1,
     innerRestRadius: 4,
     innerHoverRadius: 12,
     innerActiveRadius: 12,
@@ -487,6 +497,7 @@ export const SPLIT_BUTTON_SPECS: Record<ButtonSize, SplitButtonSizeSpec> = {
   lg: {
     size: "lg",
     height: 96,
+    outlineWidth: 2,
     innerRestRadius: 8,
     innerHoverRadius: 20,
     innerActiveRadius: 20,
@@ -503,6 +514,7 @@ export const SPLIT_BUTTON_SPECS: Record<ButtonSize, SplitButtonSizeSpec> = {
   xl: {
     size: "xl",
     height: 136,
+    outlineWidth: 3,
     innerRestRadius: 12,
     innerHoverRadius: 20,
     innerActiveRadius: 20,
@@ -802,7 +814,7 @@ export const SLIDER_TOKENS = {
   thumbActiveWidth: 2,
   thumbRadius: 2,
   thumbTrackGap: 6,
-  thumbActiveTrackGap: 5,
+  thumbActiveTrackGap: 6,
   stopDotSize: 4,
   stopDotInset: 6,
   minControlHeight: 48,
@@ -848,8 +860,8 @@ export function resolveSliderThumbGeometry(isActive = false): {
 
 export const CHECKBOX_TOKENS = {
   boxSize: 18,
-  cornerRadius: 4,
-  pressedCornerRadius: 6,
+  cornerRadius: 2,
+  pressedCornerRadius: 4,
   strokeWidth: 2,
   stateLayerSize: 40,
   minTouchTarget: 48,
@@ -901,8 +913,8 @@ export const SELECT_TOKENS = {
 } as const;
 
 export const TOOLTIP_TOKENS = {
-  plainRadius: SHAPE_CORNER_TOKENS.small,
-  richRadius: SHAPE_CORNER_TOKENS.large,
+  plainRadius: SHAPE_CORNER_TOKENS.extraSmall,
+  richRadius: SHAPE_CORNER_TOKENS.medium,
   plainPaddingBlock: 6,
   plainPaddingInline: 10,
   richPaddingBlock: 12,
@@ -911,7 +923,7 @@ export const TOOLTIP_TOKENS = {
 } as const;
 
 export const SNACKBAR_TOKENS = {
-  containerRadius: SHAPE_CORNER_TOKENS.medium,
+  containerRadius: SHAPE_CORNER_TOKENS.extraSmall,
   minHeight: 48,
   maxWidth: 420,
   paddingBlock: 12,
@@ -987,9 +999,11 @@ export const POPOVER_TOKENS = {
 export const CHIP_TOKENS = {
   height: 32,
   restRadius: SHAPE_CORNER_TOKENS.small,
-  selectedRadius: 16,
-  pressedRadius: SHAPE_CORNER_TOKENS.extraSmall,
-  paddingInline: 12,
+  selectedRadius: SHAPE_CORNER_TOKENS.small,
+  pressedRadius: SHAPE_CORNER_TOKENS.small,
+  paddingInline: 16,
+  iconPaddingInline: 8,
+  gap: 8,
   iconSize: 18,
 } as const;
 
@@ -1004,10 +1018,10 @@ export const AVATAR_SIZE_SPECS = {
 export type AvatarSize = keyof typeof AVATAR_SIZE_SPECS;
 
 export const BADGE_TOKENS = {
-  dotSize: 8,
-  pillHeight: 18,
-  pillMinWidth: 18,
-  pillPaddingInline: 5,
+  dotSize: 6,
+  pillHeight: 16,
+  pillMinWidth: 16,
+  pillPaddingInline: 4,
 } as const;
 
 export const CARD_TOKENS = {
@@ -1018,14 +1032,17 @@ export const CARD_TOKENS = {
 } as const;
 
 export const NAVIGATION_TOKENS = {
-  barHeight: 72,
-  railWidth: 84,
+  barHeight: 64,
+  tallBarHeight: 80,
+  railWidth: 80,
   indicatorWidth: 56,
   indicatorHeight: 32,
+  horizontalIndicatorHeight: 40,
+  horizontalIndicatorPaddingInline: 16,
   indicatorRadius: 16,
 } as const;
 
-export type FabSize = "sm" | "md" | "lg" | "xl";
+export type FabSize = "xs" | "sm" | "md" | "lg";
 export type FabColorVariant = "primary" | "secondary" | "tertiary" | "surface";
 
 export interface FabSizeSpec {
@@ -1037,29 +1054,29 @@ export interface FabSizeSpec {
 }
 
 export const FAB_SIZE_SPECS: Record<FabSize, FabSizeSpec> = {
-  sm: {
-    size: "sm",
+  xs: {
+    size: "xs",
     containerSize: 40,
     restRadius: 12,
     pressedRadius: 8,
     iconSize: 24,
   },
-  md: {
-    size: "md",
+  sm: {
+    size: "sm",
     containerSize: 56,
     restRadius: 16,
     pressedRadius: 12,
     iconSize: 24,
   },
-  lg: {
-    size: "lg",
+  md: {
+    size: "md",
     containerSize: 80,
     restRadius: 20,
     pressedRadius: 14,
     iconSize: 28,
   },
-  xl: {
-    size: "xl",
+  lg: {
+    size: "lg",
     containerSize: 96,
     restRadius: 28,
     pressedRadius: 18,
@@ -1075,7 +1092,7 @@ export function resolveFabGeometry(input: {
   readonly cornerRadius: number;
   readonly iconSize: number;
 } {
-  const { size = "md", isPressed = false } = input;
+  const { size = "sm", isPressed = false } = input;
   const spec = FAB_SIZE_SPECS[size];
   return {
     containerSize: spec.containerSize,
@@ -1105,8 +1122,8 @@ export const EXTENDED_FAB_SPECS: Record<ExtendedFabSize, ExtendedFabSpec> = {
     pressedRadius: 12,
     iconSize: 24,
     paddingInline: 16,
-    iconGap: 12,
-    fontSize: 15,
+    iconGap: 8,
+    fontSize: 16,
   },
   md: {
     size: "md",
@@ -1115,18 +1132,18 @@ export const EXTENDED_FAB_SPECS: Record<ExtendedFabSize, ExtendedFabSpec> = {
     pressedRadius: 14,
     iconSize: 28,
     paddingInline: 26,
-    iconGap: 14,
-    fontSize: 18,
+    iconGap: 12,
+    fontSize: 22,
   },
   lg: {
     size: "lg",
     height: 96,
     restRadius: 28,
     pressedRadius: 18,
-    iconSize: 36,
+    iconSize: 32,
     paddingInline: 28,
     iconGap: 16,
-    fontSize: 22,
+    fontSize: 24,
   },
 };
 
@@ -1136,7 +1153,932 @@ export const CAROUSEL_TOKENS = {
   mediumRadius: SHAPE_CORNER_TOKENS.largeIncreased,
   peekRadius: SHAPE_CORNER_TOKENS.large,
   minPeekWidth: 48,
+  minSmallItemSize: 40,
+  maxSmallItemSize: 56,
+  defaultPreferredWidth: 220,
+  anchorSize: 10,
 } as const;
+
+export type CarouselVariant =
+  | "multi-browse"
+  | "hero"
+  | "centered-hero"
+  | "uncontained";
+
+export interface CarouselKeyline {
+  readonly size: number;
+  readonly offset: number;
+  readonly unadjustedOffset: number;
+  readonly isFocal: boolean;
+  readonly isAnchor: boolean;
+  readonly isPivot: boolean;
+  readonly cutoff: number;
+}
+
+export interface CarouselKeylineList {
+  readonly keylines: readonly CarouselKeyline[];
+  readonly pivotIndex: number;
+  readonly firstFocalIndex: number;
+  readonly lastFocalIndex: number;
+  readonly firstNonAnchorIndex: number;
+  readonly lastNonAnchorIndex: number;
+  readonly minSize: number;
+  readonly maxSize: number;
+}
+
+export interface CarouselKeylineStrategy {
+  readonly isValid: boolean;
+  readonly variant: CarouselVariant;
+  readonly availableSpace: number;
+  readonly itemSpacing: number;
+  readonly itemMainAxisSize: number;
+  readonly minItemSize: number;
+  readonly maxItemSize: number;
+  readonly defaultKeylines: CarouselKeylineList;
+  readonly startKeylineSteps: readonly CarouselKeylineList[];
+  readonly endKeylineSteps: readonly CarouselKeylineList[];
+  readonly startShiftDistance: number;
+  readonly endShiftDistance: number;
+  readonly startShiftPoints: readonly number[];
+  readonly endShiftPoints: readonly number[];
+}
+
+export interface CarouselItemFrame {
+  readonly index: number;
+  readonly slotWidth: number;
+  readonly maskWidth: number;
+  readonly offsetDelta: number;
+  readonly cornerRadius: number;
+  readonly prominence: number;
+  readonly zIndex: number;
+  readonly isFocal: boolean;
+}
+
+function lerpScalar(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+function lerpRange(
+  outputMin: number,
+  outputMax: number,
+  inputMin: number,
+  inputMax: number,
+  value: number,
+): number {
+  if (inputMax <= inputMin) return outputMax;
+  if (value <= inputMin) return outputMin;
+  if (value >= inputMax) return outputMax;
+  return lerpScalar(
+    outputMin,
+    outputMax,
+    (value - inputMin) / (inputMax - inputMin),
+  );
+}
+
+function buildKeylineList(
+  carouselMainAxisSize: number,
+  itemSpacing: number,
+  pivotIndex: number,
+  pivotOffset: number,
+  specs: readonly { readonly size: number; readonly isAnchor: boolean }[],
+): CarouselKeylineList {
+  if (specs.length === 0 || carouselMainAxisSize <= 0) {
+    return {
+      keylines: [],
+      pivotIndex: -1,
+      firstFocalIndex: -1,
+      lastFocalIndex: -1,
+      firstNonAnchorIndex: -1,
+      lastNonAnchorIndex: -1,
+      minSize: 0,
+      maxSize: 0,
+    };
+  }
+
+  let maxSize = 0;
+  let minSize = Number.POSITIVE_INFINITY;
+  let firstNonAnchorIndex = -1;
+  let lastNonAnchorIndex = -1;
+
+  for (let i = 0; i < specs.length; i++) {
+    const s = specs[i]!;
+    if (!s.isAnchor) {
+      if (firstNonAnchorIndex === -1) firstNonAnchorIndex = i;
+      lastNonAnchorIndex = i;
+      if (s.size > maxSize) maxSize = s.size;
+      if (s.size < minSize) minSize = s.size;
+    }
+  }
+  if (!Number.isFinite(minSize)) minSize = maxSize;
+
+  let firstFocalIndex = -1;
+  let lastFocalIndex = -1;
+  for (let i = 0; i < specs.length; i++) {
+    const s = specs[i]!;
+    if (!s.isAnchor && Math.abs(s.size - maxSize) < 0.5) {
+      if (firstFocalIndex === -1) firstFocalIndex = i;
+      lastFocalIndex = i;
+    } else if (firstFocalIndex !== -1) {
+      break;
+    }
+  }
+  if (firstFocalIndex === -1) {
+    firstFocalIndex = Math.max(0, firstNonAnchorIndex);
+    lastFocalIndex = firstFocalIndex;
+  }
+
+  const safePivot = Math.max(0, Math.min(specs.length - 1, pivotIndex));
+  const stepSpan = maxSize + itemSpacing;
+  const rawOffsets = new Array<number>(specs.length).fill(0);
+  const unadjustedOffsets = new Array<number>(specs.length).fill(0);
+  const cutoffs = new Array<number>(specs.length).fill(0);
+
+  rawOffsets[safePivot] = pivotOffset;
+  unadjustedOffsets[safePivot] = pivotOffset;
+
+  for (let i = safePivot - 1; i >= 0; i--) {
+    const nextSpec = specs[i + 1]!;
+    const currSpec = specs[i]!;
+    rawOffsets[i] =
+      rawOffsets[i + 1]! - nextSpec.size / 2 - itemSpacing - currSpec.size / 2;
+    unadjustedOffsets[i] = unadjustedOffsets[i + 1]! - stepSpan;
+  }
+
+  for (let i = safePivot + 1; i < specs.length; i++) {
+    const prevSpec = specs[i - 1]!;
+    const currSpec = specs[i]!;
+    rawOffsets[i] =
+      rawOffsets[i - 1]! + prevSpec.size / 2 + itemSpacing + currSpec.size / 2;
+    unadjustedOffsets[i] = unadjustedOffsets[i - 1]! + stepSpan;
+  }
+
+  for (let i = 0; i < specs.length; i++) {
+    const s = specs[i]!;
+    if (s.isAnchor) {
+      cutoffs[i] = 0;
+      continue;
+    }
+    const left = rawOffsets[i]! - s.size / 2;
+    const right = rawOffsets[i]! + s.size / 2;
+    const leftCut = Math.max(0, -left);
+    const rightCut = Math.max(0, right - carouselMainAxisSize);
+    cutoffs[i] = leftCut + rightCut;
+  }
+
+  const keylines: CarouselKeyline[] = specs.map((s, i) => ({
+    size: s.size,
+    offset: rawOffsets[i]!,
+    unadjustedOffset: unadjustedOffsets[i]!,
+    isFocal: i >= firstFocalIndex && i <= lastFocalIndex,
+    isAnchor: s.isAnchor,
+    isPivot: i === safePivot,
+    cutoff: cutoffs[i]!,
+  }));
+
+  return {
+    keylines,
+    pivotIndex: safePivot,
+    firstFocalIndex,
+    lastFocalIndex,
+    firstNonAnchorIndex,
+    lastNonAnchorIndex,
+    minSize,
+    maxSize,
+  };
+}
+
+function moveSpecItem<T>(arr: readonly T[], src: number, dst: number): T[] {
+  const next = arr.slice();
+  const [moved] = next.splice(src, 1);
+  if (moved !== undefined) {
+    next.splice(dst, 0, moved);
+  }
+  return next;
+}
+
+function moveKeylineAndShift(
+  from: CarouselKeylineList,
+  srcIndex: number,
+  dstIndex: number,
+  carouselMainAxisSize: number,
+  itemSpacing: number,
+): CarouselKeylineList {
+  const pivotDir = srcIndex > dstIndex ? 1 : -1;
+  const srcKeyline = from.keylines[srcIndex]!;
+  const pivotDelta =
+    (srcKeyline.size - srcKeyline.cutoff + itemSpacing) * pivotDir;
+  const newPivotIndex = from.pivotIndex + pivotDir;
+  const newPivotOffset = from.keylines[from.pivotIndex]!.offset + pivotDelta;
+  const movedSpecs = moveSpecItem(from.keylines, srcIndex, dstIndex).map(
+    (k) => ({ size: k.size, isAnchor: k.isAnchor }),
+  );
+  return buildKeylineList(
+    carouselMainAxisSize,
+    itemSpacing,
+    newPivotIndex,
+    newPivotOffset,
+    movedSpecs,
+  );
+}
+
+function buildStartSteps(
+  defaultKeylines: CarouselKeylineList,
+  carouselMainAxisSize: number,
+  itemSpacing: number,
+): CarouselKeylineList[] {
+  if (defaultKeylines.keylines.length === 0) return [];
+  const steps: CarouselKeylineList[] = [defaultKeylines];
+  const firstFocal = defaultKeylines.keylines[defaultKeylines.firstFocalIndex]!;
+  const isAtStart =
+    Math.abs(firstFocal.offset - firstFocal.size / 2) < 0.5 &&
+    defaultKeylines.firstFocalIndex === defaultKeylines.firstNonAnchorIndex;
+  if (isAtStart) return steps;
+
+  const startIndex = defaultKeylines.firstNonAnchorIndex;
+  const endIndex = defaultKeylines.firstFocalIndex;
+  const numberOfSteps = endIndex - startIndex;
+
+  for (let i = 0; i < numberOfSteps; i++) {
+    const prevStep = steps[steps.length - 1]!;
+    const originalItemIndex = startIndex + i;
+    let dstIndex = defaultKeylines.lastNonAnchorIndex;
+    if (originalItemIndex > startIndex) {
+      const neighborSize = defaultKeylines.keylines[originalItemIndex - 1]!.size;
+      let matchIdx = prevStep.lastNonAnchorIndex + 1;
+      for (
+        let j = prevStep.lastFocalIndex + 1;
+        j <= prevStep.lastNonAnchorIndex;
+        j++
+      ) {
+        if (Math.abs(prevStep.keylines[j]!.size - neighborSize) < 0.5) {
+          matchIdx = j;
+          break;
+        }
+      }
+      dstIndex = Math.max(
+        prevStep.lastFocalIndex,
+        Math.min(prevStep.lastNonAnchorIndex, matchIdx - 1),
+      );
+    }
+    steps.push(
+      moveKeylineAndShift(
+        prevStep,
+        defaultKeylines.firstNonAnchorIndex,
+        dstIndex,
+        carouselMainAxisSize,
+        itemSpacing,
+      ),
+    );
+  }
+  return steps;
+}
+
+function buildEndSteps(
+  defaultKeylines: CarouselKeylineList,
+  carouselMainAxisSize: number,
+  itemSpacing: number,
+): CarouselKeylineList[] {
+  if (defaultKeylines.keylines.length === 0) return [];
+  const steps: CarouselKeylineList[] = [defaultKeylines];
+  const lastFocal = defaultKeylines.keylines[defaultKeylines.lastFocalIndex]!;
+  const isAtEnd =
+    Math.abs(lastFocal.offset + lastFocal.size / 2 - carouselMainAxisSize) <
+      0.5 &&
+    defaultKeylines.lastFocalIndex === defaultKeylines.lastNonAnchorIndex;
+  if (isAtEnd) return steps;
+
+  const startIndex = defaultKeylines.lastFocalIndex;
+  const endIndex = defaultKeylines.lastNonAnchorIndex;
+  const numberOfSteps = endIndex - startIndex;
+
+  if (numberOfSteps <= 0 && lastFocal.cutoff > 0) {
+    const shiftedPivotOffset =
+      defaultKeylines.keylines[defaultKeylines.pivotIndex]!.offset -
+      lastFocal.cutoff;
+    steps.push(
+      buildKeylineList(
+        carouselMainAxisSize,
+        itemSpacing,
+        defaultKeylines.pivotIndex,
+        shiftedPivotOffset,
+        defaultKeylines.keylines.map((k) => ({
+          size: k.size,
+          isAnchor: k.isAnchor,
+        })),
+      ),
+    );
+    return steps;
+  }
+
+  for (let i = 0; i < numberOfSteps; i++) {
+    const prevStep = steps[steps.length - 1]!;
+    const originalItemIndex = endIndex - i;
+    let dstIndex = defaultKeylines.firstNonAnchorIndex;
+    if (originalItemIndex < defaultKeylines.lastNonAnchorIndex) {
+      const neighborSize = defaultKeylines.keylines[originalItemIndex + 1]!.size;
+      let matchIdx = prevStep.firstNonAnchorIndex - 1;
+      for (
+        let j = prevStep.firstFocalIndex - 1;
+        j >= prevStep.firstNonAnchorIndex;
+        j--
+      ) {
+        if (Math.abs(prevStep.keylines[j]!.size - neighborSize) < 0.5) {
+          matchIdx = j;
+          break;
+        }
+      }
+      dstIndex = Math.max(
+        prevStep.firstNonAnchorIndex,
+        Math.min(prevStep.firstFocalIndex, matchIdx + 1),
+      );
+    }
+    steps.push(
+      moveKeylineAndShift(
+        prevStep,
+        defaultKeylines.lastNonAnchorIndex,
+        dstIndex,
+        carouselMainAxisSize,
+        itemSpacing,
+      ),
+    );
+  }
+  return steps;
+}
+
+function buildShiftPoints(
+  totalShiftDistance: number,
+  steps: readonly CarouselKeylineList[],
+  isShiftingLeft: boolean,
+): number[] {
+  if (totalShiftDistance <= 0 || steps.length === 0) return [0];
+  const points = [0];
+  for (let i = 1; i < steps.length; i++) {
+    const prev = steps[i - 1]!.keylines;
+    const curr = steps[i]!.keylines;
+    const dist = isShiftingLeft
+      ? curr[0]!.unadjustedOffset - prev[0]!.unadjustedOffset
+      : prev[prev.length - 1]!.unadjustedOffset -
+        curr[curr.length - 1]!.unadjustedOffset;
+    const pct = dist / totalShiftDistance;
+    points.push(i === steps.length - 1 ? 1 : (points[i - 1] ?? 0) + pct);
+  }
+  return points;
+}
+
+function lerpKeyline(
+  a: CarouselKeyline,
+  b: CarouselKeyline,
+  t: number,
+): CarouselKeyline {
+  return {
+    size: lerpScalar(a.size, b.size, t),
+    offset: lerpScalar(a.offset, b.offset, t),
+    unadjustedOffset: lerpScalar(a.unadjustedOffset, b.unadjustedOffset, t),
+    isFocal: t < 0.5 ? a.isFocal : b.isFocal,
+    isAnchor: t < 0.5 ? a.isAnchor : b.isAnchor,
+    isPivot: t < 0.5 ? a.isPivot : b.isPivot,
+    cutoff: lerpScalar(a.cutoff, b.cutoff, t),
+  };
+}
+
+function lerpKeylineList(
+  from: CarouselKeylineList,
+  to: CarouselKeylineList,
+  t: number,
+): CarouselKeylineList {
+  const keylines = from.keylines.map((k, idx) =>
+    lerpKeyline(k, to.keylines[idx] ?? k, t),
+  );
+  return {
+    keylines,
+    pivotIndex: t < 0.5 ? from.pivotIndex : to.pivotIndex,
+    firstFocalIndex: t < 0.5 ? from.firstFocalIndex : to.firstFocalIndex,
+    lastFocalIndex: t < 0.5 ? from.lastFocalIndex : to.lastFocalIndex,
+    firstNonAnchorIndex:
+      t < 0.5 ? from.firstNonAnchorIndex : to.firstNonAnchorIndex,
+    lastNonAnchorIndex:
+      t < 0.5 ? from.lastNonAnchorIndex : to.lastNonAnchorIndex,
+    minSize: lerpScalar(from.minSize, to.minSize, t),
+    maxSize: lerpScalar(from.maxSize, to.maxSize, t),
+  };
+}
+
+export function resolveCarouselKeylineStrategy(input: {
+  readonly count: number;
+  readonly containerWidth: number;
+  readonly variant?: CarouselVariant;
+  readonly preferredItemWidth?: number;
+  readonly gap?: number;
+  readonly minSmallItemSize?: number;
+  readonly maxSmallItemSize?: number;
+}): CarouselKeylineStrategy {
+  const {
+    count,
+    containerWidth,
+    variant = "multi-browse",
+    preferredItemWidth = CAROUSEL_TOKENS.defaultPreferredWidth,
+    gap = CAROUSEL_TOKENS.gap,
+    minSmallItemSize = CAROUSEL_TOKENS.minSmallItemSize,
+    maxSmallItemSize = CAROUSEL_TOKENS.maxSmallItemSize,
+  } = input;
+
+  if (count <= 0 || containerWidth <= 0) {
+    const empty = buildKeylineList(0, gap, 0, 0, []);
+    return {
+      isValid: false,
+      variant,
+      availableSpace: 0,
+      itemSpacing: gap,
+      itemMainAxisSize: 0,
+      minItemSize: 0,
+      maxItemSize: 0,
+      defaultKeylines: empty,
+      startKeylineSteps: [],
+      endKeylineSteps: [],
+      startShiftDistance: 0,
+      endShiftDistance: 0,
+      startShiftPoints: [0],
+      endShiftPoints: [0],
+    };
+  }
+
+  const anchorSize = CAROUSEL_TOKENS.anchorSize;
+  const targetSmall = (minSmallItemSize + maxSmallItemSize) / 2;
+  let defaultKeylines: CarouselKeylineList;
+
+  if (count === 1 || containerWidth <= maxSmallItemSize * 2 + gap) {
+    const specs = [
+      { size: anchorSize, isAnchor: true },
+      { size: containerWidth, isAnchor: false },
+      { size: anchorSize, isAnchor: true },
+    ];
+    defaultKeylines = buildKeylineList(
+      containerWidth,
+      gap,
+      1,
+      containerWidth / 2,
+      specs,
+    );
+  } else if (variant === "uncontained") {
+    const itemSize = Math.min(preferredItemWidth, containerWidth);
+    const fullCount = Math.max(
+      1,
+      Math.floor((containerWidth + gap) / (itemSize + gap)),
+    );
+    const visibleFull = Math.min(count, fullCount);
+    const usedByFull = visibleFull * itemSize + (visibleFull - 1) * gap;
+    const remainder = containerWidth - usedByFull - gap;
+    const specs: { size: number; isAnchor: boolean }[] = [
+      { size: anchorSize, isAnchor: true },
+    ];
+    for (let i = 0; i < visibleFull; i++) {
+      specs.push({ size: itemSize, isAnchor: false });
+    }
+    if (visibleFull < count && remainder > 0) {
+      const peekSize = Math.max(
+        Math.min(minSmallItemSize, itemSize),
+        Math.min(itemSize * 0.85, remainder + itemSize * 0.25),
+      );
+      specs.push({ size: peekSize, isAnchor: false });
+    }
+    specs.push({ size: anchorSize, isAnchor: true });
+    defaultKeylines = buildKeylineList(
+      containerWidth,
+      gap,
+      1,
+      itemSize / 2,
+      specs,
+    );
+  } else if (variant === "centered-hero") {
+    if (count === 2) {
+      const small = Math.min(
+        maxSmallItemSize,
+        Math.max(minSmallItemSize, targetSmall),
+      );
+      const large = Math.max(small, containerWidth - small - gap);
+      const specs = [
+        { size: anchorSize, isAnchor: true },
+        { size: large, isAnchor: false },
+        { size: small, isAnchor: false },
+        { size: anchorSize, isAnchor: true },
+      ];
+      defaultKeylines = buildKeylineList(
+        containerWidth,
+        gap,
+        1,
+        large / 2,
+        specs,
+      );
+    } else {
+      const small = Math.min(
+        maxSmallItemSize,
+        Math.max(
+          minSmallItemSize,
+          Math.min(targetSmall, (containerWidth - gap * 2) * 0.16),
+        ),
+      );
+      const large = Math.max(small, containerWidth - small * 2 - gap * 2);
+      const specs = [
+        { size: anchorSize, isAnchor: true },
+        { size: small, isAnchor: false },
+        { size: large, isAnchor: false },
+        { size: small, isAnchor: false },
+        { size: anchorSize, isAnchor: true },
+      ];
+      defaultKeylines = buildKeylineList(
+        containerWidth,
+        gap,
+        2,
+        containerWidth / 2,
+        specs,
+      );
+    }
+  } else if (variant === "hero") {
+    const small = Math.min(
+      maxSmallItemSize,
+      Math.max(
+        minSmallItemSize,
+        Math.min(targetSmall, (containerWidth - gap) * 0.18),
+      ),
+    );
+    const large = Math.max(small, containerWidth - small - gap);
+    const specs = [
+      { size: anchorSize, isAnchor: true },
+      { size: large, isAnchor: false },
+      { size: small, isAnchor: false },
+      { size: anchorSize, isAnchor: true },
+    ];
+    defaultKeylines = buildKeylineList(
+      containerWidth,
+      gap,
+      1,
+      large / 2,
+      specs,
+    );
+  } else {
+    // AOSP multiBrowseKeylineList lowest-cost arrangement
+    const maxLargeCandidates = Math.min(
+      count,
+      Math.max(1, Math.ceil(containerWidth / Math.max(120, preferredItemWidth)) + 1),
+    );
+    let bestSpecs: { size: number; isAnchor: boolean }[] | null = null;
+    let bestCost = Number.POSITIVE_INFINITY;
+    let bestLarge = containerWidth;
+
+    for (let lCount = 1; lCount <= maxLargeCandidates; lCount++) {
+      const mCandidates = count - lCount >= 2 ? [1, 0] : [0];
+      for (const mCount of mCandidates) {
+        const sCount = count > lCount + mCount ? 1 : 0;
+        const totalSlots = lCount + mCount + sCount;
+        const available = containerWidth - (totalSlots - 1) * gap;
+        if (available <= 0) continue;
+
+        const sSize =
+          sCount > 0
+            ? Math.min(
+                maxSmallItemSize,
+                Math.max(minSmallItemSize, Math.min(targetSmall, available * 0.16)),
+              )
+            : 0;
+        const remainAfterSmall = available - sCount * sSize;
+        const mRatio = mCount > 0 ? 0.56 : 0;
+        const lSize = remainAfterSmall / (lCount + mCount * mRatio);
+        const mSize = mCount > 0 ? lSize * mRatio : 0;
+
+        if (sCount > 0 && lSize <= sSize * 1.15) continue;
+        if (mCount > 0 && (mSize <= sSize * 1.05 || mSize >= lSize * 0.92)) {
+          continue;
+        }
+
+        const cost =
+          Math.abs(lSize - preferredItemWidth) * lCount +
+          (sCount > 0 ? Math.abs(sSize - targetSmall) * 0.5 : 40);
+        if (cost < bestCost) {
+          bestCost = cost;
+          bestLarge = lSize;
+          const nextSpecs: { size: number; isAnchor: boolean }[] = [
+            { size: anchorSize, isAnchor: true },
+          ];
+          for (let i = 0; i < lCount; i++) {
+            nextSpecs.push({ size: lSize, isAnchor: false });
+          }
+          for (let i = 0; i < mCount; i++) {
+            nextSpecs.push({ size: mSize, isAnchor: false });
+          }
+          for (let i = 0; i < sCount; i++) {
+            nextSpecs.push({ size: sSize, isAnchor: false });
+          }
+          nextSpecs.push({ size: anchorSize, isAnchor: true });
+          bestSpecs = nextSpecs;
+        }
+      }
+    }
+
+    if (!bestSpecs) {
+      const small = Math.min(
+        maxSmallItemSize,
+        Math.max(minSmallItemSize, Math.min(targetSmall, (containerWidth - gap) * 0.2)),
+      );
+      bestLarge = Math.max(small, containerWidth - small - gap);
+      bestSpecs = [
+        { size: anchorSize, isAnchor: true },
+        { size: bestLarge, isAnchor: false },
+        { size: small, isAnchor: false },
+        { size: anchorSize, isAnchor: true },
+      ];
+    }
+
+    defaultKeylines = buildKeylineList(
+      containerWidth,
+      gap,
+      1,
+      bestLarge / 2,
+      bestSpecs,
+    );
+  }
+
+  const startKeylineSteps = buildStartSteps(
+    defaultKeylines,
+    containerWidth,
+    gap,
+  );
+  const endKeylineSteps = buildEndSteps(defaultKeylines, containerWidth, gap);
+
+  const startShiftDistance =
+    startKeylineSteps.length > 1
+      ? Math.max(
+          0,
+          startKeylineSteps[startKeylineSteps.length - 1]!.keylines[0]!
+            .unadjustedOffset -
+            startKeylineSteps[0]!.keylines[0]!.unadjustedOffset,
+        )
+      : 0;
+  const endShiftDistance =
+    endKeylineSteps.length > 1
+      ? Math.max(
+          0,
+          endKeylineSteps[0]!.keylines[
+            endKeylineSteps[0]!.keylines.length - 1
+          ]!.unadjustedOffset -
+            endKeylineSteps[endKeylineSteps.length - 1]!.keylines[
+              endKeylineSteps[endKeylineSteps.length - 1]!.keylines.length - 1
+            ]!.unadjustedOffset,
+        )
+      : 0;
+
+  const startShiftPoints = buildShiftPoints(
+    startShiftDistance,
+    startKeylineSteps,
+    true,
+  );
+  const endShiftPoints = buildShiftPoints(
+    endShiftDistance,
+    endKeylineSteps,
+    false,
+  );
+
+  let minItemSize = defaultKeylines.minSize;
+  let maxItemSize = defaultKeylines.maxSize;
+  for (const step of startKeylineSteps) {
+    if (step.minSize < minItemSize) minItemSize = step.minSize;
+    if (step.maxSize > maxItemSize) maxItemSize = step.maxSize;
+  }
+  for (const step of endKeylineSteps) {
+    if (step.minSize < minItemSize) minItemSize = step.minSize;
+    if (step.maxSize > maxItemSize) maxItemSize = step.maxSize;
+  }
+
+  const itemMainAxisSize =
+    defaultKeylines.keylines[defaultKeylines.firstFocalIndex]?.size ?? 0;
+
+  return {
+    isValid: itemMainAxisSize > 0 && containerWidth > 0,
+    variant,
+    availableSpace: containerWidth,
+    itemSpacing: gap,
+    itemMainAxisSize,
+    minItemSize,
+    maxItemSize,
+    defaultKeylines,
+    startKeylineSteps,
+    endKeylineSteps,
+    startShiftDistance,
+    endShiftDistance,
+    startShiftPoints,
+    endShiftPoints,
+  };
+}
+
+export function getKeylineListForScrollOffset(
+  strategy: CarouselKeylineStrategy,
+  scrollOffset: number,
+  maxScrollOffset: number,
+): CarouselKeylineList {
+  if (!strategy.isValid) return strategy.defaultKeylines;
+
+  const positiveScroll = Math.max(0, scrollOffset);
+  const startShiftOffset = strategy.startShiftDistance;
+  const endShiftOffset = Math.max(0, maxScrollOffset - strategy.endShiftDistance);
+
+  if (
+    positiveScroll >= startShiftOffset &&
+    positiveScroll <= endShiftOffset
+  ) {
+    return strategy.defaultKeylines;
+  }
+
+  let interpolation = lerpRange(
+    1,
+    0,
+    0,
+    startShiftOffset,
+    positiveScroll,
+  );
+  let shiftPoints = strategy.startShiftPoints;
+  let steps = strategy.startKeylineSteps;
+
+  if (positiveScroll > endShiftOffset) {
+    interpolation = lerpRange(
+      0,
+      1,
+      endShiftOffset,
+      maxScrollOffset,
+      positiveScroll,
+    );
+    shiftPoints = strategy.endShiftPoints;
+    steps = strategy.endKeylineSteps;
+
+    if (
+      endShiftOffset < 0.01 &&
+      strategy.startKeylineSteps.length === 2 &&
+      strategy.endKeylineSteps.length === 2
+    ) {
+      steps = [
+        strategy.startKeylineSteps[strategy.startKeylineSteps.length - 1]!,
+        strategy.endKeylineSteps[strategy.endKeylineSteps.length - 1]!,
+      ];
+    }
+  }
+
+  if (steps.length <= 1) {
+    return steps[0] ?? strategy.defaultKeylines;
+  }
+
+  let fromIdx = 0;
+  let toIdx = 0;
+  let steppedT = 0;
+  let lower = shiftPoints[0] ?? 0;
+  for (let i = 1; i < steps.length; i++) {
+    const upper = shiftPoints[i] ?? 1;
+    if (interpolation <= upper + 1e-5) {
+      fromIdx = i - 1;
+      toIdx = i;
+      steppedT = lerpRange(0, 1, lower, upper, interpolation);
+      break;
+    }
+    lower = upper;
+  }
+
+  return lerpKeylineList(steps[fromIdx]!, steps[toIdx]!, steppedT);
+}
+
+export function resolveCarouselSnapOffset(input: {
+  readonly strategy: CarouselKeylineStrategy;
+  readonly index: number;
+  readonly count: number;
+}): number {
+  const { strategy, index, count } = input;
+  if (!strategy.isValid || count <= 1) return 0;
+
+  const L = strategy.itemMainAxisSize;
+  const gap = strategy.itemSpacing;
+  const maxScrollOffset = Math.max(
+    0,
+    count * L + (count - 1) * gap - strategy.availableSpace,
+  );
+  if (maxScrollOffset <= 0) return 0;
+
+  const clampedIdx = Math.max(0, Math.min(count - 1, index));
+  if (clampedIdx === 0) return 0;
+  if (clampedIdx === count - 1) return maxScrollOffset;
+
+  const def = strategy.defaultKeylines;
+  const focalCount = Math.max(1, def.lastFocalIndex - def.firstFocalIndex + 1);
+  const startStepsCount = Math.max(0, strategy.startKeylineSteps.length - 1);
+  const endShiftSteps = Math.max(0, strategy.endKeylineSteps.length - 1);
+  const totalEndPositions = endShiftSteps + (focalCount - 1);
+
+  let targetFocalOffset =
+    def.keylines[def.firstFocalIndex]!.unadjustedOffset;
+
+  if (clampedIdx < startStepsCount) {
+    const step = strategy.startKeylineSteps[startStepsCount - clampedIdx];
+    if (step) {
+      targetFocalOffset =
+        step.keylines[step.firstFocalIndex]!.unadjustedOffset;
+    }
+  } else if (clampedIdx >= count - totalEndPositions) {
+    const fromEnd = count - 1 - clampedIdx;
+    if (fromEnd < endShiftSteps) {
+      const step = strategy.endKeylineSteps[endShiftSteps - fromEnd];
+      if (step) {
+        targetFocalOffset =
+          step.keylines[step.lastFocalIndex]!.unadjustedOffset;
+      }
+    } else {
+      const focalSlot = def.lastFocalIndex - (fromEnd - endShiftSteps);
+      const kl = def.keylines[Math.max(def.firstFocalIndex, focalSlot)];
+      if (kl) targetFocalOffset = kl.unadjustedOffset;
+    }
+  }
+
+  const raw = clampedIdx * (L + gap) + L / 2 - targetFocalOffset;
+  return Math.max(0, Math.min(maxScrollOffset, raw));
+}
+
+export function resolveCarouselItemFrame(input: {
+  readonly strategy: CarouselKeylineStrategy;
+  readonly index: number;
+  readonly count: number;
+  readonly scrollOffset: number;
+}): CarouselItemFrame {
+  const { strategy, index, count, scrollOffset } = input;
+  if (!strategy.isValid || count <= 0) {
+    return {
+      index,
+      slotWidth: 0,
+      maskWidth: 0,
+      offsetDelta: 0,
+      cornerRadius: CAROUSEL_TOKENS.focalRadius,
+      prominence: 0,
+      zIndex: 1,
+      isFocal: false,
+    };
+  }
+
+  const L = strategy.itemMainAxisSize;
+  const gap = strategy.itemSpacing;
+  const maxScrollOffset = Math.max(
+    0,
+    count * L + (count - 1) * gap - strategy.availableSpace,
+  );
+  const clampedScroll = Math.max(0, Math.min(maxScrollOffset, scrollOffset));
+  const keylines = getKeylineListForScrollOffset(
+    strategy,
+    clampedScroll,
+    maxScrollOffset,
+  ).keylines;
+
+  const unadjustedCenter = index * (L + gap) + L / 2 - clampedScroll;
+  let before = keylines[0]!;
+  let after = keylines[keylines.length - 1]!;
+
+  for (let i = 0; i < keylines.length; i++) {
+    const kl = keylines[i]!;
+    if (kl.unadjustedOffset <= unadjustedCenter) {
+      before = kl;
+    }
+    if (kl.unadjustedOffset >= unadjustedCenter) {
+      after = kl;
+      break;
+    }
+  }
+
+  const isOutOfBounds = before === after;
+  const progress = isOutOfBounds
+    ? 1
+    : (unadjustedCenter - before.unadjustedOffset) /
+      Math.max(1e-5, after.unadjustedOffset - before.unadjustedOffset);
+  const interp = lerpKeyline(before, after, progress);
+
+  let offsetDelta = interp.offset - unadjustedCenter;
+  if (isOutOfBounds && interp.size > 0) {
+    offsetDelta += (unadjustedCenter - interp.unadjustedOffset) / interp.size;
+  }
+
+  const sizeSpan = Math.max(1, strategy.maxItemSize - strategy.minItemSize);
+  const prominence =
+    strategy.maxItemSize <= strategy.minItemSize + 0.5
+      ? 1
+      : Math.max(
+          0,
+          Math.min(1, (interp.size - strategy.minItemSize) / sizeSpan),
+        );
+  const cornerRadius =
+    CAROUSEL_TOKENS.peekRadius +
+    prominence * (CAROUSEL_TOKENS.focalRadius - CAROUSEL_TOKENS.peekRadius);
+
+  return {
+    index,
+    slotWidth: L,
+    maskWidth: Math.max(0, interp.size),
+    offsetDelta,
+    cornerRadius,
+    prominence,
+    zIndex: Math.round(10 + prominence * 20),
+    isFocal: prominence >= 0.92,
+  };
+}
 
 export interface CarouselItemMetric {
   readonly index: number;
@@ -1234,10 +2176,12 @@ export interface TopAppBarGeometryOutput {
 export const TOP_APP_BAR_SPECS = {
   collapsedHeight: 64,
   mediumExpandedHeight: 112,
-  largeExpandedHeight: 148,
-  collapsedTitleSize: 20,
-  mediumExpandedTitleSize: 24,
-  largeExpandedTitleSize: 28,
+  mediumSubtitleExpandedHeight: 136,
+  largeExpandedHeight: 120,
+  largeSubtitleExpandedHeight: 152,
+  collapsedTitleSize: 22,
+  mediumExpandedTitleSize: 28,
+  largeExpandedTitleSize: 36,
   horizontalPadding: 16,
 } as const;
 
@@ -1245,11 +2189,13 @@ export function resolveTopAppBarGeometry(input: {
   readonly variant?: TopAppBarVariant;
   readonly collapsedFraction?: number;
   readonly scrolled?: boolean;
+  readonly hasSubtitle?: boolean;
 } = {}): TopAppBarGeometryOutput {
   const {
     variant = "small",
     collapsedFraction = 0,
     scrolled = collapsedFraction > 0.04,
+    hasSubtitle = false,
   } = input;
 
   const t = Math.max(0, Math.min(1, collapsedFraction));
@@ -1266,8 +2212,12 @@ export function resolveTopAppBarGeometry(input: {
 
   const expandedH =
     variant === "large-flexible"
-      ? TOP_APP_BAR_SPECS.largeExpandedHeight
-      : TOP_APP_BAR_SPECS.mediumExpandedHeight;
+      ? hasSubtitle
+        ? TOP_APP_BAR_SPECS.largeSubtitleExpandedHeight
+        : TOP_APP_BAR_SPECS.largeExpandedHeight
+      : hasSubtitle
+        ? TOP_APP_BAR_SPECS.mediumSubtitleExpandedHeight
+        : TOP_APP_BAR_SPECS.mediumExpandedHeight;
   const expandedFont =
     variant === "large-flexible"
       ? TOP_APP_BAR_SPECS.largeExpandedTitleSize
@@ -1289,9 +2239,9 @@ export const PROGRESS_TOKENS = {
   trackGap: 4,
   stopDotSize: 4,
   circularSizes: {
-    sm: { size: 36, strokeWidth: 4 },
-    md: { size: 48, strokeWidth: 4.5 },
-    lg: { size: 64, strokeWidth: 6 },
+    sm: { size: 32, strokeWidth: 3.5 },
+    md: { size: 40, strokeWidth: 4 },
+    lg: { size: 56, strokeWidth: 5 },
   },
 } as const;
 
@@ -1557,4 +2507,133 @@ export const SKELETON_TOKENS = {
   textRadius: 6,
   roundedRadius: SHAPE_CORNER_TOKENS.medium,
   rectangularRadius: SHAPE_CORNER_TOKENS.extraSmall,
+} as const;
+
+export const DOCKED_TOOLBAR_TOKENS = {
+  height: 64,
+  paddingInline: 16,
+  itemSize: 48,
+  itemRadius: 24,
+  itemSelectedRadius: 14,
+  itemPressedRadius: 10,
+} as const;
+
+export const SEARCH_VIEW_TOKENS = {
+  dockedRadius: SHAPE_CORNER_TOKENS.extraLarge,
+  dockedMaxWidth: 720,
+  headerHeight: 56,
+  itemRadius: 14,
+} as const;
+
+export const FILE_UPLOAD_TOKENS = {
+  dropzoneRadius: 24,
+  dropzoneActiveRadius: SHAPE_CORNER_TOKENS.large,
+  dropzonePadding: 28,
+  itemRadius: 14,
+  itemPadding: 12,
+} as const;
+
+export const KBD_SNIPPET_TOKENS = {
+  kbdRadius: 6,
+  kbdHeight: 22,
+  snippetRadius: 14,
+  snippetMinHeight: 44,
+  copyButtonSize: 32,
+} as const;
+
+const SHORTCUT_MODIFIER_SYMBOLS = new Set(["⌘", "⇧", "⌥", "⌃"]);
+
+export function parseShortcutKeys(shortcut: string): readonly string[] {
+  const trimmed = shortcut.trim();
+  if (!trimmed) return [];
+
+  const tokens = trimmed
+    .split(/\s+|(?<=.)\+(?=.)/g)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  const expanded: string[] = [];
+  for (const token of tokens) {
+    let idx = 0;
+    const chars = Array.from(token);
+    while (
+      idx < chars.length - 1 &&
+      SHORTCUT_MODIFIER_SYMBOLS.has(chars[idx]!)
+    ) {
+      expanded.push(chars[idx]!);
+      idx += 1;
+    }
+    const rest = chars.slice(idx).join("");
+    if (rest) {
+      expanded.push(rest);
+    }
+  }
+  return expanded;
+}
+
+export const COLOR_PICKER_TOKENS = {
+  panelWidth: 288,
+  containerRadius: 24,
+  swatchSize: 28,
+  swatchRadius: 14,
+  swatchSelectedRadius: 8,
+  areaHeight: 144,
+} as const;
+
+export const DRAG_HANDLE_TOKENS = {
+  width: 4,
+  height: 48,
+  pressedWidth: 12,
+  pressedHeight: 52,
+  containerSize: 24,
+  hitTargetSize: 48,
+  restRadius: 9999,
+  pressedRadius: SHAPE_CORNER_TOKENS.medium,
+} as const;
+
+export function resolveDragHandleGeometry(input: {
+  readonly isActive?: boolean;
+  readonly orientation?: "vertical" | "horizontal";
+} = {}): {
+  readonly inlineSize: number;
+  readonly blockSize: number;
+  readonly cornerRadius: number;
+} {
+  const { isActive = false, orientation = "vertical" } = input;
+  const thickness = isActive
+    ? DRAG_HANDLE_TOKENS.pressedWidth
+    : DRAG_HANDLE_TOKENS.width;
+  const length = isActive
+    ? DRAG_HANDLE_TOKENS.pressedHeight
+    : DRAG_HANDLE_TOKENS.height;
+  const cornerRadius = isActive
+    ? DRAG_HANDLE_TOKENS.pressedRadius
+    : DRAG_HANDLE_TOKENS.restRadius;
+
+  return orientation === "horizontal"
+    ? { inlineSize: length, blockSize: thickness, cornerRadius }
+    : { inlineSize: thickness, blockSize: length, cornerRadius };
+}
+
+export const BOTTOM_APP_BAR_TOKENS = {
+  height: 80,
+  paddingInline: 16,
+  paddingBlock: 12,
+  actionGap: 4,
+} as const;
+
+export const PULL_TO_REFRESH_TOKENS = {
+  positionalThreshold: 80,
+  maxDragDistance: 132,
+  dragMultiplier: 0.5,
+  indicatorSize: 48,
+  circularSize: 40,
+} as const;
+
+export const VIBRANT_MENU_TOKENS = {
+  containerPadding: 4,
+  groupGap: 4,
+  groupRadius: SHAPE_CORNER_TOKENS.large,
+  itemOuterRadius: SHAPE_CORNER_TOKENS.medium,
+  itemInnerRadius: SHAPE_CORNER_TOKENS.extraSmall,
 } as const;

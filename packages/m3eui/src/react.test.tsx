@@ -6,37 +6,55 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   Accordion,
+  Alert,
   Avatar,
+  AvatarGroup,
   Badge,
   BottomSheet,
+  Breadcrumb,
   Button,
   ButtonGroup,
   Card,
   Carousel,
   Checkbox,
   CheckboxGroup,
+  Chip,
   CircularProgressIndicator,
   CircularWavyProgressIndicator,
   Collapsible,
+  ColorPicker,
+  ColorPickerField,
+  ColorSwatch,
   Combobox,
+  CommandPalette,
   ContainedLoadingIndicator,
+  CopyButton,
   DataTable,
   DatePickerField,
   DateRangePicker,
+  DateRangePickerField,
+  DateTimePickerField,
   Dialog,
   Divider,
   DockedDatePicker,
+  DockedToolbar,
+  DropdownMenu,
+  Empty,
   ExtendedFAB,
   FAB,
   FABMenu,
   Fieldset,
+  FileUpload,
   FilterChip,
   FloatingToolbar,
   Form,
   IconButton,
   InputChip,
+  Kbd,
   LinearProgressIndicator,
   LinearWavyProgressIndicator,
+  List,
+  ListItem,
   LoadingIndicator,
   M3E_BUILT_IN_LOCALES,
   type M3EConfig,
@@ -44,22 +62,30 @@ import {
   MaterialShapeView,
   Menubar,
   Meter,
+  ModalDatePicker,
+  MultiCombobox,
+  MultiSelect,
   NavigationDrawer,
   NavigationMenu,
   NavigationSuite,
   NumberField,
   OTPField,
+  Pagination,
+  Popover,
   Radio,
   RadioGroup,
   ScrollArea,
   SearchBar,
+  SearchView,
   SegmentedList,
   SegmentedListItem,
   Select,
   SideSheet,
   Skeleton,
   Slider,
+  Snippet,
   SplitButton,
+  SuggestionChip,
   Switch,
   Tab,
   Tabs,
@@ -325,6 +351,52 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     container.remove();
     document.documentElement.removeAttribute("lang");
     document.documentElement.removeAttribute("dir");
+    document.documentElement.removeAttribute("data-color-mode");
+    document.documentElement.style.colorScheme = "";
+    window.localStorage?.removeItem?.("m3e-color-scheme");
+  });
+
+  it("defaults colorMode to system and syncs documentElement colorScheme, data-color-mode, and meta[name=color-scheme] when toggling dark/light mode", () => {
+    let toggleMode: ((mode: "light" | "dark" | "system") => void) | undefined;
+
+    function ColorModeProbe() {
+      const { colorMode, setColorMode } = useM3E();
+      toggleMode = setColorMode;
+      return <span data-testid="mode">{colorMode}</span>;
+    }
+
+    act(() => {
+      root.render(
+        <M3EProvider>
+          <ColorModeProbe />
+        </M3EProvider>,
+      );
+    });
+
+    expect(container.querySelector('[data-testid="mode"]')?.textContent).toBe("system");
+    expect(document.documentElement.dataset.colorMode).toBe("system");
+    expect(document.documentElement.style.colorScheme).toBe("light dark");
+    expect(
+      document.querySelector('meta[name="color-scheme"]')?.getAttribute("content"),
+    ).toBe("light dark");
+
+    act(() => {
+      toggleMode?.("dark");
+    });
+
+    expect(container.querySelector('[data-testid="mode"]')?.textContent).toBe("dark");
+    expect(document.documentElement.dataset.colorMode).toBe("dark");
+    expect(document.documentElement.style.colorScheme).toBe("dark");
+    expect(
+      document.querySelector('meta[name="color-scheme"]')?.getAttribute("content"),
+    ).toBe("dark");
+
+    act(() => {
+      toggleMode?.("light");
+    });
+
+    expect(document.documentElement.dataset.colorMode).toBe("light");
+    expect(document.documentElement.style.colorScheme).toBe("light");
   });
 
   it("syncs html[lang] and auto-RTL html[dir] dynamically when switching locales and supports custom message overrides", () => {
@@ -462,8 +534,8 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     const rtlChevron = container.querySelector<HTMLElement>(
       '[data-testid="rtl-col"] .m3e-collapsible__chevron',
     );
-    expect(ltrChevron?.style.rotate).toBe("-90.0deg");
-    expect(rtlChevron?.style.rotate).toBe("90.0deg");
+    expect(ltrChevron?.hasAttribute("data-open")).toBe(false);
+    expect(rtlChevron?.hasAttribute("data-open")).toBe(false);
 
     const trigger = container.querySelector<HTMLButtonElement>(
       '[data-testid="ltr-col"] .m3e-collapsible__trigger',
@@ -472,7 +544,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
       trigger!.click();
     });
     expect(ltrPanel?.hasAttribute("hidden")).toBe(false);
-    expect(ltrChevron?.style.rotate).toBe("0.0deg");
+    expect(ltrChevron?.hasAttribute("data-open")).toBe(true);
   });
 
   it("synchronizes Accordion showExpandAll aria-expanded strictly when all items are open", () => {
@@ -730,8 +802,8 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(activeIdx).toBe(1);
   });
 
-  it("renders TopAppBar, FloatingToolbar, FAB, ExtendedFAB, SegmentedList, MaterialShapeView, LoadingIndicator & CircularProgress", () => {
-    act(() => {
+  it("renders TopAppBar, FloatingToolbar, FAB, ExtendedFAB, SegmentedList, MaterialShapeView, LoadingIndicator & CircularProgress", async () => {
+    await act(async () => {
       root.render(
         <PausedWrapper locale="en-US">
           <TopAppBar
@@ -1783,5 +1855,802 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
       ".m3e-sheet__popup",
     );
     expect(rtlSideSheet?.getAttribute("data-side")).toBe("left");
+  });
+
+  it("supports Button loading/danger/fullWidth/href, TextField prefix/suffix, Select clearable/groups, and new Alert/Chip/Breadcrumb/Pagination/Empty/CommandPalette components", () => {
+    let clickCount = 0;
+    let chipRemoved = false;
+    let chipClicked = false;
+    let selectedVal: string | null = "pro";
+    let currentPage = 2;
+    let ranCommand = "";
+
+    act(() => {
+      root.render(
+        <PausedWrapper locale="zh-CN">
+          <Button
+            loading
+            intent="danger"
+            fullWidth
+            onClick={() => {
+              clickCount += 1;
+            }}
+          >
+            正在删除
+          </Button>
+          <Button href="https://example.com/docs" variant="outlined">
+            外链按钮
+          </Button>
+          <IconButton
+            icon={<span>✕</span>}
+            aria-label="删除条目"
+            intent="danger"
+            loading
+          />
+          <TextField
+            label="自定义域名"
+            prefixText="https://"
+            suffixText=".m3e.dev"
+            defaultValue=""
+          />
+          <Select
+            label="部署实例"
+            clearable
+            value={selectedVal}
+            onValueChange={(v) => {
+              selectedVal = v;
+            }}
+            groups={[
+              {
+                label: "亚太区",
+                options: [
+                  { value: "pro", label: "Tokyo Pro" },
+                  { value: "std", label: "Singapore Standard" },
+                ],
+              },
+            ]}
+          />
+          <Alert severity="error" title="同步失败" closable>
+            请检查上游令牌权限
+          </Alert>
+          <Chip tone="success" dot>
+            运行中
+          </Chip>
+          <Chip
+            tone="primary"
+            onRemove={() => {
+              chipRemoved = true;
+            }}
+          >
+            v0.1.0
+          </Chip>
+          <Chip
+            tone="secondary"
+            variant="outlined"
+            onClick={() => {
+              chipClicked = true;
+            }}
+          >
+            筛选
+          </Chip>
+          <Breadcrumb
+            items={[
+              { key: "home", label: "首页", href: "/" },
+              { key: "comp", label: "组件", href: "/components" },
+              { key: "btn", label: "Button", href: "/components/button" },
+            ]}
+          />
+          <Pagination
+            page={currentPage}
+            totalItems={95}
+            pageSize={10}
+            showSummary
+            onPageChange={(next) => {
+              currentPage = next;
+            }}
+          />
+          <Empty shape="clover8Leaf" actions={<Button size="xs">新建</Button>} />
+          <CommandPalette
+            open
+            groups={[
+              {
+                id: "nav",
+                heading: "快捷跳转",
+                items: [
+                  {
+                    id: "go-blocks",
+                    label: "打开 Blocks 模板库",
+                    shortcut: "⌘B",
+                    onSelect: () => {
+                      ranCommand = "go-blocks";
+                    },
+                  },
+                ],
+              },
+            ]}
+          />
+        </PausedWrapper>,
+      );
+    });
+
+    const loadingBtn = container.querySelector<HTMLButtonElement>(
+      ".m3e-button[data-loading]",
+    );
+    expect(loadingBtn?.getAttribute("aria-busy")).toBe("true");
+    expect(loadingBtn?.getAttribute("data-intent")).toBe("danger");
+    expect(loadingBtn?.hasAttribute("data-full-width")).toBe(true);
+    act(() => {
+      loadingBtn?.click();
+    });
+    expect(clickCount).toBe(0);
+
+    const linkBtn = container.querySelector<HTMLAnchorElement>(
+      'a.m3e-button[href="https://example.com/docs"]',
+    );
+    expect(linkBtn).not.toBeNull();
+
+    const textAffixes = container.querySelectorAll(".m3e-text-field__text-affix");
+    expect(textAffixes.length).toBe(2);
+    expect(textAffixes[0]?.textContent).toBe("https://");
+    expect(
+      container
+        .querySelector(".m3e-text-field__shell")
+        ?.hasAttribute("data-floating"),
+    ).toBe(true);
+
+    const clearSelectBtn = container.querySelector<HTMLButtonElement>(
+      ".m3e-select__clear-btn",
+    );
+    expect(clearSelectBtn?.getAttribute("aria-label")).toBe(
+      zhCNMessages["select.clear"],
+    );
+    act(() => {
+      clearSelectBtn?.click();
+    });
+    expect(selectedVal).toBeNull();
+
+    const errorAlert = container.querySelector('.m3e-alert[data-severity="error"]');
+    expect(errorAlert?.getAttribute("role")).toBe("alert");
+    const closeAlertBtn = errorAlert?.querySelector<HTMLButtonElement>(
+      ".m3e-alert__close",
+    );
+    act(() => {
+      closeAlertBtn?.click();
+    });
+    expect(container.querySelector(".m3e-alert")).toBeNull();
+
+    const staticStatusChip = container.querySelector(
+      'span.m3e-chip-status[data-tone="success"]',
+    );
+    expect(staticStatusChip?.querySelector(".m3e-chip-status__dot")).not.toBeNull();
+    const removeStatusChipBtn = container.querySelector<HTMLButtonElement>(
+      ".m3e-chip-status__remove",
+    );
+    act(() => {
+      removeStatusChipBtn?.click();
+    });
+    expect(chipRemoved).toBe(true);
+    const interactiveStatusChip = container.querySelector<HTMLButtonElement>(
+      "button.m3e-chip-status[data-interactive]",
+    );
+    expect(interactiveStatusChip).not.toBeNull();
+    act(() => {
+      interactiveStatusChip?.click();
+    });
+    expect(chipClicked).toBe(true);
+
+    const breadcrumbOl = container.querySelector("nav.m3e-breadcrumb > ol");
+    expect(breadcrumbOl).not.toBeNull();
+    const lastCrumbLink = breadcrumbOl?.querySelector(
+      'li:last-child > a[aria-current="page"]',
+    );
+    expect(lastCrumbLink?.textContent).toBe("Button");
+
+    const nextBtn = container.querySelector<HTMLButtonElement>(
+      `button[aria-label="${zhCNMessages["pagination.next"]}"]`,
+    );
+    act(() => {
+      nextBtn?.click();
+    });
+    expect(currentPage).toBe(3);
+
+    expect(container.querySelector(".m3e-empty__title")?.textContent).toBe(
+      zhCNMessages["empty.title"],
+    );
+
+    const cmdOption = document.body.querySelector<HTMLElement>(
+      '.m3e-command-palette__item[role="option"]',
+    );
+    expect(cmdOption?.textContent).toContain("打开 Blocks 模板库");
+    act(() => {
+      cmdOption?.click();
+    });
+    expect(ranCommand).toBe("go-blocks");
+  });
+
+  it("renders IconButton as a semantic anchor element when href is provided", () => {
+    act(() => {
+      root.render(
+        <PausedWrapper>
+          <IconButton
+            href="https://github.com/boltguo/m3eui"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="GitHub"
+            icon={<span data-testid="gh-glyph">GH</span>}
+          />
+        </PausedWrapper>,
+      );
+    });
+
+    const link = container.querySelector<HTMLAnchorElement>("a.m3e-icon-button");
+    expect(link).not.toBeNull();
+    expect(link?.getAttribute("href")).toBe("https://github.com/boltguo/m3eui");
+    expect(link?.getAttribute("target")).toBe("_blank");
+    expect(link?.getAttribute("rel")).toBe("noopener noreferrer");
+    expect(link?.getAttribute("aria-label")).toBe("GitHub");
+    expect(link?.getAttribute("type")).toBeNull();
+  });
+
+  it("renders Phase 1 M3E spec components: SuggestionChip, DockedToolbar, SearchView (docked & fullscreen), and standard List", () => {
+    let chipClicks = 0;
+    let submittedSearch = "";
+    let clearedRecent = false;
+
+    act(() => {
+      root.render(
+        <PausedWrapper locale="zh-CN">
+          <div>
+            <SuggestionChip
+              selected
+              elevated
+              icon={<span>✨</span>}
+              onClick={() => {
+                chipClicks += 1;
+              }}
+            >
+              总结本周变更
+            </SuggestionChip>
+
+            <DockedToolbar
+              items={[
+                { id: "share", label: "分享", icon: <span>S</span>, selected: true },
+                { id: "bookmark", label: "收藏", icon: <span>B</span>, separatorBefore: true },
+              ]}
+              primaryAction={<FAB aria-label="新建" icon={<span>+</span>} size="sm" />}
+            />
+
+            <SearchView
+              mode="docked"
+              recentSearches={["MaterialShapes", "HCT 色彩"]}
+              onClearRecent={() => {
+                clearedRecent = true;
+              }}
+              suggestions={[
+                { value: "btn", label: "Button 按钮", category: "动作" },
+              ]}
+              onSearchSubmit={(q) => {
+                submittedSearch = q;
+              }}
+            />
+
+            <SearchView
+              open
+              mode="fullscreen"
+              defaultValue="spring"
+              suggestions={[{ value: "sp", label: "Spring Motion" }]}
+            />
+
+            <List dividers="inset" aria-label="标准设置列表">
+              <ListItem headline="通知偏好" supportingText="管理推送渠道" selected />
+              <ListItem headline="安全与密钥" />
+            </List>
+          </div>
+        </PausedWrapper>,
+      );
+    });
+
+    const suggestionChip = container.querySelector<HTMLButtonElement>(
+      ".m3e-chip--suggestion",
+    );
+    expect(suggestionChip).not.toBeNull();
+    expect(suggestionChip?.getAttribute("aria-pressed")).toBe("true");
+    expect(suggestionChip?.hasAttribute("data-elevated")).toBe(true);
+    act(() => {
+      suggestionChip?.click();
+    });
+    expect(chipClicks).toBe(1);
+
+    const dockedToolbar = container.querySelector<HTMLElement>(".m3e-docked-toolbar");
+    expect(dockedToolbar?.getAttribute("role")).toBe("toolbar");
+    expect(dockedToolbar?.getAttribute("aria-label")).toBe(
+      zhCNMessages["dockedToolbar.ariaLabel"],
+    );
+    expect(dockedToolbar?.getAttribute("data-layout")).toBe("leading-actions");
+    expect(dockedToolbar?.querySelector(".m3e-docked-toolbar__primary")).not.toBeNull();
+
+    const dockedSearchView = container.querySelector<HTMLElement>(
+      '.m3e-search-view[data-mode="docked"]',
+    );
+    expect(dockedSearchView?.querySelector('form[role="search"]')).not.toBeNull();
+    const recentList = dockedSearchView?.querySelector('ul[role="list"]');
+    expect(recentList).not.toBeNull();
+    const clearRecentBtn = dockedSearchView?.querySelector<HTMLButtonElement>(
+      ".m3e-search-view__clear-recent",
+    );
+    act(() => {
+      clearRecentBtn?.click();
+    });
+    expect(clearedRecent).toBe(true);
+
+    const recentBtn = dockedSearchView?.querySelector<HTMLButtonElement>(
+      ".m3e-search-view__item",
+    );
+    act(() => {
+      recentBtn?.click();
+    });
+    expect(submittedSearch).toBe("MaterialShapes");
+
+    const fullscreenSearch = document.body.querySelector<HTMLElement>(
+      '.m3e-search-view[data-mode="fullscreen"]',
+    );
+    expect(fullscreenSearch).not.toBeNull();
+
+    const stdList = container.querySelector<HTMLElement>(
+      '.m3e-segmented-list[data-variant="standard"]',
+    );
+    expect(stdList?.getAttribute("data-dividers")).toBe("inset");
+    const stdItems = stdList?.querySelectorAll<HTMLElement>(".m3e-segmented-list__item");
+    expect(stdItems?.length).toBe(2);
+    expect(stdItems?.[1]?.style.borderRadius).toBe("0px");
+  });
+
+  it("supports Phase 2 upgrades: MultiSelect, MultiCombobox, AvatarGroup, expandable/sticky DataTable, and DatePicker variants", () => {
+    let multiValues: string[] = ["design", "eng"];
+    let modalConfirmedDate = "";
+
+    act(() => {
+      root.render(
+        <PausedWrapper locale="zh-CN">
+          <div>
+            <MultiSelect
+              label="负责团队"
+              maxVisibleTags={1}
+              value={multiValues}
+              onValueChange={(next) => {
+                multiValues = next;
+              }}
+              options={[
+                { value: "design", label: "设计系统" },
+                { value: "eng", label: "前端架构" },
+                { value: "qa", label: "质量保障" },
+              ]}
+            />
+
+            <MultiCombobox
+              label="技术栈"
+              defaultValue={[{ value: "react", label: "React 19" }]}
+              options={[
+                { value: "react", label: "React 19" },
+                { value: "ts", label: "TypeScript 5" },
+              ]}
+            />
+
+            <AvatarGroup
+              max={3}
+              items={[
+                { id: "1", fallback: "A" },
+                { id: "2", fallback: "B" },
+                { id: "3", fallback: "C" },
+                { id: "4", fallback: "D" },
+                { id: "5", fallback: "E" },
+              ]}
+            />
+
+            <DataTable
+              caption="集群节点"
+              getRowKey={(r) => r.id}
+              rows={[
+                { id: "n1", name: "node-alpha", region: "ap-east" },
+                { id: "n2", name: "node-beta", region: "eu-central" },
+              ]}
+              columns={[
+                { id: "name", header: "节点", sticky: "start", width: 160, cell: (r) => r.name },
+                { id: "region", header: "区域", sticky: "end", cell: (r) => r.region },
+              ]}
+              renderExpandedRow={(row) => (
+                <div data-testid={`expanded-${row.id}`}>详情: {row.region}</div>
+              )}
+            />
+
+            <DockedDatePicker
+              defaultValue="2026-06-15"
+              minDate="2026-06-10"
+              maxDate="2026-06-20"
+            />
+            <DateRangePickerField
+              label="迭代周期"
+              defaultValue={{ start: "2026-06-10", end: "2026-06-18" }}
+            />
+            <DateTimePickerField
+              label="发布时间"
+              defaultValue={{ date: "2026-06-15", time: "14:30" }}
+            />
+            <ModalDatePicker
+              open
+              defaultValue="2026-06-15"
+              onValueChange={(val) => {
+                modalConfirmedDate = val;
+              }}
+            />
+          </div>
+        </PausedWrapper>,
+      );
+    });
+
+    // MultiSelect summary & clear
+    const multiClear = container.querySelector<HTMLButtonElement>(
+      ".m3e-multi-select .m3e-select__clear-btn",
+    );
+    expect(multiClear).not.toBeNull();
+    act(() => {
+      multiClear?.click();
+    });
+    expect(multiValues).toEqual([]);
+
+    // MultiCombobox chip
+    expect(
+      container.querySelector(".m3e-multi-combobox__chip-text")?.textContent,
+    ).toBe("React 19");
+
+    // AvatarGroup overflow (+2)
+    const overflowAvatar = container.querySelector(".m3e-avatar-group__overflow");
+    expect(overflowAvatar?.textContent).toContain("+2");
+
+    // DataTable sticky columns & expandable rows
+    expect(
+      container.querySelector('th[data-sticky="start"]'),
+    ).not.toBeNull();
+    expect(
+      container.querySelector('td[data-sticky="end"]'),
+    ).not.toBeNull();
+    const expandBtn = container.querySelector<HTMLButtonElement>(
+      ".m3e-data-table__expand-btn",
+    );
+    expect(expandBtn?.getAttribute("aria-expanded")).toBe("false");
+    act(() => {
+      expandBtn?.click();
+    });
+    expect(
+      container.querySelector('[data-testid="expanded-n1"]')?.textContent,
+    ).toContain("ap-east");
+
+    // DockedDatePicker minDate/maxDate constraints
+    const disabledDays = container.querySelectorAll(
+      ".m3e-date-picker__day:disabled",
+    );
+    expect(disabledDays.length).toBeGreaterThan(10);
+
+    // ModalDatePicker mode toggle & confirm
+    const modalPopup = document.body.querySelector(".m3e-modal-date-picker");
+    expect(modalPopup).not.toBeNull();
+    const confirmBtn = Array.from(
+      modalPopup!.querySelectorAll<HTMLButtonElement>("button.m3e-button"),
+    ).find((b) => b.textContent === zhCNMessages["datePicker.confirm"]);
+    act(() => {
+      confirmBtn?.click();
+    });
+    expect(modalConfirmedDate).toBe("2026-06-15");
+  });
+
+  it("renders retained Web utility components: FileUpload, Kbd/CopyButton/Snippet, and HCT ColorPicker", async () => {
+    let copiedSnippet = "";
+    let pickedHex = "#6750A4";
+    let uploadItems = [
+      { id: "f1", name: "spec.pdf", size: 204800, status: "uploading" as const, progress: 60 },
+      { id: "f2", name: "tokens.json", size: 12400, status: "completed" as const },
+    ];
+
+    act(() => {
+      root.render(
+        <PausedWrapper locale="zh-CN">
+          <FileUpload
+            defaultValue={uploadItems}
+            onValueChange={(next) => {
+              uploadItems = next as typeof uploadItems;
+            }}
+          />
+
+          <Kbd keys={["mod", "shift", "p"]} />
+          <Snippet
+            code="npx m3eui init"
+            onCopy={(val) => {
+              copiedSnippet = val;
+            }}
+          />
+
+          <ColorPicker
+            defaultValue="#6750A4"
+            onValueChange={(hex) => {
+              pickedHex = hex;
+            }}
+          />
+          <ColorPickerField label="主题种子色" defaultValue="#0B6B58" />
+          <ColorSwatch defaultValue="#6750A4" />
+        </PausedWrapper>,
+      );
+    });
+
+    // FileUpload list & remove
+    const fileList = container.querySelector('.m3e-file-upload__list[role="list"]');
+    expect(fileList?.querySelectorAll(".m3e-file-upload__item").length).toBe(2);
+    const removeFileBtn = fileList?.querySelector<HTMLButtonElement>(
+      ".m3e-file-upload__remove",
+    );
+    act(() => {
+      removeFileBtn?.click();
+    });
+    expect(uploadItems.length).toBe(1);
+
+    // Kbd & Snippet
+    const kbdText = container.querySelector("kbd.m3e-kbd")?.textContent;
+    expect(kbdText).toBe("⌘⇧P");
+    const snippetCopyBtn = container.querySelector<HTMLButtonElement>(
+      ".m3e-snippet .m3e-copy-button",
+    );
+    await act(async () => {
+      snippetCopyBtn?.click();
+    });
+    expect(copiedSnippet).toBe("npx m3eui init");
+
+    // ColorPicker HCT swatches & tonal ramp
+    const swatchBtns = container.querySelectorAll<HTMLButtonElement>(
+      ".m3e-color-swatch__item",
+    );
+    expect(swatchBtns.length).toBeGreaterThanOrEqual(8);
+    expect(
+      container.querySelectorAll(".m3e-color-picker__ramp-stop").length,
+    ).toBe(10);
+    act(() => {
+      swatchBtns[1]?.click();
+    });
+    expect(pickedHex).toBe("#0B6B58");
+  });
+
+  it("scopes M3E scrollbar tokens strictly to internal component scroll containers without global leakage", () => {
+    const css = readFileSync(
+      resolve(__dirname, "styles/m3e.css"),
+      "utf8",
+    );
+    expect(css).toContain("--m3e-scrollbar-thumb: var(--m3e-color-outline)");
+    expect(css).toContain("scrollbar-color: var(--m3e-scrollbar-thumb) var(--m3e-scrollbar-track)");
+    expect(css).toContain("@media (prefers-contrast: more)");
+    expect(css).toContain("@supports not (scrollbar-color: auto)");
+    expect(css).not.toMatch(/(?:^|\s)(?:html|body|:root|\*)::-webkit-scrollbar/);
+    expect(css).not.toMatch(/(?:html|body|:root|\*)\s*\{[^}]*scrollbar-color:/);
+  });
+
+  it("layers floating popup positioners above Dialog, Sheet, SearchView, and CommandPalette modals", () => {
+    const css = readFileSync(
+      resolve(__dirname, "styles/m3e.css"),
+      "utf8",
+    );
+    const getZIndex = (selector: string): number => {
+      const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const match = css.match(
+        new RegExp(`${escaped}\\s*\\{[^}]*?z-index:\\s*(\\d+)`, "m"),
+      );
+      if (!match) {
+        throw new Error(`Missing z-index for ${selector}`);
+      }
+      return Number(match[1]);
+    };
+
+    const modalZIndices = [
+      getZIndex(".m3e-dialog__backdrop"),
+      getZIndex(".m3e-dialog__viewport"),
+      getZIndex(".m3e-sheet__backdrop"),
+      getZIndex(".m3e-sheet__viewport"),
+      getZIndex(".m3e-search-view__modal-popup"),
+      getZIndex(".m3e-command-palette"),
+    ];
+    const maxModalZ = Math.max(...modalZIndices);
+
+    expect(getZIndex(".m3e-search-view__modal-popup")).toBeGreaterThan(
+      getZIndex(".m3e-dialog__backdrop"),
+    );
+
+    const popupPositioners = [
+      ".m3e-select__positioner",
+      ".m3e-segmented-menu__positioner",
+      ".m3e-popover__positioner",
+      ".m3e-search-bar__positioner",
+      ".m3e-preview-card__positioner",
+    ];
+    for (const selector of popupPositioners) {
+      expect(getZIndex(selector)).toBeGreaterThan(maxModalZ);
+    }
+
+    expect(getZIndex(".m3e-tooltip__positioner")).toBeGreaterThan(
+      getZIndex(".m3e-select__positioner"),
+    );
+    expect(getZIndex(".m3e-toast__viewport")).toBeGreaterThan(
+      getZIndex(".m3e-tooltip__positioner"),
+    );
+  });
+
+  it("dogfoods Kbd, Divider, Empty, and IconButton across internal composite components", () => {
+    act(() => {
+      root.render(
+        <PausedWrapper locale="en-US">
+          <CommandPalette
+            open
+            items={[
+              {
+                id: "open-blocks",
+                label: "Open Blocks",
+                shortcut: "⇧⌘B",
+                onSelect: () => {},
+              },
+            ]}
+          />
+          <DropdownMenu
+            open
+            trigger={<Button>Menu</Button>}
+            items={[
+              {
+                id: "save",
+                label: "Save",
+                shortcut: "⌘S",
+              },
+            ]}
+          />
+          <SplitButton
+            open
+            menuItems={[
+              {
+                id: "deploy",
+                label: "Deploy Now",
+                shortcut: "⌘↵",
+              },
+            ]}
+          >
+            Publish
+          </SplitButton>
+          <NavigationDrawer
+            variant="permanent"
+            value="b"
+            items={[
+              { value: "a", label: "Overview", section: "Docs" },
+              { value: "b", label: "Button", section: "Components" },
+            ]}
+          />
+          <Alert severity="info" closable title="Synced" />
+        </PausedWrapper>,
+      );
+    });
+
+    const cmdKbdKeys = document.body.querySelectorAll(
+      ".m3e-command-palette .m3e-kbd .m3e-kbd__key",
+    );
+    expect(Array.from(cmdKbdKeys).map((el) => el.textContent)).toEqual([
+      "⇧",
+      "⌘",
+      "B",
+    ]);
+
+    const menuKbds = document.body.querySelectorAll(
+      ".m3e-segmented-menu .m3e-kbd",
+    );
+    expect(menuKbds.length).toBe(2);
+
+    expect(
+      container.querySelector(".m3e-nav-drawer .m3e-divider"),
+    ).not.toBeNull();
+    expect(
+      container.querySelector(".m3e-alert .m3e-icon-button.m3e-alert__close"),
+    ).not.toBeNull();
+  });
+
+  it("keeps popup scrollports flush with outer borders and opens ColorPicker inside Popover via Button trigger", () => {
+    let pickedHex = "#6750A4";
+
+    act(() => {
+      root.render(
+        <PausedWrapper>
+          <Select
+            label="Scheme"
+            defaultValue="expressive"
+            options={[
+              { value: "expressive", label: "Expressive" },
+              { value: "vibrant", label: "Vibrant" },
+            ]}
+          />
+          <SideSheet open title="Studio">
+            <Popover
+              trigger={
+                <Button size="xs" variant="outlined">
+                  Custom
+                </Button>
+              }
+            >
+              <ColorPicker
+                value={pickedHex}
+                onValueChange={(next) => {
+                  pickedHex = next;
+                }}
+              />
+            </Popover>
+          </SideSheet>
+        </PausedWrapper>,
+      );
+    });
+
+    const selectTrigger = container.querySelector<HTMLButtonElement>(
+      ".m3e-select__trigger",
+    );
+    expect(selectTrigger).not.toBeNull();
+    act(() => {
+      selectTrigger?.click();
+    });
+
+    const selectPopup = document.body.querySelector<HTMLElement>(
+      ".m3e-select__popup",
+    );
+    const selectList = document.body.querySelector<HTMLElement>(
+      ".m3e-select__list",
+    );
+    expect(selectPopup).not.toBeNull();
+    expect(selectPopup?.style.padding).toBe("");
+    expect(selectList?.style.padding).not.toBe("");
+
+    const sheetPopup = document.body.querySelector<HTMLElement>(
+      ".m3e-sheet__popup",
+    );
+    expect(sheetPopup?.style.padding).toBe("");
+    expect(sheetPopup?.style.getPropertyValue("--m3e-sheet-pad")).not.toBe("");
+
+    const customBtn = Array.from(
+      document.body.querySelectorAll<HTMLButtonElement>(".m3e-button"),
+    ).find((b) => b.textContent?.includes("Custom"));
+    expect(customBtn).not.toBeUndefined();
+    expect(customBtn?.getAttribute("aria-expanded")).toBe("false");
+
+    act(() => {
+      customBtn?.click();
+    });
+
+    expect(customBtn?.getAttribute("aria-expanded")).toBe("true");
+    const picker = document.body.querySelector<HTMLElement>(
+      ".m3e-popover .m3e-color-picker",
+    );
+    expect(picker).not.toBeNull();
+  });
+
+  it("prevents unselected :hover rules from overriding [data-selected] or solid backgrounds via specificity inflation", () => {
+    const css = readFileSync(resolve(__dirname, "styles/m3e.css"), "utf8");
+
+    expect(css).toContain(
+      '.m3e-button[data-variant="outlined"]:hover:where(:not([data-disabled], [data-selected], [data-pressed]))',
+    );
+    expect(css).toContain(
+      ".m3e-button[data-selected]:hover:where(:not([data-disabled], [data-pressed]))",
+    );
+    expect(css).toContain(
+      '.m3e-icon-button[data-variant="outlined"]:hover:where(:not([data-disabled], [data-selected], [data-pressed]))',
+    );
+    expect(css).toContain(
+      ".m3e-icon-button[data-toggle][data-selected]:hover:where(:not([data-disabled], [data-pressed]))",
+    );
+    expect(css).toContain(
+      ".m3e-chip--suggestion:hover:where(:not(:disabled, [data-disabled], [data-selected], [data-elevated], [data-pressed]))",
+    );
+    expect(css).toContain(
+      ".m3e-docked-toolbar__button:hover:where(:not(:disabled, [data-selected], [data-pressed]))",
+    );
+    expect(css).toContain(
+      '.m3e-chip-status[data-variant="solid"][data-tone="primary"]',
+    );
+    expect(css).toContain("--m3e-chip-status-bg: var(--m3e-color-primary);");
   });
 });

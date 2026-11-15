@@ -2,7 +2,6 @@ import type { TextDirection } from "@base-ui/react/direction-provider";
 import {
   type ColorPlatform,
   type ColorSchemeVariant,
-  type ColorSpecVersion,
   MOTION_SCHEMES,
   type MotionScheme,
   type MotionSchemeName,
@@ -18,9 +17,21 @@ import {
   type M3EMessageOverrides,
   isRtlLocale,
 } from "./i18n/index.js";
+import { M3E_PACKAGE_VERSION } from "./version.js";
 
 export type M3EDirectionSetting = TextDirection | "auto";
 export type M3EColorModeSetting = "system" | "light" | "dark";
+
+export const M3E_COLOR_SCHEME_STORAGE_KEY = "m3e-color-scheme";
+
+export function getM3EInitScript(
+  storageKey: string = M3E_COLOR_SCHEME_STORAGE_KEY,
+  defaultMode: M3EColorModeSetting = "system",
+): string {
+  const safeKey = JSON.stringify(storageKey);
+  const safeDefault = JSON.stringify(defaultMode);
+  return `try{var s=localStorage.getItem(${safeKey}),m=(s==="light"||s==="dark"||s==="system")?s:${safeDefault},c=m==="system"?"light dark":m,d=document.documentElement;d.dataset.colorMode=m;d.style.colorScheme=c;var el=document.querySelector('meta[name="color-scheme"]');if(el)el.content=c;}catch(e){}`;
+}
 
 export interface M3EConfig {
   readonly $schema?: string;
@@ -28,7 +39,6 @@ export interface M3EConfig {
   readonly theme?: {
     readonly seed?: string;
     readonly schemeVariant?: ColorSchemeVariant;
-    readonly specVersion?: ColorSpecVersion;
     readonly platform?: ColorPlatform;
     readonly colorMode?: M3EColorModeSetting;
     readonly contrastLevel?: number;
@@ -57,7 +67,6 @@ export interface ResolvedM3EConfig {
   readonly style: "expressive" | "standard";
   readonly seedHex: string;
   readonly schemeVariant: ColorSchemeVariant;
-  readonly specVersion: ColorSpecVersion;
   readonly platform: ColorPlatform;
   readonly colorMode: M3EColorModeSetting;
   readonly contrastLevel: number;
@@ -81,12 +90,11 @@ export function defineM3EConfig<const T extends M3EConfig>(config: T): T {
 }
 
 export function resolveM3EConfig(config?: M3EConfig): ResolvedM3EConfig {
-  const style = config?.style ?? "expressive";
+  const style = config?.style === "standard" ? "standard" : "expressive";
   const seedHex = config?.theme?.seed ?? "#6750A4";
   const schemeVariant =
     config?.theme?.schemeVariant ??
     (style === "standard" ? "tonalSpot" : "expressive");
-  const specVersion: ColorSpecVersion = config?.theme?.specVersion ?? "2025";
   const platform: ColorPlatform = config?.theme?.platform ?? "phone";
   const colorMode = config?.theme?.colorMode ?? "system";
   const contrastLevel = Math.max(
@@ -110,7 +118,6 @@ export function resolveM3EConfig(config?: M3EConfig): ResolvedM3EConfig {
     style,
     seedHex,
     schemeVariant,
-    specVersion,
     platform,
     colorMode,
     contrastLevel,
@@ -135,7 +142,6 @@ export function serializeM3EConfig(
     schemaUrl: string;
     seedHex: string;
     schemeVariant: ColorSchemeVariant;
-    specVersion: ColorSpecVersion;
     platform: ColorPlatform;
     colorMode: M3EColorModeSetting;
     contrastLevel: number;
@@ -148,19 +154,18 @@ export function serializeM3EConfig(
   const doc: M3EConfig = {
     $schema:
       input.schemaUrl ??
-      "https://unpkg.com/m3eui@0.1.0/m3e.schema.json",
+      `https://unpkg.com/m3eui@${M3E_PACKAGE_VERSION}/m3e.schema.json`,
     style: input.motionScheme === "standard" ? "standard" : "expressive",
     theme: {
       seed: input.seedHex ?? "#6750A4",
       schemeVariant: input.schemeVariant ?? "expressive",
-      specVersion: input.specVersion ?? "2025",
       platform: input.platform ?? "phone",
       colorMode: input.colorMode ?? "system",
       contrastLevel: input.contrastLevel ?? 0,
       motionScheme: input.motionScheme ?? "expressive",
     },
     i18n: {
-      locale: input.locale ?? "zh-CN",
+      locale: input.locale ?? "en-US",
       direction: input.directionMode ?? "auto",
     },
     css: {
@@ -208,7 +213,6 @@ export function generateM3EStaticThemeCss(config?: M3EConfig): string {
     seedHex: resolved.seedHex,
     variant: resolved.schemeVariant,
     contrastLevel: resolved.contrastLevel,
-    specVersion: resolved.specVersion,
     platform: resolved.platform,
   });
   const scheme = MOTION_SCHEMES[resolved.motionScheme];
@@ -237,7 +241,24 @@ export function generateM3EStaticThemeCss(config?: M3EConfig): string {
     lines.push(`  ${key}: ${val};`);
   }
 
-  lines.push(`}`, "");
+  lines.push(
+    `}`,
+    "",
+    `:root[data-color-mode="dark"],`,
+    `:root:has(> head > meta[name="color-scheme"][content="dark"]) {`,
+    `  color-scheme: dark;`,
+    `}`,
+    "",
+    `:root[data-color-mode="light"],`,
+    `:root:has(> head > meta[name="color-scheme"][content="light"]) {`,
+    `  color-scheme: light;`,
+    `}`,
+    "",
+    `:root[data-color-mode="system"] {`,
+    `  color-scheme: light dark;`,
+    `}`,
+    "",
+  );
 
   const roleKeys = Object.keys(tokens.light) as SemanticColorRoleKey[];
   lines.push(`@supports not (color: light-dark(white, black)) {`);

@@ -1,6 +1,10 @@
+"use client";
+
 import * as React from "react";
+import { Popover as BasePopover } from "@base-ui/react/popover";
 import { Tooltip as BaseTooltip } from "@base-ui/react/tooltip";
 import { TOOLTIP_TOKENS } from "../tokens/index.js";
+import { useM3EPortalContainer } from "../context/M3EPortal.js";
 
 export interface M3ETooltipProps {
   readonly children: React.ReactElement;
@@ -30,10 +34,11 @@ export function Tooltip({
   delay = 280,
   disabled = false,
 }: M3ETooltipProps): React.JSX.Element {
+  const portalContainer = useM3EPortalContainer();
   return (
     <BaseTooltip.Root disabled={disabled}>
       <BaseTooltip.Trigger delay={delay} render={children} />
-      <BaseTooltip.Portal>
+      <BaseTooltip.Portal container={portalContainer}>
         <BaseTooltip.Positioner
           side={side}
           sideOffset={sideOffset}
@@ -65,10 +70,59 @@ export function RichTooltip({
   delay = 250,
   disabled = false,
 }: M3ERichTooltipProps): React.JSX.Element {
+  const portalContainer = useM3EPortalContainer();
+  const popupStyle: React.CSSProperties = {
+    borderRadius: `${TOOLTIP_TOKENS.richRadius}px`,
+    paddingBlock: `${TOOLTIP_TOKENS.richPaddingBlock}px`,
+    paddingInline: `${TOOLTIP_TOKENS.richPaddingInline}px`,
+    maxWidth: `${TOOLTIP_TOKENS.richMaxWidth}px`,
+  };
+
+  if (action) {
+    return (
+      <BasePopover.Root modal={false} open={disabled ? false : undefined}>
+        <BasePopover.Trigger
+          openOnHover={!disabled}
+          delay={delay}
+          closeDelay={180}
+          nativeButton={
+            typeof children.type === "string"
+              ? children.type === "button"
+              : undefined
+          }
+          render={children}
+        />
+        <BasePopover.Portal container={portalContainer}>
+          <BasePopover.Positioner
+            side={side}
+            sideOffset={sideOffset}
+            className="m3e-tooltip__positioner"
+          >
+            <BasePopover.Popup
+              initialFocus={(openType) => openType === "keyboard"}
+              className="m3e-tooltip m3e-tooltip--rich"
+              style={popupStyle}
+            >
+              {subhead ? (
+                <BasePopover.Title className="m3e-tooltip__subhead">
+                  {subhead}
+                </BasePopover.Title>
+              ) : null}
+              <BasePopover.Description className="m3e-tooltip__supporting">
+                {content}
+              </BasePopover.Description>
+              <div className="m3e-tooltip__action">{action}</div>
+            </BasePopover.Popup>
+          </BasePopover.Positioner>
+        </BasePopover.Portal>
+      </BasePopover.Root>
+    );
+  }
+
   return (
     <BaseTooltip.Root disabled={disabled}>
       <BaseTooltip.Trigger delay={delay} closeDelay={140} render={children} />
-      <BaseTooltip.Portal>
+      <BaseTooltip.Portal container={portalContainer}>
         <BaseTooltip.Positioner
           side={side}
           sideOffset={sideOffset}
@@ -76,20 +130,12 @@ export function RichTooltip({
         >
           <BaseTooltip.Popup
             className="m3e-tooltip m3e-tooltip--rich"
-            style={{
-              borderRadius: `${TOOLTIP_TOKENS.richRadius}px`,
-              paddingBlock: `${TOOLTIP_TOKENS.richPaddingBlock}px`,
-              paddingInline: `${TOOLTIP_TOKENS.richPaddingInline}px`,
-              maxWidth: `${TOOLTIP_TOKENS.richMaxWidth}px`,
-            }}
+            style={popupStyle}
           >
             {subhead ? (
               <div className="m3e-tooltip__subhead">{subhead}</div>
             ) : null}
             <div className="m3e-tooltip__supporting">{content}</div>
-            {action ? (
-              <div className="m3e-tooltip__action">{action}</div>
-            ) : null}
           </BaseTooltip.Popup>
         </BaseTooltip.Positioner>
       </BaseTooltip.Portal>

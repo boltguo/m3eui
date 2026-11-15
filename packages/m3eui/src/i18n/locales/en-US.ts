@@ -1,7 +1,13 @@
 import type { M3EMessages } from "../types.js";
 
 export const enUSMessages: M3EMessages = {
+  "alert.close": "Dismiss alert",
+
   "badge.overflow": "{max}+",
+  "badge.unreadCount": "{count} notifications",
+
+  "breadcrumb.ariaLabel": "Breadcrumbs",
+  "breadcrumb.more": "Show collapsed path items",
 
   "carousel.roleDescription": "carousel",
   "carousel.slideRoleDescription": "slide",
@@ -15,6 +21,7 @@ export const enUSMessages: M3EMessages = {
   "carousel.listLabel": "Slides",
 
   "chip.remove": "Remove chip",
+  "chip.removeItem": "Remove {label}",
 
   "collapsible.expandAll": "Expand all",
   "collapsible.collapseAll": "Collapse all",
@@ -22,7 +29,13 @@ export const enUSMessages: M3EMessages = {
   "combobox.placeholder": "Type to filter…",
   "combobox.empty": "No matching options",
   "combobox.clear": "Clear selection",
+  "combobox.toggle": "Toggle options",
+  "command.ariaLabel": "Command palette",
+  "command.placeholder": "Type a command or search…",
+  "command.empty": "No matching commands found",
+  "command.navigateHint": "↑↓ Navigate · ↵ Run · Esc Close",
   "select.placeholder": "Select an option…",
+  "select.clear": "Clear selected option",
 
   "dataTable.empty": "No matching records",
   "dataTable.sortedAscending": "Sorted by {column}, ascending",
@@ -35,13 +48,20 @@ export const enUSMessages: M3EMessages = {
   "datePicker.selectEndPrompt": " · Select end date",
   "datePicker.prevMonth": "Previous month",
   "datePicker.nextMonth": "Next month",
+  "datePicker.prevYears": "Previous years",
+  "datePicker.nextYears": "Next years",
   "datePicker.selectYear": "Select year",
   "datePicker.calendarLabel": "{monthYear} calendar",
   "datePicker.rangeCalendarLabel": "{monthYear} date range calendar",
 
   "dialog.close": "Close dialog",
+  "sheet.ariaLabel": "Sheet",
   "sheet.close": "Close sheet",
   "toast.close": "Dismiss notification",
+  "toast.viewportLabel": "Notifications",
+
+  "empty.title": "No data available",
+  "empty.description": "There are no items to display right now. Try adjusting your filters or creating a new item.",
 
   "fabMenu.triggerOpen": "Quick actions",
   "fabMenu.triggerClose": "Close quick actions",
@@ -71,12 +91,19 @@ export const enUSMessages: M3EMessages = {
   "numberField.increment": "Increase value",
   "otpField.digitLabel": "Verification digit {index}",
 
+  "pagination.ariaLabel": "Pagination",
+  "pagination.previous": "Previous page",
+  "pagination.next": "Next page",
+  "pagination.page": "Page {page}",
+  "pagination.summary": "{start}–{end} of {total}",
+
   "searchBar.placeholder": "Search…",
   "searchBar.ariaLabel": "Search",
   "searchBar.empty": "No matching suggestions",
   "searchBar.submit": "Submit search",
   "searchBar.clear": "Clear search query",
 
+  "slider.ariaLabel": "Slider",
   "slider.rangeStart": "{label} (start)",
   "slider.rangeEnd": "{label} (end)",
 
@@ -101,6 +128,58 @@ export const enUSMessages: M3EMessages = {
   "timePicker.minuteDial": "Minute dial",
   "timePicker.am": "AM",
   "timePicker.pm": "PM",
+  "timePicker.confirm": "OK",
+  "timePicker.cancel": "Cancel",
 
   "topAppBar.actionsLabel": "App bar actions",
+  "topAppBar.moreActions": "More actions",
+  "bottomAppBar.ariaLabel": "Bottom app bar",
+  "dragHandle.ariaLabel": "Resize panes",
+  "pullToRefresh.pulling": "Pull to refresh",
+  "pullToRefresh.release": "Release to refresh",
+  "pullToRefresh.refreshing": "Refreshing",
+
+  "dockedToolbar.ariaLabel": "Docked toolbar",
+  "searchView.back": "Back",
+  "searchView.recentHeading": "Recent searches",
+  "searchView.clearRecent": "Clear recent",
+  "searchView.suggestionsHeading": "Suggestions",
+
+  "select.selectedCount": "{count} selected",
+
+  "datePicker.switchToInput": "Switch to text date input",
+  "datePicker.switchToCalendar": "Switch to calendar grid",
+  "datePicker.confirm": "OK",
+  "datePicker.cancel": "Cancel",
+  "datePicker.dateInputLabel": "Date (YYYY-MM-DD)",
+  "datePicker.dateInputPlaceholder": "YYYY-MM-DD",
+
+  "dataTable.expandColumn": "Details",
+  "dataTable.expandRow": "Expand row {index}",
+  "dataTable.collapseRow": "Collapse row {index}",
+
+  "avatarGroup.overflowLabel": "{count} more members",
+
+  "fileUpload.dropPrompt": "Drag and drop files here, or",
+  "fileUpload.browseButton": "browse files",
+  "fileUpload.dropHint": "Click to browse or drag files into this zone",
+  "fileUpload.removeFile": "Remove {name}",
+  "fileUpload.errorMaxSize": "{name} exceeds maximum size ({max})",
+  "fileUpload.errorMaxFiles": "Up to {max} files allowed",
+  "fileUpload.errorFileType": "{name} has an unsupported file type",
+  "fileUpload.uploading": "Uploading",
+  "fileUpload.completed": "Completed",
+
+  "copyButton.copy": "Copy to clipboard",
+  "copyButton.copied": "Copied",
+  "copyButton.error": "Copy failed",
+
+  "colorPicker.ariaLabel": "Color picker",
+  "colorPicker.hexLabel": "HEX color",
+  "colorPicker.hue": "Hue (H)",
+  "colorPicker.chroma": "Chroma (C)",
+  "colorPicker.tone": "Tone (T)",
+  "colorPicker.swatchesLabel": "Preset swatches",
+  "colorPicker.derivedTones": "HCT tonal ramp",
+  "colorPicker.toneStop": "Tone {tone} {hex}",
 };

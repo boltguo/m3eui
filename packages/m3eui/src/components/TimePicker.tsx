@@ -1,18 +1,26 @@
 "use client";
 
 import * as React from "react";
+import { Dialog as BaseDialog } from "@base-ui/react/dialog";
 import { Popover as BasePopover } from "@base-ui/react/popover";
 import {
   SELECT_TOKENS,
   TIME_PICKER_TOKENS,
   resolveClockHandGeometry,
 } from "../tokens/index.js";
-import { useM3EI18n } from "../context/M3EProvider.js";
+import { useM3EI18n } from "../context/M3EContext.js";
+import { useM3EPortalContainer } from "../context/M3EPortal.js";
 import {
-  useM3ECornerSpring,
+  useM3ECornerSpringRef,
   useM3EScalarSpring,
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
+import { Button } from "./Button.js";
+import {
+  FieldErrorIconSvg,
+  FieldNotchedOutline,
+  useFieldsetDisabled,
+} from "../internal/fieldOutline.js";
 import {
   formatLocalizedWallTime,
   getLocaleUses24Hour,
@@ -43,7 +51,11 @@ export interface M3ETimePickerProps {
   readonly defaultValue?: PlainTimeString;
   readonly onValueChange?: (value: string) => void;
   readonly use24Hour?: boolean;
+  readonly inputMode?: "dial" | "keyboard";
   readonly defaultInputMode?: "dial" | "keyboard";
+  readonly onInputModeChange?: (mode: "dial" | "keyboard") => void;
+  readonly hideModeToggle?: boolean;
+  readonly variant?: "standard" | "vibrant";
   readonly title?: React.ReactNode;
   readonly className?: string;
   readonly style?: React.CSSProperties;
@@ -106,10 +118,12 @@ function PeriodSegmentButton({
     position === "top"
       ? ([outer, outer, inner, inner] as const)
       : ([inner, inner, outer, outer] as const);
-  const { borderRadiusCss } = useM3ECornerSpring(targetCorners, "fastSpatial");
+  const { ref: periodBtnRef, borderRadiusCss } =
+    useM3ECornerSpringRef<HTMLButtonElement>(targetCorners, "fastSpatial");
 
   return (
     <button
+      ref={periodBtnRef}
       type="button"
       aria-pressed={selected}
       onClick={onClick}
@@ -172,7 +186,11 @@ export function TimePicker({
   defaultValue = "09:30",
   onValueChange,
   use24Hour: use24HourProp,
+  inputMode: controlledInputMode,
   defaultInputMode = "dial",
+  onInputModeChange,
+  hideModeToggle = false,
+  variant = "standard",
   title,
   className,
   style,
@@ -188,8 +206,19 @@ export function TimePicker({
   const [selectionMode, setSelectionMode] = React.useState<"hour" | "minute">(
     "hour",
   );
-  const [inputMode, setInputMode] = React.useState<"dial" | "keyboard">(
-    defaultInputMode,
+  const [uncontrolledInputMode, setUncontrolledInputMode] = React.useState<
+    "dial" | "keyboard"
+  >(defaultInputMode);
+  const inputMode = controlledInputMode ?? uncontrolledInputMode;
+
+  const setInputMode = React.useCallback(
+    (next: "dial" | "keyboard") => {
+      if (controlledInputMode === undefined) {
+        setUncontrolledInputMode(next);
+      }
+      onInputModeChange?.(next);
+    },
+    [controlledInputMode, onInputModeChange],
   );
 
   const commitTime = React.useCallback(
@@ -209,6 +238,23 @@ export function TimePicker({
     ? String(hour24).padStart(2, "0")
     : String(displayHour12).padStart(2, "0");
   const minuteDisplayStr = String(minute).padStart(2, "0");
+
+  const [hourDraft, setHourDraft] = React.useState<string>(hourDisplayStr);
+  const [minuteDraft, setMinuteDraft] = React.useState<string>(minuteDisplayStr);
+  const hourFocusedRef = React.useRef<boolean>(false);
+  const minuteFocusedRef = React.useRef<boolean>(false);
+
+  React.useEffect(() => {
+    if (!hourFocusedRef.current) {
+      setHourDraft(hourDisplayStr);
+    }
+  }, [hourDisplayStr]);
+
+  React.useEffect(() => {
+    if (!minuteFocusedRef.current) {
+      setMinuteDraft(minuteDisplayStr);
+    }
+  }, [minuteDisplayStr]);
 
   const handTarget = resolveClockHandGeometry({
     mode: selectionMode,
@@ -237,6 +283,7 @@ export function TimePicker({
 
   const dialRef = React.useRef<HTMLDivElement | null>(null);
   const scrubbingRef = React.useRef<boolean>(false);
+  const pointerHandledRef = React.useRef<boolean>(false);
 
   const pickFromDialPointer = (
     clientX: number,
@@ -290,6 +337,7 @@ export function TimePicker({
       className={
         className ? `m3e-time-picker ${className}` : "m3e-time-picker"
       }
+      data-variant={variant !== "standard" ? variant : undefined}
       style={{
         borderRadius: `${TIME_PICKER_TOKENS.containerRadius}px`,
         padding: `${TIME_PICKER_TOKENS.padding}px`,
@@ -298,20 +346,22 @@ export function TimePicker({
     >
       <div className="m3e-time-picker__header">
         <span className="m3e-date-picker__eyebrow">{resolvedTitle}</span>
-        <button
-          type="button"
-          className="m3e-time-picker__mode-btn"
-          aria-label={
-            inputMode === "dial"
-              ? t("timePicker.switchToKeyboard")
-              : t("timePicker.switchToDial")
-          }
-          onClick={() =>
-            setInputMode((m) => (m === "dial" ? "keyboard" : "dial"))
-          }
-        >
-          {inputMode === "dial" ? <KeyboardIconSvg /> : <ClockIconSvg />}
-        </button>
+        {!hideModeToggle ? (
+          <button
+            type="button"
+            className="m3e-time-picker__mode-btn"
+            aria-label={
+              inputMode === "dial"
+                ? t("timePicker.switchToKeyboard")
+                : t("timePicker.switchToDial")
+            }
+            onClick={() =>
+              setInputMode(inputMode === "dial" ? "keyboard" : "dial")
+            }
+          >
+            {inputMode === "dial" ? <KeyboardIconSvg /> : <ClockIconSvg />}
+          </button>
+        ) : null}
       </div>
 
       {inputMode === "keyboard" ? (
@@ -319,21 +369,84 @@ export function TimePicker({
           <div className="m3e-time-picker__digits-ltr" dir="ltr">
             <label className="m3e-time-picker__kb-field">
               <input
-                type="number"
-                min={use24Hour ? 0 : 1}
-                max={use24Hour ? 23 : 12}
-                value={use24Hour ? hour24 : displayHour12}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={2}
+                value={hourDraft}
                 aria-label={t("timePicker.hour")}
                 className="m3e-time-picker__kb-input"
+                onFocus={(e) => {
+                  hourFocusedRef.current = true;
+                  e.currentTarget.select();
+                }}
                 onChange={(e) => {
-                  const raw = Number(e.target.value);
+                  const cleaned = e.target.value.replace(/\D/g, "").slice(0, 2);
+                  setHourDraft(cleaned);
+                  if (cleaned === "") return;
+                  const raw = Number(cleaned);
                   if (Number.isNaN(raw)) return;
                   if (use24Hour) {
-                    commitTime(Math.max(0, Math.min(23, raw)), minute);
-                  } else {
-                    const clamped12 = Math.max(1, Math.min(12, raw)) % 12;
-                    commitTime(isPm ? clamped12 + 12 : clamped12, minute);
+                    if (raw <= 23) commitTime(raw, minute);
+                  } else if (raw >= 1 && raw <= 12) {
+                    const mod12 = raw % 12;
+                    commitTime(isPm ? mod12 + 12 : mod12, minute);
                   }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    const nextH = use24Hour
+                      ? (hour24 + 1) % 24
+                      : isPm
+                        ? (((hour24 % 12) + 1) % 12) + 12
+                        : ((hour24 % 12) + 1) % 12;
+                    commitTime(nextH, minute);
+                    setHourDraft(
+                      use24Hour
+                        ? String(nextH).padStart(2, "0")
+                        : String(nextH % 12 === 0 ? 12 : nextH % 12).padStart(
+                            2,
+                            "0",
+                          ),
+                    );
+                  } else if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    const prevH = use24Hour
+                      ? (hour24 + 23) % 24
+                      : isPm
+                        ? (((hour24 % 12) + 11) % 12) + 12
+                        : ((hour24 % 12) + 11) % 12;
+                    commitTime(prevH, minute);
+                    setHourDraft(
+                      use24Hour
+                        ? String(prevH).padStart(2, "0")
+                        : String(prevH % 12 === 0 ? 12 : prevH % 12).padStart(
+                            2,
+                            "0",
+                          ),
+                    );
+                  }
+                }}
+                onBlur={() => {
+                  hourFocusedRef.current = false;
+                  if (hourDraft !== "") {
+                    const raw = Number(hourDraft);
+                    if (!Number.isNaN(raw)) {
+                      if (use24Hour) {
+                        const clamped = Math.max(0, Math.min(23, raw));
+                        commitTime(clamped, minute);
+                        setHourDraft(String(clamped).padStart(2, "0"));
+                        return;
+                      }
+                      const clamped12 = Math.max(1, Math.min(12, raw));
+                      const mod12 = clamped12 % 12;
+                      commitTime(isPm ? mod12 + 12 : mod12, minute);
+                      setHourDraft(String(clamped12).padStart(2, "0"));
+                      return;
+                    }
+                  }
+                  setHourDraft(hourDisplayStr);
                 }}
               />
               <span className="m3e-time-picker__kb-caption">
@@ -345,16 +458,51 @@ export function TimePicker({
             </span>
             <label className="m3e-time-picker__kb-field">
               <input
-                type="number"
-                min={0}
-                max={59}
-                value={minute}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={2}
+                value={minuteDraft}
                 aria-label={t("timePicker.minute")}
                 className="m3e-time-picker__kb-input"
+                onFocus={(e) => {
+                  minuteFocusedRef.current = true;
+                  e.currentTarget.select();
+                }}
                 onChange={(e) => {
-                  const raw = Number(e.target.value);
-                  if (Number.isNaN(raw)) return;
-                  commitTime(hour24, Math.max(0, Math.min(59, raw)));
+                  const cleaned = e.target.value.replace(/\D/g, "").slice(0, 2);
+                  setMinuteDraft(cleaned);
+                  if (cleaned === "") return;
+                  const raw = Number(cleaned);
+                  if (!Number.isNaN(raw) && raw <= 59) {
+                    commitTime(hour24, raw);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    const nextM = (minute + 1) % 60;
+                    commitTime(hour24, nextM);
+                    setMinuteDraft(String(nextM).padStart(2, "0"));
+                  } else if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    const prevM = (minute + 59) % 60;
+                    commitTime(hour24, prevM);
+                    setMinuteDraft(String(prevM).padStart(2, "0"));
+                  }
+                }}
+                onBlur={() => {
+                  minuteFocusedRef.current = false;
+                  if (minuteDraft !== "") {
+                    const raw = Number(minuteDraft);
+                    if (!Number.isNaN(raw)) {
+                      const clamped = Math.max(0, Math.min(59, raw));
+                      commitTime(hour24, clamped);
+                      setMinuteDraft(String(clamped).padStart(2, "0"));
+                      return;
+                    }
+                  }
+                  setMinuteDraft(minuteDisplayStr);
                 }}
               />
               <span className="m3e-time-picker__kb-caption">
@@ -507,7 +655,8 @@ export function TimePicker({
               }
             }}
             onPointerDown={(e) => {
-              if ((e.target as HTMLElement).closest("button")) return;
+              if (e.button !== 0) return;
+              pointerHandledRef.current = false;
               scrubbingRef.current = true;
               e.currentTarget.setPointerCapture?.(e.pointerId);
               pickFromDialPointer(e.clientX, e.clientY, false);
@@ -519,7 +668,21 @@ export function TimePicker({
             onPointerUp={(e) => {
               if (!scrubbingRef.current) return;
               scrubbingRef.current = false;
+              pointerHandledRef.current = true;
+              if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
+                e.currentTarget.releasePointerCapture(e.pointerId);
+              }
               pickFromDialPointer(e.clientX, e.clientY, true);
+              queueMicrotask(() => {
+                pointerHandledRef.current = false;
+              });
+            }}
+            onPointerCancel={(e) => {
+              scrubbingRef.current = false;
+              pointerHandledRef.current = false;
+              if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
+                e.currentTarget.releasePointerCapture(e.pointerId);
+              }
             }}
           >
             <svg
@@ -549,6 +712,14 @@ export function TimePicker({
                 r={TIME_PICKER_TOKENS.selectorHandleSize / 2}
                 fill="var(--m3e-color-primary)"
               />
+              {selectionMode === "minute" && minute % 5 !== 0 ? (
+                <circle
+                  cx={TIME_PICKER_TOKENS.dialSize / 2 + bobX}
+                  cy={TIME_PICKER_TOKENS.dialSize / 2 + bobY}
+                  r={2}
+                  fill="var(--m3e-color-on-primary)"
+                />
+              ) : null}
             </svg>
 
             {selectionMode === "hour" ? (
@@ -565,6 +736,7 @@ export function TimePicker({
                       key={`outer-${h}`}
                       type="button"
                       role="option"
+                      tabIndex={-1}
                       aria-selected={selected}
                       className="m3e-time-picker__dial-num"
                       data-selected={selected ? "" : undefined}
@@ -572,6 +744,7 @@ export function TimePicker({
                         translate: `${x.toFixed(1)}px ${y.toFixed(1)}px`,
                       }}
                       onClick={() => {
+                        if (pointerHandledRef.current) return;
                         if (use24Hour) {
                           commitTime(h, minute);
                         } else {
@@ -599,6 +772,7 @@ export function TimePicker({
                           key={`inner-${h}`}
                           type="button"
                           role="option"
+                          tabIndex={-1}
                           aria-selected={selected}
                           className="m3e-time-picker__dial-num m3e-time-picker__dial-num--inner"
                           data-selected={selected ? "" : undefined}
@@ -606,6 +780,7 @@ export function TimePicker({
                             translate: `${x.toFixed(1)}px ${y.toFixed(1)}px`,
                           }}
                           onClick={() => {
+                            if (pointerHandledRef.current) return;
                             commitTime(h, minute);
                             setSelectionMode("minute");
                           }}
@@ -627,19 +802,93 @@ export function TimePicker({
                     key={`min-${m}`}
                     type="button"
                     role="option"
+                    tabIndex={-1}
                     aria-selected={selected}
                     className="m3e-time-picker__dial-num"
                     data-selected={selected ? "" : undefined}
                     style={{
                       translate: `${x.toFixed(1)}px ${y.toFixed(1)}px`,
                     }}
-                    onClick={() => commitTime(hour24, m)}
+                    onClick={() => {
+                      if (pointerHandledRef.current) return;
+                      commitTime(hour24, m);
+                    }}
                   >
                     {String(m).padStart(2, "0")}
                   </button>
                 );
               })
             )}
+
+            <div
+              aria-hidden="true"
+              className="m3e-time-picker__dial-overlay"
+              style={{
+                clipPath: `circle(${TIME_PICKER_TOKENS.selectorHandleSize / 2}px at ${(TIME_PICKER_TOKENS.dialSize / 2 + bobX).toFixed(1)}px ${(TIME_PICKER_TOKENS.dialSize / 2 + bobY).toFixed(1)}px)`,
+              }}
+            >
+              {selectionMode === "hour" ? (
+                <>
+                  {outerHours.map((h, idx) => {
+                    const angle = ((idx * 30 - 90) * Math.PI) / 180;
+                    const x =
+                      Math.cos(angle) * TIME_PICKER_TOKENS.outerRingRadius;
+                    const y =
+                      Math.sin(angle) * TIME_PICKER_TOKENS.outerRingRadius;
+                    return (
+                      <span
+                        key={`ov-outer-${h}`}
+                        className="m3e-time-picker__dial-num m3e-time-picker__dial-num--overlay"
+                        style={{
+                          translate: `${x.toFixed(1)}px ${y.toFixed(1)}px`,
+                        }}
+                      >
+                        {use24Hour ? String(h).padStart(2, "0") : h}
+                      </span>
+                    );
+                  })}
+                  {use24Hour
+                    ? innerHours.map((h, idx) => {
+                        const angle = ((idx * 30 - 90) * Math.PI) / 180;
+                        const x =
+                          Math.cos(angle) * TIME_PICKER_TOKENS.innerRingRadius;
+                        const y =
+                          Math.sin(angle) * TIME_PICKER_TOKENS.innerRingRadius;
+                        return (
+                          <span
+                            key={`ov-inner-${h}`}
+                            className="m3e-time-picker__dial-num m3e-time-picker__dial-num--inner m3e-time-picker__dial-num--overlay"
+                            style={{
+                              translate: `${x.toFixed(1)}px ${y.toFixed(1)}px`,
+                            }}
+                          >
+                            {h}
+                          </span>
+                        );
+                      })
+                    : null}
+                </>
+              ) : (
+                dialMinutes.map((m, idx) => {
+                  const angle = ((idx * 30 - 90) * Math.PI) / 180;
+                  const x =
+                    Math.cos(angle) * TIME_PICKER_TOKENS.outerRingRadius;
+                  const y =
+                    Math.sin(angle) * TIME_PICKER_TOKENS.outerRingRadius;
+                  return (
+                    <span
+                      key={`ov-min-${m}`}
+                      className="m3e-time-picker__dial-num m3e-time-picker__dial-num--overlay"
+                      style={{
+                        translate: `${x.toFixed(1)}px ${y.toFixed(1)}px`,
+                      }}
+                    >
+                      {String(m).padStart(2, "0")}
+                    </span>
+                  );
+                })
+              )}
+            </div>
           </div>
         </>
       )}
@@ -648,33 +897,56 @@ export function TimePicker({
 }
 
 export interface M3ETimePickerFieldProps {
+  readonly id?: string;
+  readonly name?: string;
   readonly label?: React.ReactNode;
   readonly labelPosition?: "floating" | "outside";
+  readonly description?: React.ReactNode;
+  readonly errorMessage?: React.ReactNode;
+  readonly invalid?: boolean;
+  readonly required?: boolean;
   readonly value?: PlainTimeString;
   readonly defaultValue?: PlainTimeString;
   readonly onValueChange?: (value: string) => void;
   readonly use24Hour?: boolean;
   readonly disabled?: boolean;
+  readonly readOnly?: boolean;
   readonly className?: string;
   readonly style?: React.CSSProperties;
 }
 
 export function TimePickerField({
+  id: idProp,
+  name,
   label,
   labelPosition = "floating",
+  description,
+  errorMessage,
+  invalid = false,
+  required = false,
   value: controlledValue,
   defaultValue = "09:30",
   onValueChange,
   use24Hour: use24HourProp,
   disabled = false,
+  readOnly = false,
   className,
   style,
 }: M3ETimePickerFieldProps): React.JSX.Element {
   const { locale } = useM3EI18n();
+  const portalContainer = useM3EPortalContainer();
+  const isDisabled = useFieldsetDisabled(disabled);
+  const generatedId = React.useId();
+  const triggerId = idProp ?? generatedId;
+  const descId = React.useId();
+  const errId = React.useId();
   const use24Hour = use24HourProp ?? getLocaleUses24Hour(locale);
   const [uncontrolledTime, setUncontrolledTime] =
     React.useState<string>(defaultValue);
   const [open, setOpen] = React.useState(false);
+  React.useEffect(() => {
+    if ((isDisabled || readOnly) && open) setOpen(false);
+  }, [isDisabled, readOnly, open]);
   const current = controlledValue ?? uncontrolledTime;
   const { hour24, minute } = parsePlainTime(current);
   const formattedLabel = formatLocalizedWallTime(
@@ -687,6 +959,16 @@ export function TimePickerField({
   const radius = isFloatingLabel
     ? SELECT_TOKENS.outlinedRadius
     : SELECT_TOKENS.outsideLabelRadius;
+  const labelNode = label ? (
+    <>
+      {label}
+      {required ? (
+        <span className="m3e-field__required" aria-hidden="true">
+          {" *"}
+        </span>
+      ) : null}
+    </>
+  ) : null;
 
   return (
     <div
@@ -696,45 +978,65 @@ export function TimePickerField({
           : "m3e-date-picker-field m3e-time-picker-field"
       }
       data-label-position={labelPosition}
+      data-disabled={isDisabled ? "" : undefined}
+      data-readonly={readOnly ? "" : undefined}
+      data-invalid={invalid ? "" : undefined}
       style={style}
     >
-      {label && !isFloatingLabel ? (
-        <span className="m3e-field__label">{label}</span>
+      {labelNode && !isFloatingLabel ? (
+        <label htmlFor={triggerId} className="m3e-field__label">
+          {labelNode}
+        </label>
       ) : null}
-      <BasePopover.Root open={open} onOpenChange={setOpen}>
+      {name ? (
+        <input
+          type="hidden"
+          name={name}
+          value={formatPlainTime(hour24, minute)}
+          disabled={isDisabled}
+        />
+      ) : null}
+      <BasePopover.Root
+        open={readOnly ? false : open}
+        onOpenChange={(next) => {
+          if (!readOnly && !isDisabled) setOpen(next);
+        }}
+      >
         <div
           className="m3e-select__shell"
           data-variant="outlined"
           data-label-position={labelPosition}
           data-floating=""
-          data-popup-open={open ? "" : undefined}
+          data-popup-open={!readOnly && open ? "" : undefined}
+          data-disabled={isDisabled ? "" : undefined}
+          data-readonly={readOnly ? "" : undefined}
+          data-invalid={invalid ? "" : undefined}
           style={{ borderRadius: `${radius}px` }}
         >
           {isFloatingLabel ? (
-            <fieldset
-              aria-hidden="true"
-              className="m3e-field__outline"
-              data-floating=""
-            >
-              <legend className="m3e-field__outline-legend">
-                <span>{label}</span>
-              </legend>
-            </fieldset>
+            <FieldNotchedOutline label={labelNode} floating />
           ) : null}
           {isFloatingLabel ? (
-            <span
+            <label
+              htmlFor={triggerId}
               className="m3e-field__floating-label m3e-select__floating-label"
               data-floating=""
             >
-              {label}
-            </span>
+              {labelNode}
+            </label>
           ) : null}
           <BasePopover.Trigger
-            disabled={disabled}
+            id={triggerId}
+            disabled={isDisabled}
+            aria-invalid={invalid ? true : undefined}
+            aria-describedby={
+              invalid && errorMessage ? errId : description ? descId : undefined
+            }
             className="m3e-select__trigger m3e-date-picker-field__trigger"
             data-variant="outlined"
             data-label-position={labelPosition}
             data-floating=""
+            data-readonly={readOnly ? "" : undefined}
             style={{
               minHeight: `${height}px`,
               borderRadius: `${radius}px`,
@@ -748,14 +1050,17 @@ export function TimePickerField({
           </BasePopover.Trigger>
         </div>
 
-        <BasePopover.Portal>
+        <BasePopover.Portal container={portalContainer}>
           <BasePopover.Positioner
             side="bottom"
             align="start"
             sideOffset={6}
             className="m3e-popover__positioner"
           >
-            <BasePopover.Popup className="m3e-date-picker-field__popup">
+            <BasePopover.Popup
+              initialFocus={(openType) => openType === "keyboard"}
+              className="m3e-date-picker-field__popup"
+            >
               <TimePicker
                 value={current}
                 use24Hour={use24Hour}
@@ -770,6 +1075,160 @@ export function TimePickerField({
           </BasePopover.Positioner>
         </BasePopover.Portal>
       </BasePopover.Root>
+
+      {description && !(invalid && errorMessage) ? (
+        <p id={descId} className="m3e-field__description">
+          {description}
+        </p>
+      ) : null}
+      {invalid && errorMessage ? (
+        <div id={errId} role="alert" className="m3e-field__error">
+          <FieldErrorIconSvg />
+          <span>{errorMessage}</span>
+        </div>
+      ) : null}
     </div>
   );
 }
+
+export interface M3ETimePickerDialogProps {
+  readonly open?: boolean;
+  readonly defaultOpen?: boolean;
+  readonly onOpenChange?: (open: boolean) => void;
+  readonly trigger?: React.ReactElement;
+  readonly value?: PlainTimeString;
+  readonly defaultValue?: PlainTimeString;
+  readonly onValueChange?: (value: string) => void;
+  readonly use24Hour?: boolean;
+  readonly defaultInputMode?: "dial" | "keyboard";
+  readonly variant?: "standard" | "vibrant";
+  readonly title?: React.ReactNode;
+  readonly className?: string;
+  readonly style?: React.CSSProperties;
+}
+
+export type M3EModalTimePickerProps = M3ETimePickerDialogProps;
+
+export function TimePickerDialog({
+  open: controlledOpen,
+  defaultOpen = false,
+  onOpenChange,
+  trigger,
+  value: controlledValue,
+  defaultValue = "09:30",
+  onValueChange,
+  use24Hour,
+  defaultInputMode = "dial",
+  variant = "standard",
+  title,
+  className,
+  style,
+}: M3ETimePickerDialogProps): React.JSX.Element {
+  const { t } = useM3EI18n();
+  const portalContainer = useM3EPortalContainer();
+  const [uncontrolledOpen, setUncontrolledOpen] =
+    React.useState<boolean>(defaultOpen);
+  const [uncontrolledTime, setUncontrolledTime] =
+    React.useState<string>(defaultValue);
+  const isOpen = controlledOpen ?? uncontrolledOpen;
+  const committedTime = controlledValue ?? uncontrolledTime;
+
+  const [draftTime, setDraftTime] = React.useState<string>(committedTime);
+  const [inputMode, setInputMode] = React.useState<"dial" | "keyboard">(
+    defaultInputMode,
+  );
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setDraftTime(committedTime);
+    }
+  }, [isOpen, committedTime]);
+
+  const setOpen = (next: boolean) => {
+    if (controlledOpen === undefined) {
+      setUncontrolledOpen(next);
+    }
+    onOpenChange?.(next);
+  };
+
+  return (
+    <BaseDialog.Root open={isOpen} onOpenChange={setOpen}>
+      {trigger ? <BaseDialog.Trigger render={trigger} /> : null}
+      <BaseDialog.Portal container={portalContainer}>
+        <BaseDialog.Backdrop className="m3e-dialog__backdrop" />
+        <BaseDialog.Popup
+          className={
+            className
+              ? `m3e-dialog m3e-time-picker-dialog ${className}`
+              : "m3e-dialog m3e-time-picker-dialog"
+          }
+          data-variant={variant !== "standard" ? variant : undefined}
+          style={{
+            borderRadius: `${TIME_PICKER_TOKENS.containerRadius}px`,
+            padding: 0,
+            width: "auto",
+            ...style,
+          }}
+        >
+          <BaseDialog.Title className="m3e-visually-hidden">
+            {title ?? t("timePicker.title")}
+          </BaseDialog.Title>
+
+          <TimePicker
+            value={draftTime}
+            onValueChange={setDraftTime}
+            use24Hour={use24Hour}
+            inputMode={inputMode}
+            onInputModeChange={setInputMode}
+            hideModeToggle
+            variant={variant}
+            title={title}
+            className="m3e-time-picker-dialog__picker"
+          />
+
+          <div className="m3e-time-picker-dialog__footer">
+            <button
+              type="button"
+              className="m3e-time-picker__mode-btn"
+              aria-label={
+                inputMode === "dial"
+                  ? t("timePicker.switchToKeyboard")
+                  : t("timePicker.switchToDial")
+              }
+              onClick={() =>
+                setInputMode((m) => (m === "dial" ? "keyboard" : "dial"))
+              }
+            >
+              {inputMode === "dial" ? <KeyboardIconSvg /> : <ClockIconSvg />}
+            </button>
+
+            <div className="m3e-time-picker-dialog__actions">
+              <Button
+                variant="text"
+                size="sm"
+                onClick={() => setOpen(false)}
+              >
+                {t("timePicker.cancel")}
+              </Button>
+              <Button
+                variant="filled"
+                size="sm"
+                onClick={() => {
+                  if (controlledValue === undefined) {
+                    setUncontrolledTime(draftTime);
+                  }
+                  onValueChange?.(draftTime);
+                  setOpen(false);
+                }}
+              >
+                {t("timePicker.confirm")}
+              </Button>
+            </div>
+          </div>
+        </BaseDialog.Popup>
+      </BaseDialog.Portal>
+    </BaseDialog.Root>
+  );
+}
+
+export const ModalTimePicker = TimePickerDialog;

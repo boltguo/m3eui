@@ -1,18 +1,24 @@
+"use client";
+
 import * as React from "react";
 import { Toolbar } from "@base-ui/react/toolbar";
 import {
+  DOCKED_TOOLBAR_TOKENS,
   FAB_MENU_TOKENS,
   FLOATING_TOOLBAR_TOKENS,
+  type FabColorVariant,
   type FloatingToolbarTheme,
   type ToggleFabSize,
   resolveToggleFabGeometry,
 } from "../tokens/index.js";
-import { useM3E } from "../context/M3EProvider.js";
+import { useM3E, useM3EI18n } from "../context/M3EContext.js";
 import {
   useM3ECornerSpringRef,
   useM3EScalarSpring,
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
+import { INERT_TRUE } from "../internal/inert.js";
+import { FAB, type M3EFABProps } from "./FAB.js";
 
 export interface FloatingToolbarItemSpec {
   readonly id: string;
@@ -24,16 +30,29 @@ export interface FloatingToolbarItemSpec {
   readonly onClick?: () => void;
 }
 
+export interface FloatingToolbarFabSpec {
+  readonly icon: React.ReactNode;
+  readonly label?: string;
+  readonly "aria-label"?: string;
+  readonly variant?: FabColorVariant;
+  readonly disabled?: boolean;
+  readonly onClick?: React.MouseEventHandler<HTMLElement>;
+}
+
 export interface M3EFloatingToolbarProps {
   readonly items: readonly FloatingToolbarItemSpec[];
   readonly "aria-label"?: string;
   readonly orientation?: "horizontal" | "vertical";
   readonly theme?: FloatingToolbarTheme;
+  readonly expanded?: boolean;
+  readonly defaultExpanded?: boolean;
+  readonly onExpandedChange?: (expanded: boolean) => void;
   readonly collapsed?: boolean;
   readonly defaultCollapsed?: boolean;
   readonly onCollapsedChange?: (collapsed: boolean) => void;
   readonly scrollCollapse?: boolean;
   readonly scrollTarget?: React.RefObject<HTMLElement | null>;
+  readonly fab?: FloatingToolbarFabSpec;
   readonly companionFab?: React.ReactNode;
   readonly className?: string;
   readonly style?: React.CSSProperties;
@@ -90,11 +109,15 @@ export function FloatingToolbar({
   "aria-label": ariaLabel,
   orientation = "horizontal",
   theme = "vibrant",
+  expanded: controlledExpanded,
+  defaultExpanded,
+  onExpandedChange,
   collapsed: controlledCollapsed,
-  defaultCollapsed = false,
+  defaultCollapsed,
   onCollapsedChange,
   scrollCollapse = false,
   scrollTarget,
+  fab,
   companionFab,
   className,
   style,
@@ -102,23 +125,88 @@ export function FloatingToolbar({
   const { t } = useM3E();
   const resolvedAriaLabel = ariaLabel ?? t("floatingToolbar.ariaLabel");
   const isVertical = orientation === "vertical";
+  const toolbarRef = React.useRef<HTMLDivElement | null>(null);
+  const companionRef = React.useRef<HTMLDivElement | null>(null);
+  const companionFabBtnRef = React.useRef<HTMLElement | null>(null);
 
+  const initialCollapsed =
+    defaultCollapsed !== undefined
+      ? defaultCollapsed
+      : defaultExpanded !== undefined
+        ? !defaultExpanded
+        : false;
   const [uncontrolledCollapsed, setUncontrolledCollapsed] =
-    React.useState<boolean>(defaultCollapsed);
-  const collapsed = controlledCollapsed ?? uncontrolledCollapsed;
+    React.useState<boolean>(initialCollapsed);
+
+  const controlledIsCollapsed =
+    controlledCollapsed !== undefined
+      ? controlledCollapsed
+      : controlledExpanded !== undefined
+        ? !controlledExpanded
+        : undefined;
+  const collapsed = controlledIsCollapsed ?? uncontrolledCollapsed;
+  const expanded = !collapsed;
+
+  const [inertCommitted, setInertCommitted] = React.useState<boolean>(collapsed);
+
+  const evacuateFocusFromToolbar = React.useCallback(() => {
+    if (typeof document === "undefined") return;
+    const active = document.activeElement as HTMLElement | null;
+    if (!active || !toolbarRef.current?.contains(active)) return;
+    const fabTarget =
+      companionFabBtnRef.current &&
+      !companionFabBtnRef.current.hasAttribute("disabled") &&
+      companionFabBtnRef.current.getAttribute("aria-disabled") !== "true"
+        ? companionFabBtnRef.current
+        : companionRef.current?.querySelector<HTMLElement>(
+            'button:not([disabled]):not([aria-disabled="true"]), a[href], [tabindex]:not([tabindex="-1"])',
+          );
+    if (fabTarget) {
+      fabTarget.focus();
+    } else {
+      active.blur?.();
+    }
+  }, []);
+
+  React.useLayoutEffect(() => {
+    if (collapsed) {
+      evacuateFocusFromToolbar();
+      if (toolbarRef.current) {
+        toolbarRef.current.inert = true;
+      }
+      setInertCommitted(true);
+    } else {
+      if (toolbarRef.current) {
+        toolbarRef.current.inert = false;
+      }
+      setInertCommitted(false);
+    }
+  }, [collapsed, evacuateFocusFromToolbar]);
 
   const updateCollapsed = React.useCallback(
     (next: boolean) => {
-      if (controlledCollapsed === undefined) {
+      if (next) {
+        evacuateFocusFromToolbar();
+      }
+      if (controlledIsCollapsed === undefined) {
         setUncontrolledCollapsed((prev) => {
-          if (prev !== next) onCollapsedChange?.(next);
+          if (prev !== next) {
+            onCollapsedChange?.(next);
+            onExpandedChange?.(!next);
+          }
           return next;
         });
-      } else if (next !== controlledCollapsed) {
+      } else if (next !== controlledIsCollapsed) {
         onCollapsedChange?.(next);
+        onExpandedChange?.(!next);
       }
     },
-    [controlledCollapsed, onCollapsedChange],
+    [
+      controlledIsCollapsed,
+      evacuateFocusFromToolbar,
+      onCollapsedChange,
+      onExpandedChange,
+    ],
   );
 
   React.useEffect(() => {
@@ -146,7 +234,72 @@ export function FloatingToolbar({
   }, [scrollCollapse, scrollTarget, updateCollapsed]);
 
   const collapseMorph = useM3EScalarSpring(collapsed ? 1 : 0, "fastSpatial");
-  const companionScale = 1 + 0.08 * Math.max(0, collapseMorph);
+  const clampedCollapse = Math.max(0, Math.min(1, collapseMorph));
+
+  const fabSizePx = Math.max(
+    40,
+    FLOATING_TOOLBAR_TOKENS.companionFabExpandedSize +
+      (FLOATING_TOOLBAR_TOKENS.companionFabCollapsedSize -
+        FLOATING_TOOLBAR_TOKENS.companionFabExpandedSize) *
+        collapseMorph,
+  );
+  const fabRadiusPx = Math.max(8, 16 + (20 - 16) * collapseMorph);
+  const fabIconSizePx = Math.max(18, 24 + (28 - 24) * collapseMorph);
+  const defaultFabVariant: FabColorVariant =
+    theme === "vibrant" ? "tertiary" : "primary";
+
+  const hasCompanion = Boolean(fab || companionFab);
+  const layoutGapPx = hasCompanion
+    ? FLOATING_TOOLBAR_TOKENS.companionFabGap * (1 - clampedCollapse)
+    : 0;
+  const barPaddingPx =
+    FLOATING_TOOLBAR_TOKENS.containerPadding * (1 - clampedCollapse);
+
+  let renderedCompanion: React.ReactNode = null;
+  if (fab) {
+    renderedCompanion = (
+      <FAB
+        ref={companionFabBtnRef}
+        size={expanded ? "sm" : "md"}
+        variant={fab.variant ?? defaultFabVariant}
+        icon={fab.icon}
+        aria-label={fab["aria-label"] ?? fab.label ?? resolvedAriaLabel}
+        disabled={fab.disabled}
+        onClick={fab.onClick}
+        style={
+          {
+            width: `${fabSizePx.toFixed(1)}px`,
+            height: `${fabSizePx.toFixed(1)}px`,
+            borderRadius: `${fabRadiusPx.toFixed(1)}px`,
+            "--m3e-fab-icon-size": `${fabIconSizePx.toFixed(1)}px`,
+          } as React.CSSProperties
+        }
+      />
+    );
+  } else if (companionFab) {
+    if (React.isValidElement(companionFab) && companionFab.type === FAB) {
+      const fabProps = companionFab.props as M3EFABProps;
+      renderedCompanion = React.cloneElement(
+        companionFab as React.ReactElement<
+          M3EFABProps & React.RefAttributes<HTMLElement>
+        >,
+        {
+          ref: companionFabBtnRef,
+          size: expanded ? "sm" : "md",
+          variant: fabProps.variant ?? defaultFabVariant,
+          style: {
+            width: `${fabSizePx.toFixed(1)}px`,
+            height: `${fabSizePx.toFixed(1)}px`,
+            borderRadius: `${fabRadiusPx.toFixed(1)}px`,
+            "--m3e-fab-icon-size": `${fabIconSizePx.toFixed(1)}px`,
+            ...fabProps.style,
+          } as React.CSSProperties,
+        },
+      );
+    } else {
+      renderedCompanion = companionFab;
+    }
+  }
 
   return (
     <div
@@ -157,32 +310,31 @@ export function FloatingToolbar({
       }
       data-orientation={orientation}
       data-collapsed={collapsed ? "" : undefined}
+      data-expanded={expanded ? "" : undefined}
       style={{
-        gap: collapsed ? "0px" : `${FLOATING_TOOLBAR_TOKENS.companionFabGap}px`,
+        gap: `${layoutGapPx.toFixed(2)}px`,
         ...style,
       }}
     >
       <Toolbar.Root
+        ref={toolbarRef}
         orientation={orientation}
         aria-label={resolvedAriaLabel}
-        inert={collapsed ? true : undefined}
+        inert={collapsed && inertCommitted ? INERT_TRUE : undefined}
         className="m3e-floating-toolbar"
         data-theme={theme}
         data-orientation={orientation}
         data-collapsed={collapsed ? "" : undefined}
         style={{
           borderRadius: `${FLOATING_TOOLBAR_TOKENS.containerRadius}px`,
-          padding: collapsed ? "0px" : `${FLOATING_TOOLBAR_TOKENS.containerPadding}px`,
+          padding: `${barPaddingPx.toFixed(2)}px`,
           gap: `${FLOATING_TOOLBAR_TOKENS.itemGap}px`,
+          opacity: Math.max(0, 1 - clampedCollapse),
           minHeight: isVertical
             ? undefined
-            : collapsed
-              ? "0px"
-              : `${FLOATING_TOOLBAR_TOKENS.containerCrossSize}px`,
+            : `${(FLOATING_TOOLBAR_TOKENS.containerCrossSize * (1 - clampedCollapse)).toFixed(1)}px`,
           minWidth: isVertical
-            ? collapsed
-              ? "0px"
-              : `${FLOATING_TOOLBAR_TOKENS.containerCrossSize}px`
+            ? `${(FLOATING_TOOLBAR_TOKENS.containerCrossSize * (1 - clampedCollapse)).toFixed(1)}px`
             : undefined,
         }}
       >
@@ -198,13 +350,13 @@ export function FloatingToolbar({
           </React.Fragment>
         ))}
       </Toolbar.Root>
-      {companionFab ? (
+      {renderedCompanion ? (
         <div
+          ref={companionRef}
           className="m3e-floating-toolbar__companion"
           data-collapsed={collapsed ? "" : undefined}
-          style={{ scale: `${companionScale.toFixed(3)}` }}
         >
-          {companionFab}
+          {renderedCompanion}
         </div>
       ) : null}
     </div>
@@ -215,6 +367,7 @@ export interface FABMenuItemSpec {
   readonly id: string;
   readonly label: string;
   readonly icon: React.ReactNode;
+  readonly disabled?: boolean;
   readonly onSelect?: () => void;
 }
 
@@ -244,6 +397,24 @@ function DefaultPlusSvg() {
     >
       <line x1="12" y1="5" x2="12" y2="19" />
       <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  );
+}
+
+function CloseCrossSvg() {
+  return (
+    <svg
+      width="100%"
+      height="100%"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <line x1="6" y1="6" x2="18" y2="18" />
+      <line x1="18" y1="6" x2="6" y2="18" />
     </svg>
   );
 }
@@ -293,7 +464,9 @@ function StaggeredFabMenuItem({
   );
   const opacityProgress = useM3EScalarSpring(itemActive ? 1 : 0, "fastEffects");
 
-  const { isPressed, pressHandlers } = usePressHoldState(!isOpen);
+  const { isPressed, pressHandlers } = usePressHoldState(
+    !isOpen || Boolean(item.disabled),
+  );
   const itemCornerTarget = isPressed ? 16 : FAB_MENU_TOKENS.itemRadius;
   const { ref: mergedRef, borderRadiusCss } =
     useM3ECornerSpringRef<HTMLButtonElement>(
@@ -311,11 +484,16 @@ function StaggeredFabMenuItem({
       ref={mergedRef}
       type="button"
       role="menuitem"
-      tabIndex={isOpen && isRovingActive ? 0 : -1}
+      disabled={item.disabled}
+      tabIndex={isOpen && isRovingActive && !item.disabled ? 0 : -1}
       onFocus={onFocusItem}
-      onClick={onDismissAndSelect}
+      onClick={() => {
+        if (item.disabled) return;
+        onDismissAndSelect();
+      }}
       className="m3e-fab-menu__item"
       data-open={isOpen ? "" : undefined}
+      data-disabled={item.disabled ? "" : undefined}
       data-pressed={isPressed ? "" : undefined}
       style={{
         height: `${FAB_MENU_TOKENS.itemHeight}px`,
@@ -363,19 +541,36 @@ export function FABMenu({
   const rootRef = React.useRef<HTMLDivElement | null>(null);
   const triggerRef = React.useRef<HTMLButtonElement | null>(null);
   const itemRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
-  const [activeIndex, setActiveIndex] = React.useState<number>(() =>
-    Math.max(0, items.length - 1),
+
+  const findFirstEnabledIndex = React.useCallback(() => {
+    for (let i = 0; i < items.length; i++) {
+      if (!items[i]?.disabled) return i;
+    }
+    return 0;
+  }, [items]);
+
+  const [activeIndex, setActiveIndex] = React.useState<number>(
+    findFirstEnabledIndex,
   );
   const menuListId = React.useId();
 
+  React.useEffect(() => {
+    if (!isOpen) {
+      setActiveIndex(findFirstEnabledIndex());
+    }
+  }, [isOpen, findFirstEnabledIndex]);
+
   const setOpen = React.useCallback(
     (next: boolean) => {
+      if (next) {
+        setActiveIndex(findFirstEnabledIndex());
+      }
       if (controlledOpen === undefined) {
         setUncontrolledOpen(next);
       }
       onOpenChange?.(next);
     },
-    [controlledOpen, onOpenChange],
+    [controlledOpen, findFirstEnabledIndex, onOpenChange],
   );
 
   React.useEffect(() => {
@@ -390,30 +585,61 @@ export function FABMenu({
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, [isOpen, setOpen]);
 
-  const focusItemAt = React.useCallback(
-    (idx: number) => {
-      if (items.length === 0) return;
-      const clamped = ((idx % items.length) + items.length) % items.length;
-      setActiveIndex(clamped);
-      itemRefs.current[clamped]?.focus();
+  const focusEnabledItemFrom = React.useCallback(
+    (startIdx: number, step: 1 | -1) => {
+      const len = items.length;
+      if (len === 0) return;
+      for (let offset = 0; offset < len; offset++) {
+        const candidate = (((startIdx + offset * step) % len) + len) % len;
+        if (!items[candidate]?.disabled) {
+          setActiveIndex(candidate);
+          itemRefs.current[candidate]?.focus();
+          return;
+        }
+      }
     },
-    [items.length],
+    [items],
   );
 
   const { isPressed, pressHandlers } = usePressHoldState(false);
   const morphProgress = useM3EScalarSpring(isOpen ? 1 : 0, "fastSpatial");
+  const clampedMorph = Math.max(0, Math.min(1, morphProgress));
   const fabGeo = resolveToggleFabGeometry(size, morphProgress);
 
   const effectiveRadius = isPressed
     ? Math.max(10, fabGeo.cornerRadius - 6)
     : fabGeo.cornerRadius;
 
+  const hasCustomIcon = icon !== undefined;
+  const customIconOpacity = Math.max(0, Math.min(1, 1 - clampedMorph * 1.4));
+  const closeIconOpacity = Math.max(0, Math.min(1, (clampedMorph - 0.2) / 0.8));
+
   return (
     <div
       ref={rootRef}
       className={className ? `m3e-fab-menu ${className}` : "m3e-fab-menu"}
       data-open={isOpen ? "" : undefined}
-      style={style}
+      style={{ flexDirection: "column-reverse", ...style }}
+      onBlur={(e) => {
+        if (!isOpen) return;
+        const nextFocused = e.relatedTarget as Node | null;
+        if (nextFocused) {
+          if (!e.currentTarget.contains(nextFocused)) {
+            setOpen(false);
+          }
+          return;
+        }
+        const root = e.currentTarget;
+        queueMicrotask(() => {
+          if (
+            typeof document !== "undefined" &&
+            document.activeElement &&
+            !root.contains(document.activeElement)
+          ) {
+            setOpen(false);
+          }
+        });
+      }}
       onKeyDown={(e) => {
         if (e.key === "Escape" && isOpen) {
           e.stopPropagation();
@@ -427,37 +653,122 @@ export function FABMenu({
             e.preventDefault();
             if (!isOpen) {
               setOpen(true);
-              queueMicrotask(() => focusItemAt(items.length - 1));
+              queueMicrotask(() => focusEnabledItemFrom(items.length - 1, -1));
             } else {
-              focusItemAt(items.length - 1);
+              focusEnabledItemFrom(items.length - 1, -1);
             }
-          } else if (e.key === "ArrowDown" && isOpen) {
+          } else if (e.key === "ArrowDown") {
             e.preventDefault();
-            focusItemAt(0);
+            if (!isOpen) {
+              setOpen(true);
+              queueMicrotask(() => focusEnabledItemFrom(0, 1));
+            } else {
+              focusEnabledItemFrom(0, 1);
+            }
           }
           return;
         }
         if (!isOpen) return;
+        const domFocusedIdx =
+          typeof document !== "undefined"
+            ? itemRefs.current.indexOf(
+                document.activeElement as HTMLButtonElement,
+              )
+            : -1;
+        const currentIdx = domFocusedIdx >= 0 ? domFocusedIdx : activeIndex;
         if (e.key === "ArrowUp") {
           e.preventDefault();
-          focusItemAt(activeIndex - 1);
+          focusEnabledItemFrom(currentIdx - 1, -1);
         } else if (e.key === "ArrowDown") {
           e.preventDefault();
-          focusItemAt(activeIndex + 1);
+          focusEnabledItemFrom(currentIdx + 1, 1);
         } else if (e.key === "Home") {
           e.preventDefault();
-          focusItemAt(0);
+          focusEnabledItemFrom(0, 1);
         } else if (e.key === "End") {
           e.preventDefault();
-          focusItemAt(items.length - 1);
+          focusEnabledItemFrom(items.length - 1, -1);
         }
       }}
     >
+      <button
+        ref={triggerRef}
+        type="button"
+        aria-label={isOpen ? t("fabMenu.triggerClose") : resolvedTriggerLabel}
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
+        aria-controls={menuListId}
+        onClick={() => setOpen(!isOpen)}
+        className="m3e-toggle-fab"
+        data-open={isOpen ? "" : undefined}
+        data-size={size}
+        data-pressed={isPressed ? "" : undefined}
+        style={{
+          width: `${fabGeo.containerSize.toFixed(1)}px`,
+          height: `${fabGeo.containerSize.toFixed(1)}px`,
+          borderRadius: `${effectiveRadius.toFixed(1)}px`,
+        }}
+        {...pressHandlers}
+      >
+        <span
+          className="m3e-toggle-fab__icon"
+          style={{
+            position: "relative",
+            width: `${fabGeo.iconSize.toFixed(1)}px`,
+            height: `${fabGeo.iconSize.toFixed(1)}px`,
+            rotate: hasCustomIcon
+              ? "0deg"
+              : `${fabGeo.iconRotationDeg.toFixed(1)}deg`,
+          }}
+          aria-hidden="true"
+        >
+          {hasCustomIcon ? (
+            <>
+              <span
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: customIconOpacity,
+                  scale: `${(1 - 0.25 * clampedMorph).toFixed(3)}`,
+                  rotate: `${(45 * clampedMorph).toFixed(1)}deg`,
+                }}
+              >
+                {icon}
+              </span>
+              <span
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: closeIconOpacity,
+                  scale: `${(0.75 + 0.25 * clampedMorph).toFixed(3)}`,
+                  rotate: `${(-45 * (1 - clampedMorph)).toFixed(1)}deg`,
+                }}
+              >
+                <CloseCrossSvg />
+              </span>
+            </>
+          ) : (
+            <DefaultPlusSvg />
+          )}
+        </span>
+        {debugGeometry ? (
+          <span className="m3e-debug-badge" aria-hidden="true">
+            {Math.round(fabGeo.containerSize)}px r:{effectiveRadius.toFixed(0)}
+          </span>
+        ) : null}
+      </button>
+
       <div
         id={menuListId}
         role="menu"
         aria-label={resolvedTriggerLabel}
-        inert={!isOpen ? true : undefined}
+        inert={!isOpen ? INERT_TRUE : undefined}
         className="m3e-fab-menu__list"
         style={{
           gap: `${FAB_MENU_TOKENS.listGap}px`,
@@ -484,43 +795,101 @@ export function FABMenu({
           />
         ))}
       </div>
-
-      <button
-        ref={triggerRef}
-        type="button"
-        aria-label={isOpen ? t("fabMenu.triggerClose") : resolvedTriggerLabel}
-        aria-expanded={isOpen}
-        aria-haspopup="menu"
-        aria-controls={menuListId}
-        onClick={() => setOpen(!isOpen)}
-        className="m3e-toggle-fab"
-        data-open={isOpen ? "" : undefined}
-        data-size={size}
-        data-pressed={isPressed ? "" : undefined}
-        style={{
-          width: `${fabGeo.containerSize.toFixed(1)}px`,
-          height: `${fabGeo.containerSize.toFixed(1)}px`,
-          borderRadius: `${effectiveRadius.toFixed(1)}px`,
-        }}
-        {...pressHandlers}
-      >
-        <span
-          className="m3e-toggle-fab__icon"
-          style={{
-            width: `${fabGeo.iconSize.toFixed(1)}px`,
-            height: `${fabGeo.iconSize.toFixed(1)}px`,
-            rotate: `${fabGeo.iconRotationDeg.toFixed(1)}deg`,
-          }}
-          aria-hidden="true"
-        >
-          {icon ?? <DefaultPlusSvg />}
-        </span>
-        {debugGeometry ? (
-          <span className="m3e-debug-badge" aria-hidden="true">
-            {Math.round(fabGeo.containerSize)}px r:{effectiveRadius.toFixed(0)}
-          </span>
-        ) : null}
-      </button>
     </div>
+  );
+}
+
+export type DockedToolbarLayout = "spaced" | "centered" | "leading-actions";
+
+export interface M3EDockedToolbarProps {
+  readonly items: readonly FloatingToolbarItemSpec[];
+  readonly primaryAction?: React.ReactNode;
+  readonly layout?: DockedToolbarLayout;
+  readonly elevated?: boolean;
+  readonly "aria-label"?: string;
+  readonly className?: string;
+  readonly style?: React.CSSProperties;
+}
+
+function DockedToolbarActionButton({
+  item,
+}: {
+  readonly item: FloatingToolbarItemSpec;
+}) {
+  const { isPressed, pressHandlers } = usePressHoldState(Boolean(item.disabled));
+  const targetRadius = isPressed
+    ? DOCKED_TOOLBAR_TOKENS.itemPressedRadius
+    : item.selected
+      ? DOCKED_TOOLBAR_TOKENS.itemSelectedRadius
+      : DOCKED_TOOLBAR_TOKENS.itemRadius;
+  const { ref, borderRadiusCss } = useM3ECornerSpringRef<HTMLButtonElement>(
+    [targetRadius, targetRadius, targetRadius, targetRadius],
+    item.selected ? "fastSpatial" : "defaultEffects",
+  );
+
+  return (
+    <Toolbar.Button
+      ref={ref}
+      disabled={item.disabled}
+      aria-label={item.label}
+      aria-pressed={item.selected}
+      onClick={item.onClick}
+      className="m3e-docked-toolbar__button"
+      data-selected={item.selected ? "" : undefined}
+      data-pressed={isPressed ? "" : undefined}
+      style={{
+        width: `${DOCKED_TOOLBAR_TOKENS.itemSize}px`,
+        height: `${DOCKED_TOOLBAR_TOKENS.itemSize}px`,
+        borderRadius: borderRadiusCss,
+      }}
+      {...pressHandlers}
+    >
+      <span className="m3e-floating-toolbar__icon" aria-hidden="true">
+        {item.icon}
+      </span>
+    </Toolbar.Button>
+  );
+}
+
+export function DockedToolbar({
+  items,
+  primaryAction,
+  layout = primaryAction ? "leading-actions" : "spaced",
+  elevated = true,
+  "aria-label": ariaLabel,
+  className,
+  style,
+}: M3EDockedToolbarProps): React.JSX.Element {
+  const { t } = useM3EI18n();
+  const resolvedLabel = ariaLabel ?? t("dockedToolbar.ariaLabel");
+
+  return (
+    <Toolbar.Root
+      aria-label={resolvedLabel}
+      className={
+        className ? `m3e-docked-toolbar ${className}` : "m3e-docked-toolbar"
+      }
+      data-layout={layout}
+      data-elevated={elevated ? "" : undefined}
+      style={{
+        minHeight: `${DOCKED_TOOLBAR_TOKENS.height}px`,
+        paddingInline: `${DOCKED_TOOLBAR_TOKENS.paddingInline}px`,
+        ...style,
+      }}
+    >
+      <div className="m3e-docked-toolbar__items">
+        {items.map((item, idx) => (
+          <React.Fragment key={item.id}>
+            {item.separatorBefore && idx > 0 ? (
+              <Toolbar.Separator className="m3e-docked-toolbar__separator" />
+            ) : null}
+            <DockedToolbarActionButton item={item} />
+          </React.Fragment>
+        ))}
+      </div>
+      {primaryAction ? (
+        <div className="m3e-docked-toolbar__primary">{primaryAction}</div>
+      ) : null}
+    </Toolbar.Root>
   );
 }

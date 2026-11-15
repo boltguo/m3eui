@@ -39,15 +39,25 @@ export function App() {
 
 ## 子路径导出与 CLI
 
-- `m3eui` — 组件、Hooks、`M3EProvider`、`CSPProvider`、`getM3EInitScript`、配置与令牌
+- `m3eui` — 兼容 RSC 的组件、Hooks、`M3EProvider`、`M3EPortal`、`CSPProvider`、`getM3EInitScript`、配置与令牌入口
 - `m3eui/styles.css` — 组件样式表（`--m3e-*` 变量 + `light-dark()`）
-- `m3eui/tokens` & `m3eui/tokens.json` — HCT 色阶计算、弹簧求解、圆角拓扑与 35 种 `MaterialShapes`
-- `m3eui/i18n` — `zh-CN`、`en-US`、`ja-JP`、`ar-SA` 词典与 `M3EMessageKey` 类型
-- `m3eui/config` — `defineM3EConfig`、`resolveM3EConfig`、`serializeM3EConfig`、`generateM3EStaticThemeCss`
+- `m3eui/tokens` & `m3eui/tokens.json` — 纯函数兼容 RSC 的 61 语义角色 HCT 色阶计算（含 `success`/`warning` 调和）、弹簧求解、圆角拓扑、`parseShortcutKeys` 与 35 种 `MaterialShapes`（`getMaterialShape`）
+- `m3eui/i18n` — 兼容 RSC 的 `zh-CN`、`en-US`、`ja-JP`、`ar-SA` 词典与 `M3EMessageKey` 类型
+- `m3eui/config` — 兼容 RSC 的 `defineM3EConfig`、`resolveM3EConfig`（默认 `colorMode: "system"`）、`serializeM3EConfig`、`generateM3EStaticThemeCss`
 - `m3eui/primitives` — 透出的 `@base-ui/react` 无头原语
 - `m3eui/m3e.schema.json` — `m3e.json` JSON Schema
 - `m3eui/components/*` — 单组件模块入口
 - **CLI（`npx m3eui` / `npx m3e`）**：`init`、`sync`、`locale`、`doctor`
+
+## 组件清单
+
+| 分类 | 导出项 |
+| :--- | :--- |
+| **动作与工具栏** | `Button`, `ToggleButton`, `IconButton`, `IconToggleButton`, `SplitButton`, `ButtonGroup`, `FloatingToolbar`, `DockedToolbar`, `FABMenu`, `FAB`（`xs`/`sm`/`md`/`lg`，默认 `sm`）, `ExtendedFAB`, `CopyButton` |
+| **表单与选择** | `Form`, `Fieldset`, `TextField`, `TextareaField`, `NumberField`, `OTPField`, `Select`, `MultiSelect`, `Combobox`, `MultiCombobox`, `FileUpload`, `FileUploadDropzone`, `ColorPicker`, `ColorPickerField`, `ColorSwatch`, `DockedDatePicker`, `DatePickerField`, `DateRangePicker`, `DateRangePickerField`, `DatePickerDialog`, `ModalDatePicker`, `DateTimePickerField`, `TimePicker`, `TimePickerField`, `TimePickerDialog`, `ModalTimePicker`（完整支持 `disabled`/`readOnly`/`invalid`）, `Switch`, `Slider`, `Checkbox`, `CheckboxGroup`, `Radio`, `RadioGroup` |
+| **数据展示与表面** | `Card`, `DataTable`, `Skeleton`, `SegmentedList`, `SegmentedListItem`, `List`, `ListItem`, `Chip`, `AssistChip`, `FilterChip`, `InputChip`, `SuggestionChip`, `Avatar`, `AvatarGroup`, `Badge`, `Carousel`, `Empty`, `Kbd`, `Snippet`, `Collapsible`, `Accordion`, `PreviewCard`, `ScrollArea`, `Divider`, `DragHandle`, `VerticalDragHandle`, `MaterialShapeView` |
+| **导航** | `NavigationSuite`, `NavigationBar`, `NavigationRail`, `WideNavigationRail`, `NavigationDrawer`, `NavigationMenu`, `TopAppBar`, `BottomAppBar`, `AppBarRow`, `SearchBar`, `SearchView`, `CommandPalette`, `Breadcrumb`, `Pagination`, `Menubar`, `Tabs`, `TabsList`, `Tab`, `TabsPanel` |
+| **浮层与反馈** | `Alert`（受控/非受控 `open`）, `Dialog`, `DialogClose`, `AlertDialog`, `AlertDialogClose`, `Sheet`, `BottomSheet`, `SideSheet`, `SheetClose`, `Popover`, `PopoverClose`, `DropdownMenu`, `ContextMenu`, `Tooltip`, `RichTooltip`（键盘触发自动聚焦 `action`）, `useM3EToast`, `PullToRefresh`, `PullToRefreshBox`, `LinearProgressIndicator`, `CircularProgressIndicator`, `Meter`, `LoadingIndicator`, `ContainedLoadingIndicator`, `WavyProgressIndicator`, `LinearWavyProgressIndicator`, `CircularWavyProgressIndicator` |
 
 ## 开源协议
 

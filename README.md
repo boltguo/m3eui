@@ -68,12 +68,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
 | Path | Description |
 | :--- | :--- |
-| `m3eui` | Components, hooks, `M3EProvider`, config, i18n, and tokens |
+| `m3eui` | RSC-safe barrel for components, hooks, `M3EProvider`, `M3EPortal`, config, i18n, and tokens |
 | `m3eui/styles.css` | Component stylesheet (`--m3e-*` custom properties + `light-dark()`) |
-| `m3eui/tokens` | HCT color synthesis, spring solver, corner topology, and 35 `MaterialShapes` |
+| `m3eui/tokens` | Pure RSC-safe 61-role HCT color synthesis (`primary`/`secondary`/`tertiary`/`error`/`success`/`warning`), spring solver, corner topology, `parseShortcutKeys`, and 35 `MaterialShapes` (`getMaterialShape`) |
 | `m3eui/tokens.json` | Precomputed token and polygon JSON |
-| `m3eui/i18n` | `en-US`, `zh-CN`, `ja-JP`, `ar-SA` dictionaries and `M3EMessageKey` types |
-| `m3eui/config` | `defineM3EConfig`, `resolveM3EConfig`, `serializeM3EConfig`, `generateM3EStaticThemeCss` |
+| `m3eui/i18n` | RSC-safe `en-US`, `zh-CN`, `ja-JP`, `ar-SA` dictionaries and `M3EMessageKey` types |
+| `m3eui/config` | RSC-safe `defineM3EConfig`, `resolveM3EConfig` (`colorMode: "system"` default), `serializeM3EConfig`, `generateM3EStaticThemeCss` |
 | `m3eui/primitives` | Re-exported `@base-ui/react` primitives |
 | `m3eui/cli` | Programmatic CLI API |
 | `m3eui/m3e.schema.json` | JSON Schema for `m3e.json` |
@@ -93,12 +93,12 @@ npx m3eui doctor
 
 | Category | Exports |
 | :--- | :--- |
-| **Core & Config** | `M3EProvider`, `CSPProvider`, `useM3E`, `useM3EI18n`, `getM3EInitScript`, `defineM3EConfig`, `resolveM3EConfig`, `serializeM3EConfig`, `generateM3EStaticThemeCss`, `useM3EScalarSpring`, `useM3ECornerSpring`, `usePressHoldState` |
-| **Actions** | `Button`, `ToggleButton`, `IconButton`, `IconToggleButton`, `SplitButton`, `ButtonGroup`, `FloatingToolbar`, `FABMenu`, `FAB`, `ExtendedFAB` |
-| **Inputs & Pickers** | `Form`, `Fieldset`, `SearchBar`, `OTPField`, `DockedDatePicker`, `DatePickerField`, `DateRangePicker`, `TimePicker`, `TimePickerField`, `TextField`, `TextareaField`, `NumberField`, `Combobox`, `Select`, `Switch`, `Slider`, `Checkbox`, `CheckboxGroup`, `Radio`, `RadioGroup` |
-| **Display & Surfaces** | `Collapsible`, `Accordion`, `Carousel`, `DataTable`, `Skeleton`, `AssistChip`, `FilterChip`, `InputChip`, `Avatar`, `Badge`, `Card`, `SegmentedList`, `SegmentedListItem`, `PreviewCard`, `ScrollArea`, `Divider` |
-| **Navigation** | `NavigationMenu`, `TopAppBar`, `NavigationBar`, `NavigationRail`, `WideNavigationRail`, `NavigationDrawer`, `NavigationSuite`, `Menubar`, `Tabs`, `TabsList`, `Tab`, `TabsPanel` |
-| **Overlays & Feedback** | `Sheet`, `BottomSheet`, `SideSheet`, `SheetClose`, `Popover`, `PopoverClose`, `DropdownMenu`, `ContextMenu`, `Dialog`, `DialogClose`, `AlertDialog`, `AlertDialogClose`, `Tooltip`, `RichTooltip`, `useM3EToast`, `LinearProgressIndicator`, `CircularProgressIndicator`, `Meter`, `LoadingIndicator`, `ContainedLoadingIndicator`, `WavyProgressIndicator`, `LinearWavyProgressIndicator`, `CircularWavyProgressIndicator`, `MaterialShapeView` |
+| **Core & Config** | `M3EProvider`, `M3EPortal`, `CSPProvider`, `useM3E`, `useM3EI18n`, `useM3EPortalContainer`, `getM3EInitScript`, `defineM3EConfig`, `resolveM3EConfig`, `serializeM3EConfig`, `generateM3EStaticThemeCss`, `useM3EScalarSpring`, `useM3ECornerSpring`, `useM3ECornerSpringRef`, `usePressHoldState` |
+| **Actions** | `Button`, `ToggleButton`, `IconButton`, `IconToggleButton`, `SplitButton`, `ButtonGroup`, `FloatingToolbar`, `DockedToolbar`, `FABMenu`, `FAB` (`xs`/`sm`/`md`/`lg`, default `sm`), `ExtendedFAB`, `CopyButton` |
+| **Inputs & Selection** | `Form`, `Fieldset`, `TextField`, `TextareaField`, `NumberField`, `OTPField`, `Select`, `MultiSelect`, `Combobox`, `MultiCombobox`, `FileUpload`, `FileUploadDropzone`, `ColorPicker`, `ColorPickerField`, `ColorSwatch`, `DockedDatePicker`, `DatePickerField`, `DateRangePicker`, `DateRangePickerField`, `DatePickerDialog`, `ModalDatePicker`, `DateTimePickerField`, `TimePicker`, `TimePickerField`, `TimePickerDialog`, `ModalTimePicker` (full `disabled`/`readOnly`/`invalid` parity), `Switch`, `Slider`, `Checkbox`, `CheckboxGroup`, `Radio`, `RadioGroup` |
+| **Display & Surfaces** | `Card`, `DataTable`, `Skeleton`, `SegmentedList`, `SegmentedListItem`, `List`, `ListItem`, `Chip`, `AssistChip`, `FilterChip`, `InputChip`, `SuggestionChip`, `Avatar`, `AvatarGroup`, `Badge`, `Carousel`, `Empty`, `Kbd`, `Snippet`, `Collapsible`, `Accordion`, `PreviewCard`, `ScrollArea`, `Divider`, `DragHandle`, `VerticalDragHandle`, `MaterialShapeView` |
+| **Navigation** | `NavigationSuite`, `NavigationBar`, `NavigationRail`, `WideNavigationRail`, `NavigationDrawer`, `NavigationMenu`, `TopAppBar`, `BottomAppBar`, `AppBarRow`, `SearchBar`, `SearchView`, `CommandPalette`, `Breadcrumb`, `Pagination`, `Menubar`, `Tabs`, `TabsList`, `Tab`, `TabsPanel` |
+| **Overlays & Feedback** | `Alert` (controlled/uncontrolled `open`), `Dialog`, `DialogClose`, `AlertDialog`, `AlertDialogClose`, `Sheet`, `BottomSheet`, `SideSheet`, `SheetClose`, `Popover`, `PopoverClose`, `DropdownMenu`, `ContextMenu`, `Tooltip`, `RichTooltip` (keyboard-gated `action` focus), `useM3EToast`, `PullToRefresh`, `PullToRefreshBox`, `LinearProgressIndicator`, `CircularProgressIndicator`, `Meter`, `LoadingIndicator`, `ContainedLoadingIndicator`, `WavyProgressIndicator`, `LinearWavyProgressIndicator`, `CircularWavyProgressIndicator` |
 
 ## Development
 

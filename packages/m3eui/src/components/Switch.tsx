@@ -1,8 +1,11 @@
+"use client";
+
 import * as React from "react";
 import { Switch as BaseSwitch } from "@base-ui/react/switch";
 import { SWITCH_TOKENS, resolveSwitchGeometry } from "../tokens/index.js";
-import { useM3E } from "../context/M3EProvider.js";
+import { useM3E } from "../context/M3EContext.js";
 import { useM3EScalarSpring, usePressHoldState } from "../hooks/useM3ESpring.js";
+import { useFieldsetDisabled } from "../internal/fieldOutline.js";
 
 export interface M3ESwitchProps {
   readonly checked?: boolean;
@@ -26,8 +29,8 @@ export interface M3ESwitchProps {
 function SwitchCheckSvg() {
   return (
     <svg
-      width={14}
-      height={14}
+      width={SWITCH_TOKENS.thumbIconSize}
+      height={SWITCH_TOKENS.thumbIconSize}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -44,8 +47,8 @@ function SwitchCheckSvg() {
 function SwitchCloseSvg() {
   return (
     <svg
-      width={13}
-      height={13}
+      width={SWITCH_TOKENS.thumbIconSize}
+      height={SWITCH_TOKENS.thumbIconSize}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -66,7 +69,7 @@ export const Switch = React.forwardRef<HTMLElement, M3ESwitchProps>(
       checked: controlledChecked,
       defaultChecked = false,
       onCheckedChange,
-      disabled = false,
+      disabled,
       readOnly = false,
       required = false,
       name,
@@ -83,11 +86,12 @@ export const Switch = React.forwardRef<HTMLElement, M3ESwitchProps>(
     ref,
   ) {
     const { debugGeometry, direction } = useM3E();
+    const isDisabled = useFieldsetDisabled(disabled);
     const [uncontrolledChecked, setUncontrolledChecked] =
       React.useState<boolean>(defaultChecked);
     const isChecked = controlledChecked ?? uncontrolledChecked;
 
-    const { isPressed, pressHandlers } = usePressHoldState(disabled || readOnly);
+    const { isPressed, pressHandlers } = usePressHoldState(isDisabled || readOnly);
 
     const resolvedCheckedIcon =
       checkedIcon !== undefined ? checkedIcon : showIcons ? <SwitchCheckSvg /> : null;
@@ -114,7 +118,7 @@ export const Switch = React.forwardRef<HTMLElement, M3ESwitchProps>(
       name={name}
       checked={controlledChecked}
       defaultChecked={defaultChecked}
-      disabled={disabled}
+      disabled={isDisabled}
       readOnly={readOnly}
       required={required}
       aria-label={ariaLabel}
@@ -140,11 +144,25 @@ export const Switch = React.forwardRef<HTMLElement, M3ESwitchProps>(
         }}
       >
         {isChecked && resolvedCheckedIcon ? (
-          <span className="m3e-switch__icon" aria-hidden="true">
+          <span
+            className="m3e-switch__icon"
+            style={{
+              width: `${SWITCH_TOKENS.thumbIconSize}px`,
+              height: `${SWITCH_TOKENS.thumbIconSize}px`,
+            }}
+            aria-hidden="true"
+          >
             {resolvedCheckedIcon}
           </span>
         ) : !isChecked && resolvedUncheckedIcon ? (
-          <span className="m3e-switch__icon" aria-hidden="true">
+          <span
+            className="m3e-switch__icon"
+            style={{
+              width: `${SWITCH_TOKENS.thumbIconSize}px`,
+              height: `${SWITCH_TOKENS.thumbIconSize}px`,
+            }}
+            aria-hidden="true"
+          >
             {resolvedUncheckedIcon}
           </span>
         ) : null}
@@ -168,7 +186,7 @@ export const Switch = React.forwardRef<HTMLElement, M3ESwitchProps>(
           ? `m3e-control-row m3e-switch-row ${className}`
           : "m3e-control-row m3e-switch-row"
       }
-      data-disabled={disabled ? "" : undefined}
+      data-disabled={isDisabled ? "" : undefined}
       style={{
         minBlockSize: `${SWITCH_TOKENS.minTouchTarget}px`,
         ...style,

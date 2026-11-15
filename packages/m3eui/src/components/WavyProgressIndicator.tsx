@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import { Progress } from "@base-ui/react/progress";
 import {
@@ -11,7 +13,7 @@ import {
   buildIndeterminateLinearWavyGeometry,
   resolveDeterminateWaveAmplitude,
 } from "../tokens/index.js";
-import { useM3E } from "../context/M3EProvider.js";
+import { useM3E } from "../context/M3EContext.js";
 
 const MAX_LINEAR_TRACK_SEGMENTS = 3;
 const MAX_LINEAR_ACTIVE_SEGMENTS = 2;
@@ -43,6 +45,7 @@ export function WavyProgressIndicator({
     playbackRate,
     paused: contextPaused,
     prefersReducedMotion,
+    direction,
     locale,
     t,
   } = useM3E();
@@ -170,6 +173,16 @@ export function WavyProgressIndicator({
     }
   }, []);
 
+  const targetRef = React.useRef({
+    progress: targetProgress,
+    amplitude: targetAmplitude,
+  });
+  targetRef.current = {
+    progress: targetProgress,
+    amplitude: targetAmplitude,
+  };
+  const wakeRafRef = React.useRef<(() => void) | null>(null);
+
   React.useEffect(() => {
     if (isPaused) {
       stateRef.current = {
@@ -180,8 +193,28 @@ export function WavyProgressIndicator({
       applyGeometryToDom(computeGeometry(stateRef.current));
       return;
     }
+    if (Math.abs(targetProgress - stateRef.current.progress) <= 0.2) {
+      stateRef.current = {
+        ...stateRef.current,
+        progress: targetProgress,
+      };
+    }
+    wakeRafRef.current?.();
+  }, [
+    targetProgress,
+    targetAmplitude,
+    isPaused,
+    computeGeometry,
+    applyGeometryToDom,
+  ]);
+
+  React.useEffect(() => {
+    if (isPaused) {
+      return;
+    }
 
     let rafId = 0;
+    let running = false;
     let lastNow = performance.now();
 
     const step = (now: number) => {
@@ -191,13 +224,15 @@ export function WavyProgressIndicator({
       const dtScaledMs = dtMs * rate;
 
       const prev = stateRef.current;
+      const { progress: tgtProgress, amplitude: tgtAmplitude } =
+        targetRef.current;
       const alpha = Math.min(1, dtMs / (140 / Math.max(0.1, rate)));
 
       const nextProgress = isIndeterminate
         ? 0
-        : prev.progress + (targetProgress - prev.progress) * alpha;
+        : prev.progress + (tgtProgress - prev.progress) * alpha;
       const nextAmplitude =
-        prev.amplitude + (targetAmplitude - prev.amplitude) * alpha;
+        prev.amplitude + (tgtAmplitude - prev.amplitude) * alpha;
       const nextPhase =
         (prev.phasePx + (dtScaledMs / 1000) * effectiveWavelength) %
         Math.max(1, effectiveWavelength);
@@ -217,21 +252,34 @@ export function WavyProgressIndicator({
       const settledDeterminate =
         !isIndeterminate &&
         nextAmplitude < 0.005 &&
-        Math.abs(nextProgress - targetProgress) < 0.001 &&
-        Math.abs(nextAmplitude - targetAmplitude) < 0.002;
+        Math.abs(nextProgress - tgtProgress) < 0.001 &&
+        Math.abs(nextAmplitude - tgtAmplitude) < 0.002;
 
       if (!settledDeterminate) {
+        rafId = requestAnimationFrame(step);
+      } else {
+        running = false;
+      }
+    };
+
+    wakeRafRef.current = () => {
+      if (!running) {
+        running = true;
+        lastNow = performance.now();
         rafId = requestAnimationFrame(step);
       }
     };
 
     applyGeometryToDom(computeGeometry(stateRef.current));
+    running = true;
     rafId = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(rafId);
+    return () => {
+      running = false;
+      wakeRafRef.current = null;
+      cancelAnimationFrame(rafId);
+    };
   }, [
     isIndeterminate,
-    targetProgress,
-    targetAmplitude,
     effectiveWavelength,
     isPaused,
     playbackRate,
@@ -240,12 +288,16 @@ export function WavyProgressIndicator({
     applyGeometryToDom,
   ]);
 
-  const initialGeometry = computeGeometry({
-    progress: targetProgress,
-    amplitude: targetAmplitude,
-    phasePx: stateRef.current.phasePx,
-    cycleFraction: stateRef.current.cycleFraction,
-  });
+  const initialGeometryRef = React.useRef<LinearWavyGeometry | null>(null);
+  if (initialGeometryRef.current === null) {
+    initialGeometryRef.current = computeGeometry({
+      progress: targetProgress,
+      amplitude: targetAmplitude,
+      phasePx: stateRef.current.phasePx,
+      cycleFraction: stateRef.current.cycleFraction,
+    });
+  }
+  const initialGeometry = initialGeometryRef.current;
 
   return (
     <Progress.Root
@@ -264,6 +316,7 @@ export function WavyProgressIndicator({
         height={height}
         viewBox={`0 0 ${width} ${height}`}
         aria-hidden="true"
+        style={direction === "rtl" ? { transform: "scaleX(-1)" } : undefined}
       >
         {Array.from({ length: MAX_LINEAR_TRACK_SEGMENTS }, (_, idx) => {
           const d = initialGeometry.trackPaths[idx];
@@ -432,6 +485,16 @@ export function CircularWavyProgressIndicator({
     }
   }, []);
 
+  const targetRef = React.useRef({
+    progress: targetProgress,
+    amplitude: targetAmplitude,
+  });
+  targetRef.current = {
+    progress: targetProgress,
+    amplitude: targetAmplitude,
+  };
+  const wakeRafRef = React.useRef<(() => void) | null>(null);
+
   React.useEffect(() => {
     if (isPaused) {
       stateRef.current = {
@@ -442,8 +505,28 @@ export function CircularWavyProgressIndicator({
       applyGeometryToDom(computeGeometry(stateRef.current));
       return;
     }
+    if (Math.abs(targetProgress - stateRef.current.progress) <= 0.2) {
+      stateRef.current = {
+        ...stateRef.current,
+        progress: targetProgress,
+      };
+    }
+    wakeRafRef.current?.();
+  }, [
+    targetProgress,
+    targetAmplitude,
+    isPaused,
+    computeGeometry,
+    applyGeometryToDom,
+  ]);
+
+  React.useEffect(() => {
+    if (isPaused) {
+      return;
+    }
 
     let rafId = 0;
+    let running = false;
     let lastNow = performance.now();
 
     const step = (now: number) => {
@@ -455,13 +538,15 @@ export function CircularWavyProgressIndicator({
       const dtScaledMs = dtMs * rate;
 
       const prev = stateRef.current;
+      const { progress: tgtProgress, amplitude: tgtAmplitude } =
+        targetRef.current;
       const alpha = Math.min(1, dtMs / (140 / Math.max(0.1, rate)));
 
       const nextProgress = isIndeterminate
         ? 0
-        : prev.progress + (targetProgress - prev.progress) * alpha;
+        : prev.progress + (tgtProgress - prev.progress) * alpha;
       const nextAmplitude =
-        prev.amplitude + (targetAmplitude - prev.amplitude) * alpha;
+        prev.amplitude + (tgtAmplitude - prev.amplitude) * alpha;
       const nextPhase =
         (prev.phaseRad +
           (dtScaledMs / 1000) * CIRCULAR_WAVY_TOKENS.defaultAngularWaveSpeedRad) %
@@ -484,21 +569,34 @@ export function CircularWavyProgressIndicator({
       const settledDeterminate =
         !isIndeterminate &&
         nextAmplitude < 0.005 &&
-        Math.abs(nextProgress - targetProgress) < 0.001 &&
-        Math.abs(nextAmplitude - targetAmplitude) < 0.002;
+        Math.abs(nextProgress - tgtProgress) < 0.001 &&
+        Math.abs(nextAmplitude - tgtAmplitude) < 0.002;
 
       if (!settledDeterminate) {
+        rafId = requestAnimationFrame(step);
+      } else {
+        running = false;
+      }
+    };
+
+    wakeRafRef.current = () => {
+      if (!running) {
+        running = true;
+        lastNow = performance.now();
         rafId = requestAnimationFrame(step);
       }
     };
 
     applyGeometryToDom(computeGeometry(stateRef.current));
+    running = true;
     rafId = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(rafId);
+    return () => {
+      running = false;
+      wakeRafRef.current = null;
+      cancelAnimationFrame(rafId);
+    };
   }, [
     isIndeterminate,
-    targetProgress,
-    targetAmplitude,
     isPaused,
     playbackRate,
     prefersReducedMotion,
@@ -506,12 +604,16 @@ export function CircularWavyProgressIndicator({
     applyGeometryToDom,
   ]);
 
-  const initialGeometry = computeGeometry({
-    progress: targetProgress,
-    amplitude: targetAmplitude,
-    phaseRad: stateRef.current.phaseRad,
-    cycleFraction: stateRef.current.cycleFraction,
-  });
+  const initialGeometryRef = React.useRef<CircularWavyGeometry | null>(null);
+  if (initialGeometryRef.current === null) {
+    initialGeometryRef.current = computeGeometry({
+      progress: targetProgress,
+      amplitude: targetAmplitude,
+      phaseRad: stateRef.current.phaseRad,
+      cycleFraction: stateRef.current.cycleFraction,
+    });
+  }
+  const initialGeometry = initialGeometryRef.current;
 
   return (
     <Progress.Root

@@ -1,8 +1,11 @@
+"use client";
+
 import * as React from "react";
 import { Checkbox as BaseCheckbox } from "@base-ui/react/checkbox";
 import { CheckboxGroup as BaseCheckboxGroup } from "@base-ui/react/checkbox-group";
 import { CHECKBOX_TOKENS } from "../tokens/index.js";
 import { useM3EScalarSpring, usePressHoldState } from "../hooks/useM3ESpring.js";
+import { FieldsetDisabledContext, useFieldsetDisabled } from "../internal/fieldOutline.js";
 
 export interface M3ECheckboxProps {
   readonly checked?: boolean;
@@ -80,7 +83,7 @@ export const Checkbox = React.forwardRef<HTMLElement, M3ECheckboxProps>(
       name,
       id,
       parent = false,
-      disabled = false,
+      disabled,
       readOnly = false,
       required = false,
       label,
@@ -91,7 +94,8 @@ export const Checkbox = React.forwardRef<HTMLElement, M3ECheckboxProps>(
     },
     ref,
   ) {
-    const { isPressed, pressHandlers } = usePressHoldState(disabled || readOnly);
+    const isDisabled = useFieldsetDisabled(disabled);
+    const { isPressed, pressHandlers } = usePressHoldState(isDisabled || readOnly);
     const cornerRadius = useM3EScalarSpring(
       isPressed
         ? CHECKBOX_TOKENS.pressedCornerRadius
@@ -103,67 +107,70 @@ export const Checkbox = React.forwardRef<HTMLElement, M3ECheckboxProps>(
       <BaseCheckbox.Root
         ref={ref}
         id={id}
-      name={name}
-      value={value}
-      parent={parent}
-      checked={checked}
-      defaultChecked={defaultChecked}
-      indeterminate={indeterminate}
-      disabled={disabled}
-      readOnly={readOnly}
-      required={required}
-      aria-label={ariaLabel}
-      onCheckedChange={(next) => onCheckedChange?.(next)}
-      className={
-        !label && className ? `m3e-checkbox ${className}` : "m3e-checkbox"
-      }
-      data-pressed={isPressed ? "" : undefined}
-      style={{
-        width: `${CHECKBOX_TOKENS.boxSize}px`,
-        height: `${CHECKBOX_TOKENS.boxSize}px`,
-        borderRadius: `${Math.max(2, cornerRadius).toFixed(1)}px`,
-        ...(!label ? style : undefined),
-      }}
-      {...pressHandlers}
-    >
-      <BaseCheckbox.Indicator
-        keepMounted
-        className="m3e-checkbox__indicator"
-        render={(props, state) => (
-          <span {...props}>
-            <CheckGlyph indeterminate={state.indeterminate} />
-          </span>
-        )}
-      />
-    </BaseCheckbox.Root>
-  );
+        name={name}
+        value={value}
+        parent={parent}
+        checked={checked}
+        defaultChecked={defaultChecked}
+        indeterminate={indeterminate}
+        disabled={isDisabled}
+        readOnly={readOnly}
+        required={required}
+        aria-label={ariaLabel}
+        onCheckedChange={(next) => onCheckedChange?.(next)}
+        className={
+          !label && className
+            ? `m3e-checkbox m3e-checkbox__control ${className}`
+            : "m3e-checkbox m3e-checkbox__control"
+        }
+        data-pressed={isPressed ? "" : undefined}
+        style={{
+          width: `${CHECKBOX_TOKENS.boxSize}px`,
+          height: `${CHECKBOX_TOKENS.boxSize}px`,
+          borderRadius: `${Math.max(2, cornerRadius).toFixed(1)}px`,
+          ...(!label ? style : undefined),
+        }}
+        {...pressHandlers}
+      >
+        <span className="m3e-checkbox__halo" aria-hidden="true" />
+        <BaseCheckbox.Indicator
+          keepMounted
+          className="m3e-checkbox__indicator"
+          render={(props, state) => (
+            <span {...props}>
+              <CheckGlyph indeterminate={state.indeterminate} />
+            </span>
+          )}
+        />
+      </BaseCheckbox.Root>
+    );
 
-  if (!label) {
-    return boxNode;
-  }
+    if (!label) {
+      return boxNode;
+    }
 
-  return (
-    <label
-      className={
-        className
-          ? `m3e-control-row m3e-checkbox-row ${className}`
-          : "m3e-control-row m3e-checkbox-row"
-      }
-      data-disabled={disabled ? "" : undefined}
-      style={{
-        minBlockSize: `${CHECKBOX_TOKENS.minTouchTarget}px`,
-        ...style,
-      }}
-    >
-      <span className="m3e-checkbox__halo">{boxNode}</span>
-      <span className="m3e-control-row__text">
-        <span className="m3e-control-row__label">{label}</span>
-        {description ? (
-          <span className="m3e-control-row__description">{description}</span>
-        ) : null}
-      </span>
-    </label>
-  );
+    return (
+      <label
+        className={
+          className
+            ? `m3e-control-row m3e-checkbox-row ${className}`
+            : "m3e-control-row m3e-checkbox-row"
+        }
+        data-disabled={isDisabled ? "" : undefined}
+        style={{
+          minBlockSize: `${CHECKBOX_TOKENS.minTouchTarget}px`,
+          ...style,
+        }}
+      >
+        {boxNode}
+        <span className="m3e-control-row__text">
+          <span className="m3e-control-row__label">{label}</span>
+          {description ? (
+            <span className="m3e-control-row__description">{description}</span>
+          ) : null}
+        </span>
+      </label>
+    );
 },
 );
 
@@ -173,25 +180,28 @@ export function CheckboxGroup({
   defaultValue,
   allValues,
   onValueChange,
-  disabled = false,
+  disabled,
   "aria-label": ariaLabel,
   className,
   style,
 }: M3ECheckboxGroupProps): React.JSX.Element {
+  const isDisabled = useFieldsetDisabled(disabled);
   return (
-    <BaseCheckboxGroup
-      value={value}
-      defaultValue={defaultValue}
-      allValues={allValues}
-      disabled={disabled}
-      aria-label={ariaLabel}
-      onValueChange={(next) => onValueChange?.(next)}
-      className={
-        className ? `m3e-checkbox-group ${className}` : "m3e-checkbox-group"
-      }
-      style={style}
-    >
-      {children}
-    </BaseCheckboxGroup>
+    <FieldsetDisabledContext.Provider value={isDisabled}>
+      <BaseCheckboxGroup
+        value={value}
+        defaultValue={defaultValue}
+        allValues={allValues}
+        disabled={isDisabled}
+        aria-label={ariaLabel}
+        onValueChange={(next) => onValueChange?.(next)}
+        className={
+          className ? `m3e-checkbox-group ${className}` : "m3e-checkbox-group"
+        }
+        style={style}
+      >
+        {children}
+      </BaseCheckboxGroup>
+    </FieldsetDisabledContext.Provider>
   );
 }

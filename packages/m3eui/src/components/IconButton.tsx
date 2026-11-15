@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Button as BaseButton } from "@base-ui/react/button";
+import { mergeProps } from "@base-ui/react/merge-props";
 import { Toggle as BaseToggle } from "@base-ui/react/toggle";
 import {
   type ButtonSize,
@@ -7,21 +8,60 @@ import {
   type IconButtonWidthVariant,
   resolveIconButtonGeometry,
 } from "../tokens/index.js";
-import { useM3E } from "../context/M3EProvider.js";
+import { useM3E } from "../context/M3EContext.js";
 import { useM3ECornerSpringRef, usePressHoldState } from "../hooks/useM3ESpring.js";
+import type { ButtonIntent } from "./Button.js";
 
-export interface M3EIconButtonProps {
+export interface M3EIconButtonProps
+  extends Omit<
+    React.HTMLAttributes<HTMLElement>,
+    "children" | "className" | "style" | "onClick" | "aria-label"
+  > {
   readonly icon: React.ReactNode;
   readonly "aria-label": string;
   readonly size?: ButtonSize;
   readonly widthVariant?: IconButtonWidthVariant;
   readonly variant?: IconButtonVariant;
+  readonly intent?: ButtonIntent;
   readonly shape?: "round" | "square";
   readonly disabled?: boolean;
+  readonly loading?: boolean;
   readonly onClick?: React.MouseEventHandler<HTMLElement>;
   readonly type?: "button" | "submit" | "reset";
+  readonly href?: string;
+  readonly target?: string;
+  readonly rel?: string;
+  readonly render?: React.ReactElement;
   readonly className?: string;
   readonly style?: React.CSSProperties;
+}
+
+function IconSpinnerSvg({ size }: { readonly size: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      className="m3e-button__spinner"
+      aria-hidden="true"
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="9"
+        stroke="currentColor"
+        strokeWidth="2.6"
+        strokeOpacity="0.26"
+      />
+      <path
+        d="M21 12a9 9 0 0 0-9-9"
+        stroke="currentColor"
+        strokeWidth="2.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
 }
 
 export const IconButton = React.forwardRef<HTMLElement, M3EIconButtonProps>(
@@ -32,17 +72,25 @@ export const IconButton = React.forwardRef<HTMLElement, M3EIconButtonProps>(
       size = "sm",
       widthVariant = "default",
       variant = "standard",
+      intent = "default",
       shape = "round",
       disabled = false,
+      loading = false,
       onClick,
       type = "button",
+      href,
+      target,
+      rel,
+      render,
       className,
       style,
+      ...restProps
     },
     ref,
   ) {
     const { debugGeometry } = useM3E();
-    const { isPressed, pressHandlers } = usePressHoldState(disabled);
+    const isDisabled = disabled || loading;
+    const { isPressed, pressHandlers } = usePressHoldState(isDisabled);
 
     const geo = resolveIconButtonGeometry({
       size,
@@ -66,11 +114,26 @@ export const IconButton = React.forwardRef<HTMLElement, M3EIconButtonProps>(
       ...style,
     };
 
+    const resolvedRender =
+      render ??
+      (href ? <a href={href} target={target} rel={rel} /> : undefined);
+    const isCustomElement = Boolean(resolvedRender);
+
+    const mergedProps = mergeProps<"button">(
+      pressHandlers as unknown as React.ComponentPropsWithRef<"button">,
+      restProps as unknown as React.ComponentPropsWithRef<"button">,
+    );
+
     return (
       <BaseButton
+        {...mergedProps}
         ref={mergedRef}
-        type={type}
-        disabled={disabled}
+        type={isCustomElement ? undefined : type}
+        nativeButton={!isCustomElement}
+        render={resolvedRender}
+        disabled={isDisabled}
+        focusableWhenDisabled={loading && !disabled}
+        aria-busy={loading ? true : undefined}
         aria-label={ariaLabel}
         onClick={onClick}
         className={
@@ -78,18 +141,20 @@ export const IconButton = React.forwardRef<HTMLElement, M3EIconButtonProps>(
         }
         style={mergedStyle}
         data-variant={variant}
+        data-intent={intent !== "default" ? intent : undefined}
         data-size={size}
         data-width={widthVariant}
         data-shape={shape}
+        data-loading={loading ? "" : undefined}
+        data-explicit-disabled={disabled ? "" : undefined}
         data-pressed={isPressed ? "" : undefined}
-        {...pressHandlers}
       >
         <span
           className="m3e-icon-button__glyph"
           style={{ width: geo.iconSize, height: geo.iconSize }}
           aria-hidden="true"
         >
-          {icon}
+          {loading ? <IconSpinnerSvg size={geo.iconSize} /> : icon}
         </span>
         {debugGeometry ? (
           <span className="m3e-debug-badge" aria-hidden="true">
@@ -101,10 +166,15 @@ export const IconButton = React.forwardRef<HTMLElement, M3EIconButtonProps>(
   },
 );
 
-export interface M3EIconToggleButtonProps {
+export interface M3EIconToggleButtonProps
+  extends Omit<
+    React.ButtonHTMLAttributes<HTMLButtonElement>,
+    "children" | "className" | "style" | "value" | "aria-label"
+  > {
   readonly icon: React.ReactNode;
   readonly checkedIcon?: React.ReactNode;
   readonly "aria-label": string;
+  readonly value?: string;
   readonly pressed?: boolean;
   readonly defaultPressed?: boolean;
   readonly onPressedChange?: (pressed: boolean) => void;
@@ -125,6 +195,7 @@ export const IconToggleButton = React.forwardRef<
     icon,
     checkedIcon,
     "aria-label": ariaLabel,
+    value,
     pressed: controlledPressed,
     defaultPressed = false,
     onPressedChange,
@@ -135,6 +206,7 @@ export const IconToggleButton = React.forwardRef<
     disabled = false,
     className,
     style,
+    ...restProps
   },
   ref,
 ) {
@@ -154,7 +226,7 @@ export const IconToggleButton = React.forwardRef<
   });
 
   const { ref: mergedRef, borderRadiusCss } =
-    useM3ECornerSpringRef<HTMLButtonElement>(geo.corners, "fastSpatial", ref);
+    useM3ECornerSpringRef<HTMLButtonElement>(geo.corners, "defaultEffects", ref);
 
   const mergedStyle: React.CSSProperties = {
     width: `${geo.width}px`,
@@ -167,9 +239,16 @@ export const IconToggleButton = React.forwardRef<
     ...style,
   };
 
+  const mergedProps = mergeProps<"button">(
+    pressHandlers as unknown as React.ComponentPropsWithRef<"button">,
+    restProps as unknown as React.ComponentPropsWithRef<"button">,
+  );
+
   return (
     <BaseToggle
+      {...mergedProps}
       ref={mergedRef}
+      value={value}
       pressed={controlledPressed}
       defaultPressed={defaultPressed}
       disabled={disabled}
@@ -191,7 +270,6 @@ export const IconToggleButton = React.forwardRef<
       data-shape={shape}
       data-pressed={isPointerPressed ? "" : undefined}
       data-selected={isSelected ? "" : undefined}
-      {...pressHandlers}
     >
       <span
         className="m3e-icon-button__glyph"

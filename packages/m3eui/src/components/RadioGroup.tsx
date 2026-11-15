@@ -1,8 +1,11 @@
+"use client";
+
 import * as React from "react";
 import { Radio as BaseRadio } from "@base-ui/react/radio";
 import { RadioGroup as BaseRadioGroup } from "@base-ui/react/radio-group";
 import { RADIO_TOKENS } from "../tokens/index.js";
 import { usePressHoldState } from "../hooks/useM3ESpring.js";
+import { FieldsetDisabledContext, useFieldsetDisabled } from "../internal/fieldOutline.js";
 
 export interface M3ERadioGroupProps<Value extends string = string> {
   readonly children: React.ReactNode;
@@ -37,7 +40,7 @@ export function RadioGroup<Value extends string = string>({
   value,
   defaultValue,
   onValueChange,
-  disabled = false,
+  disabled,
   readOnly = false,
   required = false,
   name,
@@ -46,24 +49,27 @@ export function RadioGroup<Value extends string = string>({
   className,
   style,
 }: M3ERadioGroupProps<Value>): React.JSX.Element {
+  const isDisabled = useFieldsetDisabled(disabled);
   return (
-    <BaseRadioGroup
-      value={value}
-      defaultValue={defaultValue}
-      disabled={disabled}
-      readOnly={readOnly}
-      required={required}
-      name={name}
-      aria-label={ariaLabel}
-      onValueChange={(next) => onValueChange?.(next as Value)}
-      className={
-        className ? `m3e-radio-group ${className}` : "m3e-radio-group"
-      }
-      data-orientation={orientation}
-      style={style}
-    >
-      {children}
-    </BaseRadioGroup>
+    <FieldsetDisabledContext.Provider value={isDisabled}>
+      <BaseRadioGroup
+        value={value}
+        defaultValue={defaultValue}
+        disabled={isDisabled || undefined}
+        readOnly={readOnly}
+        required={required}
+        name={name}
+        aria-label={ariaLabel}
+        onValueChange={(next) => onValueChange?.(next as Value)}
+        className={
+          className ? `m3e-radio-group ${className}` : "m3e-radio-group"
+        }
+        data-orientation={orientation}
+        style={style}
+      >
+        {children}
+      </BaseRadioGroup>
+    </FieldsetDisabledContext.Provider>
   );
 }
 
@@ -71,7 +77,7 @@ export function Radio<Value extends string = string>({
   value,
   label,
   description,
-  disabled = false,
+  disabled,
   readOnly = false,
   required = false,
   id,
@@ -79,17 +85,22 @@ export function Radio<Value extends string = string>({
   className,
   style,
 }: M3ERadioProps<Value>): React.JSX.Element {
-  const { isPressed, pressHandlers } = usePressHoldState(disabled || readOnly);
+  const isDisabled = useFieldsetDisabled(disabled);
+  const { isPressed, pressHandlers } = usePressHoldState(isDisabled || readOnly);
 
   const radioNode = (
     <BaseRadio.Root
       id={id}
       value={value}
-      disabled={disabled}
+      disabled={isDisabled}
       readOnly={readOnly}
       required={required}
       aria-label={ariaLabel}
-      className={!label && className ? `m3e-radio ${className}` : "m3e-radio"}
+      className={
+        !label && className
+          ? `m3e-radio m3e-radio__control ${className}`
+          : "m3e-radio m3e-radio__control"
+      }
       data-pressed={isPressed ? "" : undefined}
       style={{
         width: `${RADIO_TOKENS.ringSize}px`,
@@ -98,6 +109,7 @@ export function Radio<Value extends string = string>({
       }}
       {...pressHandlers}
     >
+      <span className="m3e-radio__halo" aria-hidden="true" />
       <BaseRadio.Indicator
         keepMounted
         className="m3e-radio__dot"
@@ -120,13 +132,13 @@ export function Radio<Value extends string = string>({
           ? `m3e-control-row m3e-radio-row ${className}`
           : "m3e-control-row m3e-radio-row"
       }
-      data-disabled={disabled ? "" : undefined}
+      data-disabled={isDisabled ? "" : undefined}
       style={{
         minBlockSize: `${RADIO_TOKENS.minTouchTarget}px`,
         ...style,
       }}
     >
-      <span className="m3e-radio__halo">{radioNode}</span>
+      {radioNode}
       <span className="m3e-control-row__text">
         <span className="m3e-control-row__label">{label}</span>
         {description ? (

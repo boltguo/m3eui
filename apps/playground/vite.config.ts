@@ -3,7 +3,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig({
-  base: "./",
+  base: "/",
   plugins: [react()],
   resolve: {
     alias: [
@@ -37,16 +37,30 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          if (id.includes("/apps/playground/src/registry/blocks") || id.includes("/apps/playground/src/registry/composites")) {
+            return "playground-blocks";
+          }
+          if (id.includes("/apps/playground/src/registry/components/")) {
+            return "playground-components";
+          }
           if (id.includes("/packages/m3eui/src/tokens/")) {
             return "m3eui-tokens";
           }
           if (id.includes("/packages/m3eui/")) {
             return "m3eui";
           }
+          if (id.includes("node_modules/shiki") || id.includes("node_modules/@shikijs/")) {
+            return "vendor-shiki";
+          }
           if (id.includes("node_modules/@base-ui/")) {
             return "vendor-base-ui";
           }
-          if (id.includes("node_modules/react") || id.includes("node_modules/scheduler")) {
+          if (
+            id.includes("node_modules/react") ||
+            id.includes("node_modules/scheduler") ||
+            id.includes("node_modules/cookie") ||
+            id.includes("node_modules/set-cookie-parser")
+          ) {
             return "vendor-react";
           }
           return undefined;

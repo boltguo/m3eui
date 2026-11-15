@@ -8,7 +8,9 @@ import {
   NAVIGATION_TOKENS,
   WIDE_NAVIGATION_RAIL_TOKENS,
 } from "../tokens/index.js";
-import { useM3E } from "../context/M3EProvider.js";
+import { useM3E } from "../context/M3EContext.js";
+import { useM3EPortalContainer } from "../context/M3EPortal.js";
+import { Divider } from "./SurfaceUtilities.js";
 import {
   useM3EScalarSpring,
   usePressHoldState,
@@ -33,6 +35,8 @@ export interface M3ENavigationBarProps<Value extends string = string> {
   readonly items: readonly NavigationDestination<Value>[];
   readonly value: Value;
   readonly onValueChange: (value: Value) => void;
+  readonly itemLayout?: "vertical" | "horizontal";
+  readonly arrangement?: "equal-weight" | "centered";
   readonly "aria-label"?: string;
   readonly className?: string;
   readonly style?: React.CSSProperties;
@@ -51,24 +55,45 @@ export interface M3ENavigationRailProps<Value extends string = string> {
 function NavItemButton<Value extends string>({
   item,
   active,
+  itemLayout = "vertical",
   onSelect,
 }: {
   readonly item: NavigationDestination<Value>;
   readonly active: boolean;
+  readonly itemLayout?: "vertical" | "horizontal";
   readonly onSelect: (v: Value) => void;
 }) {
+  const { isPressed, pressHandlers } = usePressHoldState(Boolean(item.disabled));
   const pillScale = useM3EScalarSpring(active ? 1 : 0.35, "fastSpatial");
   const pillOpacity = active ? 1 : 0;
+  const isHorizontal = itemLayout === "horizontal";
 
-  return (
-    <button
-      type="button"
-      disabled={item.disabled}
-      aria-current={active ? "page" : undefined}
-      className="m3e-nav-item"
-      data-active={active ? "" : undefined}
-      onClick={() => onSelect(item.value)}
+  const inner = isHorizontal ? (
+    <span
+      className="m3e-nav-item__pill-wrap m3e-nav-item__pill-wrap--horizontal"
+      style={{
+        minHeight: `${NAVIGATION_TOKENS.horizontalIndicatorHeight}px`,
+        paddingInline: `${NAVIGATION_TOKENS.horizontalIndicatorPaddingInline}px`,
+      }}
     >
+      <span
+        className="m3e-nav-item__pill"
+        style={{
+          borderRadius: `${NAVIGATION_TOKENS.horizontalIndicatorHeight / 2}px`,
+          opacity: pillOpacity,
+          scale: `${Math.max(0.2, pillScale).toFixed(3)} 1`,
+        }}
+        aria-hidden="true"
+      />
+      <Badge count={item.badgeCount} dot={item.badgeDot}>
+        <span className="m3e-nav-item__icon" aria-hidden="true">
+          {active && item.activeIcon ? item.activeIcon : item.icon}
+        </span>
+      </Badge>
+      <span className="m3e-nav-item__label">{item.label}</span>
+    </span>
+  ) : (
+    <>
       <span
         className="m3e-nav-item__pill-wrap"
         style={{
@@ -92,6 +117,44 @@ function NavItemButton<Value extends string>({
         </Badge>
       </span>
       <span className="m3e-nav-item__label">{item.label}</span>
+    </>
+  );
+
+  if (item.href && !item.disabled) {
+    const ariaCurrent = active
+      ? item.href.startsWith("#")
+        ? "true"
+        : "page"
+      : undefined;
+    return (
+      <a
+        href={item.href}
+        aria-current={ariaCurrent}
+        className="m3e-nav-item"
+        data-active={active ? "" : undefined}
+        data-pressed={isPressed ? "" : undefined}
+        data-layout={itemLayout}
+        onClick={() => onSelect(item.value)}
+        {...pressHandlers}
+      >
+        {inner}
+      </a>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      disabled={item.disabled}
+      aria-current={active ? "page" : undefined}
+      className="m3e-nav-item"
+      data-active={active ? "" : undefined}
+      data-pressed={isPressed ? "" : undefined}
+      data-layout={itemLayout}
+      onClick={() => onSelect(item.value)}
+      {...pressHandlers}
+    >
+      {inner}
     </button>
   );
 }
@@ -100,6 +163,8 @@ export function NavigationBar<Value extends string = string>({
   items,
   value,
   onValueChange,
+  itemLayout = "vertical",
+  arrangement = "equal-weight",
   "aria-label": ariaLabel,
   className,
   style,
@@ -109,6 +174,8 @@ export function NavigationBar<Value extends string = string>({
     <nav
       aria-label={ariaLabel ?? t("navigation.barLabel")}
       className={className ? `m3e-nav-bar ${className}` : "m3e-nav-bar"}
+      data-item-layout={itemLayout}
+      data-arrangement={arrangement}
       style={{
         minHeight: `${NAVIGATION_TOKENS.barHeight}px`,
         ...style,
@@ -119,6 +186,7 @@ export function NavigationBar<Value extends string = string>({
           key={item.value}
           item={item}
           active={item.value === value}
+          itemLayout={itemLayout}
           onSelect={onValueChange}
         />
       ))}
@@ -189,6 +257,7 @@ function WideRailItemButton<Value extends string>({
 }) {
   const { locale, t } = useM3E();
   const { isPressed, pressHandlers } = usePressHoldState(Boolean(item.disabled));
+  const pillScale = useM3EScalarSpring(active ? 1 : 0.35, "fastSpatial");
   const radius = useM3EScalarSpring(
     isPressed
       ? WIDE_NAVIGATION_RAIL_TOKENS.itemPressedRadius
@@ -196,19 +265,20 @@ function WideRailItemButton<Value extends string>({
     "fastSpatial",
   );
 
-  if (!expanded) {
-    return <NavItemButton item={item} active={active} onSelect={onSelect} />;
-  }
-
   const resolvedIcon = active && item.activeIcon ? item.activeIcon : item.icon;
-  const content = (
+  const content = expanded ? (
     <>
       {resolvedIcon ? (
         <span className="m3e-wide-rail__icon" aria-hidden="true">
           {resolvedIcon}
         </span>
       ) : null}
-      <span className="m3e-wide-rail__label">{item.label}</span>
+      <span
+        className="m3e-wide-rail__label"
+        data-text={typeof item.label === "string" ? item.label : undefined}
+      >
+        {item.label}
+      </span>
       {item.badgeCount !== undefined && item.badgeCount > 0 ? (
         <span className="m3e-wide-rail__badge">
           {item.badgeCount > 99
@@ -221,7 +291,40 @@ function WideRailItemButton<Value extends string>({
         <span className="m3e-wide-rail__dot" aria-hidden="true" />
       ) : null}
     </>
+  ) : (
+    <>
+      <span
+        className="m3e-nav-item__pill-wrap"
+        style={{
+          width: `${NAVIGATION_TOKENS.indicatorWidth}px`,
+          height: `${NAVIGATION_TOKENS.indicatorHeight}px`,
+        }}
+      >
+        <span
+          className="m3e-nav-item__pill"
+          style={{
+            borderRadius: `${NAVIGATION_TOKENS.indicatorRadius}px`,
+            opacity: active ? 1 : 0,
+            scale: `${Math.max(0.2, pillScale).toFixed(3)} 1`,
+          }}
+          aria-hidden="true"
+        />
+        <Badge count={item.badgeCount} dot={item.badgeDot}>
+          <span className="m3e-nav-item__icon" aria-hidden="true">
+            {resolvedIcon}
+          </span>
+        </Badge>
+      </span>
+      <span className="m3e-nav-item__label">{item.label}</span>
+    </>
   );
+
+  const itemStyle: React.CSSProperties | undefined = expanded
+    ? {
+        minHeight: `${WIDE_NAVIGATION_RAIL_TOKENS.itemHeight}px`,
+        borderRadius: `${Math.max(8, radius).toFixed(1)}px`,
+      }
+    : undefined;
 
   if (item.href && !item.disabled) {
     const ariaCurrent = active
@@ -235,15 +338,16 @@ function WideRailItemButton<Value extends string>({
         data-nav-value={item.value}
         aria-current={ariaCurrent}
         className={
-          active && !suppressDataActive
-            ? "m3e-wide-rail__item target-current"
-            : "m3e-wide-rail__item"
+          expanded
+            ? active && !suppressDataActive
+              ? "m3e-wide-rail__item target-current"
+              : "m3e-wide-rail__item"
+            : "m3e-nav-item"
         }
         data-active={active && !suppressDataActive ? "" : undefined}
-        style={{
-          minHeight: `${WIDE_NAVIGATION_RAIL_TOKENS.itemHeight}px`,
-          borderRadius: `${Math.max(8, radius).toFixed(1)}px`,
-        }}
+        data-pressed={isPressed ? "" : undefined}
+        data-collapsed={!expanded ? "" : undefined}
+        style={itemStyle}
         onClick={() => onSelect(item.value)}
         {...pressHandlers}
       >
@@ -257,12 +361,11 @@ function WideRailItemButton<Value extends string>({
       type="button"
       disabled={item.disabled}
       aria-current={active ? "page" : undefined}
-      className="m3e-wide-rail__item"
+      className={expanded ? "m3e-wide-rail__item" : "m3e-nav-item"}
       data-active={active ? "" : undefined}
-      style={{
-        minHeight: `${WIDE_NAVIGATION_RAIL_TOKENS.itemHeight}px`,
-        borderRadius: `${Math.max(8, radius).toFixed(1)}px`,
-      }}
+      data-pressed={isPressed ? "" : undefined}
+      data-collapsed={!expanded ? "" : undefined}
+      style={itemStyle}
       onClick={() => onSelect(item.value)}
       {...pressHandlers}
     >
@@ -406,6 +509,7 @@ export interface M3ENavigationDrawerProps<Value extends string = string> {
 function DrawerBody<Value extends string>({
   items,
   value,
+  scrollSpy = false,
   suppressDataActive = false,
   onSelect,
   headline,
@@ -413,17 +517,39 @@ function DrawerBody<Value extends string>({
 }: {
   readonly items: readonly NavigationDestination<Value>[];
   readonly value: Value;
+  readonly scrollSpy?: boolean;
   readonly suppressDataActive?: boolean;
   readonly onSelect: (v: Value) => void;
   readonly headline?: React.ReactNode;
   readonly footer?: React.ReactNode;
 }) {
+  const scrollerRef = React.useRef<HTMLDivElement | null>(null);
+
+  React.useLayoutEffect(() => {
+    if (scrollSpy) return;
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    const activeItem = scroller.querySelector<HTMLElement>(
+      ".m3e-wide-rail__item[data-active]",
+    );
+    if (!activeItem) return;
+    const scrollerRect = scroller.getBoundingClientRect();
+    const itemRect = activeItem.getBoundingClientRect();
+    const topOffset = itemRect.top - scrollerRect.top;
+    const bottomOffset = itemRect.bottom - scrollerRect.bottom;
+    if (topOffset < 12) {
+      scroller.scrollTop += topOffset - 24;
+    } else if (bottomOffset > -12) {
+      scroller.scrollTop += bottomOffset + 24;
+    }
+  }, [value, scrollSpy]);
+
   return (
     <>
       {headline ? (
         <div className="m3e-nav-drawer__headline">{headline}</div>
       ) : null}
-      <div className="m3e-nav-drawer__items">
+      <div ref={scrollerRef} className="m3e-nav-drawer__items">
         {items.map((item, idx) => {
           const prevSection = idx > 0 ? items[idx - 1]?.section : undefined;
           const showSectionHeader =
@@ -433,7 +559,7 @@ function DrawerBody<Value extends string>({
           return (
             <React.Fragment key={item.value}>
               {showDivider ? (
-                <hr className="m3e-nav-drawer__divider" />
+                <Divider className="m3e-nav-drawer__divider" />
               ) : null}
               {showSectionHeader ? (
                 <div className="m3e-nav-drawer__section-title">
@@ -473,6 +599,7 @@ export function NavigationDrawer<Value extends string = string>({
   style,
 }: M3ENavigationDrawerProps<Value>): React.JSX.Element {
   const { direction, t } = useM3E();
+  const portalContainer = useM3EPortalContainer();
   const resolvedLabel = ariaLabel ?? t("navigation.drawerLabel");
   const navRef = React.useRef<HTMLElement | null>(null);
   const [nativeScrollSpy, setNativeScrollSpy] = React.useState(false);
@@ -577,16 +704,19 @@ export function NavigationDrawer<Value extends string = string>({
         aria-label={resolvedLabel}
         data-scrollspy={scrollSpy ? "" : undefined}
         className={className ? `m3e-nav-drawer ${className}` : "m3e-nav-drawer"}
-        style={{
-          width: `${NAVIGATION_DRAWER_TOKENS.width}px`,
-          borderRadius: `${NAVIGATION_DRAWER_TOKENS.cornerRadius}px`,
-          padding: `${NAVIGATION_DRAWER_TOKENS.padding}px`,
-          ...style,
-        }}
+        style={
+          {
+            width: `${NAVIGATION_DRAWER_TOKENS.width}px`,
+            borderRadius: `${NAVIGATION_DRAWER_TOKENS.cornerRadius}px`,
+            "--m3e-nav-drawer-pad": `${NAVIGATION_DRAWER_TOKENS.padding}px`,
+            ...style,
+          } as React.CSSProperties
+        }
       >
         <DrawerBody
           items={items}
           value={value}
+          scrollSpy={scrollSpy}
           suppressDataActive={scrollSpy && nativeScrollSpy}
           onSelect={onValueChange}
           headline={headline}
@@ -604,6 +734,9 @@ export function NavigationDrawer<Value extends string = string>({
       ? `${r}px 0px 0px ${r}px`
       : `0px ${r}px ${r}px 0px`;
 
+  const modalAriaLabel =
+    ariaLabel ?? (!headline ? t("navigation.drawerLabel") : undefined);
+
   return (
     <BaseDrawer.Root
       open={open}
@@ -612,23 +745,25 @@ export function NavigationDrawer<Value extends string = string>({
       onOpenChange={(next) => onOpenChange?.(next)}
     >
       {trigger ? <BaseDrawer.Trigger render={trigger} /> : null}
-      <BaseDrawer.Portal>
+      <BaseDrawer.Portal container={portalContainer}>
         <BaseDrawer.Backdrop className="m3e-sheet__backdrop" />
         <BaseDrawer.Viewport className="m3e-sheet__viewport" data-side={side}>
           <BaseDrawer.Popup
-            aria-label={resolvedLabel}
+            aria-label={modalAriaLabel}
             className={
               className
                 ? `m3e-sheet__popup m3e-nav-drawer m3e-nav-drawer--modal ${className}`
                 : "m3e-sheet__popup m3e-nav-drawer m3e-nav-drawer--modal"
             }
             data-side={side}
-            style={{
-              maxWidth: `${NAVIGATION_DRAWER_TOKENS.width}px`,
-              borderRadius: endRadius,
-              padding: `${NAVIGATION_DRAWER_TOKENS.padding}px`,
-              ...style,
-            }}
+            style={
+              {
+                maxWidth: `${NAVIGATION_DRAWER_TOKENS.width}px`,
+                borderRadius: endRadius,
+                "--m3e-nav-drawer-pad": `${NAVIGATION_DRAWER_TOKENS.padding}px`,
+                ...style,
+              } as React.CSSProperties
+            }
           >
             {headline ? (
               <BaseDrawer.Title className="m3e-nav-drawer__headline">
@@ -679,14 +814,18 @@ export function NavigationSuite<Value extends string = string>({
   const { t } = useM3E();
   const resolvedLabel = ariaLabel ?? t("navigation.suiteLabel");
   const hostRef = React.useRef<HTMLDivElement | null>(null);
-  const [measuredWidth, setMeasuredWidth] = React.useState<number>(800);
+  const [measuredWidth, setMeasuredWidth] = React.useState<number | null>(null);
 
   React.useLayoutEffect(() => {
     const el = hostRef.current;
     if (!el || layout !== "auto") return undefined;
     const update = () => {
       const w = el.getBoundingClientRect().width;
-      if (w > 0) setMeasuredWidth(w);
+      if (w > 0) {
+        setMeasuredWidth(w);
+      } else if (typeof window !== "undefined") {
+        setMeasuredWidth(window.innerWidth > 0 ? window.innerWidth : 800);
+      }
     };
     update();
     if (typeof ResizeObserver === "undefined") return undefined;
@@ -695,12 +834,53 @@ export function NavigationSuite<Value extends string = string>({
     return () => ro.disconnect();
   }, [layout]);
 
+  if (layout === "auto" && measuredWidth === null) {
+    return (
+      <div
+        ref={hostRef}
+        className={className ? `m3e-nav-suite ${className}` : "m3e-nav-suite"}
+        data-layout="auto"
+        style={style}
+      >
+        <div className="m3e-nav-suite__auto-shell">
+          <div className="m3e-nav-suite__slot m3e-nav-suite__slot--rail">
+            <NavigationRail
+              items={items}
+              value={value}
+              onValueChange={onValueChange}
+              header={header}
+              aria-label={resolvedLabel}
+            />
+          </div>
+          <div className="m3e-nav-suite__slot m3e-nav-suite__slot--wide-rail">
+            <WideNavigationRail
+              items={items}
+              value={value}
+              onValueChange={onValueChange}
+              header={header}
+              aria-label={resolvedLabel}
+            />
+          </div>
+          <div className="m3e-nav-suite__content">{children}</div>
+          <div className="m3e-nav-suite__slot m3e-nav-suite__slot--bar">
+            <NavigationBar
+              items={items}
+              value={value}
+              onValueChange={onValueChange}
+              aria-label={resolvedLabel}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const resolvedMode: Exclude<NavigationSuiteLayout, "auto"> =
     layout !== "auto"
       ? layout
-      : measuredWidth < NAVIGATION_SUITE_TOKENS.compactMaxWidth
+      : (measuredWidth ?? 800) < NAVIGATION_SUITE_TOKENS.compactMaxWidth
         ? "bar"
-        : measuredWidth < NAVIGATION_SUITE_TOKENS.mediumMaxWidth
+        : (measuredWidth ?? 800) < NAVIGATION_SUITE_TOKENS.mediumMaxWidth
           ? "rail"
           : "wide-rail";
 

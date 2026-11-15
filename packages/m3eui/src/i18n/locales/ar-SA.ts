@@ -1,7 +1,13 @@
 import type { M3EMessages } from "../types.js";
 
 export const arSAMessages: M3EMessages = {
+  "alert.close": "إغلاق التنبيه",
+
   "badge.overflow": "{max}+",
+  "badge.unreadCount": "{count} إشعارات",
+
+  "breadcrumb.ariaLabel": "مسار التنقل",
+  "breadcrumb.more": "إظهار المسارات المطوية",
 
   "carousel.roleDescription": "عرض دوار",
   "carousel.slideRoleDescription": "شريحة",
@@ -15,6 +21,7 @@ export const arSAMessages: M3EMessages = {
   "carousel.listLabel": "الشرائح",
 
   "chip.remove": "إزالة الشريحة",
+  "chip.removeItem": "إزالة {label}",
 
   "collapsible.expandAll": "توسيع الكل",
   "collapsible.collapseAll": "طي الكل",
@@ -22,7 +29,13 @@ export const arSAMessages: M3EMessages = {
   "combobox.placeholder": "اكتب للتصفية…",
   "combobox.empty": "لا توجد خيارات مطابقة",
   "combobox.clear": "مسح التحديد",
+  "combobox.toggle": "تبديل قائمة الخيارات",
+  "command.ariaLabel": "لوحة الأوامر",
+  "command.placeholder": "اكتب أمراً أو ابحث…",
+  "command.empty": "لم يتم العثور على أوامر مطابقة",
+  "command.navigateHint": "↑↓ للتنقل · ↵ للتنفيذ · Esc للإغلاق",
   "select.placeholder": "اختر خياراً…",
+  "select.clear": "مسح الخيار المحدد",
 
   "dataTable.empty": "لا توجد سجلات مطابقة",
   "dataTable.sortedAscending": "تم الفرز حسب {column} تصاعدياً",
@@ -35,13 +48,20 @@ export const arSAMessages: M3EMessages = {
   "datePicker.selectEndPrompt": " · اختر تاريخ الانتهاء",
   "datePicker.prevMonth": "الشهر السابق",
   "datePicker.nextMonth": "الشهر التالي",
+  "datePicker.prevYears": "السنوات السابقة",
+  "datePicker.nextYears": "السنوات التالية",
   "datePicker.selectYear": "اختر السنة",
   "datePicker.calendarLabel": "تقويم {monthYear}",
   "datePicker.rangeCalendarLabel": "تقويم نطاق التاريخ لـ {monthYear}",
 
   "dialog.close": "إغلاق النافذة",
+  "sheet.ariaLabel": "لوحة",
   "sheet.close": "إغلاق اللوحة",
   "toast.close": "إغلاق الإشعار",
+  "toast.viewportLabel": "الإشعارات",
+
+  "empty.title": "لا توجد بيانات",
+  "empty.description": "لا توجد عناصر لعرضها حالياً. جرّب تعديل عوامل التصفية أو إنشاء عنصر جديد.",
 
   "fabMenu.triggerOpen": "إجراءات سريعة",
   "fabMenu.triggerClose": "إغلاق القائمة السريعة",
@@ -71,12 +91,19 @@ export const arSAMessages: M3EMessages = {
   "numberField.increment": "زيادة القيمة",
   "otpField.digitLabel": "الرقم {index} من رمز التحقق",
 
+  "pagination.ariaLabel": "ترقيم الصفحات",
+  "pagination.previous": "الصفحة السابقة",
+  "pagination.next": "الصفحة التالية",
+  "pagination.page": "الصفحة {page}",
+  "pagination.summary": "{start}–{end} من أصل {total}",
+
   "searchBar.placeholder": "بحث…",
   "searchBar.ariaLabel": "بحث",
   "searchBar.empty": "لا توجد اقتراحات مطابقة",
   "searchBar.submit": "تنفيذ البحث",
   "searchBar.clear": "مسح نص البحث",
 
+  "slider.ariaLabel": "شريط التمرير",
   "slider.rangeStart": "{label} (البداية)",
   "slider.rangeEnd": "{label} (النهاية)",
 
@@ -101,6 +128,58 @@ export const arSAMessages: M3EMessages = {
   "timePicker.minuteDial": "قرص الدقائق",
   "timePicker.am": "ص",
   "timePicker.pm": "م",
+  "timePicker.confirm": "تأكيد",
+  "timePicker.cancel": "إلغاء",
 
   "topAppBar.actionsLabel": "إجراءات الشريط العلوي",
+  "topAppBar.moreActions": "المزيد من الإجراءات",
+  "bottomAppBar.ariaLabel": "الشريط السفلي للتطبيق",
+  "dragHandle.ariaLabel": "تغيير حجم الألواح",
+  "pullToRefresh.pulling": "اسحب للتحديث",
+  "pullToRefresh.release": "أفلت للتحديث",
+  "pullToRefresh.refreshing": "جارٍ التحديث",
+
+  "dockedToolbar.ariaLabel": "شريط الأدوات السفلي المثبت",
+  "searchView.back": "رجوع",
+  "searchView.recentHeading": "عمليات البحث الأخيرة",
+  "searchView.clearRecent": "مسح السجل",
+  "searchView.suggestionsHeading": "الاقتراحات",
+
+  "select.selectedCount": "تم تحديد {count}",
+
+  "datePicker.switchToInput": "التبديل إلى إدخال التاريخ نصياً",
+  "datePicker.switchToCalendar": "التبديل إلى شبكة التقويم",
+  "datePicker.confirm": "تأكيد",
+  "datePicker.cancel": "إلغاء",
+  "datePicker.dateInputLabel": "التاريخ (YYYY-MM-DD)",
+  "datePicker.dateInputPlaceholder": "YYYY-MM-DD",
+
+  "dataTable.expandColumn": "التفاصيل",
+  "dataTable.expandRow": "توسيع تفاصيل الصف {index}",
+  "dataTable.collapseRow": "طي تفاصيل الصف {index}",
+
+  "avatarGroup.overflowLabel": "{count} أعضاء إضافيين",
+
+  "fileUpload.dropPrompt": "اسحب الملفات وأفلتها هنا، أو",
+  "fileUpload.browseButton": "تصفح الملفات",
+  "fileUpload.dropHint": "انقر للاختيار أو اسحب الملفات إلى هذه المنطقة",
+  "fileUpload.removeFile": "إزالة الملف {name}",
+  "fileUpload.errorMaxSize": "{name} يتجاوز الحد الأقصى للحجم ({max})",
+  "fileUpload.errorMaxFiles": "يُسمح بحد أقصى {max} ملفات",
+  "fileUpload.errorFileType": "نوع الملف {name} غير مدعوم",
+  "fileUpload.uploading": "جارٍ الرفع",
+  "fileUpload.completed": "مكتمل",
+
+  "copyButton.copy": "نسخ إلى الحافظة",
+  "copyButton.copied": "تم النسخ",
+  "copyButton.error": "فشل النسخ",
+
+  "colorPicker.ariaLabel": "منتقي الألوان",
+  "colorPicker.hexLabel": "قيمة HEX",
+  "colorPicker.hue": "صبغة اللون (H)",
+  "colorPicker.chroma": "التشبع (C)",
+  "colorPicker.tone": "النغمة الضوئية (T)",
+  "colorPicker.swatchesLabel": "عينات الألوان",
+  "colorPicker.derivedTones": "تدرج نغمات HCT",
+  "colorPicker.toneStop": "نغمة {tone} {hex}",
 };

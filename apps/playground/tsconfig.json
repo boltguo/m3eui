@@ -11,5 +11,5 @@
       "m3eui": ["../../packages/m3eui/src/index.ts"]
     }
   },
-  "include": ["src/**/*", "../../m3e.json"]
+  "include": ["src/**/*", "../../m3e.json", "../../packages/m3eui/package.json"]
 }

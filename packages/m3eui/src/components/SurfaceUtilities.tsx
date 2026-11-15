@@ -1,16 +1,21 @@
+"use client";
+
 import * as React from "react";
 import { PreviewCard as BasePreviewCard } from "@base-ui/react/preview-card";
 import { ScrollArea as BaseScrollArea } from "@base-ui/react/scroll-area";
 import { Separator as BaseSeparator } from "@base-ui/react/separator";
 import {
-  DIVIDER_TOKENS,
   PREVIEW_CARD_TOKENS,
   SCROLL_AREA_TOKENS,
 } from "../tokens/index.js";
+import { useM3EPortalContainer } from "../context/M3EPortal.js";
 
 export interface M3EPreviewCardProps {
   readonly trigger: React.ReactElement;
   readonly children: React.ReactNode;
+  readonly open?: boolean;
+  readonly defaultOpen?: boolean;
+  readonly onOpenChange?: (open: boolean) => void;
   readonly side?: "top" | "bottom" | "left" | "right";
   readonly align?: "start" | "center" | "end";
   readonly delay?: number;
@@ -22,6 +27,9 @@ export interface M3EPreviewCardProps {
 export function PreviewCard({
   trigger,
   children,
+  open,
+  defaultOpen,
+  onOpenChange,
   side = "bottom",
   align = "start",
   delay = 280,
@@ -29,14 +37,25 @@ export function PreviewCard({
   className,
   style,
 }: M3EPreviewCardProps): React.JSX.Element {
+  const portalContainer = useM3EPortalContainer();
   return (
-    <BasePreviewCard.Root>
+    <BasePreviewCard.Root
+      open={open}
+      defaultOpen={defaultOpen}
+      onOpenChange={
+        onOpenChange
+          ? (nextOpen) => {
+              onOpenChange(nextOpen);
+            }
+          : undefined
+      }
+    >
       <BasePreviewCard.Trigger
         delay={delay}
         closeDelay={closeDelay}
         render={trigger}
       />
-      <BasePreviewCard.Portal>
+      <BasePreviewCard.Portal container={portalContainer}>
         <BasePreviewCard.Positioner
           side={side}
           align={align}
@@ -68,6 +87,7 @@ export interface M3EDividerProps {
   readonly orientation?: "horizontal" | "vertical";
   readonly inset?: boolean;
   readonly label?: React.ReactNode;
+  readonly children?: React.ReactNode;
   readonly className?: string;
   readonly style?: React.CSSProperties;
 }
@@ -76,10 +96,12 @@ export function Divider({
   orientation = "horizontal",
   inset = false,
   label,
+  children,
   className,
   style,
 }: M3EDividerProps): React.JSX.Element {
-  if (label && orientation === "horizontal") {
+  const content = label ?? children;
+  if (content && orientation === "horizontal") {
     return (
       <div
         role="separator"
@@ -89,10 +111,12 @@ export function Divider({
             ? `m3e-divider m3e-divider--labeled ${className}`
             : "m3e-divider m3e-divider--labeled"
         }
+        data-orientation="horizontal"
+        data-inset={inset ? "" : undefined}
         style={style}
       >
         <span className="m3e-divider__line" aria-hidden="true" />
-        <span className="m3e-divider__label">{label}</span>
+        <span className="m3e-divider__label">{content}</span>
         <span className="m3e-divider__line" aria-hidden="true" />
       </div>
     );
@@ -104,12 +128,7 @@ export function Divider({
       className={className ? `m3e-divider ${className}` : "m3e-divider"}
       data-orientation={orientation}
       data-inset={inset ? "" : undefined}
-      style={{
-        ...(inset && orientation === "horizontal"
-          ? { marginInlineStart: `${DIVIDER_TOKENS.insetStart}px` }
-          : undefined),
-        ...style,
-      }}
+      style={style}
     />
   );
 }

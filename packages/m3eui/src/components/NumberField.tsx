@@ -1,11 +1,16 @@
 import * as React from "react";
+import { Field as BaseField } from "@base-ui/react/field";
 import { NumberField as BaseNumberField } from "@base-ui/react/number-field";
 import { NUMBER_FIELD_TOKENS, flipCornersHorizontal } from "../tokens/index.js";
-import { useM3E } from "../context/M3EProvider.js";
+import { useM3E } from "../context/M3EContext.js";
 import {
-  useM3ECornerSpring,
+  useM3ECornerSpringRef,
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
+import {
+  FieldErrorIconSvg,
+  useFieldsetDisabled,
+} from "../internal/fieldOutline.js";
 
 export interface M3ENumberFieldProps {
   readonly label?: React.ReactNode;
@@ -16,6 +21,9 @@ export interface M3ENumberFieldProps {
   readonly max?: number;
   readonly step?: number;
   readonly format?: Intl.NumberFormatOptions;
+  readonly description?: React.ReactNode;
+  readonly errorMessage?: React.ReactNode;
+  readonly invalid?: boolean;
   readonly disabled?: boolean;
   readonly readOnly?: boolean;
   readonly required?: boolean;
@@ -24,6 +32,14 @@ export interface M3ENumberFieldProps {
   readonly "aria-label"?: string;
   readonly className?: string;
   readonly style?: React.CSSProperties;
+}
+
+function assignRef<T>(ref: React.ForwardedRef<T>, value: T | null): void {
+  if (typeof ref === "function") {
+    ref(value);
+  } else if (ref) {
+    ref.current = value;
+  }
 }
 
 function MinusGlyph() {
@@ -61,99 +77,169 @@ function PlusGlyph() {
   );
 }
 
-export function NumberField({
-  label,
-  value,
-  defaultValue,
-  onValueChange,
-  min,
-  max,
-  step = 1,
-  format,
-  disabled = false,
-  readOnly = false,
-  required = false,
-  name,
-  id,
-  "aria-label": ariaLabel,
-  className,
-  style,
-}: M3ENumberFieldProps): React.JSX.Element {
+export const NumberField = React.forwardRef<
+  HTMLInputElement,
+  M3ENumberFieldProps
+>(function NumberField(
+  {
+    label,
+    value: controlledValue,
+    defaultValue,
+    onValueChange,
+    min,
+    max,
+    step = 1,
+    format,
+    description,
+    errorMessage,
+    invalid,
+    disabled,
+    readOnly = false,
+    required = false,
+    name,
+    id,
+    "aria-label": ariaLabel,
+    className,
+    style,
+  },
+  forwardedRef,
+): React.JSX.Element {
   const { locale, direction, t } = useM3E();
+  const isDisabled = useFieldsetDisabled(disabled);
+  const stepBlocked = isDisabled || readOnly;
   const generatedId = React.useId();
   const inputId = id ?? generatedId;
+  const inputRef = React.useRef<HTMLInputElement | null>(null);
+  const defaultValRef = React.useRef<number | null>(defaultValue ?? null);
+  defaultValRef.current = defaultValue ?? null;
+
+  const [uncontrolledValue, setUncontrolledValue] = React.useState<
+    number | null
+  >(defaultValue ?? null);
+  const currentValue =
+    controlledValue !== undefined ? controlledValue : uncontrolledValue;
+
+  React.useEffect(() => {
+    if (controlledValue !== undefined) return;
+    const form = inputRef.current?.form;
+    if (!form) return;
+    const onReset = () => {
+      setUncontrolledValue(defaultValRef.current);
+    };
+    form.addEventListener("reset", onReset);
+    return () => form.removeEventListener("reset", onReset);
+  }, [controlledValue]);
 
   const { isPressed: decPressed, pressHandlers: decHandlers } =
-    usePressHoldState(disabled || readOnly);
+    usePressHoldState(stepBlocked);
   const { isPressed: incPressed, pressHandlers: incHandlers } =
-    usePressHoldState(disabled || readOnly);
+    usePressHoldState(stepBlocked);
 
   const pill = NUMBER_FIELD_TOKENS.outerRadius;
-  const decInner = decPressed
-    ? NUMBER_FIELD_TOKENS.innerPressedRadius
-    : NUMBER_FIELD_TOKENS.innerRestRadius;
-  const incInner = incPressed
-    ? NUMBER_FIELD_TOKENS.innerPressedRadius
-    : NUMBER_FIELD_TOKENS.innerRestRadius;
+  const decInner =
+    !stepBlocked && decPressed
+      ? NUMBER_FIELD_TOKENS.innerPressedRadius
+      : NUMBER_FIELD_TOKENS.innerRestRadius;
+  const incInner =
+    !stepBlocked && incPressed
+      ? NUMBER_FIELD_TOKENS.innerPressedRadius
+      : NUMBER_FIELD_TOKENS.innerRestRadius;
 
   const rawDecCorners = [pill, decInner, decInner, pill] as const;
   const rawIncCorners = [incInner, pill, pill, incInner] as const;
 
-  const { borderRadiusCss: decRadiusCss } = useM3ECornerSpring(
+  const decSpring = useM3ECornerSpringRef<HTMLButtonElement>(
     direction === "rtl" ? flipCornersHorizontal(rawDecCorners) : rawDecCorners,
     "fastSpatial",
   );
-  const { borderRadiusCss: incRadiusCss } = useM3ECornerSpring(
+  const incSpring = useM3ECornerSpringRef<HTMLButtonElement>(
     direction === "rtl" ? flipCornersHorizontal(rawIncCorners) : rawIncCorners,
     "fastSpatial",
   );
 
+  const hasExplicitError = Boolean(invalid || errorMessage);
+
   return (
-    <BaseNumberField.Root
-      id={inputId}
+    <BaseField.Root
       name={name}
-      value={value}
-      defaultValue={defaultValue}
-      min={min}
-      max={max}
-      step={step}
-      locale={locale}
-      format={format}
-      disabled={disabled}
-      readOnly={readOnly}
-      required={required}
-      onValueChange={(next) => onValueChange?.(next)}
-      className={
-        className ? `m3e-number-field ${className}` : "m3e-number-field"
+      disabled={isDisabled || undefined}
+      invalid={errorMessage ? true : invalid}
+      render={
+        <BaseNumberField.Root
+          id={inputId}
+          name={name}
+          inputRef={inputRef}
+          value={currentValue}
+          min={min}
+          max={max}
+          step={step}
+          locale={locale}
+          format={format}
+          disabled={isDisabled}
+          readOnly={readOnly}
+          required={required}
+          onValueChange={(next) => {
+            if (readOnly) return;
+            if (controlledValue === undefined) {
+              setUncontrolledValue(next);
+            }
+            onValueChange?.(next);
+          }}
+          className={
+            className ? `m3e-number-field ${className}` : "m3e-number-field"
+          }
+          data-readonly={readOnly ? "" : undefined}
+          data-invalid={hasExplicitError ? "" : undefined}
+          style={style}
+        />
       }
-      style={style}
     >
       {label ? (
         <BaseNumberField.ScrubArea className="m3e-number-field__scrub">
-          <label htmlFor={inputId} className="m3e-field__label">
+          <BaseField.Label htmlFor={inputId} className="m3e-field__label">
             {label}
-          </label>
+            {required ? (
+              <span className="m3e-field__required" aria-hidden="true">
+                {" "}*
+              </span>
+            ) : null}
+          </BaseField.Label>
         </BaseNumberField.ScrubArea>
       ) : null}
 
+      {description ? (
+        <BaseField.Description className="m3e-field__description">
+          {description}
+        </BaseField.Description>
+      ) : null}
+
       <BaseNumberField.Group
-        className="m3e-number-field__group"
+        className="m3e-number-field__group m3e-number-field__shell"
+        data-readonly={readOnly ? "" : undefined}
+        data-invalid={hasExplicitError ? "" : undefined}
         style={{ gap: `${NUMBER_FIELD_TOKENS.seamGap}px` }}
       >
         <BaseNumberField.Decrement
+          ref={decSpring.ref}
           aria-label={t("numberField.decrement")}
           className="m3e-number-field__step"
           style={{
             width: `${NUMBER_FIELD_TOKENS.stepperWidth}px`,
             height: `${NUMBER_FIELD_TOKENS.height}px`,
-            borderRadius: decRadiusCss,
+            borderRadius: decSpring.borderRadiusCss,
           }}
-          {...decHandlers}
+          {...(stepBlocked ? undefined : decHandlers)}
         >
           <MinusGlyph />
         </BaseNumberField.Decrement>
 
         <BaseNumberField.Input
+          ref={(node) => {
+            const inputNode =
+              node instanceof HTMLInputElement ? node : null;
+            inputRef.current = inputNode;
+            assignRef(forwardedRef, inputNode);
+          }}
           aria-label={!label ? ariaLabel : undefined}
           className="m3e-number-field__input"
           style={{
@@ -163,18 +249,38 @@ export function NumberField({
         />
 
         <BaseNumberField.Increment
+          ref={incSpring.ref}
           aria-label={t("numberField.increment")}
           className="m3e-number-field__step"
           style={{
             width: `${NUMBER_FIELD_TOKENS.stepperWidth}px`,
             height: `${NUMBER_FIELD_TOKENS.height}px`,
-            borderRadius: incRadiusCss,
+            borderRadius: incSpring.borderRadiusCss,
           }}
-          {...incHandlers}
+          {...(stepBlocked ? undefined : incHandlers)}
         >
           <PlusGlyph />
         </BaseNumberField.Increment>
       </BaseNumberField.Group>
-    </BaseNumberField.Root>
+
+      {!isDisabled ? (
+        <BaseField.Error
+          match={hasExplicitError ? true : undefined}
+          className="m3e-field__error"
+          render={(errorProps) => {
+            const resolvedMessage =
+              errorMessage ??
+              errorProps.children ??
+              (invalid ? t("textField.defaultInvalid") : null);
+            return (
+              <div {...errorProps}>
+                <FieldErrorIconSvg label={t("textField.errorIcon")} />
+                <span>{resolvedMessage}</span>
+              </div>
+            );
+          }}
+        />
+      ) : null}
+    </BaseField.Root>
   );
-}
+});

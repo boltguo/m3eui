@@ -2,16 +2,17 @@ import { arSAMessages } from "./locales/ar-SA.js";
 import { enUSMessages } from "./locales/en-US.js";
 import { jaJPMessages } from "./locales/ja-JP.js";
 import { zhCNMessages } from "./locales/zh-CN.js";
+import { formatM3EMessage } from "./format.js";
 import type {
   M3EBuiltInLocale,
   M3ELocale,
-  M3EMessageKey,
   M3EMessageOverrides,
   M3EMessages,
+  M3ETranslateFn,
 } from "./types.js";
 
 export * from "./types.js";
-export { arSAMessages, enUSMessages, jaJPMessages, zhCNMessages };
+export { arSAMessages, enUSMessages, formatM3EMessage, jaJPMessages, zhCNMessages };
 
 export const M3E_BUILT_IN_LOCALES: Readonly<Record<M3EBuiltInLocale, M3EMessages>> = {
   "en-US": enUSMessages,
@@ -154,22 +155,6 @@ export function resolveM3EMessages(
 
   if (!overrides) return base;
   return { ...base, ...overrides };
-}
-
-export type M3ETranslateFn = (
-  key: M3EMessageKey,
-  params?: Readonly<Record<string, string | number>>,
-) => string;
-
-export function formatM3EMessage(
-  template: string,
-  params?: Readonly<Record<string, string | number>>,
-): string {
-  if (!params) return template;
-  return template.replace(/\{(\w+)\}/g, (_, token: string) => {
-    const val = params[token];
-    return val === undefined ? `{${token}}` : String(val);
-  });
 }
 
 export function createM3ETranslator(

@@ -1,8 +1,11 @@
+"use client";
+
 import * as React from "react";
 import { AlertDialog as BaseAlertDialog } from "@base-ui/react/alert-dialog";
 import { Dialog as BaseDialog } from "@base-ui/react/dialog";
 import { DIALOG_TOKENS } from "../tokens/index.js";
-import { useM3EI18n } from "../context/M3EProvider.js";
+import { useM3EI18n } from "../context/M3EContext.js";
+import { useM3EPortalContainer } from "../context/M3EPortal.js";
 
 export interface M3EDialogProps {
   readonly open?: boolean;
@@ -64,6 +67,7 @@ export function Dialog({
   style,
 }: M3EDialogProps): React.JSX.Element {
   const { t } = useM3EI18n();
+  const portalContainer = useM3EPortalContainer();
   return (
     <BaseDialog.Root
       open={open}
@@ -71,7 +75,7 @@ export function Dialog({
       onOpenChange={(next) => onOpenChange?.(next)}
     >
       {trigger ? <BaseDialog.Trigger render={trigger} /> : null}
-      <BaseDialog.Portal>
+      <BaseDialog.Portal container={portalContainer}>
         <BaseDialog.Backdrop className="m3e-dialog__backdrop" />
         <BaseDialog.Viewport className="m3e-dialog__viewport">
           <BaseDialog.Popup
@@ -107,14 +111,22 @@ export function Dialog({
                 </svg>
               </BaseDialog.Close>
             ) : null}
-            {icon ? (
-              <div className="m3e-dialog__icon" aria-hidden="true">
-                {icon}
-              </div>
-            ) : null}
-            <BaseDialog.Title className="m3e-dialog__title">
-              {title}
-            </BaseDialog.Title>
+            <div
+              className="m3e-dialog__header"
+              data-has-close={showCloseButton ? "" : undefined}
+            >
+              {icon ? (
+                <div className="m3e-dialog__icon" aria-hidden="true">
+                  {icon}
+                </div>
+              ) : null}
+              <BaseDialog.Title
+                className="m3e-dialog__title"
+                data-has-close={showCloseButton ? "" : undefined}
+              >
+                {title}
+              </BaseDialog.Title>
+            </div>
             {description ? (
               <BaseDialog.Description className="m3e-dialog__description">
                 {description}
@@ -148,9 +160,12 @@ export function AlertDialog({
   description,
   children,
   actions,
+  showCloseButton = false,
   className,
   style,
 }: M3EDialogProps): React.JSX.Element {
+  const { t } = useM3EI18n();
+  const portalContainer = useM3EPortalContainer();
   return (
     <BaseAlertDialog.Root
       open={open}
@@ -158,7 +173,7 @@ export function AlertDialog({
       onOpenChange={(next) => onOpenChange?.(next)}
     >
       {trigger ? <BaseAlertDialog.Trigger render={trigger} /> : null}
-      <BaseAlertDialog.Portal>
+      <BaseAlertDialog.Portal container={portalContainer}>
         <BaseAlertDialog.Backdrop className="m3e-dialog__backdrop" />
         <BaseAlertDialog.Viewport className="m3e-dialog__viewport">
           <BaseAlertDialog.Popup
@@ -176,14 +191,42 @@ export function AlertDialog({
               ...style,
             }}
           >
-            {icon ? (
-              <div className="m3e-dialog__icon m3e-dialog__icon--alert" aria-hidden="true">
-                {icon}
-              </div>
+            {showCloseButton ? (
+              <BaseAlertDialog.Close
+                aria-label={t("dialog.close")}
+                className="m3e-dialog__close-btn"
+              >
+                <svg
+                  width={18}
+                  height={18}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  aria-hidden="true"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </BaseAlertDialog.Close>
             ) : null}
-            <BaseAlertDialog.Title className="m3e-dialog__title">
-              {title}
-            </BaseAlertDialog.Title>
+            <div
+              className="m3e-dialog__header"
+              data-has-close={showCloseButton ? "" : undefined}
+            >
+              {icon ? (
+                <div className="m3e-dialog__icon m3e-dialog__icon--alert" aria-hidden="true">
+                  {icon}
+                </div>
+              ) : null}
+              <BaseAlertDialog.Title
+                className="m3e-dialog__title"
+                data-has-close={showCloseButton ? "" : undefined}
+              >
+                {title}
+              </BaseAlertDialog.Title>
+            </div>
             {description ? (
               <BaseAlertDialog.Description className="m3e-dialog__description">
                 {description}

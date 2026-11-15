@@ -70,9 +70,11 @@ export function generateM3ESystemCssVars(): Record<string, string> {
     vars[`--m3e-elevation-${level}`] = spec.shadowCss;
   }
 
+  const pressedPct = `${Math.round(M3E_STATE_LAYER_TOKENS.pressOpacity * 100)}%`;
   vars["--m3e-state-hover-opacity"] = `${Math.round(M3E_STATE_LAYER_TOKENS.hoverOpacity * 100)}%`;
   vars["--m3e-state-focus-opacity"] = `${Math.round(M3E_STATE_LAYER_TOKENS.focusOpacity * 100)}%`;
-  vars["--m3e-state-press-opacity"] = `${Math.round(M3E_STATE_LAYER_TOKENS.pressOpacity * 100)}%`;
+  vars["--m3e-state-pressed-opacity"] = pressedPct;
+  vars["--m3e-state-press-opacity"] = "var(--m3e-state-pressed-opacity)";
   vars["--m3e-state-dragged-opacity"] = `${Math.round(M3E_STATE_LAYER_TOKENS.draggedOpacity * 100)}%`;
   vars["--m3e-state-disabled-container-opacity"] = `${Math.round(M3E_STATE_LAYER_TOKENS.disabledContainerOpacity * 100)}%`;
   vars["--m3e-state-disabled-content-opacity"] = `${Math.round(M3E_STATE_LAYER_TOKENS.disabledContentOpacity * 100)}%`;

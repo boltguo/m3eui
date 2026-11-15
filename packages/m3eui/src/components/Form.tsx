@@ -3,7 +3,8 @@
 import * as React from "react";
 import { Fieldset as BaseFieldset } from "@base-ui/react/fieldset";
 import { Form as BaseForm } from "@base-ui/react/form";
-import { useM3EI18n } from "../context/M3EProvider.js";
+import { useM3EI18n } from "../context/M3EContext.js";
+import { FieldsetDisabledContext, useFieldsetDisabled } from "../internal/fieldOutline.js";
 
 export interface M3EFormProps
   extends Omit<React.FormHTMLAttributes<HTMLFormElement>, "onSubmit"> {
@@ -90,24 +91,27 @@ export function Fieldset({
   style,
 }: M3EFieldsetProps): React.JSX.Element {
   const descId = React.useId();
+  const isDisabled = useFieldsetDisabled(disabled);
 
   return (
-    <BaseFieldset.Root
-      disabled={disabled}
-      aria-describedby={description ? descId : undefined}
-      className={className ? `m3e-fieldset ${className}` : "m3e-fieldset"}
-      data-variant={variant}
-      style={style}
-    >
-      <BaseFieldset.Legend render={<legend />} className="m3e-fieldset__legend">
-        {legend}
-      </BaseFieldset.Legend>
-      {description ? (
-        <p id={descId} className="m3e-fieldset__description">
-          {description}
-        </p>
-      ) : null}
-      <div className="m3e-fieldset__body">{children}</div>
-    </BaseFieldset.Root>
+    <FieldsetDisabledContext.Provider value={isDisabled}>
+      <BaseFieldset.Root
+        disabled={isDisabled}
+        aria-describedby={description ? descId : undefined}
+        className={className ? `m3e-fieldset ${className}` : "m3e-fieldset"}
+        data-variant={variant}
+        style={style}
+      >
+        <BaseFieldset.Legend render={<legend />} className="m3e-fieldset__legend">
+          {legend}
+        </BaseFieldset.Legend>
+        {description ? (
+          <p id={descId} className="m3e-fieldset__description">
+            {description}
+          </p>
+        ) : null}
+        <div className="m3e-fieldset__body">{children}</div>
+      </BaseFieldset.Root>
+    </FieldsetDisabledContext.Provider>
   );
 }

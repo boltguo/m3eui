@@ -9,14 +9,20 @@ import {
   MENUBAR_TOKENS,
   POPOVER_TOKENS,
   SEGMENTED_MENU_TOKENS,
+  VIBRANT_MENU_TOKENS,
+  parseShortcutKeys,
   resolveSegmentedMenuItemCorners,
 } from "../tokens/index.js";
-import { useM3E } from "../context/M3EProvider.js";
+import { useM3E } from "../context/M3EContext.js";
+import { useM3EPortalContainer } from "../context/M3EPortal.js";
 import {
-  useM3ECornerSpring,
-  useM3EScalarSpring,
+  useM3ECornerSpringRef,
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
+import { Kbd } from "./KbdAndSnippet.js";
+
+export type M3EMenuTheme = "standard" | "vibrant";
+export type M3EMenuVariant = "segmented" | "standard";
 
 export interface M3EPopoverProps {
   readonly open?: boolean;
@@ -63,6 +69,7 @@ export function Popover({
   className,
   style,
 }: M3EPopoverProps): React.JSX.Element {
+  const portalContainer = useM3EPortalContainer();
   return (
     <BasePopover.Root
       open={open}
@@ -70,7 +77,7 @@ export function Popover({
       onOpenChange={(next) => onOpenChange?.(next)}
     >
       <BasePopover.Trigger render={trigger} />
-      <BasePopover.Portal>
+      <BasePopover.Portal container={portalContainer}>
         <BasePopover.Positioner
           side={side}
           align={align}
@@ -114,13 +121,16 @@ export interface M3EMenuItemSpec {
   readonly separatorBefore?: boolean;
   readonly checked?: boolean;
   readonly onCheckedChange?: (checked: boolean) => void;
+  readonly closeOnClick?: boolean;
   readonly submenu?: readonly M3EMenuItemSpec[];
-  readonly onSelect?: () => void;
+  readonly onSelect?: (event?: React.MouseEvent<HTMLElement>) => void;
 }
 
 export interface M3EDropdownMenuProps {
   readonly trigger: React.ReactElement;
   readonly items: readonly M3EMenuItemSpec[];
+  readonly theme?: M3EMenuTheme;
+  readonly variant?: M3EMenuVariant;
   readonly open?: boolean;
   readonly defaultOpen?: boolean;
   readonly onOpenChange?: (open: boolean) => void;
@@ -131,8 +141,25 @@ export interface M3EDropdownMenuProps {
 export interface M3EContextMenuProps {
   readonly children: React.ReactNode;
   readonly items: readonly M3EMenuItemSpec[];
+  readonly theme?: M3EMenuTheme;
+  readonly variant?: M3EMenuVariant;
   readonly className?: string;
   readonly style?: React.CSSProperties;
+}
+
+function splitMenuGroups(
+  items: readonly M3EMenuItemSpec[],
+): readonly (readonly M3EMenuItemSpec[])[] {
+  const groups: M3EMenuItemSpec[][] = [];
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i]!;
+    if (i === 0 || item.separatorBefore) {
+      groups.push([item]);
+    } else {
+      groups[groups.length - 1]!.push(item);
+    }
+  }
+  return groups;
 }
 
 function SubmenuChevronSvg({ rtl }: { readonly rtl: boolean }) {
@@ -172,14 +199,53 @@ function MenuCheckSvg() {
   );
 }
 
-function DropdownSegmentedItemList({
+function DropdownSegmentedPopupBody({
   items,
+  theme,
+  variant,
 }: {
   readonly items: readonly M3EMenuItemSpec[];
+  readonly theme: M3EMenuTheme;
+  readonly variant: M3EMenuVariant;
 }) {
   const hasAnyLeadingSlot = items.some(
     (it) => Boolean(it.icon) || it.checked !== undefined,
   );
+  const groups = splitMenuGroups(items);
+  const isDetachedGroups = variant === "segmented" && groups.length > 1;
+
+  if (isDetachedGroups) {
+    return (
+      <>
+        {groups.map((groupItems, groupIdx) => (
+          <BaseMenu.Group
+            key={groupItems[0]?.id ?? groupIdx}
+            className="m3e-segmented-menu__group"
+            style={{
+              borderRadius: `${SEGMENTED_MENU_TOKENS.containerRadius}px`,
+              padding: `${SEGMENTED_MENU_TOKENS.containerPadding}px`,
+              gap: `${SEGMENTED_MENU_TOKENS.itemGap}px`,
+            }}
+          >
+            {groupItems.map((item, idx) => (
+              <DropdownSegmentedItem
+                key={item.id}
+                item={item}
+                index={idx}
+                count={groupItems.length}
+                hasAnyLeadingSlot={hasAnyLeadingSlot}
+                isFirstInGroup={idx === 0}
+                isLastInGroup={idx === groupItems.length - 1}
+                showSeparator={false}
+                theme={theme}
+                variant={variant}
+              />
+            ))}
+          </BaseMenu.Group>
+        ))}
+      </>
+    );
+  }
 
   return (
     <>
@@ -194,6 +260,9 @@ function DropdownSegmentedItemList({
           isLastInGroup={
             idx === items.length - 1 || Boolean(items[idx + 1]?.separatorBefore)
           }
+          showSeparator={idx > 0 && Boolean(item.separatorBefore)}
+          theme={theme}
+          variant={variant}
         />
       ))}
     </>
@@ -207,6 +276,9 @@ function DropdownSegmentedItem({
   hasAnyLeadingSlot,
   isFirstInGroup,
   isLastInGroup,
+  showSeparator,
+  theme,
+  variant,
 }: {
   readonly item: M3EMenuItemSpec;
   readonly index: number;
@@ -214,20 +286,31 @@ function DropdownSegmentedItem({
   readonly hasAnyLeadingSlot: boolean;
   readonly isFirstInGroup: boolean;
   readonly isLastInGroup: boolean;
+  readonly showSeparator: boolean;
+  readonly theme: M3EMenuTheme;
+  readonly variant: M3EMenuVariant;
 }) {
   const { direction } = useM3E();
+  const portalContainer = useM3EPortalContainer();
+  const trackHighlight = variant === "segmented";
   const [highlighted, setHighlighted] = React.useState(false);
   const { isPressed, pressHandlers } = usePressHoldState(Boolean(item.disabled));
-  const corners = resolveSegmentedMenuItemCorners({
-    index,
-    count,
-    isFirstInGroup,
-    isLastInGroup,
-    isHighlighted: highlighted,
-    isSelected: Boolean(item.checked),
-    isPressed,
-  });
-  const { borderRadiusCss } = useM3ECornerSpring(corners, "fastSpatial");
+  const corners =
+    variant === "standard"
+      ? ([8, 8, 8, 8] as const)
+      : resolveSegmentedMenuItemCorners({
+          index,
+          count,
+          isFirstInGroup,
+          isLastInGroup,
+          isHighlighted: trackHighlight ? highlighted : false,
+          isSelected: Boolean(item.checked),
+          isPressed,
+        });
+  const { ref: cornerRef, borderRadiusCss } = useM3ECornerSpringRef<HTMLElement>(
+    corners,
+    "fastSpatial",
+  );
 
   const commonStyle: React.CSSProperties = {
     minHeight: `${SEGMENTED_MENU_TOKENS.itemHeight}px`,
@@ -236,31 +319,42 @@ function DropdownSegmentedItem({
   };
 
   const interactionHandlers = {
-    onPointerEnter: () => setHighlighted(true),
+    onPointerEnter: () => {
+      if (trackHighlight) setHighlighted(true);
+    },
+    onPointerMove: () => {
+      if (trackHighlight && !highlighted) setHighlighted(true);
+    },
     onPointerLeave: () => {
-      setHighlighted(false);
+      if (trackHighlight) setHighlighted(false);
       pressHandlers.onPointerLeave();
     },
     onPointerDown: pressHandlers.onPointerDown,
     onPointerUp: pressHandlers.onPointerUp,
     onPointerCancel: pressHandlers.onPointerCancel,
-    onFocus: () => setHighlighted(true),
+    onFocus: () => {
+      if (trackHighlight) setHighlighted(true);
+    },
     onBlur: () => {
-      setHighlighted(false);
+      if (trackHighlight) setHighlighted(false);
       pressHandlers.onBlur();
     },
   };
 
   if (item.submenu && item.submenu.length > 0) {
+    const subGroups = splitMenuGroups(item.submenu);
+    const subDetached = variant === "segmented" && subGroups.length > 1;
     return (
       <>
-        {item.separatorBefore ? (
+        {showSeparator ? (
           <BaseMenu.Separator className="m3e-menu__separator" />
         ) : null}
         <BaseMenu.SubmenuRoot>
           <BaseMenu.SubmenuTrigger
+            ref={cornerRef as React.Ref<HTMLDivElement>}
             disabled={item.disabled}
             className="m3e-segmented-menu__item m3e-segmented-menu__submenu-trigger"
+            data-pressed={isPressed ? "" : undefined}
             style={commonStyle}
             {...interactionHandlers}
           >
@@ -271,7 +365,12 @@ function DropdownSegmentedItem({
             ) : hasAnyLeadingSlot ? (
               <span className="m3e-segmented-menu__icon" aria-hidden="true" />
             ) : null}
-            <span className="m3e-segmented-menu__label">{item.label}</span>
+            <span
+              className="m3e-segmented-menu__label"
+              data-text={typeof item.label === "string" ? item.label : undefined}
+            >
+              {item.label}
+            </span>
             <span
               className="m3e-segmented-menu__submenu-caret"
               aria-hidden="true"
@@ -279,7 +378,7 @@ function DropdownSegmentedItem({
               <SubmenuChevronSvg rtl={direction === "rtl"} />
             </span>
           </BaseMenu.SubmenuTrigger>
-          <BaseMenu.Portal>
+          <BaseMenu.Portal container={portalContainer}>
             <BaseMenu.Positioner
               sideOffset={4}
               alignOffset={-4}
@@ -287,13 +386,24 @@ function DropdownSegmentedItem({
             >
               <BaseMenu.Popup
                 className="m3e-segmented-menu"
-                style={{
-                  borderRadius: `${SEGMENTED_MENU_TOKENS.containerRadius}px`,
-                  padding: `${SEGMENTED_MENU_TOKENS.containerPadding}px`,
-                  gap: `${SEGMENTED_MENU_TOKENS.itemGap}px`,
-                }}
+                data-theme={theme !== "standard" ? theme : undefined}
+                data-variant={variant}
+                data-grouped={subDetached ? "" : undefined}
+                style={
+                  subDetached
+                    ? { gap: `${VIBRANT_MENU_TOKENS.groupGap}px` }
+                    : {
+                        borderRadius: `${SEGMENTED_MENU_TOKENS.containerRadius}px`,
+                        padding: `${SEGMENTED_MENU_TOKENS.containerPadding}px`,
+                        gap: `${SEGMENTED_MENU_TOKENS.itemGap}px`,
+                      }
+                }
               >
-                <DropdownSegmentedItemList items={item.submenu} />
+                <DropdownSegmentedPopupBody
+                  items={item.submenu}
+                  theme={theme}
+                  variant={variant}
+                />
               </BaseMenu.Popup>
             </BaseMenu.Positioner>
           </BaseMenu.Portal>
@@ -305,11 +415,13 @@ function DropdownSegmentedItem({
   if (item.checked !== undefined) {
     return (
       <>
-        {item.separatorBefore ? (
+        {showSeparator ? (
           <BaseMenu.Separator className="m3e-menu__separator" />
         ) : null}
         <BaseMenu.CheckboxItem
+          ref={cornerRef as React.Ref<HTMLDivElement>}
           checked={item.checked}
+          closeOnClick={item.closeOnClick ?? true}
           disabled={item.disabled}
           onCheckedChange={(next) => {
             item.onCheckedChange?.(next);
@@ -317,6 +429,7 @@ function DropdownSegmentedItem({
           }}
           className="m3e-segmented-menu__item"
           data-selected={item.checked ? "" : undefined}
+          data-pressed={isPressed ? "" : undefined}
           style={commonStyle}
           {...interactionHandlers}
         >
@@ -325,11 +438,20 @@ function DropdownSegmentedItem({
               <MenuCheckSvg />
             </BaseMenu.CheckboxItemIndicator>
           </span>
-          <span className="m3e-segmented-menu__label">{item.label}</span>
+          <span
+            className="m3e-segmented-menu__label"
+            data-text={typeof item.label === "string" ? item.label : undefined}
+          >
+            {item.label}
+          </span>
           {item.shortcut ? (
-            <span className="m3e-segmented-menu__shortcut">
+            <Kbd
+              size="sm"
+              className="m3e-segmented-menu__shortcut"
+              keys={parseShortcutKeys(item.shortcut)}
+            >
               {item.shortcut}
-            </span>
+            </Kbd>
           ) : null}
         </BaseMenu.CheckboxItem>
       </>
@@ -338,14 +460,16 @@ function DropdownSegmentedItem({
 
   return (
     <>
-      {item.separatorBefore ? (
+      {showSeparator ? (
         <BaseMenu.Separator className="m3e-menu__separator" />
       ) : null}
       <BaseMenu.Item
+        ref={cornerRef as React.Ref<HTMLDivElement>}
         disabled={item.disabled}
-        onClick={() => item.onSelect?.()}
+        onClick={(e) => item.onSelect?.(e)}
         className="m3e-segmented-menu__item"
         data-danger={item.danger ? "" : undefined}
+        data-pressed={isPressed ? "" : undefined}
         style={commonStyle}
         {...interactionHandlers}
       >
@@ -356,9 +480,20 @@ function DropdownSegmentedItem({
         ) : hasAnyLeadingSlot ? (
           <span className="m3e-segmented-menu__icon" aria-hidden="true" />
         ) : null}
-        <span className="m3e-segmented-menu__label">{item.label}</span>
+        <span
+          className="m3e-segmented-menu__label"
+          data-text={typeof item.label === "string" ? item.label : undefined}
+        >
+          {item.label}
+        </span>
         {item.shortcut ? (
-          <span className="m3e-segmented-menu__shortcut">{item.shortcut}</span>
+          <Kbd
+            size="sm"
+            className="m3e-segmented-menu__shortcut"
+            keys={parseShortcutKeys(item.shortcut)}
+          >
+            {item.shortcut}
+          </Kbd>
         ) : null}
       </BaseMenu.Item>
     </>
@@ -368,12 +503,18 @@ function DropdownSegmentedItem({
 export function DropdownMenu({
   trigger,
   items,
+  theme = "standard",
+  variant = "segmented",
   open,
   defaultOpen,
   onOpenChange,
   side = "bottom",
   align = "start",
 }: M3EDropdownMenuProps): React.JSX.Element {
+  const portalContainer = useM3EPortalContainer();
+  const groups = splitMenuGroups(items);
+  const isDetachedGroups = variant === "segmented" && groups.length > 1;
+
   return (
     <BaseMenu.Root
       modal={false}
@@ -382,7 +523,7 @@ export function DropdownMenu({
       onOpenChange={(next) => onOpenChange?.(next)}
     >
       <BaseMenu.Trigger render={trigger} />
-      <BaseMenu.Portal>
+      <BaseMenu.Portal container={portalContainer}>
         <BaseMenu.Positioner
           side={side}
           align={align}
@@ -391,13 +532,24 @@ export function DropdownMenu({
         >
           <BaseMenu.Popup
             className="m3e-segmented-menu"
-            style={{
-              borderRadius: `${SEGMENTED_MENU_TOKENS.containerRadius}px`,
-              padding: `${SEGMENTED_MENU_TOKENS.containerPadding}px`,
-              gap: `${SEGMENTED_MENU_TOKENS.itemGap}px`,
-            }}
+            data-theme={theme !== "standard" ? theme : undefined}
+            data-variant={variant}
+            data-grouped={isDetachedGroups ? "" : undefined}
+            style={
+              isDetachedGroups
+                ? { gap: `${VIBRANT_MENU_TOKENS.groupGap}px` }
+                : {
+                    borderRadius: `${SEGMENTED_MENU_TOKENS.containerRadius}px`,
+                    padding: `${SEGMENTED_MENU_TOKENS.containerPadding}px`,
+                    gap: `${SEGMENTED_MENU_TOKENS.itemGap}px`,
+                  }
+            }
           >
-            <DropdownSegmentedItemList items={items} />
+            <DropdownSegmentedPopupBody
+              items={items}
+              theme={theme}
+              variant={variant}
+            />
           </BaseMenu.Popup>
         </BaseMenu.Positioner>
       </BaseMenu.Portal>
@@ -405,14 +557,54 @@ export function DropdownMenu({
   );
 }
 
-function ContextSegmentedItemList({
+function ContextSegmentedPopupBody({
   items,
+  theme,
+  variant,
 }: {
   readonly items: readonly M3EMenuItemSpec[];
+  readonly theme: M3EMenuTheme;
+  readonly variant: M3EMenuVariant;
 }) {
   const hasAnyLeadingSlot = items.some(
     (it) => Boolean(it.icon) || it.checked !== undefined,
   );
+  const groups = splitMenuGroups(items);
+  const isDetachedGroups = variant === "segmented" && groups.length > 1;
+
+  if (isDetachedGroups) {
+    return (
+      <>
+        {groups.map((groupItems, groupIdx) => (
+          <BaseContextMenu.Group
+            key={groupItems[0]?.id ?? groupIdx}
+            className="m3e-segmented-menu__group"
+            style={{
+              borderRadius: `${SEGMENTED_MENU_TOKENS.containerRadius}px`,
+              padding: `${SEGMENTED_MENU_TOKENS.containerPadding}px`,
+              gap: `${SEGMENTED_MENU_TOKENS.itemGap}px`,
+            }}
+          >
+            {groupItems.map((item, idx) => (
+              <ContextSegmentedItem
+                key={item.id}
+                item={item}
+                index={idx}
+                count={groupItems.length}
+                hasAnyLeadingSlot={hasAnyLeadingSlot}
+                isFirstInGroup={idx === 0}
+                isLastInGroup={idx === groupItems.length - 1}
+                showSeparator={false}
+                theme={theme}
+                variant={variant}
+              />
+            ))}
+          </BaseContextMenu.Group>
+        ))}
+      </>
+    );
+  }
+
   return (
     <>
       {items.map((item, idx) => (
@@ -426,6 +618,9 @@ function ContextSegmentedItemList({
           isLastInGroup={
             idx === items.length - 1 || Boolean(items[idx + 1]?.separatorBefore)
           }
+          showSeparator={idx > 0 && Boolean(item.separatorBefore)}
+          theme={theme}
+          variant={variant}
         />
       ))}
     </>
@@ -439,6 +634,9 @@ function ContextSegmentedItem({
   hasAnyLeadingSlot,
   isFirstInGroup,
   isLastInGroup,
+  showSeparator,
+  theme,
+  variant,
 }: {
   readonly item: M3EMenuItemSpec;
   readonly index: number;
@@ -446,20 +644,31 @@ function ContextSegmentedItem({
   readonly hasAnyLeadingSlot: boolean;
   readonly isFirstInGroup: boolean;
   readonly isLastInGroup: boolean;
+  readonly showSeparator: boolean;
+  readonly theme: M3EMenuTheme;
+  readonly variant: M3EMenuVariant;
 }) {
   const { direction } = useM3E();
+  const portalContainer = useM3EPortalContainer();
+  const trackHighlight = variant === "segmented";
   const [highlighted, setHighlighted] = React.useState(false);
   const { isPressed, pressHandlers } = usePressHoldState(Boolean(item.disabled));
-  const corners = resolveSegmentedMenuItemCorners({
-    index,
-    count,
-    isFirstInGroup,
-    isLastInGroup,
-    isHighlighted: highlighted,
-    isSelected: Boolean(item.checked),
-    isPressed,
-  });
-  const { borderRadiusCss } = useM3ECornerSpring(corners, "fastSpatial");
+  const corners =
+    variant === "standard"
+      ? ([8, 8, 8, 8] as const)
+      : resolveSegmentedMenuItemCorners({
+          index,
+          count,
+          isFirstInGroup,
+          isLastInGroup,
+          isHighlighted: trackHighlight ? highlighted : false,
+          isSelected: Boolean(item.checked),
+          isPressed,
+        });
+  const { ref: cornerRef, borderRadiusCss } = useM3ECornerSpringRef<HTMLElement>(
+    corners,
+    "fastSpatial",
+  );
 
   const commonStyle: React.CSSProperties = {
     minHeight: `${SEGMENTED_MENU_TOKENS.itemHeight}px`,
@@ -468,31 +677,42 @@ function ContextSegmentedItem({
   };
 
   const interactionHandlers = {
-    onPointerEnter: () => setHighlighted(true),
+    onPointerEnter: () => {
+      if (trackHighlight) setHighlighted(true);
+    },
+    onPointerMove: () => {
+      if (trackHighlight && !highlighted) setHighlighted(true);
+    },
     onPointerLeave: () => {
-      setHighlighted(false);
+      if (trackHighlight) setHighlighted(false);
       pressHandlers.onPointerLeave();
     },
     onPointerDown: pressHandlers.onPointerDown,
     onPointerUp: pressHandlers.onPointerUp,
     onPointerCancel: pressHandlers.onPointerCancel,
-    onFocus: () => setHighlighted(true),
+    onFocus: () => {
+      if (trackHighlight) setHighlighted(true);
+    },
     onBlur: () => {
-      setHighlighted(false);
+      if (trackHighlight) setHighlighted(false);
       pressHandlers.onBlur();
     },
   };
 
   if (item.submenu && item.submenu.length > 0) {
+    const subGroups = splitMenuGroups(item.submenu);
+    const subDetached = variant === "segmented" && subGroups.length > 1;
     return (
       <>
-        {item.separatorBefore ? (
+        {showSeparator ? (
           <BaseContextMenu.Separator className="m3e-menu__separator" />
         ) : null}
         <BaseContextMenu.SubmenuRoot>
           <BaseContextMenu.SubmenuTrigger
+            ref={cornerRef as React.Ref<HTMLDivElement>}
             disabled={item.disabled}
             className="m3e-segmented-menu__item m3e-segmented-menu__submenu-trigger"
+            data-pressed={isPressed ? "" : undefined}
             style={commonStyle}
             {...interactionHandlers}
           >
@@ -503,7 +723,12 @@ function ContextSegmentedItem({
             ) : hasAnyLeadingSlot ? (
               <span className="m3e-segmented-menu__icon" aria-hidden="true" />
             ) : null}
-            <span className="m3e-segmented-menu__label">{item.label}</span>
+            <span
+              className="m3e-segmented-menu__label"
+              data-text={typeof item.label === "string" ? item.label : undefined}
+            >
+              {item.label}
+            </span>
             <span
               className="m3e-segmented-menu__submenu-caret"
               aria-hidden="true"
@@ -511,7 +736,7 @@ function ContextSegmentedItem({
               <SubmenuChevronSvg rtl={direction === "rtl"} />
             </span>
           </BaseContextMenu.SubmenuTrigger>
-          <BaseContextMenu.Portal>
+          <BaseContextMenu.Portal container={portalContainer}>
             <BaseContextMenu.Positioner
               sideOffset={4}
               alignOffset={-4}
@@ -519,13 +744,24 @@ function ContextSegmentedItem({
             >
               <BaseContextMenu.Popup
                 className="m3e-segmented-menu"
-                style={{
-                  borderRadius: `${SEGMENTED_MENU_TOKENS.containerRadius}px`,
-                  padding: `${SEGMENTED_MENU_TOKENS.containerPadding}px`,
-                  gap: `${SEGMENTED_MENU_TOKENS.itemGap}px`,
-                }}
+                data-theme={theme !== "standard" ? theme : undefined}
+                data-variant={variant}
+                data-grouped={subDetached ? "" : undefined}
+                style={
+                  subDetached
+                    ? { gap: `${VIBRANT_MENU_TOKENS.groupGap}px` }
+                    : {
+                        borderRadius: `${SEGMENTED_MENU_TOKENS.containerRadius}px`,
+                        padding: `${SEGMENTED_MENU_TOKENS.containerPadding}px`,
+                        gap: `${SEGMENTED_MENU_TOKENS.itemGap}px`,
+                      }
+                }
               >
-                <ContextSegmentedItemList items={item.submenu} />
+                <ContextSegmentedPopupBody
+                  items={item.submenu}
+                  theme={theme}
+                  variant={variant}
+                />
               </BaseContextMenu.Popup>
             </BaseContextMenu.Positioner>
           </BaseContextMenu.Portal>
@@ -534,16 +770,64 @@ function ContextSegmentedItem({
     );
   }
 
+  if (item.checked !== undefined) {
+    return (
+      <>
+        {showSeparator ? (
+          <BaseContextMenu.Separator className="m3e-menu__separator" />
+        ) : null}
+        <BaseContextMenu.CheckboxItem
+          ref={cornerRef as React.Ref<HTMLDivElement>}
+          checked={item.checked}
+          closeOnClick={item.closeOnClick ?? true}
+          disabled={item.disabled}
+          onCheckedChange={(next) => {
+            item.onCheckedChange?.(next);
+            item.onSelect?.();
+          }}
+          className="m3e-segmented-menu__item"
+          data-selected={item.checked ? "" : undefined}
+          data-pressed={isPressed ? "" : undefined}
+          style={commonStyle}
+          {...interactionHandlers}
+        >
+          <span className="m3e-segmented-menu__icon" aria-hidden="true">
+            <BaseContextMenu.CheckboxItemIndicator>
+              <MenuCheckSvg />
+            </BaseContextMenu.CheckboxItemIndicator>
+          </span>
+          <span
+            className="m3e-segmented-menu__label"
+            data-text={typeof item.label === "string" ? item.label : undefined}
+          >
+            {item.label}
+          </span>
+          {item.shortcut ? (
+            <Kbd
+              size="sm"
+              className="m3e-segmented-menu__shortcut"
+              keys={parseShortcutKeys(item.shortcut)}
+            >
+              {item.shortcut}
+            </Kbd>
+          ) : null}
+        </BaseContextMenu.CheckboxItem>
+      </>
+    );
+  }
+
   return (
     <>
-      {item.separatorBefore ? (
+      {showSeparator ? (
         <BaseContextMenu.Separator className="m3e-menu__separator" />
       ) : null}
       <BaseContextMenu.Item
+        ref={cornerRef as React.Ref<HTMLDivElement>}
         disabled={item.disabled}
-        onClick={() => item.onSelect?.()}
+        onClick={(e) => item.onSelect?.(e)}
         className="m3e-segmented-menu__item"
         data-danger={item.danger ? "" : undefined}
+        data-pressed={isPressed ? "" : undefined}
         style={commonStyle}
         {...interactionHandlers}
       >
@@ -554,9 +838,20 @@ function ContextSegmentedItem({
         ) : hasAnyLeadingSlot ? (
           <span className="m3e-segmented-menu__icon" aria-hidden="true" />
         ) : null}
-        <span className="m3e-segmented-menu__label">{item.label}</span>
+        <span
+          className="m3e-segmented-menu__label"
+          data-text={typeof item.label === "string" ? item.label : undefined}
+        >
+          {item.label}
+        </span>
         {item.shortcut ? (
-          <span className="m3e-segmented-menu__shortcut">{item.shortcut}</span>
+          <Kbd
+            size="sm"
+            className="m3e-segmented-menu__shortcut"
+            keys={parseShortcutKeys(item.shortcut)}
+          >
+            {item.shortcut}
+          </Kbd>
         ) : null}
       </BaseContextMenu.Item>
     </>
@@ -566,9 +861,15 @@ function ContextSegmentedItem({
 export function ContextMenu({
   children,
   items,
+  theme = "standard",
+  variant = "segmented",
   className,
   style,
 }: M3EContextMenuProps): React.JSX.Element {
+  const portalContainer = useM3EPortalContainer();
+  const groups = splitMenuGroups(items);
+  const isDetachedGroups = variant === "segmented" && groups.length > 1;
+
   return (
     <BaseContextMenu.Root>
       <BaseContextMenu.Trigger
@@ -581,17 +882,28 @@ export function ContextMenu({
       >
         {children}
       </BaseContextMenu.Trigger>
-      <BaseContextMenu.Portal>
+      <BaseContextMenu.Portal container={portalContainer}>
         <BaseContextMenu.Positioner className="m3e-segmented-menu__positioner">
           <BaseContextMenu.Popup
             className="m3e-segmented-menu"
-            style={{
-              borderRadius: `${SEGMENTED_MENU_TOKENS.containerRadius}px`,
-              padding: `${SEGMENTED_MENU_TOKENS.containerPadding}px`,
-              gap: `${SEGMENTED_MENU_TOKENS.itemGap}px`,
-            }}
+            data-theme={theme !== "standard" ? theme : undefined}
+            data-variant={variant}
+            data-grouped={isDetachedGroups ? "" : undefined}
+            style={
+              isDetachedGroups
+                ? { gap: `${VIBRANT_MENU_TOKENS.groupGap}px` }
+                : {
+                    borderRadius: `${SEGMENTED_MENU_TOKENS.containerRadius}px`,
+                    padding: `${SEGMENTED_MENU_TOKENS.containerPadding}px`,
+                    gap: `${SEGMENTED_MENU_TOKENS.itemGap}px`,
+                  }
+            }
           >
-            <ContextSegmentedItemList items={items} />
+            <ContextSegmentedPopupBody
+              items={items}
+              theme={theme}
+              variant={variant}
+            />
           </BaseContextMenu.Popup>
         </BaseContextMenu.Positioner>
       </BaseContextMenu.Portal>
@@ -619,29 +931,40 @@ function MenubarTopTrigger({
 }: {
   readonly menu: M3EMenubarMenuSpec;
 }) {
+  const portalContainer = useM3EPortalContainer();
   const { isPressed, pressHandlers } = usePressHoldState(Boolean(menu.disabled));
-  const radius = useM3EScalarSpring(
-    isPressed
-      ? MENUBAR_TOKENS.triggerPressedRadius
-      : MENUBAR_TOKENS.triggerRadius,
+  const targetRadius = isPressed
+    ? MENUBAR_TOKENS.triggerPressedRadius
+    : MENUBAR_TOKENS.triggerRadius;
+  const { ref: cornerRef, borderRadiusCss } = useM3ECornerSpringRef<HTMLButtonElement>(
+    [targetRadius, targetRadius, targetRadius, targetRadius],
     "fastSpatial",
   );
+  const groups = splitMenuGroups(menu.items);
+  const isDetachedGroups = groups.length > 1;
 
   return (
     <BaseMenu.Root disabled={menu.disabled}>
       <BaseMenu.Trigger
+        ref={cornerRef}
         disabled={menu.disabled}
         className="m3e-menubar__trigger"
+        data-pressed={isPressed ? "" : undefined}
         style={{
           height: `${MENUBAR_TOKENS.triggerHeight}px`,
           paddingInline: `${MENUBAR_TOKENS.triggerPaddingInline}px`,
-          borderRadius: `${Math.max(4, radius).toFixed(1)}px`,
+          borderRadius: borderRadiusCss,
         }}
         {...pressHandlers}
       >
-        {menu.label}
+        <span
+          className="m3e-menubar__label"
+          data-text={typeof menu.label === "string" ? menu.label : undefined}
+        >
+          {menu.label}
+        </span>
       </BaseMenu.Trigger>
-      <BaseMenu.Portal>
+      <BaseMenu.Portal container={portalContainer}>
         <BaseMenu.Positioner
           side="bottom"
           align="start"
@@ -650,13 +973,23 @@ function MenubarTopTrigger({
         >
           <BaseMenu.Popup
             className="m3e-segmented-menu m3e-menubar__popup"
-            style={{
-              borderRadius: `${SEGMENTED_MENU_TOKENS.containerRadius}px`,
-              padding: `${SEGMENTED_MENU_TOKENS.containerPadding}px`,
-              gap: `${SEGMENTED_MENU_TOKENS.itemGap}px`,
-            }}
+            data-variant="segmented"
+            data-grouped={isDetachedGroups ? "" : undefined}
+            style={
+              isDetachedGroups
+                ? { gap: `${VIBRANT_MENU_TOKENS.groupGap}px` }
+                : {
+                    borderRadius: `${SEGMENTED_MENU_TOKENS.containerRadius}px`,
+                    padding: `${SEGMENTED_MENU_TOKENS.containerPadding}px`,
+                    gap: `${SEGMENTED_MENU_TOKENS.itemGap}px`,
+                  }
+            }
           >
-            <DropdownSegmentedItemList items={menu.items} />
+            <DropdownSegmentedPopupBody
+              items={menu.items}
+              theme="standard"
+              variant="segmented"
+            />
           </BaseMenu.Popup>
         </BaseMenu.Positioner>
       </BaseMenu.Portal>

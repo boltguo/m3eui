@@ -316,7 +316,10 @@ export function generateM3ETypographyCssVars(): Record<string, string> {
     vars[`--m3e-typescale-${kebab}-size`] = sizeRem;
     vars[`--m3e-typescale-${kebab}-line-height`] = lineRem;
     vars[`--m3e-typescale-${kebab}-weight`] = String(spec.fontWeight);
-    vars[`--m3e-typescale-${kebab}-tracking`] = `${spec.letterSpacing}px`;
+    vars[`--m3e-typescale-${kebab}-tracking`] =
+      spec.letterSpacing === 0
+        ? "0em"
+        : `${Number((spec.letterSpacing / spec.fontSize).toFixed(4))}em`;
   }
 
   return vars;

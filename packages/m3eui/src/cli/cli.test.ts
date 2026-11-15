@@ -157,4 +157,60 @@ describe("m3eui CLI — Declarative m3e.json & Theme Sync CLI Suite", () => {
     const cfg = JSON.parse(readFileSync(join(tempDir, "m3e.json"), "utf8"));
     expect(cfg.theme.seed).toBe("#B3261E");
   });
+
+  it("prints package version for --version/-v and rejects malformed CLI flags, commands, and config values", () => {
+    const versionLogs: string[] = [];
+    expect(runM3ECli(["--version"], { cwd: tempDir, log: (l) => versionLogs.push(l) })).toBe(0);
+    expect(versionLogs[0]).toMatch(/^\d+\.\d+\.\d+/);
+
+    const badCases: string[][] = [
+      ["unknown-cmd"],
+      ["init", "--unknown-flag"],
+      ["init", "--seed"],
+      ["init", "--seed", "--force"],
+      ["init", "extra-positional"],
+      ["init", "--variant", "not-a-variant"],
+      ["init", "--seed", "not-hex"],
+      ["locale", "bad locale!"],
+      ["locale", "fr-FR", "extra-arg"],
+    ];
+
+    for (const argv of badCases) {
+      const errs: string[] = [];
+      const code = runM3ECli(argv, {
+        cwd: tempDir,
+        log: () => {},
+        error: (e) => errs.push(e),
+      });
+      expect(code).toBe(1);
+      expect(errs.length).toBeGreaterThan(0);
+    }
+
+    writeFileSync(
+      join(tempDir, "m3e.json"),
+      JSON.stringify({
+        unknownTopKey: true,
+        theme: {
+          seed: "#6750A4",
+          schemeVariant: "expressive",
+          colorMode: "invalid",
+          motionScheme: "bouncy",
+        },
+        i18n: { locale: "bad locale!", direction: "diagonal" },
+      }),
+      "utf8",
+    );
+    const doctorReport = runM3EDoctor(tempDir);
+    expect(doctorReport.ok).toBe(false);
+    expect(
+      doctorReport.checks.find((c) => c.name === "config-schema")?.passed,
+    ).toBe(false);
+    expect(
+      doctorReport.checks.find((c) => c.name === "theme-motion-scheme")?.passed,
+    ).toBe(false);
+    expect(
+      doctorReport.checks.find((c) => c.name === "i18n-locale-resolution")
+        ?.passed,
+    ).toBe(false);
+  });
 });

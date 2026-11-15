@@ -1,14 +1,19 @@
+"use client";
+
 import * as React from "react";
 import {
   LOADING_INDICATOR_DETERMINATE_MORPH_SEQUENCE,
   LOADING_INDICATOR_MORPH_SEQUENCE,
   LOADING_INDICATOR_TOKENS,
+} from "../tokens/loading-shapes.js";
+import { evaluateSpringDisplacement } from "../tokens/motion.js";
+import {
   type MorphPair,
   cubicsToSvgPath,
-  evaluateSpringDisplacement,
   interpolateMorphCubics,
-} from "../tokens/index.js";
-import { useM3E } from "../context/M3EProvider.js";
+} from "../tokens/shapes.js";
+import { useM3E } from "../context/M3EContext.js";
+import { subscribeSpringFrame } from "../hooks/useM3ESpring.js";
 
 export interface LoadingIndicatorProps {
   readonly size?: number;
@@ -19,13 +24,6 @@ export interface LoadingIndicatorProps {
   readonly "aria-label"?: string;
   readonly className?: string;
   readonly style?: React.CSSProperties;
-  readonly onFrameInfo?: (info: {
-    readonly morphIndex: number;
-    readonly fromShape: string;
-    readonly toShape: string;
-    readonly morphProgress: number;
-    readonly rotationDeg: number;
-  }) => void;
 }
 
 export function LoadingIndicator({
@@ -37,7 +35,6 @@ export function LoadingIndicator({
   "aria-label": ariaLabel,
   className,
   style,
-  onFrameInfo,
 }: LoadingIndicatorProps): React.JSX.Element {
   const { playbackRate, paused: contextPaused, prefersReducedMotion, t } = useM3E();
   const resolvedAriaLabel = ariaLabel ?? t("loading.label");
@@ -52,8 +49,6 @@ export function LoadingIndicator({
   const pathRef = React.useRef<SVGPathElement | null>(null);
   const groupRef = React.useRef<SVGGElement | null>(null);
   const virtualElapsedMsRef = React.useRef<number>(0);
-  const onFrameRef = React.useRef(onFrameInfo);
-  onFrameRef.current = onFrameInfo;
 
   const scaleFactor =
     isDeterminate && morphSequence === undefined
@@ -77,6 +72,7 @@ export function LoadingIndicator({
       clamped === 1 && activeIndex === seqLen - 1 ? 1 : (clamped * seqLen) % 1;
 
     const pair = resolvedSequence[activeIndex];
+    if (!pair) return;
     const cubics = interpolateMorphCubics(pair, localProgress);
     const d = cubicsToSvgPath(cubics, size, scaleFactor);
     const rot = -clamped * 180;
@@ -88,20 +84,10 @@ export function LoadingIndicator({
         `rotate(${rot.toFixed(2)} ${size / 2} ${size / 2})`,
       );
     }
-    onFrameRef.current?.({
-      morphIndex: activeIndex,
-      fromShape: pair.from,
-      toShape: pair.to,
-      morphProgress: localProgress,
-      rotationDeg: rot,
-    });
   }, [isDeterminate, determinateProgress, resolvedSequence, size, scaleFactor]);
 
   React.useEffect(() => {
     if (isDeterminate || resolvedSequence.length === 0) return;
-
-    let rafId = 0;
-    let lastNow = performance.now();
 
     const renderAt = (elapsedMs: number) => {
       const interval = LOADING_INDICATOR_TOKENS.morphIntervalMs;
@@ -115,6 +101,7 @@ export function LoadingIndicator({
 
       const morphProgress = evaluateSpringDisplacement(springSpec, withinStepSec);
       const pair = resolvedSequence[morphIndex];
+      if (!pair) return;
       const cubics = interpolateMorphCubics(pair, morphProgress);
       const d = cubicsToSvgPath(cubics, size, scaleFactor);
 
@@ -137,32 +124,20 @@ export function LoadingIndicator({
           `rotate(${rotationDeg.toFixed(2)} ${size / 2} ${size / 2})`,
         );
       }
-      onFrameRef.current?.({
-        morphIndex,
-        fromShape: pair.from,
-        toShape: pair.to,
-        morphProgress,
-        rotationDeg,
-      });
     };
 
     renderAt(virtualElapsedMsRef.current);
 
-    if (isPaused) {
+    if (isPaused || typeof requestAnimationFrame !== "function") {
       return;
     }
 
-    const tick = (now: number) => {
-      const dt = Math.min(64, Math.max(0, now - lastNow));
-      lastNow = now;
-      const rate = prefersReducedMotion ? Math.min(0.4, playbackRate) : playbackRate;
-      virtualElapsedMsRef.current += dt * rate;
+    const rate = prefersReducedMotion ? Math.min(0.4, playbackRate) : playbackRate;
+    return subscribeSpringFrame((dtSec) => {
+      virtualElapsedMsRef.current += dtSec * 1000 * rate;
       renderAt(virtualElapsedMsRef.current);
-      rafId = requestAnimationFrame(tick);
-    };
-
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
+      return true;
+    });
   }, [isDeterminate, isPaused, playbackRate, prefersReducedMotion, resolvedSequence, size, scaleFactor]);
 
   const ariaValueNow = isDeterminate

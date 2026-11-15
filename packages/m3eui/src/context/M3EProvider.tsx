@@ -11,18 +11,21 @@ import { Tooltip as BaseTooltip } from "@base-ui/react/tooltip";
 import {
   type ColorPlatform,
   type ColorSchemeVariant,
-  type ColorSpecVersion,
-  EXPRESSIVE_MOTION_SCHEME,
-  type M3EThemeTokens,
   MOTION_SCHEMES,
-  type MotionScheme,
   type MotionSchemeName,
-  generateM3ESystemCssVars,
   generateM3EThemeTokens,
-  generateM3ETypographyCssVars,
 } from "../tokens/index.js";
 import { M3EToastViewportHost } from "../components/Toast.js";
 import {
+  type ColorMode,
+  M3EContext,
+  type M3EContextValue,
+  useM3E,
+  useM3EI18n,
+} from "./M3EContext.js";
+import { M3EPortalContext } from "./M3EPortal.js";
+import {
+  M3E_COLOR_SCHEME_STORAGE_KEY,
   type M3EConfig,
   type M3EDirectionSetting,
   generateM3EMotionCssVars,
@@ -32,114 +35,23 @@ import {
 import {
   type M3ELocale,
   type M3EMessageOverrides,
-  type M3EMessages,
-  type M3ETranslateFn,
   canonicalizeBcp47Locale,
   createM3ETranslator,
-  enUSMessages,
   isRtlLocale,
   resolveM3EMessages,
 } from "../i18n/index.js";
 
-export type ColorMode = "system" | "light" | "dark";
-export type { TextDirection };
-export { CSPProvider };
+export type { ColorMode, M3EContextValue, TextDirection };
+export { CSPProvider, useM3E, useM3EI18n };
 
-export const M3E_COLOR_SCHEME_STORAGE_KEY = "m3e-color-scheme";
-
-export function getM3EInitScript(
-  storageKey: string = M3E_COLOR_SCHEME_STORAGE_KEY,
-): string {
-  const safeKey = JSON.stringify(storageKey);
-  return `try{var s=localStorage.getItem(${safeKey});var m=document.querySelector('meta[name="color-scheme"]');if(m)m.content=(s==="light"||s==="dark")?s:"light dark";}catch(e){}`;
-}
-
-export interface M3EContextValue {
-  readonly seedHex: string;
-  readonly setSeedHex: (hex: string) => void;
-  readonly schemeVariant: ColorSchemeVariant;
-  readonly setSchemeVariant: (variant: ColorSchemeVariant) => void;
-  readonly specVersion: ColorSpecVersion;
-  readonly setSpecVersion: (specVersion: ColorSpecVersion) => void;
-  readonly platform: ColorPlatform;
-  readonly setPlatform: (platform: ColorPlatform) => void;
-  readonly contrastLevel: number;
-  readonly setContrastLevel: (level: number) => void;
-  readonly colorMode: ColorMode;
-  readonly setColorMode: (mode: ColorMode) => void;
-  readonly locale: M3ELocale;
-  readonly setLocale: (locale: M3ELocale) => void;
-  readonly messages: M3EMessages;
-  readonly t: M3ETranslateFn;
-  readonly directionMode: M3EDirectionSetting;
-  readonly setDirectionMode: (mode: M3EDirectionSetting) => void;
-  readonly direction: TextDirection;
-  readonly setDirection: (dir: TextDirection) => void;
-  readonly motionSchemeName: MotionSchemeName;
-  readonly setMotionSchemeName: (name: MotionSchemeName) => void;
-  readonly motionScheme: MotionScheme;
-  readonly playbackRate: number;
-  readonly setPlaybackRate: (rate: number) => void;
-  readonly paused: boolean;
-  readonly setPaused: (paused: boolean) => void;
-  readonly debugGeometry: boolean;
-  readonly setDebugGeometry: (debug: boolean) => void;
-  readonly prefersReducedMotion: boolean;
-  readonly themeTokens: M3EThemeTokens;
-  readonly exportConfigJson: () => string;
-}
-
-const DEFAULT_THEME = generateM3EThemeTokens({
-  seedHex: "#6750A4",
-  variant: "expressive",
-  contrastLevel: 0,
-  specVersion: "2025",
-  platform: "phone",
-});
-
-const DEFAULT_TRANSLATOR = createM3ETranslator("en-US");
-
-const M3EContext = React.createContext<M3EContextValue>({
-  seedHex: "#6750A4",
-  setSeedHex: () => {},
-  schemeVariant: "expressive",
-  setSchemeVariant: () => {},
-  specVersion: "2025",
-  setSpecVersion: () => {},
-  platform: "phone",
-  setPlatform: () => {},
-  contrastLevel: 0,
-  setContrastLevel: () => {},
-  colorMode: "system",
-  setColorMode: () => {},
-  locale: "en-US",
-  setLocale: () => {},
-  messages: enUSMessages,
-  t: DEFAULT_TRANSLATOR,
-  directionMode: "auto",
-  setDirectionMode: () => {},
-  direction: "ltr",
-  setDirection: () => {},
-  motionSchemeName: "expressive",
-  setMotionSchemeName: () => {},
-  motionScheme: EXPRESSIVE_MOTION_SCHEME,
-  playbackRate: 1,
-  setPlaybackRate: () => {},
-  paused: false,
-  setPaused: () => {},
-  debugGeometry: false,
-  setDebugGeometry: () => {},
-  prefersReducedMotion: false,
-  themeTokens: DEFAULT_THEME,
-  exportConfigJson: () => serializeM3EConfig({}),
-});
+const useIsoLayoutEffect =
+  typeof window !== "undefined" ? React.useLayoutEffect : React.useEffect;
 
 export interface M3EProviderProps {
   readonly children: React.ReactNode;
   readonly config?: M3EConfig;
   readonly initialSeedHex?: string;
   readonly initialSchemeVariant?: ColorSchemeVariant;
-  readonly initialSpecVersion?: ColorSpecVersion;
   readonly initialPlatform?: ColorPlatform;
   readonly initialContrastLevel?: number;
   readonly initialColorMode?: ColorMode;
@@ -152,6 +64,7 @@ export interface M3EProviderProps {
   readonly cspNonce?: string;
   readonly cspDisableStyleElements?: boolean;
   readonly syncDocumentRoot?: boolean;
+  readonly portalContainer?: HTMLElement | null;
 }
 
 export function M3EProvider({
@@ -159,7 +72,6 @@ export function M3EProvider({
   config,
   initialSeedHex,
   initialSchemeVariant,
-  initialSpecVersion,
   initialPlatform,
   initialContrastLevel,
   initialColorMode,
@@ -172,6 +84,7 @@ export function M3EProvider({
   cspNonce,
   cspDisableStyleElements,
   syncDocumentRoot = true,
+  portalContainer: explicitPortalContainer,
 }: M3EProviderProps): React.JSX.Element {
   const resolvedCfg = React.useMemo(() => resolveM3EConfig(config), [config]);
 
@@ -180,9 +93,6 @@ export function M3EProvider({
   );
   const [schemeVariant, setSchemeVariant] = React.useState<ColorSchemeVariant>(
     initialSchemeVariant ?? resolvedCfg.schemeVariant,
-  );
-  const [specVersion, setSpecVersion] = React.useState<ColorSpecVersion>(
-    initialSpecVersion ?? resolvedCfg.specVersion,
   );
   const [platform, setPlatform] = React.useState<ColorPlatform>(
     initialPlatform ?? resolvedCfg.platform,
@@ -195,17 +105,10 @@ export function M3EProvider({
   }, []);
 
   const fallbackColorMode = initialColorMode ?? resolvedCfg.colorMode;
-  const [colorMode, setColorMode] = React.useState<ColorMode>(() => {
-    if (typeof window === "undefined") return fallbackColorMode;
-    try {
-      const saved = window.localStorage.getItem(M3E_COLOR_SCHEME_STORAGE_KEY);
-      if (saved === "light" || saved === "dark") {
-        return saved;
-      }
-    } catch {
-    }
-    return fallbackColorMode;
-  });
+  const [colorMode, setColorMode] = React.useState<ColorMode>(fallbackColorMode);
+  const storageHydratedRef = React.useRef(false);
+  const [portalContainer, setPortalContainer] =
+    React.useState<HTMLElement | null>(null);
 
   const [uncontrolledLocale, setUncontrolledLocale] = React.useState<M3ELocale>(
     initialLocale ?? resolvedCfg.locale,
@@ -238,6 +141,15 @@ export function M3EProvider({
   const [debugGeometry, setDebugGeometry] = React.useState<boolean>(false);
   const [prefersReducedMotion, setPrefersReducedMotion] =
     React.useState<boolean>(false);
+  const [prefersDarkColorScheme, setPrefersDarkColorScheme] =
+    React.useState<boolean>(false);
+
+  const resolvedColorMode: "light" | "dark" =
+    colorMode === "system"
+      ? prefersDarkColorScheme
+        ? "dark"
+        : "light"
+      : colorMode;
 
   const mergedOverrides = React.useMemo<M3EMessageOverrides | undefined>(() => {
     if (!resolvedCfg.messages && !propMessageOverrides) return undefined;
@@ -265,18 +177,32 @@ export function M3EProvider({
   }, []);
 
   React.useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    setPrefersDarkColorScheme(mq.matches);
+    const onChange = (e: MediaQueryListEvent) =>
+      setPrefersDarkColorScheme(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  React.useEffect(() => {
     if (!syncDocumentRoot || typeof window === "undefined") return;
     const onStorage = (e: StorageEvent) => {
       if (e.key !== M3E_COLOR_SCHEME_STORAGE_KEY) return;
-      if (e.newValue === "light" || e.newValue === "dark") {
+      if (
+        e.newValue === "light" ||
+        e.newValue === "dark" ||
+        e.newValue === "system"
+      ) {
         setColorMode(e.newValue);
       } else {
-        setColorMode("system");
+        setColorMode(fallbackColorMode);
       }
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
-  }, [syncDocumentRoot]);
+  }, [fallbackColorMode, syncDocumentRoot]);
 
   const themeTokens = React.useMemo(
     () =>
@@ -284,32 +210,40 @@ export function M3EProvider({
         seedHex,
         variant: schemeVariant,
         contrastLevel,
-        specVersion,
         platform,
       }),
-    [seedHex, schemeVariant, contrastLevel, specVersion, platform],
+    [seedHex, schemeVariant, contrastLevel, platform],
   );
 
   const motionScheme = MOTION_SCHEMES[motionSchemeName];
 
-  const staticFoundationVars = React.useMemo(
-    () => ({
-      ...generateM3ESystemCssVars(),
-      ...generateM3ETypographyCssVars(),
-    }),
-    [],
-  );
-
   const cssVars = React.useMemo(() => {
     return {
-      ...staticFoundationVars,
       ...themeTokens.cssLightDarkVars,
       ...generateM3EMotionCssVars(motionScheme, playbackRate),
     } as Record<string, string>;
-  }, [staticFoundationVars, themeTokens, motionScheme, playbackRate]);
+  }, [themeTokens, motionScheme, playbackRate]);
 
-  React.useEffect(() => {
+  useIsoLayoutEffect(() => {
     if (!syncDocumentRoot || typeof document === "undefined") return;
+    if (!storageHydratedRef.current) {
+      storageHydratedRef.current = true;
+      if (!initialColorMode) {
+        try {
+          const saved = window.localStorage.getItem(
+            M3E_COLOR_SCHEME_STORAGE_KEY,
+          );
+          if (
+            (saved === "light" || saved === "dark" || saved === "system") &&
+            saved !== colorMode
+          ) {
+            setColorMode(saved);
+            return;
+          }
+        } catch {
+        }
+      }
+    }
     const metaContent = colorMode === "system" ? "light dark" : colorMode;
     let meta = document.querySelector<HTMLMetaElement>(
       'meta[name="color-scheme"]',
@@ -321,41 +255,106 @@ export function M3EProvider({
     }
     meta.setAttribute("content", metaContent);
     document.documentElement.dataset.colorMode = colorMode;
+    document.documentElement.style.colorScheme = metaContent;
     try {
-      if (colorMode === "system") {
+      if (colorMode === fallbackColorMode) {
         window.localStorage.removeItem(M3E_COLOR_SCHEME_STORAGE_KEY);
       } else {
         window.localStorage.setItem(M3E_COLOR_SCHEME_STORAGE_KEY, colorMode);
       }
     } catch {
     }
-  }, [colorMode, syncDocumentRoot]);
+  }, [colorMode, fallbackColorMode, initialColorMode, syncDocumentRoot]);
 
   const canonicalLocale = React.useMemo(
     () => canonicalizeBcp47Locale(activeLocale),
     [activeLocale],
   );
 
-  React.useEffect(() => {
+  useIsoLayoutEffect(() => {
     if (!syncDocumentRoot || typeof document === "undefined") return;
     document.documentElement.dir = direction;
     document.documentElement.lang = canonicalLocale;
   }, [direction, canonicalLocale, syncDocumentRoot]);
 
-  React.useEffect(() => {
+  const appliedCssVarsRef = React.useRef<Record<string, string>>({});
+
+  useIsoLayoutEffect(() => {
     if (!syncDocumentRoot || typeof document === "undefined") return;
     const rootStyle = document.documentElement.style;
-    for (const [k, v] of Object.entries(cssVars)) {
-      rootStyle.setProperty(k, v);
+    const prev = appliedCssVarsRef.current;
+    const nextKeys = Object.keys(cssVars);
+    for (const k of nextKeys) {
+      const nextVal = cssVars[k]!;
+      if (prev[k] !== nextVal) {
+        rootStyle.setProperty(k, nextVal);
+      }
     }
+    appliedCssVarsRef.current = cssVars;
   }, [cssVars, syncDocumentRoot]);
+
+  useIsoLayoutEffect(() => {
+    if (!syncDocumentRoot || typeof document === "undefined") return;
+    return () => {
+      const rootStyle = document.documentElement.style;
+      for (const k of Object.keys(appliedCssVarsRef.current)) {
+        rootStyle.removeProperty(k);
+      }
+      appliedCssVarsRef.current = {};
+    };
+  }, [syncDocumentRoot]);
+
+  useIsoLayoutEffect(() => {
+    if (
+      explicitPortalContainer !== undefined ||
+      syncDocumentRoot ||
+      typeof document === "undefined"
+    ) {
+      setPortalContainer(null);
+      return;
+    }
+    const host = document.createElement("div");
+    host.className = "m3e-scope";
+    host.dataset.m3ePortal = "";
+    document.body.appendChild(host);
+    setPortalContainer(host);
+    return () => {
+      host.remove();
+      setPortalContainer(null);
+    };
+  }, [explicitPortalContainer, syncDocumentRoot]);
+
+  useIsoLayoutEffect(() => {
+    if (!portalContainer) return;
+    portalContainer.lang = canonicalLocale;
+    portalContainer.dir = direction;
+    portalContainer.dataset.colorMode = colorMode;
+    portalContainer.dataset.motionScheme = motionSchemeName;
+    if (debugGeometry) {
+      portalContainer.dataset.debugGeometry = "";
+    } else {
+      delete portalContainer.dataset.debugGeometry;
+    }
+    portalContainer.style.colorScheme =
+      colorMode === "system" ? "light dark" : colorMode;
+    for (const [k, v] of Object.entries(cssVars)) {
+      portalContainer.style.setProperty(k, v);
+    }
+  }, [
+    portalContainer,
+    canonicalLocale,
+    direction,
+    colorMode,
+    motionSchemeName,
+    debugGeometry,
+    cssVars,
+  ]);
 
   const exportConfigJson = React.useCallback(
     () =>
       serializeM3EConfig({
         seedHex,
         schemeVariant,
-        specVersion,
         platform,
         colorMode,
         contrastLevel,
@@ -367,7 +366,6 @@ export function M3EProvider({
     [
       seedHex,
       schemeVariant,
-      specVersion,
       platform,
       colorMode,
       contrastLevel,
@@ -384,13 +382,12 @@ export function M3EProvider({
       setSeedHex,
       schemeVariant,
       setSchemeVariant,
-      specVersion,
-      setSpecVersion,
       platform,
       setPlatform,
       contrastLevel,
       setContrastLevel,
       colorMode,
+      resolvedColorMode,
       setColorMode,
       locale: canonicalLocale,
       setLocale: setUncontrolledLocale,
@@ -416,11 +413,11 @@ export function M3EProvider({
     [
       seedHex,
       schemeVariant,
-      specVersion,
       platform,
       contrastLevel,
       setContrastLevel,
       colorMode,
+      resolvedColorMode,
       canonicalLocale,
       messages,
       t,
@@ -442,26 +439,43 @@ export function M3EProvider({
   const effectiveDisableStyles =
     cspDisableStyleElements ?? resolvedCfg.cspDisableStyleElements;
 
+  const effectivePortalContainer =
+    explicitPortalContainer !== undefined
+      ? explicitPortalContainer
+      : syncDocumentRoot
+        ? undefined
+        : portalContainer;
+
   const content = (
-    <DirectionProvider direction={direction}>
-      <BaseTooltip.Provider delay={280} timeout={400}>
-        <BaseToast.Provider limit={4} timeout={4200}>
-          <div
-            lang={canonicalLocale}
-            dir={direction}
-            className="m3e-scope"
-            data-motion-scheme={motionSchemeName}
-            data-debug-geometry={debugGeometry ? "" : undefined}
-            style={
-              syncDocumentRoot ? undefined : (cssVars as React.CSSProperties)
-            }
-          >
-            {children}
-          </div>
-          <M3EToastViewportHost />
-        </BaseToast.Provider>
-      </BaseTooltip.Provider>
-    </DirectionProvider>
+    <M3EPortalContext.Provider value={effectivePortalContainer}>
+      <DirectionProvider direction={direction}>
+        <BaseTooltip.Provider delay={280} timeout={400}>
+          <BaseToast.Provider limit={4} timeout={4000}>
+            <div
+              lang={canonicalLocale}
+              dir={direction}
+              className="m3e-scope"
+              data-color-mode={colorMode}
+              data-theme={resolvedColorMode}
+              data-motion-scheme={motionSchemeName}
+              data-debug-geometry={debugGeometry ? "" : undefined}
+              style={
+                syncDocumentRoot
+                  ? undefined
+                  : ({
+                      ...cssVars,
+                      colorScheme:
+                        colorMode === "system" ? "light dark" : colorMode,
+                    } as React.CSSProperties)
+              }
+            >
+              {children}
+            </div>
+            <M3EToastViewportHost />
+          </BaseToast.Provider>
+        </BaseTooltip.Provider>
+      </DirectionProvider>
+    </M3EPortalContext.Provider>
   );
 
   return (
@@ -478,19 +492,4 @@ export function M3EProvider({
       )}
     </M3EContext.Provider>
   );
-}
-
-export function useM3E(): M3EContextValue {
-  return React.useContext(M3EContext);
-}
-
-export function useM3EI18n(): {
-  readonly locale: M3ELocale;
-  readonly setLocale: (locale: M3ELocale) => void;
-  readonly direction: TextDirection;
-  readonly messages: M3EMessages;
-  readonly t: M3ETranslateFn;
-} {
-  const { locale, setLocale, direction, messages, t } = React.useContext(M3EContext);
-  return { locale, setLocale, direction, messages, t };
 }

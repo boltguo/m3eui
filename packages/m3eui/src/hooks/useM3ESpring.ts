@@ -5,7 +5,7 @@ import {
   type SpringPhysicsSpec,
   stepSpringSimulation,
 } from "../tokens/index.js";
-import { useM3E } from "../context/M3EProvider.js";
+import { useM3E } from "../context/M3EContext.js";
 
 type SpringFrameSubscriber = (dtSec: number) => boolean;
 
@@ -90,7 +90,7 @@ export function useM3EScalarSpringEffect(
   callbackRef.current = onUpdate;
 
   React.useEffect(() => {
-    if (paused || typeof requestAnimationFrame !== "function") {
+    if (paused || prefersReducedMotion || typeof requestAnimationFrame !== "function") {
       stateRef.current = { value: target, velocity: 0 };
       callbackRef.current(target);
       return;
@@ -140,6 +140,9 @@ export function useM3EScalarSpring(
   return current;
 }
 
+const useIsoLayoutEffect =
+  typeof window !== "undefined" ? React.useLayoutEffect : React.useEffect;
+
 export function useM3ECornerSpringRef<T extends HTMLElement = HTMLElement>(
   target: CornerTuple,
   tokenKey: MotionTokenKey = "defaultEffects",
@@ -160,7 +163,7 @@ export function useM3ECornerSpringRef<T extends HTMLElement = HTMLElement>(
   const currentRef = React.useRef<CornerTuple>(target);
   const velocityRef = React.useRef<[number, number, number, number]>([0, 0, 0, 0]);
 
-  if (paused) {
+  if (paused || prefersReducedMotion) {
     currentRef.current = target;
     velocityRef.current = [0, 0, 0, 0];
   }
@@ -183,7 +186,7 @@ export function useM3ECornerSpringRef<T extends HTMLElement = HTMLElement>(
   const [t0, t1, t2, t3] = target;
 
   React.useEffect(() => {
-    if (paused || typeof requestAnimationFrame !== "function") {
+    if (paused || prefersReducedMotion || typeof requestAnimationFrame !== "function") {
       velocityRef.current = [0, 0, 0, 0];
       flushToDom([t0, t1, t2, t3]);
       return;
@@ -250,6 +253,14 @@ export function useM3ECornerSpringRef<T extends HTMLElement = HTMLElement>(
     flushToDom,
   ]);
 
+  useIsoLayoutEffect(() => {
+    if (nodeRef.current) {
+      nodeRef.current.style.borderRadius = formatCornersBorderRadius(
+        currentRef.current,
+      );
+    }
+  });
+
   const mergedRef = React.useCallback(
     (node: T | null) => {
       nodeRef.current = node;
@@ -289,7 +300,7 @@ export function useM3ECornerSpring(
   const [t0, t1, t2, t3] = target;
 
   React.useEffect(() => {
-    if (paused || typeof requestAnimationFrame !== "function") {
+    if (paused || prefersReducedMotion || typeof requestAnimationFrame !== "function") {
       currentRef.current = [t0, t1, t2, t3];
       velocityRef.current = [0, 0, 0, 0];
       setCorners([t0, t1, t2, t3]);
@@ -358,8 +369,23 @@ export function useM3ECornerSpring(
 export function usePressHoldState(disabled = false, baseMinHoldMs = 95) {
   const { playbackRate } = useM3E();
   const [isPressed, setIsPressed] = React.useState(false);
-  const downTimeRef = React.useRef<number>(0);
+  const downTimeRef = React.useRef<number | null>(null);
   const releaseTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const cancelPress = React.useCallback(() => {
+    if (releaseTimerRef.current) {
+      clearTimeout(releaseTimerRef.current);
+      releaseTimerRef.current = null;
+    }
+    downTimeRef.current = null;
+    setIsPressed(false);
+  }, []);
+
+  React.useEffect(() => {
+    if (disabled) {
+      cancelPress();
+    }
+  }, [disabled, cancelPress]);
 
   React.useEffect(() => {
     return () => {
@@ -367,24 +393,33 @@ export function usePressHoldState(disabled = false, baseMinHoldMs = 95) {
     };
   }, []);
 
+  React.useEffect(() => {
+    if (!isPressed || typeof window === "undefined") return;
+    const onWindowBlur = () => cancelPress();
+    window.addEventListener("blur", onWindowBlur);
+    return () => window.removeEventListener("blur", onWindowBlur);
+  }, [isPressed, cancelPress]);
+
   const beginPress = React.useCallback(() => {
     if (disabled) return;
     if (releaseTimerRef.current) {
       clearTimeout(releaseTimerRef.current);
       releaseTimerRef.current = null;
     }
-    downTimeRef.current = performance.now();
+    downTimeRef.current =
+      typeof performance !== "undefined" ? performance.now() : Date.now();
     setIsPressed(true);
   }, [disabled]);
 
   const endPress = React.useCallback(() => {
-    if (!downTimeRef.current) {
-      setIsPressed(false);
+    if (downTimeRef.current === null) {
       return;
     }
+    const now =
+      typeof performance !== "undefined" ? performance.now() : Date.now();
     const minHold = baseMinHoldMs / Math.max(0.1, playbackRate);
-    const elapsed = performance.now() - downTimeRef.current;
-    downTimeRef.current = 0;
+    const elapsed = now - downTimeRef.current;
+    downTimeRef.current = null;
 
     if (elapsed >= minHold) {
       setIsPressed(false);
@@ -400,20 +435,33 @@ export function usePressHoldState(disabled = false, baseMinHoldMs = 95) {
   const pressHandlers = React.useMemo(
     () => ({
       onPointerDown: (e: React.PointerEvent<HTMLElement>) => {
-        if (e.button === 0) beginPress();
+        if (e.button === 0 && !(e.ctrlKey && e.pointerType === "mouse")) {
+          beginPress();
+        }
       },
       onPointerUp: () => endPress(),
-      onPointerLeave: () => endPress(),
-      onPointerCancel: () => endPress(),
+      onPointerLeave: (e?: React.PointerEvent<HTMLElement>) => {
+        if (e?.pointerType === "touch") return;
+        if (downTimeRef.current !== null) {
+          cancelPress();
+        }
+      },
+      onPointerCancel: () => cancelPress(),
+      onLostPointerCapture: () => {
+        if (downTimeRef.current !== null) {
+          cancelPress();
+        }
+      },
       onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => {
+        if (e.repeat) return;
         if (e.key === " " || e.key === "Enter") beginPress();
       },
       onKeyUp: (e: React.KeyboardEvent<HTMLElement>) => {
         if (e.key === " " || e.key === "Enter") endPress();
       },
-      onBlur: () => endPress(),
+      onBlur: () => cancelPress(),
     }),
-    [beginPress, endPress],
+    [beginPress, endPress, cancelPress],
   );
 
   return { isPressed, pressHandlers };

@@ -1,11 +1,18 @@
 import * as React from "react";
 import { Combobox as BaseCombobox } from "@base-ui/react/combobox";
+import { Field as BaseField } from "@base-ui/react/field";
 import { SELECT_TOKENS } from "../tokens/index.js";
-import { useM3EI18n } from "../context/M3EProvider.js";
+import { useM3EPortalContainer } from "../context/M3EPortal.js";
+import { useM3EI18n } from "../context/M3EContext.js";
 import {
   useM3ECornerSpringRef,
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
+import {
+  FieldErrorIconSvg,
+  FieldNotchedOutline,
+  useFieldsetDisabled,
+} from "../internal/fieldOutline.js";
 
 export interface ComboboxOption {
   readonly value: string;
@@ -16,27 +23,42 @@ export interface ComboboxOption {
 
 export interface M3EComboboxProps {
   readonly options: readonly ComboboxOption[];
-  readonly value?: ComboboxOption | null;
-  readonly defaultValue?: ComboboxOption | null;
+  readonly value?: ComboboxOption | string | null;
+  readonly defaultValue?: ComboboxOption | string | null;
   readonly onValueChange?: (option: ComboboxOption | null) => void;
   readonly variant?: "outlined" | "filled";
   readonly labelPosition?: "floating" | "outside";
   readonly label?: React.ReactNode;
   readonly placeholder?: string;
   readonly emptyMessage?: React.ReactNode;
+  readonly description?: React.ReactNode;
+  readonly errorMessage?: React.ReactNode;
+  readonly invalid?: boolean;
+  readonly clearable?: boolean;
   readonly disabled?: boolean;
+  readonly readOnly?: boolean;
   readonly required?: boolean;
+  readonly leadingIcon?: React.ReactNode;
   readonly name?: string;
   readonly id?: string;
+  readonly "aria-label"?: string;
   readonly className?: string;
   readonly style?: React.CSSProperties;
 }
 
-function SearchSvg() {
+function assignRef<T>(ref: React.ForwardedRef<T>, value: T | null): void {
+  if (typeof ref === "function") {
+    ref(value);
+  } else if (ref) {
+    ref.current = value;
+  }
+}
+
+function ChevronSvg() {
   return (
     <svg
-      width={17}
-      height={17}
+      width={18}
+      height={18}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -45,8 +67,7 @@ function SearchSvg() {
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      <circle cx="11" cy="11" r="8" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+      <polyline points="6 9 12 15 18 9" />
     </svg>
   );
 }
@@ -137,41 +158,435 @@ function ComboboxOptionRow({
   );
 }
 
-export function Combobox({
-  options,
-  value: controlledValue,
-  defaultValue,
-  onValueChange,
-  variant = "outlined",
-  labelPosition = "floating",
-  label,
-  placeholder,
-  emptyMessage,
-  disabled = false,
-  required = false,
-  name,
-  id,
-  className,
-  style,
-}: M3EComboboxProps): React.JSX.Element {
+export const Combobox = React.forwardRef<HTMLInputElement, M3EComboboxProps>(
+  function Combobox(
+    {
+      options,
+      value: controlledValue,
+      defaultValue,
+      onValueChange,
+      variant = "outlined",
+      labelPosition = "floating",
+      label,
+      placeholder,
+      emptyMessage,
+      description,
+      errorMessage,
+      invalid,
+      clearable = true,
+      disabled,
+      readOnly = false,
+      required = false,
+      leadingIcon,
+      name,
+      id,
+      "aria-label": ariaLabel,
+      className,
+      style,
+    },
+    forwardedRef,
+  ): React.JSX.Element {
+    const { t } = useM3EI18n();
+    const portalContainer = useM3EPortalContainer();
+    const isDisabled = useFieldsetDisabled(disabled);
+    const resolvedPlaceholder = placeholder ?? t("combobox.placeholder");
+    const resolvedEmptyMessage = emptyMessage ?? t("combobox.empty");
+    const generatedId = React.useId();
+    const inputId = id ?? generatedId;
+    const shellRef = React.useRef<HTMLDivElement | null>(null);
+    const inputRef = React.useRef<HTMLInputElement | null>(null);
+    const normalizeOption = React.useCallback(
+      (raw: ComboboxOption | string | null | undefined): ComboboxOption | null => {
+        if (raw == null) return null;
+        if (typeof raw === "string") {
+          return options.find((opt) => opt.value === raw) ?? { value: raw, label: raw };
+        }
+        return options.find((opt) => opt.value === raw.value) ?? raw;
+      },
+      [options],
+    );
+
+    const defaultValRef = React.useRef<ComboboxOption | null>(
+      normalizeOption(defaultValue),
+    );
+    defaultValRef.current = normalizeOption(defaultValue);
+
+    const [uncontrolledValue, setUncontrolledValue] =
+      React.useState<ComboboxOption | null>(() => normalizeOption(defaultValue));
+    const [isOpen, setIsOpen] = React.useState(false);
+    const [isFocused, setIsFocused] = React.useState(false);
+
+    React.useEffect(() => {
+      if (controlledValue !== undefined) return;
+      const form = inputRef.current?.form;
+      if (!form) return;
+      const onReset = () => {
+        setUncontrolledValue(defaultValRef.current);
+      };
+      form.addEventListener("reset", onReset);
+      return () => form.removeEventListener("reset", onReset);
+    }, [controlledValue]);
+
+    const rawCurrentValue =
+      controlledValue !== undefined ? controlledValue : uncontrolledValue;
+
+    const resolvedCurrentValue = React.useMemo(
+      () => normalizeOption(rawCurrentValue),
+      [rawCurrentValue, normalizeOption],
+    );
+
+    const [inputText, setInputText] = React.useState<string>(
+      () => resolvedCurrentValue?.label ?? "",
+    );
+
+    const resolveOptionLabel = React.useCallback(
+      (item: ComboboxOption) =>
+        options.find((opt) => opt.value === item.value)?.label ?? item.label ?? "",
+      [options],
+    );
+
+    const effectiveOpen = readOnly ? false : isOpen;
+    const hasExplicitError = Boolean(invalid || errorMessage);
+    const resolvedLabelText = resolvedCurrentValue
+      ? resolveOptionLabel(resolvedCurrentValue)
+      : "";
+    const hasValue = resolvedLabelText.length > 0 || inputText.length > 0;
+    const isFloatingLabel = labelPosition === "floating" && Boolean(label);
+    const isLabelFloated = isFocused || effectiveOpen || hasValue;
+
+    const height = isFloatingLabel
+      ? variant === "filled"
+        ? SELECT_TOKENS.filledHeight
+        : SELECT_TOKENS.outlinedHeight
+      : 48;
+
+    const baseRadius = isFloatingLabel
+      ? variant === "filled"
+        ? SELECT_TOKENS.filledTopRadius
+        : SELECT_TOKENS.outlinedRadius
+      : SELECT_TOKENS.outsideLabelRadius;
+
+    const containerRadius =
+      variant === "filled"
+        ? `${baseRadius}px ${baseRadius}px ${SELECT_TOKENS.filledBottomRadius}px ${SELECT_TOKENS.filledBottomRadius}px`
+        : `${baseRadius}px`;
+
+    return (
+      <BaseField.Root
+        name={name}
+        disabled={isDisabled || undefined}
+        invalid={errorMessage ? true : invalid}
+        className={
+          className
+            ? `m3e-field m3e-field-root m3e-combobox ${className}`
+            : "m3e-field m3e-field-root m3e-combobox"
+        }
+        data-label-position={labelPosition}
+        data-readonly={readOnly ? "" : undefined}
+        style={style}
+      >
+        <BaseCombobox.Root
+          items={options}
+          value={resolvedCurrentValue}
+          disabled={isDisabled}
+          readOnly={readOnly}
+          required={required}
+          name={name}
+          openOnInputClick={!readOnly}
+          open={effectiveOpen}
+          onOpenChange={(next) => {
+            if (readOnly && next) return;
+            setIsOpen(next);
+          }}
+          autoHighlight
+          isItemEqualToValue={(a, b) => a.value === b.value}
+          itemToStringLabel={resolveOptionLabel}
+          itemToStringValue={(item) => item.value}
+          onInputValueChange={(val) => setInputText(val)}
+          onValueChange={(next) => {
+            if (readOnly) return;
+            const resolved = next ?? null;
+            if (controlledValue === undefined) {
+              setUncontrolledValue(resolved);
+            }
+            onValueChange?.(resolved);
+          }}
+        >
+          {label && !isFloatingLabel ? (
+            <BaseField.Label className="m3e-field__label">
+              {label}
+              {required ? (
+                <span className="m3e-field__required" aria-hidden="true">
+                  {" "}*
+                </span>
+              ) : null}
+            </BaseField.Label>
+          ) : null}
+          {description && !isFloatingLabel ? (
+            <BaseField.Description className="m3e-field__description">
+              {description}
+            </BaseField.Description>
+          ) : null}
+
+          <div
+            ref={shellRef}
+            className="m3e-combobox__shell"
+            data-variant={variant}
+            data-label-position={labelPosition}
+            data-floating={isLabelFloated ? "" : undefined}
+            data-popup-open={effectiveOpen ? "" : undefined}
+            data-disabled={isDisabled ? "" : undefined}
+            data-readonly={readOnly ? "" : undefined}
+            data-invalid={hasExplicitError ? "" : undefined}
+            data-has-leading={leadingIcon ? "" : undefined}
+            style={{
+              minHeight: `${height}px`,
+              borderRadius: containerRadius,
+            }}
+          >
+            {isFloatingLabel && variant === "outlined" ? (
+              <FieldNotchedOutline
+                label={label}
+                required={required}
+                floating={isLabelFloated}
+              />
+            ) : null}
+
+            {leadingIcon ? (
+              <span className="m3e-text-field__affix" aria-hidden="true">
+                {leadingIcon}
+              </span>
+            ) : null}
+
+            <div className="m3e-text-field__control-stack">
+              {isFloatingLabel ? (
+                <BaseField.Label
+                  className="m3e-field__floating-label"
+                  data-floating={isLabelFloated ? "" : undefined}
+                >
+                  {label}
+                  {required ? (
+                    <span className="m3e-field__required" aria-hidden="true">
+                      {" "}*
+                    </span>
+                  ) : null}
+                </BaseField.Label>
+              ) : null}
+              <BaseCombobox.Input
+                ref={(node) => {
+                  const inputNode =
+                    node instanceof HTMLInputElement ? node : null;
+                  inputRef.current = inputNode;
+                  assignRef(forwardedRef, inputNode);
+                }}
+                id={inputId}
+                readOnly={readOnly}
+                aria-label={!label ? ariaLabel ?? resolvedPlaceholder : undefined}
+                placeholder={resolvedPlaceholder}
+                autoCorrect="off"
+                autoCapitalize="none"
+                spellCheck={false}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                className="m3e-combobox__input"
+              />
+            </div>
+
+            {clearable && !isDisabled && !readOnly ? (
+              <BaseCombobox.Clear
+                aria-label={t("combobox.clear")}
+                className="m3e-text-field__icon-btn m3e-combobox__clear"
+              >
+                <ClearSvg />
+              </BaseCombobox.Clear>
+            ) : null}
+
+            <BaseCombobox.Trigger
+              className="m3e-combobox__trigger"
+              aria-label={t("combobox.toggle")}
+              aria-labelledby={undefined}
+              tabIndex={-1}
+              disabled={isDisabled || readOnly}
+              data-open={effectiveOpen ? "" : undefined}
+            >
+              <ChevronSvg />
+            </BaseCombobox.Trigger>
+          </div>
+
+          <BaseCombobox.Portal container={portalContainer}>
+            <BaseCombobox.Positioner
+              anchor={shellRef}
+              side="bottom"
+              align="start"
+              sideOffset={6}
+              className="m3e-select__positioner"
+            >
+              <BaseCombobox.Popup
+                className="m3e-select__popup m3e-combobox__popup"
+                style={{
+                  borderRadius: `${SELECT_TOKENS.popupRadius}px`,
+                }}
+              >
+                <BaseCombobox.Empty className="m3e-combobox__empty">
+                  {resolvedEmptyMessage}
+                </BaseCombobox.Empty>
+                <BaseCombobox.List
+                  className="m3e-select__list"
+                  style={{
+                    padding: `${SELECT_TOKENS.popupPadding}px`,
+                    gap: `${SELECT_TOKENS.itemGap}px`,
+                  }}
+                >
+                  {(option: ComboboxOption) => (
+                    <ComboboxOptionRow
+                      key={option.value}
+                      option={option}
+                      isSelected={resolvedCurrentValue?.value === option.value}
+                    />
+                  )}
+                </BaseCombobox.List>
+              </BaseCombobox.Popup>
+            </BaseCombobox.Positioner>
+          </BaseCombobox.Portal>
+        </BaseCombobox.Root>
+
+        {isFloatingLabel && description ? (
+          <div className="m3e-field__supporting-row">
+            <BaseField.Description className="m3e-field__description">
+              {description}
+            </BaseField.Description>
+          </div>
+        ) : null}
+
+        {!isDisabled ? (
+          <BaseField.Error
+            match={hasExplicitError ? true : undefined}
+            className="m3e-field__error"
+            render={(errorProps) => {
+              const resolvedMessage =
+                errorMessage ??
+                errorProps.children ??
+                (invalid ? t("textField.defaultInvalid") : null);
+              return (
+                <div {...errorProps}>
+                  <FieldErrorIconSvg label={t("textField.errorIcon")} />
+                  <span>{resolvedMessage}</span>
+                </div>
+              );
+            }}
+          />
+        ) : null}
+      </BaseField.Root>
+    );
+  },
+);
+
+export interface M3EMultiComboboxProps {
+  readonly options: readonly ComboboxOption[];
+  readonly value?: readonly ComboboxOption[];
+  readonly defaultValue?: readonly ComboboxOption[];
+  readonly onValueChange?: (options: ComboboxOption[]) => void;
+  readonly variant?: "outlined" | "filled";
+  readonly labelPosition?: "floating" | "outside";
+  readonly label?: React.ReactNode;
+  readonly placeholder?: string;
+  readonly emptyMessage?: React.ReactNode;
+  readonly description?: React.ReactNode;
+  readonly errorMessage?: React.ReactNode;
+  readonly invalid?: boolean;
+  readonly clearable?: boolean;
+  readonly disabled?: boolean;
+  readonly readOnly?: boolean;
+  readonly required?: boolean;
+  readonly leadingIcon?: React.ReactNode;
+  readonly name?: string;
+  readonly id?: string;
+  readonly "aria-label"?: string;
+  readonly className?: string;
+  readonly style?: React.CSSProperties;
+}
+
+export const MultiCombobox = React.forwardRef<
+  HTMLInputElement,
+  M3EMultiComboboxProps
+>(function MultiCombobox(
+  {
+    options,
+    value: controlledValue,
+    defaultValue = [],
+    onValueChange,
+    variant = "outlined",
+    labelPosition = "floating",
+    label,
+    placeholder,
+    emptyMessage,
+    description,
+    errorMessage,
+    invalid,
+    clearable = true,
+    disabled,
+    readOnly = false,
+    required = false,
+    leadingIcon,
+    name,
+    id,
+    "aria-label": ariaLabel,
+    className,
+    style,
+  },
+  forwardedRef,
+): React.JSX.Element {
   const { t } = useM3EI18n();
+  const portalContainer = useM3EPortalContainer();
+  const isDisabled = useFieldsetDisabled(disabled);
   const resolvedPlaceholder = placeholder ?? t("combobox.placeholder");
   const resolvedEmptyMessage = emptyMessage ?? t("combobox.empty");
   const generatedId = React.useId();
   const inputId = id ?? generatedId;
-  const [uncontrolledValue, setUncontrolledValue] =
-    React.useState<ComboboxOption | null>(defaultValue ?? null);
-  const [inputText, setInputText] = React.useState<string>(
-    defaultValue?.label ?? "",
-  );
+  const anchorRef = React.useRef<HTMLDivElement | null>(null);
+  const inputRef = React.useRef<HTMLInputElement | null>(null);
+  const defaultValRef = React.useRef<readonly ComboboxOption[]>(defaultValue);
+  defaultValRef.current = defaultValue;
+
+  const [uncontrolledValues, setUncontrolledValues] = React.useState<
+    readonly ComboboxOption[]
+  >(defaultValue);
+  const [inputText, setInputText] = React.useState<string>("");
+  const [isOpen, setIsOpen] = React.useState(false);
   const [isFocused, setIsFocused] = React.useState(false);
 
-  const currentValue =
-    controlledValue !== undefined ? controlledValue : uncontrolledValue;
+  React.useEffect(() => {
+    if (controlledValue !== undefined) return;
+    const form = inputRef.current?.form;
+    if (!form) return;
+    const onReset = () => {
+      setUncontrolledValues(defaultValRef.current);
+    };
+    form.addEventListener("reset", onReset);
+    return () => form.removeEventListener("reset", onReset);
+  }, [controlledValue]);
 
+  const rawCurrentValues =
+    controlledValue !== undefined ? controlledValue : uncontrolledValues;
+
+  const currentValues = React.useMemo(
+    () =>
+      rawCurrentValues.map(
+        (item) => options.find((opt) => opt.value === item.value) ?? item,
+      ),
+    [rawCurrentValues, options],
+  );
+
+  const selectedValueSet = React.useMemo(
+    () => new Set(currentValues.map((v) => v.value)),
+    [currentValues],
+  );
+
+  const effectiveOpen = readOnly ? false : isOpen;
+  const hasExplicitError = Boolean(invalid || errorMessage);
   const isFloatingLabel = labelPosition === "floating" && Boolean(label);
   const isLabelFloated =
-    isFocused || currentValue !== null || inputText.length > 0;
+    isFocused || effectiveOpen || currentValues.length > 0 || inputText.length > 0;
 
   const height = isFloatingLabel
     ? variant === "filled"
@@ -190,110 +605,235 @@ export function Combobox({
       ? `${baseRadius}px ${baseRadius}px ${SELECT_TOKENS.filledBottomRadius}px ${SELECT_TOKENS.filledBottomRadius}px`
       : `${baseRadius}px`;
 
+  const resolveOptionLabel = React.useCallback(
+    (item: ComboboxOption) =>
+      options.find((opt) => opt.value === item.value)?.label ?? item.label,
+    [options],
+  );
+
+  const handleValuesChange = (resolved: ComboboxOption[]) => {
+    if (controlledValue === undefined) {
+      setUncontrolledValues(resolved);
+    }
+    onValueChange?.(resolved);
+  };
+
+  const showClear = Boolean(
+    clearable && !isDisabled && !readOnly && currentValues.length > 0,
+  );
+
   return (
-    <div
-      className={className ? `m3e-combobox ${className}` : "m3e-combobox"}
+    <BaseField.Root
+      name={name}
+      disabled={isDisabled || undefined}
+      invalid={errorMessage ? true : invalid}
+      className={
+        className
+          ? `m3e-field m3e-field-root m3e-combobox m3e-multi-combobox ${className}`
+          : "m3e-field m3e-field-root m3e-combobox m3e-multi-combobox"
+      }
       data-label-position={labelPosition}
+      data-readonly={readOnly ? "" : undefined}
       style={style}
     >
       <BaseCombobox.Root
+        multiple
         items={options}
-        value={controlledValue}
-        defaultValue={defaultValue}
-        disabled={disabled}
+        value={currentValues}
+        disabled={isDisabled}
+        readOnly={readOnly}
         required={required}
         name={name}
+        openOnInputClick={!readOnly}
+        open={effectiveOpen}
+        onOpenChange={(next) => {
+          if (readOnly && next) return;
+          setIsOpen(next);
+        }}
         autoHighlight
         isItemEqualToValue={(a, b) => a.value === b.value}
-        itemToStringLabel={(item) => item.label}
+        itemToStringLabel={resolveOptionLabel}
         itemToStringValue={(item) => item.value}
         onInputValueChange={(val) => setInputText(val)}
         onValueChange={(next) => {
-          const resolved = next ?? null;
-          if (controlledValue === undefined) {
-            setUncontrolledValue(resolved);
-          }
-          onValueChange?.(resolved);
+          if (readOnly) return;
+          const resolved = Array.isArray(next) ? next : [];
+          handleValuesChange(resolved);
         }}
       >
         {label && !isFloatingLabel ? (
-          <label htmlFor={inputId} className="m3e-field__label">
+          <BaseField.Label className="m3e-field__label">
             {label}
             {required ? (
               <span className="m3e-field__required" aria-hidden="true">
                 {" "}*
               </span>
             ) : null}
-          </label>
+          </BaseField.Label>
+        ) : null}
+        {description && !isFloatingLabel ? (
+          <BaseField.Description className="m3e-field__description">
+            {description}
+          </BaseField.Description>
         ) : null}
 
         <div
-          className="m3e-combobox__shell"
+          ref={anchorRef}
+          className="m3e-combobox__shell m3e-multi-combobox__shell"
           data-variant={variant}
           data-label-position={labelPosition}
           data-floating={isLabelFloated ? "" : undefined}
-          data-has-leading=""
+          data-popup-open={effectiveOpen ? "" : undefined}
+          data-disabled={isDisabled ? "" : undefined}
+          data-readonly={readOnly ? "" : undefined}
+          data-invalid={hasExplicitError ? "" : undefined}
+          data-has-leading={leadingIcon ? "" : undefined}
           style={{
             minHeight: `${height}px`,
             borderRadius: containerRadius,
           }}
+          onClick={(e) => {
+            if (
+              !isDisabled &&
+              !(e.target as HTMLElement).closest("button")
+            ) {
+              inputRef.current?.focus();
+            }
+          }}
         >
           {isFloatingLabel && variant === "outlined" ? (
-            <fieldset
-              aria-hidden="true"
-              className="m3e-field__outline"
-              data-floating={isLabelFloated ? "" : undefined}
-            >
-              <legend className="m3e-field__outline-legend">
-                <span>
-                  {label}
-                  {required ? " *" : ""}
-                </span>
-              </legend>
-            </fieldset>
+            <FieldNotchedOutline
+              label={label}
+              required={required}
+              floating={isLabelFloated}
+            />
           ) : null}
 
-          <span className="m3e-text-field__affix" aria-hidden="true">
-            <SearchSvg />
-          </span>
+          {leadingIcon ? (
+            <span className="m3e-text-field__affix" aria-hidden="true">
+              {leadingIcon}
+            </span>
+          ) : null}
 
-          <div className="m3e-text-field__control-stack">
-            {isFloatingLabel ? (
-              <label
-                htmlFor={inputId}
-                className="m3e-field__floating-label"
-                data-floating={isLabelFloated ? "" : undefined}
-              >
-                {label}
-                {required ? (
-                  <span className="m3e-field__required" aria-hidden="true">
-                    {" "}*
-                  </span>
-                ) : null}
-              </label>
-            ) : null}
-            <BaseCombobox.Input
-              id={inputId}
-              placeholder={resolvedPlaceholder}
-              autoCorrect="off"
-              autoCapitalize="none"
-              spellCheck={false}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              className="m3e-combobox__input"
-            />
-          </div>
+          {isFloatingLabel ? (
+            <BaseField.Label
+              className="m3e-field__floating-label m3e-select__floating-label"
+              data-floating={isLabelFloated ? "" : undefined}
+              style={
+                leadingIcon
+                  ? {
+                      insetInlineStart:
+                        isLabelFloated && variant === "outlined"
+                          ? "16px"
+                          : "44px",
+                    }
+                  : undefined
+              }
+            >
+              {label}
+              {required ? (
+                <span className="m3e-field__required" aria-hidden="true">
+                  {" "}*
+                </span>
+              ) : null}
+            </BaseField.Label>
+          ) : null}
 
-          <BaseCombobox.Clear
-            aria-label={t("combobox.clear")}
-            className="m3e-text-field__icon-btn m3e-combobox__clear"
+          <BaseCombobox.Chips className="m3e-multi-combobox__chips">
+            <BaseCombobox.Value>
+              {(selected: ComboboxOption[]) => (
+                <React.Fragment>
+                  {selected.map((opt) => {
+                    const resolvedLabel = resolveOptionLabel(opt);
+                    return (
+                      <BaseCombobox.Chip
+                        key={opt.value}
+                        className="m3e-multi-combobox__chip"
+                        aria-label={resolvedLabel}
+                      >
+                        <span className="m3e-multi-combobox__chip-text">
+                          {resolvedLabel}
+                        </span>
+                        {!isDisabled && !readOnly ? (
+                          <BaseCombobox.ChipRemove
+                            aria-label={t("chip.removeItem", {
+                              label: resolvedLabel,
+                            })}
+                            className="m3e-multi-combobox__chip-remove"
+                          >
+                            <ClearSvg />
+                          </BaseCombobox.ChipRemove>
+                        ) : null}
+                      </BaseCombobox.Chip>
+                    );
+                  })}
+                  <BaseCombobox.Input
+                    ref={(node) => {
+                      const inputNode =
+                        node instanceof HTMLInputElement ? node : null;
+                      inputRef.current = inputNode;
+                      assignRef(forwardedRef, inputNode);
+                    }}
+                    id={inputId}
+                    readOnly={readOnly}
+                    aria-label={
+                      !label ? ariaLabel ?? resolvedPlaceholder : undefined
+                    }
+                    size={
+                      selected.length === 0
+                        ? undefined
+                        : Math.max(2, inputText.length + 1)
+                    }
+                    placeholder={
+                      selected.length === 0 ? resolvedPlaceholder : ""
+                    }
+                    data-has-tags={selected.length > 0 ? "" : undefined}
+                    data-draft-empty={inputText.length === 0 ? "" : undefined}
+                    autoCorrect="off"
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                    onKeyDown={(e) => {
+                      if (
+                        (readOnly || isDisabled) &&
+                        (e.key === "Backspace" || e.key === "Delete")
+                      ) {
+                        e.preventDefault();
+                      }
+                    }}
+                    className="m3e-combobox__input m3e-multi-combobox__input"
+                  />
+                </React.Fragment>
+              )}
+            </BaseCombobox.Value>
+          </BaseCombobox.Chips>
+
+          {showClear ? (
+            <BaseCombobox.Clear
+              keepMounted
+              aria-label={t("combobox.clear")}
+              className="m3e-text-field__icon-btn m3e-combobox__clear"
+            >
+              <ClearSvg />
+            </BaseCombobox.Clear>
+          ) : null}
+
+          <BaseCombobox.Trigger
+            className="m3e-combobox__trigger"
+            aria-label={t("combobox.toggle")}
+            aria-labelledby={undefined}
+            tabIndex={-1}
+            disabled={isDisabled || readOnly}
+            data-open={effectiveOpen ? "" : undefined}
           >
-            <ClearSvg />
-          </BaseCombobox.Clear>
+            <ChevronSvg />
+          </BaseCombobox.Trigger>
         </div>
 
-        <BaseCombobox.Portal>
+        <BaseCombobox.Portal container={portalContainer}>
           <BaseCombobox.Positioner
+            anchor={anchorRef}
             side="bottom"
             align="start"
             sideOffset={6}
@@ -303,7 +843,6 @@ export function Combobox({
               className="m3e-select__popup m3e-combobox__popup"
               style={{
                 borderRadius: `${SELECT_TOKENS.popupRadius}px`,
-                padding: `${SELECT_TOKENS.popupPadding}px`,
               }}
             >
               <BaseCombobox.Empty className="m3e-combobox__empty">
@@ -311,13 +850,16 @@ export function Combobox({
               </BaseCombobox.Empty>
               <BaseCombobox.List
                 className="m3e-select__list"
-                style={{ gap: `${SELECT_TOKENS.itemGap}px` }}
+                style={{
+                  padding: `${SELECT_TOKENS.popupPadding}px`,
+                  gap: `${SELECT_TOKENS.itemGap}px`,
+                }}
               >
                 {(option: ComboboxOption) => (
                   <ComboboxOptionRow
                     key={option.value}
                     option={option}
-                    isSelected={currentValue?.value === option.value}
+                    isSelected={selectedValueSet.has(option.value)}
                   />
                 )}
               </BaseCombobox.List>
@@ -325,6 +867,33 @@ export function Combobox({
           </BaseCombobox.Positioner>
         </BaseCombobox.Portal>
       </BaseCombobox.Root>
-    </div>
+
+      {isFloatingLabel && description ? (
+        <div className="m3e-field__supporting-row">
+          <BaseField.Description className="m3e-field__description">
+            {description}
+          </BaseField.Description>
+        </div>
+      ) : null}
+
+      {!isDisabled ? (
+        <BaseField.Error
+          match={hasExplicitError ? true : undefined}
+          className="m3e-field__error"
+          render={(errorProps) => {
+            const resolvedMessage =
+              errorMessage ??
+              errorProps.children ??
+              (invalid ? t("textField.defaultInvalid") : null);
+            return (
+              <div {...errorProps}>
+                <FieldErrorIconSvg label={t("textField.errorIcon")} />
+                <span>{resolvedMessage}</span>
+              </div>
+            );
+          }}
+        />
+      ) : null}
+    </BaseField.Root>
   );
-}
+});

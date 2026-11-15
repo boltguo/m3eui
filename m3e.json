@@ -4,14 +4,13 @@
   "theme": {
     "seed": "#6750A4",
     "schemeVariant": "expressive",
-    "specVersion": "2025",
     "platform": "phone",
     "colorMode": "system",
     "contrastLevel": 0,
     "motionScheme": "expressive"
   },
   "i18n": {
-    "locale": "zh-CN",
+    "locale": "en-US",
     "direction": "auto"
   },
   "css": {

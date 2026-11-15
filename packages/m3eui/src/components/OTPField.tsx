@@ -1,15 +1,16 @@
 import * as React from "react";
+import { Field as BaseField } from "@base-ui/react/field";
 import { OTPField as BaseOTPField } from "@base-ui/react/otp-field";
 import {
   OTP_FIELD_TOKENS,
-  flipCornersHorizontal,
   resolveOtpSlotCorners,
 } from "../tokens/index.js";
-import { useM3E } from "../context/M3EProvider.js";
+import { useM3E } from "../context/M3EContext.js";
 import {
-  useM3ECornerSpring,
+  useM3ECornerSpringRef,
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
+import { FieldErrorIconSvg, useFieldsetDisabled } from "../internal/fieldOutline.js";
 
 export interface M3EOTPFieldProps {
   readonly length?: number;
@@ -20,10 +21,15 @@ export interface M3EOTPFieldProps {
   readonly onValueComplete?: (value: string) => void;
   readonly label?: React.ReactNode;
   readonly helperText?: React.ReactNode;
+  readonly errorMessage?: React.ReactNode;
+  readonly invalid?: boolean;
+  readonly name?: string;
+  readonly id?: string;
   readonly mask?: boolean;
   readonly validationType?: "numeric" | "alphanumeric" | "alpha" | "none";
   readonly enableWebOTP?: boolean;
   readonly disabled?: boolean;
+  readonly "aria-label"?: string;
   readonly className?: string;
   readonly style?: React.CSSProperties;
 }
@@ -41,11 +47,11 @@ function OTPSlotCell({
   readonly isLastInGroup: boolean;
   readonly disabled: boolean;
 }) {
-  const { direction, t } = useM3E();
+  const { t } = useM3E();
   const [focused, setFocused] = React.useState(false);
   const { isPressed, pressHandlers } = usePressHoldState(disabled);
 
-  const rawCorners = resolveOtpSlotCorners({
+  const corners = resolveOtpSlotCorners({
     index,
     count: length,
     isFirstInGroup,
@@ -53,13 +59,13 @@ function OTPSlotCell({
     isFocused: focused,
     isPressed,
   });
-  const corners =
-    direction === "rtl" ? flipCornersHorizontal(rawCorners) : rawCorners;
 
-  const { borderRadiusCss } = useM3ECornerSpring(corners, "fastSpatial");
+  const { ref: slotRef, borderRadiusCss } =
+    useM3ECornerSpringRef<HTMLInputElement>(corners, "fastSpatial");
 
   return (
     <BaseOTPField.Input
+      ref={slotRef}
       aria-label={
         index === 0 ? undefined : t("otpField.digitLabel", { index: index + 1 })
       }
@@ -93,24 +99,47 @@ export function OTPField({
   onValueComplete,
   label,
   helperText,
+  errorMessage,
+  invalid = false,
+  name,
+  id,
   mask = false,
   validationType = "numeric",
   enableWebOTP = false,
-  disabled = false,
+  disabled,
+  "aria-label": ariaLabel,
   className,
   style,
 }: M3EOTPFieldProps): React.JSX.Element {
-  const firstInputId = React.useId();
+  const { t } = useM3E();
+  const isDisabled = useFieldsetDisabled(disabled);
+  const generatedId = React.useId();
+  const firstInputId = id ?? generatedId;
   const hintId = React.useId();
+  const wrapRef = React.useRef<HTMLDivElement | null>(null);
+  const defaultValRef = React.useRef(defaultValue ?? "");
+  defaultValRef.current = defaultValue ?? "";
+
   const [uncontrolledVal, setUncontrolledVal] = React.useState<string>(
     defaultValue ?? "",
   );
   const currentVal = controlledValue ?? uncontrolledVal;
 
   React.useEffect(() => {
+    if (controlledValue !== undefined) return;
+    const form = wrapRef.current?.closest("form");
+    if (!form) return;
+    const onReset = () => {
+      setUncontrolledVal(defaultValRef.current);
+    };
+    form.addEventListener("reset", onReset);
+    return () => form.removeEventListener("reset", onReset);
+  }, [controlledValue]);
+
+  React.useEffect(() => {
     if (
       !enableWebOTP ||
-      disabled ||
+      isDisabled ||
       typeof window === "undefined" ||
       !("OTPCredential" in window) ||
       typeof navigator === "undefined" ||
@@ -145,20 +174,25 @@ export function OTPField({
     return () => {
       ac.abort();
     };
-  }, [enableWebOTP, disabled, length, controlledValue, onValueChange, onValueComplete]);
+  }, [enableWebOTP, isDisabled, length, controlledValue, onValueChange, onValueComplete]);
 
   return (
-    <div
+    <BaseField.Root
+      ref={wrapRef}
+      name={name}
+      disabled={isDisabled || undefined}
+      invalid={invalid || undefined}
       className={
         className ? `m3e-otp-field-wrap ${className}` : "m3e-otp-field-wrap"
       }
       style={style}
     >
-      {label ? (
-        <label htmlFor={firstInputId} className="m3e-otp-field__label">
-          {label}
-        </label>
-      ) : null}
+      <label
+        htmlFor={firstInputId}
+        className={label ? "m3e-otp-field__label" : "m3e-sr-only"}
+      >
+        {label ?? ariaLabel ?? t("otpField.digitLabel", { index: 1 })}
+      </label>
 
       {helperText ? (
         <p id={hintId} className="m3e-otp-field__hint">
@@ -168,14 +202,16 @@ export function OTPField({
 
       <BaseOTPField.Root
         id={firstInputId}
+        name={name}
+        dir="ltr"
+        aria-label={ariaLabel}
         length={length}
-        value={controlledValue}
-        defaultValue={defaultValue}
+        value={currentVal}
         autoComplete="one-time-code"
         inputMode={validationType === "numeric" ? "numeric" : "text"}
         validationType={validationType}
         mask={mask}
-        disabled={disabled}
+        disabled={isDisabled}
         aria-describedby={helperText ? hintId : undefined}
         onValueChange={(next) => {
           if (controlledValue === undefined) {
@@ -208,7 +244,7 @@ export function OTPField({
                 length={length}
                 isFirstInGroup={isFirstInGroup}
                 isLastInGroup={isLastInGroup}
-                disabled={disabled}
+                disabled={isDisabled}
               />
               {hasSepAfter ? (
                 <BaseOTPField.Separator className="m3e-otp-field__separator">
@@ -219,6 +255,13 @@ export function OTPField({
           );
         })}
       </BaseOTPField.Root>
-    </div>
+
+      {invalid ? (
+        <div className="m3e-field__error" role="alert">
+          <FieldErrorIconSvg label={t("textField.errorIcon")} />
+          <span>{errorMessage ?? t("textField.defaultInvalid")}</span>
+        </div>
+      ) : null}
+    </BaseField.Root>
   );
 }

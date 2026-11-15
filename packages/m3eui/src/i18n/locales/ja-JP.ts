@@ -1,7 +1,13 @@
 import type { M3EMessages } from "../types.js";
 
 export const jaJPMessages: M3EMessages = {
+  "alert.close": "アラートを閉じる",
+
   "badge.overflow": "{max}+",
+  "badge.unreadCount": "{count} 件の通知",
+
+  "breadcrumb.ariaLabel": "パンくずリスト",
+  "breadcrumb.more": "省略された階層を表示",
 
   "carousel.roleDescription": "カルーセル",
   "carousel.slideRoleDescription": "スライド",
@@ -15,6 +21,7 @@ export const jaJPMessages: M3EMessages = {
   "carousel.listLabel": "スライド一覧",
 
   "chip.remove": "チップを削除",
+  "chip.removeItem": "{label} を削除",
 
   "collapsible.expandAll": "すべて展開",
   "collapsible.collapseAll": "すべて折りたたむ",
@@ -22,7 +29,13 @@ export const jaJPMessages: M3EMessages = {
   "combobox.placeholder": "キーワードで絞り込み…",
   "combobox.empty": "一致する項目がありません",
   "combobox.clear": "選択をクリア",
+  "combobox.toggle": "候補を開閉",
+  "command.ariaLabel": "コマンドパレット",
+  "command.placeholder": "コマンドまたは検索キーワードを入力…",
+  "command.empty": "一致するコマンドが見つかりません",
+  "command.navigateHint": "↑↓ 移動 · ↵ 実行 · Esc 閉じる",
   "select.placeholder": "選択してください…",
+  "select.clear": "選択項目をクリア",
 
   "dataTable.empty": "一致するデータがありません",
   "dataTable.sortedAscending": "{column} で昇順に並べ替えました",
@@ -35,13 +48,20 @@ export const jaJPMessages: M3EMessages = {
   "datePicker.selectEndPrompt": " · 終了日を選択してください",
   "datePicker.prevMonth": "前の月",
   "datePicker.nextMonth": "次の月",
+  "datePicker.prevYears": "前の年リスト",
+  "datePicker.nextYears": "次の年リスト",
   "datePicker.selectYear": "年を選択",
   "datePicker.calendarLabel": "{monthYear} のカレンダー",
   "datePicker.rangeCalendarLabel": "{monthYear} の期間選択カレンダー",
 
   "dialog.close": "ダイアログを閉じる",
+  "sheet.ariaLabel": "シート",
   "sheet.close": "シートを閉じる",
   "toast.close": "通知を閉じる",
+  "toast.viewportLabel": "通知",
+
+  "empty.title": "データがありません",
+  "empty.description": "表示できる項目がありません。条件を変更するか新しく作成してください。",
 
   "fabMenu.triggerOpen": "クイック操作",
   "fabMenu.triggerClose": "クイックメニューを閉じる",
@@ -71,12 +91,19 @@ export const jaJPMessages: M3EMessages = {
   "numberField.increment": "値を増やす",
   "otpField.digitLabel": "認証コード {index} 桁目",
 
+  "pagination.ariaLabel": "ページネーション",
+  "pagination.previous": "前のページ",
+  "pagination.next": "次のページ",
+  "pagination.page": "{page} ページ",
+  "pagination.summary": "全 {total} 件中 {start}–{end} 件",
+
   "searchBar.placeholder": "検索…",
   "searchBar.ariaLabel": "検索",
   "searchBar.empty": "一致する候補がありません",
   "searchBar.submit": "検索を実行",
   "searchBar.clear": "検索語句をクリア",
 
+  "slider.ariaLabel": "スライダー",
   "slider.rangeStart": "{label} (開始)",
   "slider.rangeEnd": "{label} (終了)",
 
@@ -101,6 +128,58 @@ export const jaJPMessages: M3EMessages = {
   "timePicker.minuteDial": "分ダイヤル",
   "timePicker.am": "午前",
   "timePicker.pm": "午後",
+  "timePicker.confirm": "決定",
+  "timePicker.cancel": "キャンセル",
 
   "topAppBar.actionsLabel": "アプリバーの操作",
+  "topAppBar.moreActions": "その他の操作",
+  "bottomAppBar.ariaLabel": "ボトムアプリバー",
+  "dragHandle.ariaLabel": "ペインのサイズを変更",
+  "pullToRefresh.pulling": "引っ張って更新",
+  "pullToRefresh.release": "離して更新",
+  "pullToRefresh.refreshing": "更新中",
+
+  "dockedToolbar.ariaLabel": "下部固定ツールバー",
+  "searchView.back": "戻る",
+  "searchView.recentHeading": "最近の検索",
+  "searchView.clearRecent": "履歴を消去",
+  "searchView.suggestionsHeading": "検索候補",
+
+  "select.selectedCount": "{count} 件選択中",
+
+  "datePicker.switchToInput": "テキスト日付入力に切り替え",
+  "datePicker.switchToCalendar": "カレンダー選択に切り替え",
+  "datePicker.confirm": "決定",
+  "datePicker.cancel": "キャンセル",
+  "datePicker.dateInputLabel": "日付 (YYYY-MM-DD)",
+  "datePicker.dateInputPlaceholder": "YYYY-MM-DD",
+
+  "dataTable.expandColumn": "詳細",
+  "dataTable.expandRow": "{index} 行目の詳細を展開",
+  "dataTable.collapseRow": "{index} 行目の詳細を折りたたむ",
+
+  "avatarGroup.overflowLabel": "他 {count} 名",
+
+  "fileUpload.dropPrompt": "ファイルをここにドラッグ＆ドロップ、または",
+  "fileUpload.browseButton": "ファイルを選択",
+  "fileUpload.dropHint": "クリックまたはドラッグでアップロード",
+  "fileUpload.removeFile": "{name} を削除",
+  "fileUpload.errorMaxSize": "{name} は上限サイズ ({max}) を超えています",
+  "fileUpload.errorMaxFiles": "アップロードできるのは最大 {max} 件までです",
+  "fileUpload.errorFileType": "{name} は対応していないファイル形式です",
+  "fileUpload.uploading": "アップロード中",
+  "fileUpload.completed": "完了",
+
+  "copyButton.copy": "クリップボードにコピー",
+  "copyButton.copied": "コピーしました",
+  "copyButton.error": "コピーに失敗しました",
+
+  "colorPicker.ariaLabel": "カラーピッカー",
+  "colorPicker.hexLabel": "HEX カラー",
+  "colorPicker.hue": "色相 (H)",
+  "colorPicker.chroma": "彩度 (C)",
+  "colorPicker.tone": "トーン (T)",
+  "colorPicker.swatchesLabel": "プリセットカラー",
+  "colorPicker.derivedTones": "HCT トーン階調",
+  "colorPicker.toneStop": "トーン {tone} {hex}",
 };

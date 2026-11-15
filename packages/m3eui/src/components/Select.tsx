@@ -1,12 +1,20 @@
 import * as React from "react";
+import { Field as BaseField } from "@base-ui/react/field";
 import { Select as BaseSelect } from "@base-ui/react/select";
 import { SELECT_TOKENS } from "../tokens/index.js";
-import { useM3EI18n } from "../context/M3EProvider.js";
+import { useM3EPortalContainer } from "../context/M3EPortal.js";
+import { useM3EI18n } from "../context/M3EContext.js";
+import { formatLocalizedInteger } from "../i18n/index.js";
 import {
   useM3ECornerSpringRef,
   useM3EScalarSpring,
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
+import {
+  FieldErrorIconSvg,
+  FieldNotchedOutline,
+  useFieldsetDisabled,
+} from "../internal/fieldOutline.js";
 
 export type SelectVariant = "outlined" | "filled";
 export type SelectLabelPosition = "floating" | "outside";
@@ -19,8 +27,14 @@ export interface SelectOption<Value extends string = string> {
   readonly disabled?: boolean;
 }
 
-export interface M3ESelectProps<Value extends string = string> {
+export interface SelectOptionGroup<Value extends string = string> {
+  readonly label: string;
   readonly options: readonly SelectOption<Value>[];
+}
+
+export interface M3ESelectProps<Value extends string = string> {
+  readonly options?: readonly SelectOption<Value>[];
+  readonly groups?: readonly SelectOptionGroup<Value>[];
   readonly value?: Value | null;
   readonly defaultValue?: Value | null;
   readonly onValueChange?: (value: Value | null) => void;
@@ -28,13 +42,26 @@ export interface M3ESelectProps<Value extends string = string> {
   readonly labelPosition?: SelectLabelPosition;
   readonly label?: string;
   readonly placeholder?: string;
+  readonly description?: React.ReactNode;
+  readonly errorMessage?: React.ReactNode;
+  readonly invalid?: boolean;
+  readonly clearable?: boolean;
   readonly disabled?: boolean;
+  readonly readOnly?: boolean;
   readonly required?: boolean;
   readonly name?: string;
   readonly id?: string;
   readonly "aria-label"?: string;
   readonly className?: string;
   readonly style?: React.CSSProperties;
+}
+
+function assignRef<T>(ref: React.ForwardedRef<T>, value: T | null): void {
+  if (typeof ref === "function") {
+    ref(value);
+  } else if (ref) {
+    ref.current = value;
+  }
 }
 
 function ChevronSvg() {
@@ -51,6 +78,24 @@ function ChevronSvg() {
       aria-hidden="true"
     >
       <polyline points="6 9 12 15 18 9" />
+    </svg>
+  );
+}
+
+function ClearSvg() {
+  return (
+    <svg
+      width={14}
+      height={14}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.3"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
     </svg>
   );
 }
@@ -119,43 +164,74 @@ function SelectOptionRow<Value extends string>({
         </span>
       ) : null}
       <span className="m3e-select__item-text">
-        <BaseSelect.ItemText className="m3e-select__item-label">
+        <BaseSelect.ItemText
+          className="m3e-select__item-label"
+          data-text={option.label}
+        >
           {option.label}
         </BaseSelect.ItemText>
         {option.description ? (
           <span className="m3e-select__item-desc">{option.description}</span>
         ) : null}
       </span>
-      <BaseSelect.ItemIndicator className="m3e-select__item-check">
+      <BaseSelect.ItemIndicator keepMounted className="m3e-select__item-check">
         <CheckMarkSvg />
       </BaseSelect.ItemIndicator>
     </BaseSelect.Item>
   );
 }
 
-export function Select<Value extends string = string>({
-  options,
-  value: controlledValue,
-  defaultValue,
-  onValueChange,
-  variant = "outlined",
-  labelPosition = "floating",
-  label,
-  placeholder,
-  disabled = false,
-  required = false,
-  name,
-  id,
-  "aria-label": ariaLabel,
-  className,
-  style,
-}: M3ESelectProps<Value>): React.JSX.Element {
+function SelectInner<Value extends string = string>(
+  {
+    options = [],
+    groups,
+    value: controlledValue,
+    defaultValue,
+    onValueChange,
+    variant = "outlined",
+    labelPosition = "floating",
+    label,
+    placeholder,
+    description,
+    errorMessage,
+    invalid,
+    clearable = false,
+    disabled,
+    readOnly = false,
+    required = false,
+    name,
+    id,
+    "aria-label": ariaLabel,
+    className,
+    style,
+  }: M3ESelectProps<Value>,
+  forwardedRef: React.ForwardedRef<HTMLButtonElement>,
+): React.JSX.Element {
   const { t } = useM3EI18n();
+  const portalContainer = useM3EPortalContainer();
+  const isDisabled = useFieldsetDisabled(disabled);
   const resolvedPlaceholder = placeholder ?? t("select.placeholder");
+  const triggerRef = React.useRef<HTMLButtonElement | null>(null);
+  const defaultValRef = React.useRef<Value | null>(defaultValue ?? null);
+  defaultValRef.current = defaultValue ?? null;
+
   const [isOpen, setIsOpen] = React.useState(false);
   const [uncontrolledValue, setUncontrolledValue] = React.useState<Value | null>(
     defaultValue ?? null,
   );
+
+  React.useEffect(() => {
+    if (controlledValue !== undefined) return;
+    const form = triggerRef.current?.closest("form");
+    if (!form) return;
+    const onReset = () => {
+      setUncontrolledValue(defaultValRef.current);
+    };
+    form.addEventListener("reset", onReset);
+    return () => form.removeEventListener("reset", onReset);
+  }, [controlledValue]);
+
+  const effectiveOpen = readOnly ? false : isOpen;
   const currentValue =
     controlledValue !== undefined ? controlledValue : uncontrolledValue;
 
@@ -164,16 +240,22 @@ export function Select<Value extends string = string>({
     currentValue !== undefined &&
     String(currentValue).length > 0;
   const isFloatingLabel = labelPosition === "floating" && Boolean(label);
-  const isLabelFloated = isOpen || hasSelection;
+  const isLabelFloated = effectiveOpen || hasSelection;
+  const hasExplicitError = Boolean(invalid || errorMessage);
 
-  const chevronDeg = useM3EScalarSpring(isOpen ? 180 : 0, "fastSpatial");
+  const chevronDeg = useM3EScalarSpring(effectiveOpen ? 180 : 0, "fastSpatial");
 
   const generatedId = React.useId();
   const triggerId = id ?? generatedId;
 
+  const flatOptions = React.useMemo(
+    () => (groups ? groups.flatMap((g) => g.options) : options),
+    [groups, options],
+  );
+
   const itemsMap = React.useMemo(
-    () => options.map((o) => ({ value: o.value, label: o.label })),
-    [options],
+    () => flatOptions.map((o) => ({ value: o.value, label: o.label })),
+    [flatOptions],
   );
 
   const height = isFloatingLabel
@@ -193,67 +275,87 @@ export function Select<Value extends string = string>({
       ? `${baseRadius}px ${baseRadius}px ${SELECT_TOKENS.filledBottomRadius}px ${SELECT_TOKENS.filledBottomRadius}px`
       : `${baseRadius}px`;
 
+  const handleCommit = (resolved: Value | null) => {
+    if (controlledValue === undefined) {
+      setUncontrolledValue(resolved);
+    }
+    onValueChange?.(resolved);
+  };
+
+  const showClearBtn = Boolean(
+    clearable && hasSelection && !isDisabled && !readOnly,
+  );
+
   return (
-    <div
-      className={className ? `m3e-select-field ${className}` : "m3e-select-field"}
+    <BaseField.Root
+      name={name}
+      disabled={isDisabled || undefined}
+      invalid={errorMessage ? true : invalid}
+      className={
+        className
+          ? `m3e-field m3e-field-root m3e-select-field ${className}`
+          : "m3e-field m3e-field-root m3e-select-field"
+      }
       data-label-position={labelPosition}
-      data-disabled={disabled ? "" : undefined}
+      data-readonly={readOnly ? "" : undefined}
       style={style}
     >
       {label && !isFloatingLabel ? (
-        <label htmlFor={triggerId} className="m3e-field__label">
+        <BaseField.Label className="m3e-field__label">
           {label}
           {required ? (
             <span className="m3e-field__required" aria-hidden="true">
               {" "}*
             </span>
           ) : null}
-        </label>
+        </BaseField.Label>
+      ) : null}
+      {description && !isFloatingLabel ? (
+        <BaseField.Description className="m3e-field__description">
+          {description}
+        </BaseField.Description>
       ) : null}
       <BaseSelect.Root
         id={triggerId}
         name={name}
         items={itemsMap}
-        value={controlledValue}
-        defaultValue={defaultValue}
-        disabled={disabled}
+        value={currentValue}
+        disabled={isDisabled}
+        readOnly={readOnly}
         required={required}
         modal={false}
-        onOpenChange={(next) => setIsOpen(next)}
+        open={effectiveOpen}
+        onOpenChange={(next) => {
+          if (readOnly && next) return;
+          setIsOpen(next);
+        }}
         onValueChange={(next) => {
-          const resolved = (next as Value | null) ?? null;
-          if (controlledValue === undefined) {
-            setUncontrolledValue(resolved);
-          }
-          onValueChange?.(resolved);
+          if (readOnly) return;
+          handleCommit((next as Value | null) ?? null);
         }}
       >
         <div
-          className="m3e-select__shell"
+          className="m3e-select__shell m3e-select-shell"
           data-variant={variant}
           data-label-position={labelPosition}
           data-floating={isLabelFloated ? "" : undefined}
-          data-popup-open={isOpen ? "" : undefined}
+          data-popup-open={effectiveOpen ? "" : undefined}
+          data-disabled={isDisabled ? "" : undefined}
+          data-readonly={readOnly ? "" : undefined}
+          data-invalid={hasExplicitError ? "" : undefined}
+          data-clearable={showClearBtn ? "" : undefined}
           style={{ borderRadius: triggerRadius }}
         >
           {isFloatingLabel && variant === "outlined" ? (
-            <fieldset
-              aria-hidden="true"
-              className="m3e-field__outline"
-              data-floating={isLabelFloated ? "" : undefined}
-            >
-              <legend className="m3e-field__outline-legend">
-                <span>
-                  {label}
-                  {required ? " *" : ""}
-                </span>
-              </legend>
-            </fieldset>
+            <FieldNotchedOutline
+              label={label}
+              required={required}
+              floating={isLabelFloated}
+            />
           ) : null}
 
           {isFloatingLabel ? (
-            <label
-              htmlFor={triggerId}
+            <BaseField.Label
               className="m3e-field__floating-label m3e-select__floating-label"
               data-floating={isLabelFloated ? "" : undefined}
             >
@@ -263,15 +365,23 @@ export function Select<Value extends string = string>({
                   {" "}*
                 </span>
               ) : null}
-            </label>
+            </BaseField.Label>
           ) : null}
 
           <BaseSelect.Trigger
+            ref={(node) => {
+              const btnNode =
+                node instanceof HTMLButtonElement ? node : null;
+              triggerRef.current = btnNode;
+              assignRef(forwardedRef, btnNode);
+            }}
             aria-label={!label ? ariaLabel ?? resolvedPlaceholder : undefined}
-            className="m3e-select__trigger"
+            aria-invalid={hasExplicitError ? true : undefined}
+            className="m3e-select__trigger m3e-select-trigger"
             data-variant={variant}
             data-label-position={labelPosition}
             data-floating={isLabelFloated ? "" : undefined}
+            data-readonly={readOnly ? "" : undefined}
             style={{
               minHeight: `${height}px`,
               paddingInline: `${SELECT_TOKENS.paddingInline}px`,
@@ -289,9 +399,29 @@ export function Select<Value extends string = string>({
               <ChevronSvg />
             </BaseSelect.Icon>
           </BaseSelect.Trigger>
+
+          {showClearBtn ? (
+            <button
+              type="button"
+              aria-label={t("select.clear")}
+              className="m3e-select__clear-btn"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleCommit(null);
+                triggerRef.current?.focus();
+              }}
+            >
+              <ClearSvg />
+            </button>
+          ) : null}
         </div>
 
-        <BaseSelect.Portal>
+        <BaseSelect.Portal container={portalContainer}>
           <BaseSelect.Positioner
             alignItemWithTrigger={false}
             side="bottom"
@@ -303,25 +433,461 @@ export function Select<Value extends string = string>({
               className="m3e-select__popup"
               style={{
                 borderRadius: `${SELECT_TOKENS.popupRadius}px`,
-                padding: `${SELECT_TOKENS.popupPadding}px`,
               }}
             >
               <BaseSelect.List
                 className="m3e-select__list"
-                style={{ gap: `${SELECT_TOKENS.itemGap}px` }}
+                style={{
+                  padding: `${SELECT_TOKENS.popupPadding}px`,
+                  gap: `${SELECT_TOKENS.itemGap}px`,
+                }}
               >
-                {options.map((opt) => (
-                  <SelectOptionRow
-                    key={opt.value}
-                    option={opt}
-                    isSelected={currentValue === opt.value}
-                  />
-                ))}
+                {groups
+                  ? groups.map((group) => (
+                      <BaseSelect.Group
+                        key={group.label}
+                        className="m3e-select__group"
+                      >
+                        <BaseSelect.GroupLabel className="m3e-select__group-label">
+                          {group.label}
+                        </BaseSelect.GroupLabel>
+                        {group.options.map((opt) => (
+                          <SelectOptionRow
+                            key={opt.value}
+                            option={opt}
+                            isSelected={currentValue === opt.value}
+                          />
+                        ))}
+                      </BaseSelect.Group>
+                    ))
+                  : options.map((opt) => (
+                      <SelectOptionRow
+                        key={opt.value}
+                        option={opt}
+                        isSelected={currentValue === opt.value}
+                      />
+                    ))}
               </BaseSelect.List>
             </BaseSelect.Popup>
           </BaseSelect.Positioner>
         </BaseSelect.Portal>
       </BaseSelect.Root>
-    </div>
+
+      {isFloatingLabel && description ? (
+        <div className="m3e-field__supporting-row">
+          <BaseField.Description className="m3e-field__description">
+            {description}
+          </BaseField.Description>
+        </div>
+      ) : null}
+
+      {!isDisabled ? (
+        <BaseField.Error
+          match={hasExplicitError ? true : undefined}
+          className="m3e-field__error"
+          render={(errorProps) => {
+            const resolvedMessage =
+              errorMessage ??
+              errorProps.children ??
+              (invalid ? t("textField.defaultInvalid") : null);
+            return (
+              <div {...errorProps}>
+                <FieldErrorIconSvg label={t("textField.errorIcon")} />
+                <span>{resolvedMessage}</span>
+              </div>
+            );
+          }}
+        />
+      ) : null}
+    </BaseField.Root>
   );
 }
+
+export const Select = React.forwardRef(SelectInner) as <
+  Value extends string = string,
+>(
+  props: M3ESelectProps<Value> & React.RefAttributes<HTMLButtonElement>,
+) => React.JSX.Element;
+
+export interface M3EMultiSelectProps<Value extends string = string> {
+  readonly options?: readonly SelectOption<Value>[];
+  readonly groups?: readonly SelectOptionGroup<Value>[];
+  readonly value?: readonly Value[];
+  readonly defaultValue?: readonly Value[];
+  readonly onValueChange?: (value: Value[]) => void;
+  readonly maxVisibleTags?: number;
+  readonly variant?: SelectVariant;
+  readonly labelPosition?: SelectLabelPosition;
+  readonly label?: string;
+  readonly placeholder?: string;
+  readonly description?: React.ReactNode;
+  readonly errorMessage?: React.ReactNode;
+  readonly invalid?: boolean;
+  readonly clearable?: boolean;
+  readonly disabled?: boolean;
+  readonly readOnly?: boolean;
+  readonly required?: boolean;
+  readonly name?: string;
+  readonly id?: string;
+  readonly "aria-label"?: string;
+  readonly className?: string;
+  readonly style?: React.CSSProperties;
+}
+
+function MultiSelectInner<Value extends string = string>(
+  {
+    options = [],
+    groups,
+    value: controlledValue,
+    defaultValue = [],
+    onValueChange,
+    maxVisibleTags = 3,
+    variant = "outlined",
+    labelPosition = "floating",
+    label,
+    placeholder,
+    description,
+    errorMessage,
+    invalid,
+    clearable = true,
+    disabled,
+    readOnly = false,
+    required = false,
+    name,
+    id,
+    "aria-label": ariaLabel,
+    className,
+    style,
+  }: M3EMultiSelectProps<Value>,
+  forwardedRef: React.ForwardedRef<HTMLButtonElement>,
+): React.JSX.Element {
+  const { locale, t } = useM3EI18n();
+  const portalContainer = useM3EPortalContainer();
+  const isDisabled = useFieldsetDisabled(disabled);
+  const resolvedPlaceholder = placeholder ?? t("select.placeholder");
+  const triggerRef = React.useRef<HTMLButtonElement | null>(null);
+  const defaultValRef = React.useRef<readonly Value[]>(defaultValue);
+  defaultValRef.current = defaultValue;
+
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [uncontrolledValues, setUncontrolledValues] = React.useState<
+    readonly Value[]
+  >(defaultValue);
+
+  React.useEffect(() => {
+    if (controlledValue !== undefined) return;
+    const form = triggerRef.current?.closest("form");
+    if (!form) return;
+    const onReset = () => {
+      setUncontrolledValues(defaultValRef.current);
+    };
+    form.addEventListener("reset", onReset);
+    return () => form.removeEventListener("reset", onReset);
+  }, [controlledValue]);
+
+  const effectiveOpen = readOnly ? false : isOpen;
+  const currentValues =
+    controlledValue !== undefined ? controlledValue : uncontrolledValues;
+
+  const hasSelection = currentValues.length > 0;
+  const isFloatingLabel = labelPosition === "floating" && Boolean(label);
+  const isLabelFloated = effectiveOpen || hasSelection;
+  const hasExplicitError = Boolean(invalid || errorMessage);
+
+  const chevronDeg = useM3EScalarSpring(effectiveOpen ? 180 : 0, "fastSpatial");
+  const generatedId = React.useId();
+  const triggerId = id ?? generatedId;
+
+  const flatOptions = React.useMemo(
+    () => (groups ? groups.flatMap((g) => g.options) : options),
+    [groups, options],
+  );
+
+  const labelByValue = React.useMemo(() => {
+    const map = new Map<Value, string>();
+    for (const opt of flatOptions) {
+      map.set(opt.value, opt.label);
+    }
+    return map;
+  }, [flatOptions]);
+
+  const itemsMap = React.useMemo(
+    () => flatOptions.map((o) => ({ value: o.value, label: o.label })),
+    [flatOptions],
+  );
+
+  const height = isFloatingLabel
+    ? variant === "filled"
+      ? SELECT_TOKENS.filledHeight
+      : SELECT_TOKENS.outlinedHeight
+    : 48;
+
+  const baseRadius = isFloatingLabel
+    ? variant === "filled"
+      ? SELECT_TOKENS.filledTopRadius
+      : SELECT_TOKENS.outlinedRadius
+    : SELECT_TOKENS.outsideLabelRadius;
+
+  const triggerRadius =
+    variant === "filled"
+      ? `${baseRadius}px ${baseRadius}px ${SELECT_TOKENS.filledBottomRadius}px ${SELECT_TOKENS.filledBottomRadius}px`
+      : `${baseRadius}px`;
+
+  const handleCommit = (resolved: Value[]) => {
+    if (controlledValue === undefined) {
+      setUncontrolledValues(resolved);
+    }
+    onValueChange?.(resolved);
+  };
+
+  const showClearBtn = Boolean(
+    clearable && hasSelection && !isDisabled && !readOnly,
+  );
+  const selectedSet = React.useMemo(
+    () => new Set<Value>(currentValues),
+    [currentValues],
+  );
+  const visibleValues = currentValues.slice(0, Math.max(1, maxVisibleTags));
+  const overflowCount = Math.max(0, currentValues.length - visibleValues.length);
+
+  return (
+    <BaseField.Root
+      name={name}
+      disabled={isDisabled || undefined}
+      invalid={errorMessage ? true : invalid}
+      className={
+        className
+          ? `m3e-field m3e-field-root m3e-select-field m3e-multi-select ${className}`
+          : "m3e-field m3e-field-root m3e-select-field m3e-multi-select"
+      }
+      data-label-position={labelPosition}
+      data-readonly={readOnly ? "" : undefined}
+      style={style}
+    >
+      {label && !isFloatingLabel ? (
+        <BaseField.Label className="m3e-field__label">
+          {label}
+          {required ? (
+            <span className="m3e-field__required" aria-hidden="true">
+              {" "}*
+            </span>
+          ) : null}
+        </BaseField.Label>
+      ) : null}
+      {description && !isFloatingLabel ? (
+        <BaseField.Description className="m3e-field__description">
+          {description}
+        </BaseField.Description>
+      ) : null}
+
+      <BaseSelect.Root
+        multiple
+        id={triggerId}
+        name={name}
+        items={itemsMap}
+        value={currentValues}
+        disabled={isDisabled}
+        readOnly={readOnly}
+        required={required}
+        modal={false}
+        open={effectiveOpen}
+        onOpenChange={(next) => {
+          if (readOnly && next) return;
+          setIsOpen(next);
+        }}
+        onValueChange={(next) => {
+          if (readOnly) return;
+          handleCommit(Array.isArray(next) ? (next as Value[]) : []);
+        }}
+      >
+        <div
+          className="m3e-select__shell m3e-select-shell"
+          data-variant={variant}
+          data-label-position={labelPosition}
+          data-floating={isLabelFloated ? "" : undefined}
+          data-popup-open={effectiveOpen ? "" : undefined}
+          data-disabled={isDisabled ? "" : undefined}
+          data-readonly={readOnly ? "" : undefined}
+          data-invalid={hasExplicitError ? "" : undefined}
+          data-clearable={showClearBtn ? "" : undefined}
+          style={{ borderRadius: triggerRadius }}
+        >
+          {isFloatingLabel && variant === "outlined" ? (
+            <FieldNotchedOutline
+              label={label}
+              required={required}
+              floating={isLabelFloated}
+            />
+          ) : null}
+
+          {isFloatingLabel ? (
+            <BaseField.Label
+              className="m3e-field__floating-label m3e-select__floating-label"
+              data-floating={isLabelFloated ? "" : undefined}
+            >
+              {label}
+              {required ? (
+                <span className="m3e-field__required" aria-hidden="true">
+                  {" "}*
+                </span>
+              ) : null}
+            </BaseField.Label>
+          ) : null}
+
+          <BaseSelect.Trigger
+            ref={(node) => {
+              const btnNode =
+                node instanceof HTMLButtonElement ? node : null;
+              triggerRef.current = btnNode;
+              assignRef(forwardedRef, btnNode);
+            }}
+            aria-label={!label ? ariaLabel ?? resolvedPlaceholder : undefined}
+            aria-invalid={hasExplicitError ? true : undefined}
+            className="m3e-select__trigger m3e-select-trigger m3e-multi-select__trigger"
+            data-variant={variant}
+            data-label-position={labelPosition}
+            data-floating={isLabelFloated ? "" : undefined}
+            data-readonly={readOnly ? "" : undefined}
+            style={{
+              minHeight: `${height}px`,
+              paddingInline: `${SELECT_TOKENS.paddingInline}px`,
+              borderRadius: triggerRadius,
+            }}
+          >
+            {hasSelection ? (
+              <span className="m3e-multi-select__tags">
+                {visibleValues.map((val) => (
+                  <span key={val} className="m3e-multi-select__tag">
+                    <span className="m3e-multi-select__tag-text">
+                      {labelByValue.get(val) ?? val}
+                    </span>
+                  </span>
+                ))}
+                {overflowCount > 0 ? (
+                  <span className="m3e-multi-select__overflow">
+                    +{formatLocalizedInteger(locale, overflowCount)}
+                  </span>
+                ) : null}
+              </span>
+            ) : (
+              <BaseSelect.Value
+                placeholder={resolvedPlaceholder}
+                className="m3e-select__value"
+              />
+            )}
+            <BaseSelect.Icon
+              className="m3e-select__chevron"
+              style={{ rotate: `${chevronDeg.toFixed(1)}deg` }}
+            >
+              <ChevronSvg />
+            </BaseSelect.Icon>
+          </BaseSelect.Trigger>
+
+          {showClearBtn ? (
+            <button
+              type="button"
+              aria-label={t("select.clear")}
+              className="m3e-select__clear-btn"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleCommit([]);
+                triggerRef.current?.focus();
+              }}
+            >
+              <ClearSvg />
+            </button>
+          ) : null}
+        </div>
+
+        <BaseSelect.Portal container={portalContainer}>
+          <BaseSelect.Positioner
+            alignItemWithTrigger={false}
+            side="bottom"
+            align="start"
+            sideOffset={6}
+            className="m3e-select__positioner"
+          >
+            <BaseSelect.Popup
+              className="m3e-select__popup"
+              style={{
+                borderRadius: `${SELECT_TOKENS.popupRadius}px`,
+              }}
+            >
+              <BaseSelect.List
+                className="m3e-select__list"
+                style={{
+                  padding: `${SELECT_TOKENS.popupPadding}px`,
+                  gap: `${SELECT_TOKENS.itemGap}px`,
+                }}
+              >
+                {groups
+                  ? groups.map((group) => (
+                      <BaseSelect.Group
+                        key={group.label}
+                        className="m3e-select__group"
+                      >
+                        <BaseSelect.GroupLabel className="m3e-select__group-label">
+                          {group.label}
+                        </BaseSelect.GroupLabel>
+                        {group.options.map((opt) => (
+                          <SelectOptionRow
+                            key={opt.value}
+                            option={opt}
+                            isSelected={selectedSet.has(opt.value)}
+                          />
+                        ))}
+                      </BaseSelect.Group>
+                    ))
+                  : options.map((opt) => (
+                      <SelectOptionRow
+                        key={opt.value}
+                        option={opt}
+                        isSelected={selectedSet.has(opt.value)}
+                      />
+                    ))}
+              </BaseSelect.List>
+            </BaseSelect.Popup>
+          </BaseSelect.Positioner>
+        </BaseSelect.Portal>
+      </BaseSelect.Root>
+
+      {isFloatingLabel && description ? (
+        <div className="m3e-field__supporting-row">
+          <BaseField.Description className="m3e-field__description">
+            {description}
+          </BaseField.Description>
+        </div>
+      ) : null}
+
+      {!isDisabled ? (
+        <BaseField.Error
+          match={hasExplicitError ? true : undefined}
+          className="m3e-field__error"
+          render={(errorProps) => {
+            const resolvedMessage =
+              errorMessage ??
+              errorProps.children ??
+              (invalid ? t("textField.defaultInvalid") : null);
+            return (
+              <div {...errorProps}>
+                <FieldErrorIconSvg label={t("textField.errorIcon")} />
+                <span>{resolvedMessage}</span>
+              </div>
+            );
+          }}
+        />
+      ) : null}
+    </BaseField.Root>
+  );
+}
+
+export const MultiSelect = React.forwardRef(MultiSelectInner) as <
+  Value extends string = string,
+>(
+  props: M3EMultiSelectProps<Value> & React.RefAttributes<HTMLButtonElement>,
+) => React.JSX.Element;

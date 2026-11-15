@@ -2,13 +2,12 @@
 
 import * as React from "react";
 import {
-  DATA_TABLE_TOKENS,
   type M3EShapeName,
-  MATERIAL_SHAPES,
-  SKELETON_TOKENS,
-  cubicsToSvgPath,
-} from "../tokens/index.js";
-import { useM3EI18n } from "../context/M3EProvider.js";
+  getMaterialShape,
+} from "../tokens/shapes.js";
+import { DATA_TABLE_TOKENS } from "../tokens/topology.js";
+import { useM3EI18n } from "../context/M3EContext.js";
+import { SkeletonBase } from "../internal/skeletonBase.js";
 import { Checkbox } from "./Checkbox.js";
 
 export type SortDirection = "ascending" | "descending";
@@ -18,6 +17,8 @@ export interface M3EDataTableColumn<Row> {
   readonly header: React.ReactNode;
   readonly headerLabel?: string;
   readonly align?: "start" | "center" | "end";
+  readonly width?: number | string;
+  readonly sticky?: "start" | "end";
   readonly sortable?: boolean;
   readonly isRowHeader?: boolean;
   readonly sortAccessor?: (row: Row) => string | number;
@@ -42,8 +43,16 @@ export interface M3EDataTableProps<Row> {
   readonly selectedRowKeys?: readonly string[];
   readonly defaultSelectedRowKeys?: readonly string[];
   readonly onSelectedRowKeysChange?: (keys: string[]) => void;
+  readonly renderExpandedRow?: (row: Row, index: number) => React.ReactNode;
+  readonly expandedRowKeys?: readonly string[];
+  readonly defaultExpandedRowKeys?: readonly string[];
+  readonly onExpandedRowKeysChange?: (keys: string[]) => void;
   readonly density?: "comfortable" | "compact";
   readonly stickyHeader?: boolean;
+  readonly loading?: boolean;
+  readonly loadingRows?: number;
+  readonly toolbar?: React.ReactNode;
+  readonly footer?: React.ReactNode;
   readonly emptyMessage?: React.ReactNode;
   readonly className?: string;
   readonly style?: React.CSSProperties;
@@ -79,6 +88,28 @@ function SortArrowSvg({
   );
 }
 
+function ExpandChevronSvg({ expanded }: { readonly expanded: boolean }) {
+  return (
+    <svg
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      style={{
+        rotate: expanded ? "90deg" : "0deg",
+        transition: "rotate 160ms ease-out",
+      }}
+    >
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  );
+}
+
 export function DataTable<Row>({
   caption,
   hideCaption = false,
@@ -92,8 +123,16 @@ export function DataTable<Row>({
   selectedRowKeys: controlledSelectedKeys,
   defaultSelectedRowKeys = [],
   onSelectedRowKeysChange,
+  renderExpandedRow,
+  expandedRowKeys: controlledExpandedKeys,
+  defaultExpandedRowKeys = [],
+  onExpandedRowKeysChange,
   density = "comfortable",
   stickyHeader = false,
+  loading = false,
+  loadingRows = 4,
+  toolbar,
+  footer,
   emptyMessage,
   className,
   style,
@@ -117,6 +156,23 @@ export function DataTable<Row>({
     readonly string[]
   >(defaultSelectedRowKeys);
   const selectedKeys = controlledSelectedKeys ?? uncontrolledSelected;
+
+  const [uncontrolledExpanded, setUncontrolledExpanded] = React.useState<
+    readonly string[]
+  >(defaultExpandedRowKeys);
+  const expandedKeys = controlledExpandedKeys ?? uncontrolledExpanded;
+  const expandedSet = React.useMemo(
+    () => new Set(expandedKeys),
+    [expandedKeys],
+  );
+  const expandable = Boolean(renderExpandedRow);
+
+  const commitExpandedKeys = (next: string[]) => {
+    if (controlledExpandedKeys === undefined) {
+      setUncontrolledExpanded(next);
+    }
+    onExpandedRowKeysChange?.(next);
+  };
 
   const sortedRows = React.useMemo(() => {
     if (!activeSort) return rows;
@@ -186,6 +242,93 @@ export function DataTable<Row>({
       ? DATA_TABLE_TOKENS.compactRowHeight
       : DATA_TABLE_TOKENS.rowHeight;
 
+  const headerCellRefs = React.useRef<Record<string, HTMLTableCellElement | null>>(
+    {},
+  );
+  const [stickyOffsets, setStickyOffsets] = React.useState<
+    Record<string, number>
+  >({});
+  const hasStickyStart = columns.some((c) => c.sticky === "start");
+  const hasStickyColumns =
+    hasStickyStart || columns.some((c) => c.sticky === "end");
+
+  React.useLayoutEffect(() => {
+    if (!hasStickyColumns) {
+      setStickyOffsets((prev) => (Object.keys(prev).length === 0 ? prev : {}));
+      return undefined;
+    }
+
+    const computeOffsets = () => {
+      const next: Record<string, number> = {};
+      let startAcc = 0;
+
+      if (hasStickyStart && expandable) {
+        next.__expand = startAcc;
+        const el = headerCellRefs.current.__expand;
+        startAcc += Math.round(el?.getBoundingClientRect().width || 44);
+      }
+      if (hasStickyStart && selectable) {
+        next.__select = startAcc;
+        const el = headerCellRefs.current.__select;
+        startAcc += Math.round(el?.getBoundingClientRect().width || 48);
+      }
+
+      for (const col of columns) {
+        if (col.sticky === "start") {
+          next[col.id] = startAcc;
+          const el = headerCellRefs.current[col.id];
+          const fallback = typeof col.width === "number" ? col.width : 120;
+          startAcc += Math.round(el?.getBoundingClientRect().width || fallback);
+        }
+      }
+
+      let endAcc = 0;
+      for (let i = columns.length - 1; i >= 0; i--) {
+        const col = columns[i];
+        if (col?.sticky === "end") {
+          next[col.id] = endAcc;
+          const el = headerCellRefs.current[col.id];
+          const fallback = typeof col.width === "number" ? col.width : 120;
+          endAcc += Math.round(el?.getBoundingClientRect().width || fallback);
+        }
+      }
+
+      setStickyOffsets((prev) => {
+        const prevKeys = Object.keys(prev);
+        const nextKeys = Object.keys(next);
+        if (
+          prevKeys.length === nextKeys.length &&
+          nextKeys.every((k) => prev[k] === next[k])
+        ) {
+          return prev;
+        }
+        return next;
+      });
+    };
+
+    computeOffsets();
+
+    if (typeof ResizeObserver !== "undefined") {
+      const ro = new ResizeObserver(computeOffsets);
+      for (const el of Object.values(headerCellRefs.current)) {
+        if (el) ro.observe(el);
+      }
+      return () => ro.disconnect();
+    }
+    return undefined;
+  }, [hasStickyColumns, hasStickyStart, expandable, selectable, columns]);
+
+  const getStickyStyle = (
+    key: string,
+    sticky?: "start" | "end",
+  ): React.CSSProperties | undefined => {
+    if (!sticky) return undefined;
+    const offset = stickyOffsets[key] ?? 0;
+    return sticky === "start"
+      ? { insetInlineStart: `${offset}px` }
+      : { insetInlineEnd: `${offset}px` };
+  };
+
   return (
     <div
       className={
@@ -202,10 +345,13 @@ export function DataTable<Row>({
         {announcement}
       </div>
 
+      {toolbar ? <div className="m3e-data-table__toolbar">{toolbar}</div> : null}
+
       <div
         tabIndex={0}
         role="region"
         aria-labelledby={captionId}
+        aria-busy={loading ? true : undefined}
         className="m3e-data-table-wrap"
         data-sticky-header={stickyHeader ? "" : undefined}
       >
@@ -221,49 +367,111 @@ export function DataTable<Row>({
 
           <thead className="m3e-data-table__head">
             <tr>
+              {expandable ? (
+                <th
+                  ref={(el) => {
+                    headerCellRefs.current.__expand = el;
+                  }}
+                  scope="col"
+                  className="m3e-data-table__th m3e-data-table__th--expand"
+                  data-sticky={hasStickyStart ? "start" : undefined}
+                  style={{
+                    height: `${DATA_TABLE_TOKENS.headerHeight}px`,
+                    ...getStickyStyle(
+                      "__expand",
+                      hasStickyStart ? "start" : undefined,
+                    ),
+                  }}
+                >
+                  <span className="m3e-sr-only">
+                    {t("dataTable.expandColumn")}
+                  </span>
+                </th>
+              ) : null}
+
               {selectable ? (
                 <th
+                  ref={(el) => {
+                    headerCellRefs.current.__select = el;
+                  }}
                   scope="col"
                   className="m3e-data-table__th m3e-data-table__th--checkbox"
-                  style={{ height: `${DATA_TABLE_TOKENS.headerHeight}px` }}
+                  data-sticky={hasStickyStart ? "start" : undefined}
+                  style={{
+                    height: `${DATA_TABLE_TOKENS.headerHeight}px`,
+                    ...getStickyStyle(
+                      "__select",
+                      hasStickyStart ? "start" : undefined,
+                    ),
+                  }}
                 >
                   <Checkbox
                     aria-label={t("dataTable.selectAllRows")}
+                    disabled={loading}
                     checked={allSelected}
                     indeterminate={someSelected}
                     onCheckedChange={(checked) => {
-                      commitSelectedKeys(checked ? [...allRowKeys] : []);
+                      const pageKeySet = new Set(allRowKeys);
+                      if (checked) {
+                        commitSelectedKeys(
+                          Array.from(new Set([...selectedKeys, ...allRowKeys])),
+                        );
+                      } else {
+                        commitSelectedKeys(
+                          selectedKeys.filter((k) => !pageKeySet.has(k)),
+                        );
+                      }
                     }}
                   />
                 </th>
               ) : null}
 
               {columns.map((col) => {
-                const isSorted = activeSort?.columnId === col.id;
-                const dir: SortDirection = isSorted
-                  ? activeSort.direction
-                  : "ascending";
+                const isSorted = Boolean(
+                  activeSort && activeSort.columnId === col.id,
+                );
+                const dir: SortDirection =
+                  isSorted && activeSort ? activeSort.direction : "ascending";
 
                 return (
                   <th
                     key={col.id}
+                    ref={(el) => {
+                      headerCellRefs.current[col.id] = el;
+                    }}
                     scope="col"
                     aria-sort={isSorted ? dir : undefined}
                     className="m3e-data-table__th"
                     data-align={col.align ?? "start"}
+                    data-sticky={col.sticky}
                     style={{
                       height: `${DATA_TABLE_TOKENS.headerHeight}px`,
                       paddingInline: `${DATA_TABLE_TOKENS.cellPaddingInline}px`,
+                      width:
+                        typeof col.width === "number"
+                          ? `${col.width}px`
+                          : col.width,
+                      ...getStickyStyle(col.id, col.sticky),
                     }}
                   >
                     {col.sortable ? (
                       <button
                         type="button"
+                        disabled={loading}
                         className="m3e-data-table__sort-btn"
                         data-active={isSorted ? "" : undefined}
                         onClick={() => handleSortClick(col)}
                       >
-                        <span>{col.header}</span>
+                        <span
+                          className="m3e-data-table__sort-label"
+                          data-text={
+                            typeof col.header === "string"
+                              ? col.header
+                              : undefined
+                          }
+                        >
+                          {col.header}
+                        </span>
                         <SortArrowSvg active={isSorted} direction={dir} />
                       </button>
                     ) : (
@@ -278,10 +486,65 @@ export function DataTable<Row>({
           </thead>
 
           <tbody className="m3e-data-table__body">
-            {sortedRows.length === 0 ? (
+            {loading ? (
+              Array.from({ length: Math.max(1, loadingRows) }, (_, rIdx) => (
+                <tr key={`skeleton-${rIdx}`} className="m3e-data-table__row">
+                  {expandable ? (
+                    <td
+                      className="m3e-data-table__td m3e-data-table__td--expand"
+                      data-sticky={hasStickyStart ? "start" : undefined}
+                      style={{
+                        height: `${rowHeight}px`,
+                        ...getStickyStyle(
+                          "__expand",
+                          hasStickyStart ? "start" : undefined,
+                        ),
+                      }}
+                    >
+                      <SkeletonBase variant="circular" width={18} height={18} />
+                    </td>
+                  ) : null}
+                  {selectable ? (
+                    <td
+                      className="m3e-data-table__td m3e-data-table__td--checkbox"
+                      data-sticky={hasStickyStart ? "start" : undefined}
+                      style={{
+                        height: `${rowHeight}px`,
+                        ...getStickyStyle(
+                          "__select",
+                          hasStickyStart ? "start" : undefined,
+                        ),
+                      }}
+                    >
+                      <SkeletonBase variant="rounded" width={18} height={18} />
+                    </td>
+                  ) : null}
+                  {columns.map((col, cIdx) => (
+                    <td
+                      key={col.id}
+                      className="m3e-data-table__td"
+                      data-sticky={col.sticky}
+                      style={{
+                        height: `${rowHeight}px`,
+                        paddingInline: `${DATA_TABLE_TOKENS.cellPaddingInline}px`,
+                        ...getStickyStyle(col.id, col.sticky),
+                      }}
+                    >
+                      <SkeletonBase
+                        variant="text"
+                        width={cIdx === 0 ? "72%" : "54%"}
+                        height={14}
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : sortedRows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={columns.length + (selectable ? 1 : 0)}
+                  colSpan={
+                    columns.length + (selectable ? 1 : 0) + (expandable ? 1 : 0)
+                  }
                   className="m3e-data-table__empty"
                 >
                   {resolvedEmptyMessage}
@@ -291,63 +554,137 @@ export function DataTable<Row>({
               sortedRows.map((row, rowIndex) => {
                 const key = getRowKey(row, rowIndex);
                 const isSelected = selectedSet.has(key);
+                const isExpanded = expandedSet.has(key);
+                const expandRowId = `${captionId}-exp-${rowIndex}`;
 
                 return (
-                  <tr
-                    key={key}
-                    className="m3e-data-table__row"
-                    data-selected={isSelected ? "" : undefined}
-                  >
-                    {selectable ? (
-                      <td
-                        className="m3e-data-table__td m3e-data-table__td--checkbox"
-                        style={{ height: `${rowHeight}px` }}
-                      >
-                        <Checkbox
-                          aria-label={t("dataTable.selectRow", {
-                            index: rowIndex + 1,
-                          })}
-                          checked={isSelected}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              commitSelectedKeys([...selectedKeys, key]);
-                            } else {
-                              commitSelectedKeys(
-                                selectedKeys.filter((k) => k !== key),
-                              );
-                            }
-                          }}
-                        />
-                      </td>
-                    ) : null}
-
-                    {columns.map((col, colIndex) => {
-                      const isRowHeader =
-                        col.isRowHeader ?? colIndex === 0;
-                      const CellTag = isRowHeader ? "th" : "td";
-
-                      return (
-                        <CellTag
-                          key={col.id}
-                          scope={isRowHeader ? "row" : undefined}
-                          className="m3e-data-table__td"
-                          data-align={col.align ?? "start"}
+                  <React.Fragment key={key}>
+                    <tr
+                      className="m3e-data-table__row"
+                      data-selected={isSelected ? "" : undefined}
+                      data-expanded={isExpanded ? "" : undefined}
+                    >
+                      {expandable ? (
+                        <td
+                          className="m3e-data-table__td m3e-data-table__td--expand"
+                          data-sticky={hasStickyStart ? "start" : undefined}
                           style={{
                             height: `${rowHeight}px`,
-                            paddingInline: `${DATA_TABLE_TOKENS.cellPaddingInline}px`,
+                            ...getStickyStyle(
+                              "__expand",
+                              hasStickyStart ? "start" : undefined,
+                            ),
                           }}
                         >
-                          {col.cell(row, rowIndex)}
-                        </CellTag>
-                      );
-                    })}
-                  </tr>
+                          <button
+                            type="button"
+                            aria-expanded={isExpanded}
+                            aria-controls={expandRowId}
+                            aria-label={t(
+                              isExpanded
+                                ? "dataTable.collapseRow"
+                                : "dataTable.expandRow",
+                              { index: rowIndex + 1 },
+                            )}
+                            className="m3e-data-table__expand-btn"
+                            onClick={() => {
+                              if (isExpanded) {
+                                commitExpandedKeys(
+                                  expandedKeys.filter((k) => k !== key),
+                                );
+                              } else {
+                                commitExpandedKeys([...expandedKeys, key]);
+                              }
+                            }}
+                          >
+                            <ExpandChevronSvg expanded={isExpanded} />
+                          </button>
+                        </td>
+                      ) : null}
+
+                      {selectable ? (
+                        <td
+                          className="m3e-data-table__td m3e-data-table__td--checkbox"
+                          data-sticky={hasStickyStart ? "start" : undefined}
+                          style={{
+                            height: `${rowHeight}px`,
+                            ...getStickyStyle(
+                              "__select",
+                              hasStickyStart ? "start" : undefined,
+                            ),
+                          }}
+                        >
+                          <Checkbox
+                            aria-label={t("dataTable.selectRow", {
+                              index: rowIndex + 1,
+                            })}
+                            checked={isSelected}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                commitSelectedKeys([...selectedKeys, key]);
+                              } else {
+                                commitSelectedKeys(
+                                  selectedKeys.filter((k) => k !== key),
+                                );
+                              }
+                            }}
+                          />
+                        </td>
+                      ) : null}
+
+                      {columns.map((col, colIndex) => {
+                        const isRowHeader =
+                          col.isRowHeader ?? colIndex === 0;
+                        const CellTag = isRowHeader ? "th" : "td";
+
+                        return (
+                          <CellTag
+                            key={col.id}
+                            scope={isRowHeader ? "row" : undefined}
+                            className="m3e-data-table__td"
+                            data-align={col.align ?? "start"}
+                            data-sticky={col.sticky}
+                            style={{
+                              height: `${rowHeight}px`,
+                              paddingInline: `${DATA_TABLE_TOKENS.cellPaddingInline}px`,
+                              width:
+                                typeof col.width === "number"
+                                  ? `${col.width}px`
+                                  : col.width,
+                              ...getStickyStyle(col.id, col.sticky),
+                            }}
+                          >
+                            {col.cell(row, rowIndex)}
+                          </CellTag>
+                        );
+                      })}
+                    </tr>
+                    {expandable && isExpanded && renderExpandedRow ? (
+                      <tr
+                        id={expandRowId}
+                        className="m3e-data-table__expanded-row"
+                      >
+                        <td
+                          colSpan={
+                            columns.length +
+                            (selectable ? 1 : 0) +
+                            (expandable ? 1 : 0)
+                          }
+                          className="m3e-data-table__expanded-cell"
+                        >
+                          {renderExpandedRow(row, rowIndex)}
+                        </td>
+                      </tr>
+                    ) : null}
+                  </React.Fragment>
                 );
               })
             )}
           </tbody>
         </table>
       </div>
+
+      {footer ? <div className="m3e-data-table__footer">{footer}</div> : null}
     </div>
   );
 }
@@ -362,6 +699,10 @@ export interface M3ESkeletonProps {
   readonly style?: React.CSSProperties;
 }
 
+function toCssSize(value: number | string): string {
+  return typeof value === "number" ? `${value}px` : value;
+}
+
 export function Skeleton({
   variant = "rounded",
   shape,
@@ -372,15 +713,30 @@ export function Skeleton({
   style,
 }: M3ESkeletonProps): React.JSX.Element {
   if (shape) {
-    const numericSize = typeof width === "number" ? width : 56;
-    const shapeData = MATERIAL_SHAPES[shape] ?? MATERIAL_SHAPES.circle;
-    const pathD = cubicsToSvgPath(shapeData.cubics, numericSize, 0.92);
+    const resolvedWidth =
+      width !== undefined
+        ? toCssSize(width)
+        : typeof height === "number"
+          ? `${height}px`
+          : "56px";
+    const resolvedHeight =
+      height !== undefined
+        ? toCssSize(height)
+        : typeof width === "number"
+          ? `${width}px`
+          : "56px";
+    const preserveAspectRatio =
+      width !== undefined && height !== undefined && width !== height
+        ? "none"
+        : "xMidYMid meet";
+    const shapeDef = getMaterialShape(shape);
 
     return (
       <svg
-        width={numericSize}
-        height={numericSize}
-        viewBox={`0 0 ${numericSize} ${numericSize}`}
+        width="100%"
+        height="100%"
+        viewBox="0 0 100 100"
+        preserveAspectRatio={preserveAspectRatio}
         aria-hidden="true"
         className={
           className
@@ -388,38 +744,25 @@ export function Skeleton({
             : "m3e-skeleton m3e-skeleton--shape"
         }
         data-animated={animated ? "" : undefined}
-        style={style}
+        style={{
+          width: resolvedWidth,
+          height: resolvedHeight,
+          ...style,
+        }}
       >
-        <path d={pathD} fill="currentColor" />
+        <path d={shapeDef.previewSvgPath} fill="currentColor" />
       </svg>
     );
   }
 
-  const resolvedRadius =
-    variant === "circular"
-      ? 9999
-      : variant === "text"
-        ? SKELETON_TOKENS.textRadius
-        : variant === "rectangular"
-          ? SKELETON_TOKENS.rectangularRadius
-          : SKELETON_TOKENS.roundedRadius;
-
-  const defaultHeight =
-    variant === "text" ? 14 : variant === "circular" ? 44 : 36;
-  const defaultWidth = variant === "circular" ? (height ?? 44) : "100%";
-
   return (
-    <span
-      aria-hidden="true"
-      className={className ? `m3e-skeleton ${className}` : "m3e-skeleton"}
-      data-variant={variant}
-      data-animated={animated ? "" : undefined}
-      style={{
-        width: width ?? defaultWidth,
-        height: height ?? defaultHeight,
-        borderRadius: `${resolvedRadius}px`,
-        ...style,
-      }}
+    <SkeletonBase
+      variant={variant}
+      width={width}
+      height={height}
+      animated={animated}
+      className={className}
+      style={style}
     />
   );
 }

@@ -20,7 +20,19 @@ const cssDest = join(distDir, "styles.css");
 mkdirSync(distDir, { recursive: true });
 copyFileSync(cssSrc, cssDest);
 
-const NON_CLIENT_PREFIXES = ["cli/", "cli\\", "tokens/", "tokens\\"];
+const pkgJson = JSON.parse(readFileSync(join(pkgRoot, "package.json"), "utf8"));
+const schemaJson = JSON.parse(
+  readFileSync(join(pkgRoot, "m3e.schema.json"), "utf8"),
+);
+const NON_CLIENT_FILES = new Set(["index.js", "config.js", "version.js"]);
+const NON_CLIENT_PREFIXES = [
+  "cli/",
+  "cli\\",
+  "tokens/",
+  "tokens\\",
+  "i18n/",
+  "i18n\\",
+];
 
 function prependUseClient(dir) {
   for (const entry of readdirSync(dir)) {
@@ -32,6 +44,7 @@ function prependUseClient(dir) {
     }
     if (!fullPath.endsWith(".js")) continue;
     const rel = relative(distDir, fullPath);
+    if (NON_CLIENT_FILES.has(rel)) continue;
     if (NON_CLIENT_PREFIXES.some((p) => rel.startsWith(p))) continue;
 
     const raw = readFileSync(fullPath, "utf8");
@@ -51,6 +64,21 @@ prependUseClient(distDir);
 const cliBinPath = join(distDir, "cli", "bin.js");
 if (existsSync(cliBinPath)) {
   chmodSync(cliBinPath, 0o755);
+}
+
+const versionMod = await import(join(distDir, "version.js"));
+if (versionMod.M3E_PACKAGE_VERSION !== pkgJson.version) {
+  throw new Error(
+    `Version mismatch: src/version.ts (${versionMod.M3E_PACKAGE_VERSION}) !== package.json (${pkgJson.version})`,
+  );
+}
+if (
+  typeof schemaJson.$id !== "string" ||
+  !schemaJson.$id.includes(`@${pkgJson.version}/`)
+) {
+  throw new Error(
+    `Schema $id mismatch: m3e.schema.json (${String(schemaJson.$id)}) must reference @${pkgJson.version}/`,
+  );
 }
 
 const tokens = await import(join(distDir, "tokens", "index.js"));
@@ -74,9 +102,9 @@ for (const name of tokens.M3E_ALL_SHAPE_NAMES) {
 
 const payload = {
   meta: {
-    package: "m3eui",
-    version: "0.1.0",
-    specification: "Material 3 Expressive (1.5.0)",
+    package: pkgJson.name ?? "m3eui",
+    version: pkgJson.version ?? "0.1.0",
+    specification: "Material 3 Expressive",
   },
   themes: {
     expressiveViolet: tokens.generateM3EThemeTokens({
@@ -116,6 +144,11 @@ const payload = {
     menubar: tokens.MENUBAR_TOKENS,
     dataTable: tokens.DATA_TABLE_TOKENS,
     skeleton: tokens.SKELETON_TOKENS,
+    dockedToolbar: tokens.DOCKED_TOOLBAR_TOKENS,
+    searchView: tokens.SEARCH_VIEW_TOKENS,
+    fileUpload: tokens.FILE_UPLOAD_TOKENS,
+    kbdSnippet: tokens.KBD_SNIPPET_TOKENS,
+    colorPicker: tokens.COLOR_PICKER_TOKENS,
   },
   shapes: shapesSummary,
 };
