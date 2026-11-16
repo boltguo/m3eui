@@ -491,17 +491,6 @@ body {
   justify-self: center;
   inline-size: min(100%, 400px);
   aspect-ratio: 1;
-  padding: 0;
-  border: 0;
-  background: none;
-  cursor: pointer;
-  border-radius: 48px;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.home-hero__art:focus-visible {
-  outline: 3px solid var(--m3e-color-secondary);
-  outline-offset: 4px;
 }
 
 .home-hero__shape {
@@ -517,8 +506,8 @@ body {
 }
 
 .home-hero__shape--a {
-  inset-block-start: 14%;
-  inset-inline-start: 0;
+  inset-block-start: 16%;
+  inset-inline-start: 4%;
   z-index: 1;
 }
 
@@ -606,10 +595,6 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 560px;
-  overflow: hidden;
-  border-radius: 28px;
-  background-color: var(--m3e-color-surface);
-  box-shadow: var(--m3e-elevation-level1);
 }
 
 .home-phone__body {
@@ -618,7 +603,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 16px 12px 88px;
+  padding: 0 0 88px;
 }
 
 .home-phone__time {
@@ -629,7 +614,7 @@ body {
 .home-phone__fab {
   position: absolute;
   inset-block-end: 16px;
-  inset-inline-end: 16px;
+  inset-inline-end: 0;
 }
 
 .home-scene--player {

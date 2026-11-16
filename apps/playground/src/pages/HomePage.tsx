@@ -13,9 +13,9 @@ import {
   Dialog,
   DialogClose,
   DropdownMenu,
-  ExtendedFAB,
-  FAB,
+  FABMenu,
   FilterChip,
+  FloatingToolbar,
   IconButton,
   IconToggleButton,
   LinearProgressIndicator,
@@ -77,7 +77,7 @@ const HERO_SHAPES: readonly M3EShapeName[] = [
 ];
 
 const HERO_SLOTS = [
-  { id: "a", offset: 0, size: 264, fill: "var(--m3e-color-primary)" },
+  { id: "a", offset: 0, size: 200, fill: "var(--m3e-color-primary)" },
   { id: "b", offset: 2, size: 168, fill: "var(--m3e-color-tertiary-container)" },
   { id: "c", offset: 4, size: 136, fill: "var(--m3e-color-secondary-container)" },
   { id: "d", offset: 6, size: 88, fill: "var(--m3e-color-tertiary)" },
@@ -138,6 +138,12 @@ const Hero = React.memo(function Hero({
   const navigate = useNavigate();
   const [step, setStep] = React.useState(0);
 
+  React.useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const id = window.setInterval(() => setStep((s) => s + 1), 2400);
+    return () => window.clearInterval(id);
+  }, []);
+
   return (
     <header className="home-hero">
       <div className="home-hero__copy">
@@ -174,12 +180,7 @@ const Hero = React.memo(function Hero({
         </div>
       </div>
 
-      <button
-        type="button"
-        className="home-hero__art"
-        aria-label={ui.switchPolygonTooltip}
-        onClick={() => setStep((s) => s + 1)}
-      >
+      <div className="home-hero__art" aria-hidden="true">
         {HERO_SLOTS.map((slot) => (
           <span key={slot.id} className={`home-hero__shape home-hero__shape--${slot.id}`}>
             <MaterialShapeView
@@ -189,7 +190,7 @@ const Hero = React.memo(function Hero({
             />
           </span>
         ))}
-      </button>
+      </div>
     </header>
   );
 });
@@ -216,7 +217,6 @@ type PhoneTab = "inbox" | "people" | "files" | "settings";
 
 const PhoneScene = React.memo(function PhoneScene() {
   const resolve = useCopyResolver();
-  const { toast } = useM3EToast();
   const [tab, setTab] = React.useState<PhoneTab>("inbox");
   const [unreadOnly, setUnreadOnly] = React.useState(false);
   const [selected, setSelected] = React.useState("m1");
@@ -257,14 +257,15 @@ const PhoneScene = React.memo(function PhoneScene() {
               />
             ))}
           </SegmentedList>
-          <FAB
+          <FABMenu
             className="home-phone__fab"
-            variant="tertiary"
-            icon={<EditIcon size={22} />}
-            aria-label={resolve({ zh: "写邮件", en: "Compose" })}
-            onClick={() =>
-              toast({ title: resolve({ zh: "草稿已保存", en: "Draft saved" }) })
-            }
+            size="sm"
+            triggerLabel={resolve({ zh: "新建", en: "Create" })}
+            items={[
+              { id: "mail", label: resolve({ zh: "写邮件", en: "Compose" }), icon: <EditIcon size={20} /> },
+              { id: "folder", label: resolve({ zh: "新建文件夹", en: "New folder" }), icon: <FolderIcon size={20} /> },
+              { id: "invite", label: resolve({ zh: "邀请", en: "Invite" }), icon: <UsersIcon size={20} /> },
+            ]}
           />
         </div>
         <NavigationBar<PhoneTab>
@@ -471,7 +472,7 @@ const ActionsScene = React.memo(function ActionsScene() {
         <Button variant="outlined">{resolve({ zh: "取消", en: "Cancel" })}</Button>
       </div>
       <ButtonGroup
-        variant="standard"
+        variant="connected"
         selectionMode="single"
         aria-label={resolve({ zh: "视图", en: "View" })}
         value={view}
@@ -519,10 +520,17 @@ const ActionsScene = React.memo(function ActionsScene() {
             aria-label={`${resolve({ zh: "添加", en: "Add" })} ${size.toUpperCase()}`}
           />
         ))}
-        <ExtendedFAB icon={<EditIcon size={22} />} variant="tertiary">
-          {resolve({ zh: "新建", en: "Create" })}
-        </ExtendedFAB>
       </div>
+      <FloatingToolbar
+        aria-label={resolve({ zh: "编辑工具", en: "Editing tools" })}
+        items={[
+          { id: "edit", label: resolve({ zh: "编辑", en: "Edit" }), icon: <EditIcon size={22} />, selected: true },
+          { id: "share", label: resolve({ zh: "分享", en: "Share" }), icon: <ShareIcon size={22} /> },
+          { id: "download", label: resolve({ zh: "下载", en: "Download" }), icon: <DownloadIcon size={22} /> },
+          { id: "delete", label: resolve({ zh: "删除", en: "Delete" }), icon: <TrashIcon size={22} /> },
+        ]}
+        fab={{ icon: <PlusIcon size={22} />, "aria-label": resolve({ zh: "添加", en: "Add" }) }}
+      />
     </Scene>
   );
 });
