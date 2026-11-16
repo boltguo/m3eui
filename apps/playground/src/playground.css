@@ -1185,7 +1185,8 @@ body {
 
 .m3e-demo-box__surface {
   border-radius: var(--m3e-shape-corner-extra-large);
-  background-color: var(--m3e-color-surface-container-low);
+  border: 1px solid var(--m3e-color-outline-variant);
+  background-color: var(--m3e-color-surface);
   overflow: hidden;
 }
 
