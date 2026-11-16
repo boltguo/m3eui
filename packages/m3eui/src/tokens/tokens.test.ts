@@ -1,35 +1,48 @@
 import { describe, expect, it } from "vitest";
 import {
-  BUTTON_GROUP_TOKENS,
-  BUTTON_SIZE_SPECS,
-  EXPRESSIVE_MOTION_SCHEME,
-  FLOATING_TOOLBAR_TOKENS,
-  ICON_BUTTON_SIZE_SPECS,
+  generateM3EThemeTokens,
+} from "./color.js";
+import {
+  M3E_COLOR_SCHEME_VARIANTS,
+} from "./color-variants.js";
+import {
+  M3E_ELEVATION_TOKENS,
+  M3E_STATE_LAYER_TOKENS,
+  generateM3ESystemCssVars,
+} from "./elevation.js";
+import {
   LOADING_INDICATOR_DETERMINATE_MORPH_SEQUENCE,
   LOADING_INDICATOR_MORPH_SEQUENCE,
   LOADING_INDICATOR_SHAPE_SEQUENCE,
   LOADING_INDICATOR_TOKENS,
+} from "./loading-shapes.js";
+import {
   Hct,
-  M3E_ALL_SHAPE_NAMES,
-  M3E_COLOR_SCHEME_VARIANTS,
-  M3E_ELEVATION_TOKENS,
-  M3E_STATE_LAYER_TOKENS,
-  M3E_TYPOGRAPHY_TOKENS,
-  MATERIAL_SHAPES,
-  STANDARD_MOTION_SCHEME,
   argbFromHex,
-  buildDeterminateCircularWavyGeometry,
-  buildDeterminateLinearWavyGeometry,
-  buildIndeterminateCircularWavyGeometry,
-  buildIndeterminateLinearWavyGeometry,
-  computeButtonGroupWidths,
-  cubicsToSvgPath,
+} from "./monet/index.js";
+import {
+  EXPRESSIVE_MOTION_SCHEME,
+  STANDARD_MOTION_SCHEME,
   evaluateSpringDisplacement,
-  flipCornersHorizontal,
-  generateM3EThemeTokens,
+  resolveCrossPlatformSpring,
+  stepSpringSimulation,
+} from "./motion.js";
+import {
+  M3E_ALL_SHAPE_NAMES,
+  MATERIAL_SHAPES,
+  cubicsToSvgPath,
   getShapeMorphPair,
   interpolateMorphCubics,
   createMorphPair,
+  getMaterialShape,
+} from "./shapes.js";
+import {
+  BUTTON_GROUP_TOKENS,
+  BUTTON_SIZE_SPECS,
+  FLOATING_TOOLBAR_TOKENS,
+  ICON_BUTTON_SIZE_SPECS,
+  computeButtonGroupWidths,
+  flipCornersHorizontal,
   resolveAccordionItemCorners,
   resolveCarouselItemFrame,
   resolveCarouselKeylineStrategy,
@@ -38,8 +51,6 @@ import {
   resolveCircularProgressArcs,
   resolveClockHandGeometry,
   resolveConnectedGroupCorners,
-  resolveCrossPlatformSpring,
-  resolveDeterminateWaveAmplitude,
   resolveDragHandleGeometry,
   resolveFabGeometry,
   resolveIconButtonGeometry,
@@ -56,17 +67,23 @@ import {
   DRAG_HANDLE_TOKENS,
   EXTENDED_FAB_SPECS,
   FAB_SIZE_SPECS,
-  PULL_TO_REFRESH_TOKENS,
   SLIDER_SIZE_SPECS,
   SNACKBAR_TOKENS,
   TOOLTIP_TOKENS,
-  generateM3ESystemCssVars,
-  generateM3ETypographyCssVars,
-  getMaterialShape,
   parseShortcutKeys,
-  stepSpringSimulation,
   SWITCH_TOKENS,
-} from "./index.js";
+} from "./topology.js";
+import {
+  M3E_TYPOGRAPHY_TOKENS,
+  generateM3ETypographyCssVars,
+} from "./typography.js";
+import {
+  buildDeterminateCircularWavyGeometry,
+  buildDeterminateLinearWavyGeometry,
+  buildIndeterminateCircularWavyGeometry,
+  buildIndeterminateLinearWavyGeometry,
+  resolveDeterminateWaveAmplitude,
+} from "./wavy.js";
 
 describe("m3eui/tokens — Motion Physics & Cross-Platform Springs", () => {
   it("enforces critical damping (dampingRatio === 1.0, zero overshoot) on all effects springs", () => {
@@ -849,7 +866,7 @@ describe("m3eui/tokens — AOSP Compose Material 3 Expressive 1.5.0 Parity", () 
     expect(leftPeek.maskWidth).toBeCloseTo(rightPeek.maskWidth, 1);
   });
 
-  it("resolves DragHandle, PullToRefreshBox, and VibrantMenu token contracts", () => {
+  it("resolves DragHandle token contracts", () => {
     expect(DRAG_HANDLE_TOKENS).toMatchObject({
       width: 4,
       height: 48,
@@ -875,8 +892,5 @@ describe("m3eui/tokens — AOSP Compose Material 3 Expressive 1.5.0 Parity", () 
       blockSize: 12,
       cornerRadius: 12,
     });
-
-    expect(PULL_TO_REFRESH_TOKENS.positionalThreshold).toBe(80);
-    expect(PULL_TO_REFRESH_TOKENS.dragMultiplier).toBe(0.5);
   });
 });

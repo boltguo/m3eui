@@ -7,7 +7,7 @@ import {
   SLIDER_TOKENS,
   type SliderSize,
   resolveSliderThumbGeometry,
-} from "../tokens/index.js";
+} from "../tokens/topology.js";
 import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3EScalarSpringEffect } from "../hooks/useM3ESpring.js";
 import { formatLocalizedNumber } from "../i18n/index.js";

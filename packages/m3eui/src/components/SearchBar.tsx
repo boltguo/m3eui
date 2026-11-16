@@ -3,7 +3,10 @@
 import * as React from "react";
 import { Autocomplete as BaseAutocomplete } from "@base-ui/react/autocomplete";
 import { Dialog as BaseDialog } from "@base-ui/react/dialog";
-import { SEARCH_BAR_TOKENS, SEARCH_VIEW_TOKENS } from "../tokens/index.js";
+import {
+  SEARCH_BAR_TOKENS,
+  SEARCH_VIEW_TOKENS,
+} from "../tokens/topology.js";
 import { useM3ERuntime, useM3EI18n } from "../context/M3EContext.js";
 import { useM3EPortalContainer } from "../context/M3EPortal.js";
 import {

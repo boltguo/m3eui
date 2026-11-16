@@ -3,7 +3,9 @@
 import * as React from "react";
 import { Button as BaseButton } from "@base-ui/react/button";
 import { Toggle as BaseToggle } from "@base-ui/react/toggle";
-import { CHIP_TOKENS } from "../tokens/index.js";
+import {
+  CHIP_TOKENS,
+} from "../tokens/topology.js";
 import { useM3EI18n } from "../context/M3EContext.js";
 import {
   useM3EScalarSpring,

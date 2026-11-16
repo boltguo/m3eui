@@ -3,7 +3,9 @@
 import * as React from "react";
 import { Popover as BasePopover } from "@base-ui/react/popover";
 import { Tooltip as BaseTooltip } from "@base-ui/react/tooltip";
-import { TOOLTIP_TOKENS } from "../tokens/index.js";
+import {
+  TOOLTIP_TOKENS,
+} from "../tokens/topology.js";
 import { useM3EPortalContainer } from "../context/M3EPortal.js";
 
 export interface M3ETooltipProps {

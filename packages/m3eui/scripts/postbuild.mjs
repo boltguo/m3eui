@@ -81,7 +81,14 @@ if (
   );
 }
 
-const tokens = await import(join(distDir, "tokens", "index.js"));
+const tokens = {
+  ...(await import(join(distDir, "tokens", "motion.js"))),
+  ...(await import(join(distDir, "tokens", "shapes.js"))),
+  ...(await import(join(distDir, "tokens", "color.js"))),
+  ...(await import(join(distDir, "tokens", "typography.js"))),
+  ...(await import(join(distDir, "tokens", "elevation.js"))),
+  ...(await import(join(distDir, "tokens", "topology.js"))),
+};
 
 function resolveSchemeMap(scheme) {
   const out = {};
@@ -140,11 +147,8 @@ const payload = {
     timePicker: tokens.TIME_PICKER_TOKENS,
     navigation: tokens.NAVIGATION_TOKENS,
     navigationRail: tokens.NAVIGATION_RAIL_TOKENS,
-    sidebar: tokens.SIDEBAR_TOKENS,
-    menubar: tokens.MENUBAR_TOKENS,
     dataTable: tokens.DATA_TABLE_TOKENS,
     skeleton: tokens.SKELETON_TOKENS,
-    dockedToolbar: tokens.DOCKED_TOOLBAR_TOKENS,
     searchView: tokens.SEARCH_VIEW_TOKENS,
     fileUpload: tokens.FILE_UPLOAD_TOKENS,
     kbdSnippet: tokens.KBD_SNIPPET_TOKENS,

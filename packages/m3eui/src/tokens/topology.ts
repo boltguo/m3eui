@@ -2524,32 +2524,12 @@ export const NAVIGATION_RAIL_TOKENS = {
   itemPressedRadius: 12,
   padding: 20,
   modalCornerRadius: SHAPE_CORNER_TOKENS.large,
-} as const;
-
-export const SIDEBAR_TOKENS = {
-  width: 280,
-  modalMaxWidth: 360,
-  itemHeight: 40,
-  itemRadius: 20,
-  itemPressedRadius: 8,
-  padding: 12,
-  wideMinWidth: 840,
-  modalCornerRadius: SHAPE_CORNER_TOKENS.large,
-} as const;
-
-export const NAVIGATION_SUITE_TOKENS = {
-  compactMaxWidth: 600,
-  mediumMaxWidth: 840,
-} as const;
-
-export const MENUBAR_TOKENS = {
-  height: 40,
-  containerRadius: 20,
-  padding: 4,
-  triggerHeight: 32,
-  triggerRadius: 16,
-  triggerPressedRadius: 8,
-  triggerPaddingInline: 14,
+  compactWidth: 280,
+  compactItemHeight: 40,
+  compactItemRadius: 20,
+  compactItemPressedRadius: 8,
+  compactPadding: 12,
+  autoModalBreakpoint: 840,
 } as const;
 
 export const DATA_TABLE_TOKENS = {
@@ -2564,15 +2544,6 @@ export const SKELETON_TOKENS = {
   textRadius: 6,
   roundedRadius: SHAPE_CORNER_TOKENS.medium,
   rectangularRadius: SHAPE_CORNER_TOKENS.extraSmall,
-} as const;
-
-export const DOCKED_TOOLBAR_TOKENS = {
-  height: 64,
-  paddingInline: 16,
-  itemSize: 48,
-  itemRadius: 24,
-  itemSelectedRadius: 14,
-  itemPressedRadius: 10,
 } as const;
 
 export const SEARCH_VIEW_TOKENS = {
@@ -2669,11 +2640,3 @@ export function resolveDragHandleGeometry(input: {
     ? { inlineSize: length, blockSize: thickness, cornerRadius }
     : { inlineSize: thickness, blockSize: length, cornerRadius };
 }
-
-export const PULL_TO_REFRESH_TOKENS = {
-  positionalThreshold: 80,
-  maxDragDistance: 132,
-  dragMultiplier: 0.5,
-  indicatorSize: 48,
-  circularSize: 40,
-} as const;

@@ -5,7 +5,9 @@ import { Autocomplete as BaseAutocomplete } from "@base-ui/react/autocomplete";
 import { Dialog as BaseDialog } from "@base-ui/react/dialog";
 import { useM3EI18n } from "../context/M3EContext.js";
 import { useM3EPortalContainer } from "../context/M3EPortal.js";
-import { parseShortcutKeys } from "../tokens/index.js";
+import {
+  parseShortcutKeys,
+} from "../tokens/topology.js";
 import { Empty } from "./Empty.js";
 import { Kbd } from "./Kbd.js";
 

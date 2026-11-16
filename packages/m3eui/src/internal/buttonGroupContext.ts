@@ -1,5 +1,7 @@
 import * as React from "react";
-import type { CornerTuple } from "../tokens/index.js";
+import type {
+  CornerTuple,
+} from "../tokens/topology.js";
 
 export interface ButtonGroupItemContextValue {
   readonly cornerOverride?: CornerTuple;

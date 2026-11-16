@@ -5,7 +5,7 @@ import { Accordion as BaseAccordion } from "@base-ui/react/accordion";
 import {
   ACCORDION_TOKENS,
   resolveAccordionItemCorners,
-} from "../tokens/index.js";
+} from "../tokens/topology.js";
 import { useM3EI18n } from "../context/M3EContext.js";
 import {
   useM3ECornerSpringRef,

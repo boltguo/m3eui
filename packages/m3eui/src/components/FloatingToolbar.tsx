@@ -3,21 +3,17 @@
 import * as React from "react";
 import { Toolbar } from "@base-ui/react/toolbar";
 import {
-  DOCKED_TOOLBAR_TOKENS,
   FLOATING_TOOLBAR_TOKENS,
   type FabColorVariant,
   type FloatingToolbarTheme,
-} from "../tokens/index.js";
-import { useM3ERuntime, useM3EI18n } from "../context/M3EContext.js";
+} from "../tokens/topology.js";
+import { useM3ERuntime } from "../context/M3EContext.js";
 import {
   useM3ECornerSpringRef,
   useM3EScalarSpring,
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
-import { INERT_TRUE, inertProp } from "../internal/inert.js";
-import { FabElevationContext } from "../internal/fabElevation.js";
-import { MoreVertIconSvg } from "../internal/icons.js";
-import { DropdownMenu } from "./Menu.js";
+import { INERT_TRUE } from "../internal/inert.js";
 import { FAB, type M3EFABProps } from "./FAB.js";
 import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
 
@@ -361,197 +357,5 @@ export function FloatingToolbar({
         </div>
       ) : null}
     </div>
-  );
-}
-
-export type DockedToolbarLayout = "spaced" | "centered" | "leading-actions";
-
-export type DockedToolbarScrollBehavior = "pinned" | "exit-always";
-
-export interface M3EDockedToolbarProps {
-  readonly items: readonly FloatingToolbarItemSpec[];
-  readonly primaryAction?: React.ReactNode;
-  readonly layout?: DockedToolbarLayout;
-  readonly elevated?: boolean;
-  readonly maxVisibleActions?: number;
-  readonly scrollBehavior?: DockedToolbarScrollBehavior;
-  readonly scrollTargetRef?: React.RefObject<HTMLElement | Window | null>;
-  readonly hidden?: boolean;
-  readonly "aria-label"?: string;
-  readonly className?: string;
-  readonly style?: React.CSSProperties;
-}
-
-function DockedToolbarActionButton({
-  item,
-}: {
-  readonly item: FloatingToolbarItemSpec;
-}) {
-  const { isPressed, pressHandlers } = usePressHoldState(Boolean(item.disabled));
-  const targetRadius = isPressed
-    ? DOCKED_TOOLBAR_TOKENS.itemPressedRadius
-    : item.selected
-      ? DOCKED_TOOLBAR_TOKENS.itemSelectedRadius
-      : DOCKED_TOOLBAR_TOKENS.itemRadius;
-  const { ref, borderRadiusCss } = useM3ECornerSpringRef<HTMLButtonElement>(
-    [targetRadius, targetRadius, targetRadius, targetRadius],
-    item.selected ? "fastSpatial" : "defaultEffects",
-  );
-
-  return (
-    <Toolbar.Button
-      ref={ref}
-      disabled={item.disabled}
-      aria-label={item.label}
-      aria-pressed={item.selected}
-      onClick={item.onClick}
-      className="m3e-docked-toolbar__button"
-      data-selected={item.selected ? "" : undefined}
-      data-pressed={isPressed ? "" : undefined}
-      style={{
-        width: `${DOCKED_TOOLBAR_TOKENS.itemSize}px`,
-        height: `${DOCKED_TOOLBAR_TOKENS.itemSize}px`,
-        borderRadius: borderRadiusCss,
-      }}
-      {...pressHandlers}
-    >
-      <span className="m3e-floating-toolbar__icon" aria-hidden="true">
-        {item.icon}
-      </span>
-    </Toolbar.Button>
-  );
-}
-
-function useExitOnScroll(
-  enabled: boolean,
-  targetRef: React.RefObject<HTMLElement | Window | null> | undefined,
-): boolean {
-  const [hidden, setHidden] = React.useState(false);
-  React.useEffect(() => {
-    if (!enabled || typeof window === "undefined") {
-      setHidden(false);
-      return undefined;
-    }
-    const target: HTMLElement | Window = targetRef?.current ?? window;
-    const readY = () =>
-      target === window ? window.scrollY : (target as HTMLElement).scrollTop;
-    let lastY = Math.max(0, readY());
-    const onScroll = () => {
-      const y = Math.max(0, readY());
-      const dy = y - lastY;
-      if (y <= 8) {
-        lastY = y;
-        setHidden(false);
-      } else if (Math.abs(dy) > 6) {
-        lastY = y;
-        setHidden(dy > 0);
-      }
-    };
-    target.addEventListener("scroll", onScroll, { passive: true });
-    return () => target.removeEventListener("scroll", onScroll);
-  }, [enabled, targetRef]);
-  return hidden;
-}
-
-export function DockedToolbar({
-  items,
-  primaryAction,
-  layout = primaryAction ? "leading-actions" : "spaced",
-  elevated = true,
-  maxVisibleActions,
-  scrollBehavior = "pinned",
-  scrollTargetRef,
-  hidden: controlledHidden,
-  "aria-label": ariaLabel,
-  className,
-  style,
-}: M3EDockedToolbarProps): React.JSX.Element {
-  const { t } = useM3EI18n();
-  const resolvedLabel = ariaLabel ?? t("dockedToolbar.ariaLabel");
-  const scrollHidden = useExitOnScroll(
-    scrollBehavior === "exit-always",
-    scrollTargetRef,
-  );
-  const isHidden = controlledHidden ?? scrollHidden;
-  const hideProgress = useM3EScalarSpring(isHidden ? 1 : 0, "defaultSpatial");
-
-  const hasOverflow =
-    maxVisibleActions !== undefined && items.length > maxVisibleActions;
-  const visibleItems = hasOverflow
-    ? items.slice(0, Math.max(0, maxVisibleActions - 1))
-    : items;
-  const overflowItems = hasOverflow ? items.slice(visibleItems.length) : [];
-
-  return (
-    <Toolbar.Root
-      aria-label={resolvedLabel}
-      aria-hidden={isHidden ? true : undefined}
-      inert={inertProp(isHidden)}
-      className={
-        className ? `m3e-docked-toolbar ${className}` : "m3e-docked-toolbar"
-      }
-      data-layout={layout}
-      data-elevated={elevated ? "" : undefined}
-      data-hidden={isHidden ? "" : undefined}
-      style={{
-        minHeight: `calc(${DOCKED_TOOLBAR_TOKENS.height}px + env(safe-area-inset-bottom, 0px))`,
-        paddingInline: `${DOCKED_TOOLBAR_TOKENS.paddingInline}px`,
-        paddingBlockEnd: "env(safe-area-inset-bottom, 0px)",
-        ...(hideProgress > 0.002
-          ? {
-              translate: `0px ${(hideProgress * 100).toFixed(2)}%`,
-              opacity: Math.max(0, 1 - hideProgress * 0.4),
-              pointerEvents: isHidden ? "none" : undefined,
-            }
-          : null),
-        ...style,
-      }}
-    >
-      <div className="m3e-docked-toolbar__items">
-        {visibleItems.map((item, idx) => (
-          <React.Fragment key={item.id}>
-            {item.separatorBefore && idx > 0 ? (
-              <Toolbar.Separator className="m3e-docked-toolbar__separator" />
-            ) : null}
-            <DockedToolbarActionButton item={item} />
-          </React.Fragment>
-        ))}
-        {hasOverflow ? (
-          <DropdownMenu
-            align="end"
-            items={overflowItems.map((item) => ({
-              id: item.id,
-              label: item.label,
-              icon: item.icon,
-              disabled: item.disabled,
-              separatorBefore: item.separatorBefore,
-              onSelect: item.onClick,
-            }))}
-            trigger={
-              <Toolbar.Button
-                aria-label={t("topAppBar.moreActions")}
-                className="m3e-docked-toolbar__button"
-                style={{
-                  width: `${DOCKED_TOOLBAR_TOKENS.itemSize}px`,
-                  height: `${DOCKED_TOOLBAR_TOKENS.itemSize}px`,
-                  borderRadius: `${DOCKED_TOOLBAR_TOKENS.itemRadius}px`,
-                }}
-              >
-                <span className="m3e-floating-toolbar__icon" aria-hidden="true">
-                  <MoreVertIconSvg />
-                </span>
-              </Toolbar.Button>
-            }
-          />
-        ) : null}
-      </div>
-      {primaryAction ? (
-        <div className="m3e-docked-toolbar__primary">
-          <FabElevationContext.Provider value="none">
-            {primaryAction}
-          </FabElevationContext.Provider>
-        </div>
-      ) : null}
-    </Toolbar.Root>
   );
 }

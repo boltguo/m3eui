@@ -2,7 +2,9 @@
 
 import * as React from "react";
 import { ScrollArea as BaseScrollArea } from "@base-ui/react/scroll-area";
-import { SCROLL_AREA_TOKENS } from "../tokens/index.js";
+import {
+  SCROLL_AREA_TOKENS,
+} from "../tokens/topology.js";
 
 export interface M3EScrollAreaProps {
   readonly children: React.ReactNode;

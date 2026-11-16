@@ -2,7 +2,10 @@
 
 import * as React from "react";
 import { Switch as BaseSwitch } from "@base-ui/react/switch";
-import { SWITCH_TOKENS, resolveSwitchGeometry } from "../tokens/index.js";
+import {
+  SWITCH_TOKENS,
+  resolveSwitchGeometry,
+} from "../tokens/topology.js";
 import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3EScalarSpringEffect, usePressHoldState } from "../hooks/useM3ESpring.js";
 import { useFieldsetDisabled } from "../internal/fieldOutline.js";

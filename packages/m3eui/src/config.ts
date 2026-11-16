@@ -1,17 +1,25 @@
 import type { TextDirection } from "@base-ui/react/direction-provider";
 import {
   type ColorPlatform,
+  type SemanticColorRoleKey,
+  generateM3EThemeTokens,
+  roleKeyToCssVarName,
+} from "./tokens/color.js";
+import {
   type ColorSchemeVariant,
+} from "./tokens/color-variants.js";
+import {
+  generateM3ESystemCssVars,
+} from "./tokens/elevation.js";
+import {
   MOTION_SCHEMES,
   type MotionScheme,
   type MotionSchemeName,
-  type SemanticColorRoleKey,
-  generateM3ESystemCssVars,
-  generateM3EThemeTokens,
-  generateM3ETypographyCssVars,
   resolveCrossPlatformSpring,
-  roleKeyToCssVarName,
-} from "./tokens/index.js";
+} from "./tokens/motion.js";
+import {
+  generateM3ETypographyCssVars,
+} from "./tokens/typography.js";
 import { M3E_COLOR_SCHEME_VARIANTS } from "./tokens/color-variants.js";
 import {
   type M3ELocale,

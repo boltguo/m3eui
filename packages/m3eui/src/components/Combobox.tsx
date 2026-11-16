@@ -6,7 +6,7 @@ import {
   SEGMENTED_MENU_TOKENS,
   SELECT_TOKENS,
   resolveSegmentedMenuItemCorners,
-} from "../tokens/index.js";
+} from "../tokens/topology.js";
 import { useM3EPortalContainer } from "../context/M3EPortal.js";
 import { useM3EI18n } from "../context/M3EContext.js";
 import {

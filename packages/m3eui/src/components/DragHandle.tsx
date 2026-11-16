@@ -4,7 +4,7 @@ import * as React from "react";
 import {
   DRAG_HANDLE_TOKENS,
   resolveDragHandleGeometry,
-} from "../tokens/index.js";
+} from "../tokens/topology.js";
 import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3EScalarSpring } from "../hooks/useM3ESpring.js";
 

@@ -1,9 +1,5 @@
 import * as React from "react";
-import {
-  Button,
-  CopyButton,
-  useM3EToast,
-} from "m3eui";
+import { CopyButton, IconButton, Tooltip, useM3EToast } from "m3eui";
 import { useCopyResolver, usePlaygroundStrings } from "../i18n";
 import type { ComponentScenarioSpec } from "../registry/types";
 import { CodeBlock } from "./CodeBlock";
@@ -23,6 +19,7 @@ export function DemoBox({
 
   const titleText = resolve(scenario.title);
   const descText = resolve(scenario.description);
+  const codeLabel = expanded ? ui.hideCode : ui.showCode;
 
   const handleCopyAnchor = async (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
@@ -39,28 +36,33 @@ export function DemoBox({
 
   return (
     <section id={scenario.id} tabIndex={-1} className="m3e-demo-box">
-      <div className="m3e-demo-box__preview">{scenario.render()}</div>
-
-      <div className="m3e-demo-box__meta">
+      <header className="m3e-demo-box__header">
         <div className="m3e-demo-box__info">
-          <div className="m3e-demo-box__title-row">
-            <h3 className="m3e-demo-box__title">
-              <a
-                href={`#${scenario.id}`}
-                onClick={handleCopyAnchor}
-                className="m3e-demo-box__anchor-link"
-              >
-                {titleText}
-                <span className="m3e-demo-box__hash" aria-hidden="true">
-                  #
-                </span>
-              </a>
-            </h3>
-          </div>
+          <h3 className="m3e-demo-box__title">
+            <a
+              href={`#${scenario.id}`}
+              onClick={handleCopyAnchor}
+              className="m3e-demo-box__anchor-link"
+            >
+              {titleText}
+              <span className="m3e-demo-box__hash" aria-hidden="true">
+                #
+              </span>
+            </a>
+          </h3>
           <p className="m3e-demo-box__desc">{descText}</p>
         </div>
 
         <div className="m3e-demo-box__actions">
+          <Tooltip content={codeLabel}>
+            <IconButton
+              size="xs"
+              variant={expanded ? "tonal" : "standard"}
+              aria-label={codeLabel}
+              icon={<CodeBracketsIcon size={18} />}
+              onClick={() => setExpanded((prev) => !prev)}
+            />
+          </Tooltip>
           <CopyButton
             value={scenario.code.trim()}
             variant="ghost"
@@ -68,22 +70,17 @@ export function DemoBox({
             copiedLabel={ui.cardCopied}
             onCopy={() => toast({ title: ui.cardCopiedCodeToast(titleText) })}
           />
-          <Button
-            size="xs"
-            variant={expanded ? "tonal" : "outlined"}
-            leadingIcon={<CodeBracketsIcon size={14} />}
-            onClick={() => setExpanded((prev) => !prev)}
-          >
-            {expanded ? ui.hideCode : ui.showCode}
-          </Button>
         </div>
-      </div>
+      </header>
 
-      {expanded && (
-        <div className="m3e-demo-box__code">
-          <CodeBlock code={scenario.code} lang="tsx" maxHeight={380} embedded />
-        </div>
-      )}
+      <div className="m3e-demo-box__surface">
+        <div className="m3e-demo-box__preview">{scenario.render()}</div>
+        {expanded && (
+          <div className="m3e-demo-box__code">
+            <CodeBlock code={scenario.code} lang="tsx" maxHeight={380} embedded />
+          </div>
+        )}
+      </div>
     </section>
   );
 }

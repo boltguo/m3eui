@@ -20,7 +20,6 @@ import {
   DataTable,
   DatePickerField,
   Dialog,
-  DockedToolbar,
   DatePicker,
   DragHandle,
   DropdownMenu,
@@ -36,7 +35,6 @@ import {
   NavigationBar,
   NumberField,
   OTPField,
-  PullToRefreshBox,
   Tooltip,
   SearchBar,
   SearchView,
@@ -106,8 +104,7 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
       "components/Tabs.js",
       "components/TopAppBar.js",
       "components/DragHandle.js",
-      "components/Sidebar.js",
-      "components/PullToRefresh.js",
+      "components/Navigation.js",
     ]) {
       const code = readFileSync(resolve(distRoot, rel), "utf8").trimStart();
       expect(
@@ -1164,9 +1161,8 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
     expect(onTimeCommit).not.toHaveBeenCalled();
   });
 
-  it("delivers standalone AOSP DragHandle (RTL keyboard + pointercancel), DockedToolbar (flat FAB context), and PullToRefreshBox (threshold + cancel guard)", () => {
+  it("delivers standalone AOSP DragHandle (RTL keyboard + pointercancel)", () => {
     const onSplitChange = vi.fn();
-    const onRefresh = vi.fn();
 
     act(() => {
       root.render(
@@ -1179,24 +1175,6 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
             onValueChange={onSplitChange}
           />
           <DragHandle orientation="horizontal" defaultValue={40} />
-          <DockedToolbar
-            maxVisibleActions={3}
-            items={[
-              { id: "b1", label: "Check", icon: <span>1</span> },
-              { id: "b2", label: "Edit", icon: <span>2</span> },
-              { id: "b3", label: "Mic", icon: <span>3</span> },
-              { id: "b4", label: "Share", icon: <span>4</span> },
-            ]}
-            primaryAction={<FAB id="bab-fab" icon={<span>+</span>} aria-label="Add" />}
-          />
-          <PullToRefreshBox
-            id="ptr-box"
-            refreshing={false}
-            onRefresh={onRefresh}
-            threshold={60}
-          >
-            <div style={{ height: 300 }}>Feed items</div>
-          </PullToRefreshBox>
         </M3EProvider>,
       );
     });
@@ -1250,91 +1228,6 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
     });
     expect(vHandle.hasAttribute("data-active")).toBe(false);
     expect(vHandle.hasAttribute("data-dragging")).toBe(false);
-
-    // 2. DockedToolbar forces primaryAction FAB elevation to "none" per AOSP AppBar.kt
-    const babFab = container.querySelector<HTMLButtonElement>("#bab-fab")!;
-    expect(babFab.getAttribute("data-elevation")).toBe("none");
-    expect(
-      container.querySelectorAll(".m3e-docked-toolbar__items .m3e-docked-toolbar__button")
-        .length,
-    ).toBe(3);
-
-    // 3. PullToRefreshBox: pointercancel does NOT trigger onRefresh; pull past threshold (deltaY * 0.5 >= 60 => deltaY >= 120) DOES trigger onRefresh
-    const ptr = container.querySelector<HTMLElement>(".m3e-pull-to-refresh")!;
-    act(() => {
-      ptr.dispatchEvent(
-        new PointerEvent("pointerdown", {
-          button: 0,
-          pointerId: 3,
-          clientX: 100,
-          clientY: 20,
-          bubbles: true,
-        }),
-      );
-      ptr.dispatchEvent(
-        new PointerEvent("pointermove", {
-          pointerId: 3,
-          clientX: 100,
-          clientY: 180,
-          bubbles: true,
-        }),
-      );
-      ptr.dispatchEvent(
-        new PointerEvent("pointercancel", { pointerId: 3, bubbles: true }),
-      );
-    });
-    expect(onRefresh).not.toHaveBeenCalled();
-
-    act(() => {
-      ptr.dispatchEvent(
-        new PointerEvent("pointerdown", {
-          button: 0,
-          pointerId: 4,
-          clientX: 100,
-          clientY: 20,
-          bubbles: true,
-        }),
-      );
-      ptr.dispatchEvent(
-        new PointerEvent("pointermove", {
-          pointerId: 4,
-          clientX: 100,
-          clientY: 160,
-          bubbles: true,
-        }),
-      );
-      ptr.dispatchEvent(
-        new PointerEvent("pointerup", { pointerId: 4, bubbles: true }),
-      );
-    });
-    expect(onRefresh).toHaveBeenCalledTimes(1);
-
-    // Touch path: non-passive touchmove blocks native scroll only while pulling down from the top
-    const touchEvent = (type: string, y: number) => {
-      const ev = new Event(type, { bubbles: true, cancelable: true });
-      const list = [{ identifier: 7, clientX: 100, clientY: y }];
-      Object.defineProperty(ev, "touches", { value: type === "touchend" ? [] : list });
-      Object.defineProperty(ev, "changedTouches", { value: list });
-      return ev;
-    };
-    const up = touchEvent("touchmove", 0);
-    act(() => {
-      ptr.dispatchEvent(touchEvent("touchstart", 40));
-      ptr.dispatchEvent(up);
-    });
-    expect(up.defaultPrevented).toBe(false);
-
-    const down = touchEvent("touchmove", 200);
-    act(() => {
-      ptr.dispatchEvent(touchEvent("touchstart", 20));
-      ptr.dispatchEvent(touchEvent("touchmove", 30));
-      ptr.dispatchEvent(down);
-    });
-    expect(down.defaultPrevented).toBe(true);
-    act(() => {
-      ptr.dispatchEvent(touchEvent("touchend", 200));
-    });
-    expect(onRefresh).toHaveBeenCalledTimes(2);
   });
 
   it("covers 0.1.0 release regressions across Web-derived & form controls", () => {

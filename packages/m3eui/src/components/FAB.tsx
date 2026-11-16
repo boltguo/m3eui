@@ -12,7 +12,7 @@ import {
   type ToggleFabSize,
   resolveFabGeometry,
   resolveToggleFabGeometry,
-} from "../tokens/index.js";
+} from "../tokens/topology.js";
 import { useM3ERuntime } from "../context/M3EContext.js";
 import {
   useM3ECornerSpringRef,
@@ -21,9 +21,7 @@ import {
 } from "../hooks/useM3ESpring.js";
 import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
 import { INERT_TRUE } from "../internal/inert.js";
-import { FabElevationContext, type FabElevation } from "../internal/fabElevation.js";
-
-export type { FabElevation };
+export type FabElevation = "default" | "lowered" | "none";
 
 const EXTENDED_FAB_TYPESCALE_MAP: Record<ExtendedFabSize, string> = {
   sm: "title-medium",
@@ -79,8 +77,7 @@ const IconFAB = React.forwardRef<HTMLElement, M3EIconFABProps>(function IconFAB(
   ref,
 ) {
   const { debugGeometry } = useM3ERuntime();
-  const contextElevation = React.useContext(FabElevationContext);
-  const resolvedElevation = elevation ?? contextElevation ?? "default";
+  const resolvedElevation = elevation ?? "default";
   const { isPressed, pressHandlers } = usePressHoldState(disabled || !visible);
   const geo = resolveFabGeometry({
     size,
@@ -215,8 +212,7 @@ const ExtendedFAB = React.forwardRef<HTMLElement, M3EExtendedFABProps>(
     ref,
   ) {
     const { debugGeometry } = useM3ERuntime();
-    const contextElevation = React.useContext(FabElevationContext);
-    const resolvedElevation = elevation ?? contextElevation ?? "default";
+    const resolvedElevation = elevation ?? "default";
     const { isPressed, pressHandlers } = usePressHoldState(
       disabled || !visible,
     );

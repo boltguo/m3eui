@@ -3,8 +3,8 @@ import { Link, Navigate, useNavigate, useOutletContext, useParams } from "react-
 import {
   Breadcrumb,
   Card,
+  NavigationRail,
   type NavigationDestination,
-  Sidebar,
   useM3EI18n,
 } from "m3eui";
 import { useCopyResolver, usePlaygroundStrings } from "../i18n";
@@ -55,7 +55,10 @@ export function DocsPage() {
 
   return (
     <div className="m3e-doc-layout">
-      <Sidebar
+      <NavigationRail
+        expanded
+        modal="auto"
+        density="compact"
         className="m3e-playground-sidebar"
         open={navOpen}
         onOpenChange={setNavOpen}

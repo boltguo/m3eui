@@ -1,10 +1,12 @@
 import * as React from "react";
 import {
-  type CornerTuple,
   type MotionTokenKey,
   type SpringPhysicsSpec,
   stepSpringSimulation,
-} from "../tokens/index.js";
+} from "../tokens/motion.js";
+import {
+  type CornerTuple,
+} from "../tokens/topology.js";
 import { useM3ERuntime } from "../context/M3EContext.js";
 import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
 

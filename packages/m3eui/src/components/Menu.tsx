@@ -3,13 +3,11 @@
 import * as React from "react";
 import { ContextMenu as BaseContextMenu } from "@base-ui/react/context-menu";
 import { Menu as BaseMenu } from "@base-ui/react/menu";
-import { Menubar as BaseMenubar } from "@base-ui/react/menubar";
 import {
-  MENUBAR_TOKENS,
   SEGMENTED_MENU_TOKENS,
   parseShortcutKeys,
   resolveSegmentedMenuItemCorners,
-} from "../tokens/index.js";
+} from "../tokens/topology.js";
 import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3EPortalContainer } from "../context/M3EPortal.js";
 import { useM3ECornerSpringRef, usePressHoldState } from "../hooks/useM3ESpring.js";
@@ -108,12 +106,69 @@ function MenuCheckSvg() {
   );
 }
 
-function resolveMenuGroupRadius(index: number, count: number): string {
+/** AOSP DropdownMenuGroup: once hovered, a group the pointer has left morphs to its inactive (small) shape. */
+function useMenuSurfaceShape<T extends HTMLElement>(
+  index: number,
+  count: number,
+  morph: boolean,
+) {
+  const [hovered, setHovered] = React.useState<boolean | null>(null);
   const outer = SEGMENTED_MENU_TOKENS.containerRadius;
   const inner = SEGMENTED_MENU_TOKENS.groupInnerRadius;
-  const top = index === 0 ? outer : inner;
-  const bottom = index === count - 1 ? outer : inner;
-  return `${top}px ${top}px ${bottom}px ${bottom}px`;
+  const top = morph && hovered === false ? inner : index === 0 ? outer : inner;
+  const bottom = morph && hovered === false ? inner : index === count - 1 ? outer : inner;
+  const nodeRef = React.useRef<T | null>(null);
+  const { ref: springRef, borderRadiusCss } = useM3ECornerSpringRef<T>(
+    [top, top, bottom, bottom],
+    "fastSpatial",
+  );
+  const ref = React.useCallback(
+    (node: T | null) => {
+      nodeRef.current = node;
+      springRef(node);
+    },
+    [springRef],
+  );
+  // Native listeners: React's synthetic enter/leave treat portaled submenus as descendants.
+  React.useEffect(() => {
+    const node = nodeRef.current;
+    if (!morph || !node) return;
+    const track = (next: boolean) => (event: PointerEvent) => {
+      if (event.pointerType !== "touch") setHovered(next);
+    };
+    const enter = track(true);
+    const leave = track(false);
+    node.addEventListener("pointerenter", enter);
+    node.addEventListener("pointerleave", leave);
+    return () => {
+      node.removeEventListener("pointerenter", enter);
+      node.removeEventListener("pointerleave", leave);
+    };
+  }, [morph]);
+  return { ref, borderRadius: borderRadiusCss };
+}
+
+function MenuGroupSurface({
+  index,
+  count,
+  style,
+  children,
+}: {
+  readonly index: number;
+  readonly count: number;
+  readonly style: React.CSSProperties;
+  readonly children: React.ReactNode;
+}) {
+  const { borderRadius, ...shape } = useMenuSurfaceShape<HTMLDivElement>(index, count, true);
+  return (
+    <BaseMenu.Group
+      {...shape}
+      className="m3e-segmented-menu__group"
+      style={{ ...style, borderRadius }}
+    >
+      {children}
+    </BaseMenu.Group>
+  );
 }
 
 function MenuPopup({
@@ -137,8 +192,15 @@ function MenuPopup({
     gap: `${SEGMENTED_MENU_TOKENS.itemGap}px`,
   };
 
+  const { borderRadius, ...surfaceShape } = useMenuSurfaceShape<HTMLDivElement>(
+    0,
+    1,
+    variant === "segmented" && !isDetachedGroups,
+  );
+
   return (
     <BaseMenu.Popup
+      {...(isDetachedGroups ? null : surfaceShape)}
       className={className ? `m3e-segmented-menu ${className}` : "m3e-segmented-menu"}
       data-theme={theme !== "standard" ? theme : undefined}
       data-variant={variant}
@@ -148,19 +210,17 @@ function MenuPopup({
           ? { gap: `${SEGMENTED_MENU_TOKENS.groupGap}px` }
           : {
               ...surfaceStyle,
-              borderRadius: `${SEGMENTED_MENU_TOKENS.containerRadius}px`,
+              borderRadius,
             }
       }
     >
       {isDetachedGroups
         ? groups.map((groupItems, groupIdx) => (
-            <BaseMenu.Group
+            <MenuGroupSurface
               key={groupItems[0]!.id}
-              className="m3e-segmented-menu__group"
-              style={{
-                ...surfaceStyle,
-                borderRadius: resolveMenuGroupRadius(groupIdx, groups.length),
-              }}
+              index={groupIdx}
+              count={groups.length}
+              style={surfaceStyle}
             >
               {groupItems.map((item, idx) => (
                 <MenuItem
@@ -176,7 +236,7 @@ function MenuPopup({
                   variant={variant}
                 />
               ))}
-            </BaseMenu.Group>
+            </MenuGroupSurface>
           ))
         : items.map((item, idx) => (
             <MenuItem
@@ -439,103 +499,5 @@ export function ContextMenu({
         </BaseContextMenu.Positioner>
       </BaseContextMenu.Portal>
     </BaseContextMenu.Root>
-  );
-}
-
-export interface M3EMenubarMenuSpec {
-  readonly id: string;
-  readonly label: React.ReactNode;
-  readonly disabled?: boolean;
-  readonly items: readonly M3EMenuItemSpec[];
-}
-
-export interface M3EMenubarProps {
-  readonly menus: readonly M3EMenubarMenuSpec[];
-  readonly disabled?: boolean;
-  readonly "aria-label"?: string;
-  readonly className?: string;
-  readonly style?: React.CSSProperties;
-}
-
-function MenubarTopTrigger({
-  menu,
-}: {
-  readonly menu: M3EMenubarMenuSpec;
-}) {
-  const portalContainer = useM3EPortalContainer();
-  const { isPressed, pressHandlers } = usePressHoldState(Boolean(menu.disabled));
-  const targetRadius = isPressed
-    ? MENUBAR_TOKENS.triggerPressedRadius
-    : MENUBAR_TOKENS.triggerRadius;
-  const { ref: cornerRef, borderRadiusCss } = useM3ECornerSpringRef<HTMLButtonElement>(
-    [targetRadius, targetRadius, targetRadius, targetRadius],
-    "fastSpatial",
-  );
-
-  return (
-    <BaseMenu.Root disabled={menu.disabled}>
-      <BaseMenu.Trigger
-        ref={cornerRef}
-        disabled={menu.disabled}
-        className="m3e-menubar__trigger"
-        data-pressed={isPressed ? "" : undefined}
-        style={{
-          height: `${MENUBAR_TOKENS.triggerHeight}px`,
-          paddingInline: `${MENUBAR_TOKENS.triggerPaddingInline}px`,
-          borderRadius: borderRadiusCss,
-        }}
-        {...pressHandlers}
-      >
-        <span
-          className="m3e-menubar__label"
-          data-text={typeof menu.label === "string" ? menu.label : undefined}
-        >
-          {menu.label}
-        </span>
-      </BaseMenu.Trigger>
-      <BaseMenu.Portal container={portalContainer}>
-        <BaseMenu.Positioner
-          side="bottom"
-          align="start"
-          sideOffset={6}
-          className="m3e-segmented-menu__positioner"
-        >
-          <MenuPopup
-            items={menu.items}
-            theme="standard"
-            variant="segmented"
-            className="m3e-menubar__popup"
-          />
-        </BaseMenu.Positioner>
-      </BaseMenu.Portal>
-    </BaseMenu.Root>
-  );
-}
-
-export function Menubar({
-  menus,
-  disabled = false,
-  "aria-label": ariaLabel,
-  className,
-  style,
-}: M3EMenubarProps): React.JSX.Element {
-  const { t } = useM3ERuntime();
-  return (
-    <BaseMenubar
-      modal={false}
-      disabled={disabled}
-      aria-label={ariaLabel ?? t("menubar.ariaLabel")}
-      className={className ? `m3e-menubar ${className}` : "m3e-menubar"}
-      style={{
-        minHeight: `${MENUBAR_TOKENS.height}px`,
-        borderRadius: `${MENUBAR_TOKENS.containerRadius}px`,
-        padding: `${MENUBAR_TOKENS.padding}px`,
-        ...style,
-      }}
-    >
-      {menus.map((menu) => (
-        <MenubarTopTrigger key={menu.id} menu={menu} />
-      ))}
-    </BaseMenubar>
   );
 }

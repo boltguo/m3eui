@@ -2,7 +2,10 @@ import * as React from "react";
 import { useFormReset } from "../internal/formField.js";
 import { Field as BaseField } from "@base-ui/react/field";
 import { NumberField as BaseNumberField } from "@base-ui/react/number-field";
-import { NUMBER_FIELD_TOKENS, flipCornersHorizontal } from "../tokens/index.js";
+import {
+  NUMBER_FIELD_TOKENS,
+  flipCornersHorizontal,
+} from "../tokens/topology.js";
 import { useM3ERuntime } from "../context/M3EContext.js";
 import {
   useM3ECornerSpringRef,

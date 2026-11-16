@@ -133,14 +133,6 @@ export interface M3EThemeTokens {
   readonly cssLightDarkVars: Record<string, string>;
 }
 
-export const M3E_SEED_PRESETS = [
-  { name: "Expressive Violet", hex: "#6750A4" },
-  { name: "Cobalt Pulse", hex: "#2563EB" },
-  { name: "Emerald Mint", hex: "#0F766E" },
-  { name: "Coral Bloom", hex: "#E11D48" },
-  { name: "Amber Spark", hex: "#D97706" },
-] as const;
-
 const MDC = new MaterialDynamicColors();
 const SUCCESS_ANCHOR_ARGB = 0xff1b6d3d;
 const WARNING_ANCHOR_ARGB = 0xff7d5800;

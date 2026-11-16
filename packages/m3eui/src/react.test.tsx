@@ -4,7 +4,9 @@ import * as React from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { generateM3EThemeTokens } from "./tokens/index.js";
+import {
+  generateM3EThemeTokens,
+} from "./tokens/color.js";
 import {
   Accordion,
   Alert,
@@ -33,7 +35,6 @@ import {
   DatePicker,
   Dialog,
   Divider,
-  DockedToolbar,
   DropdownMenu,
   Empty,
   FAB,
@@ -51,12 +52,9 @@ import {
   type M3EConfig,
   M3EProvider,
   MaterialShapeView,
-  Menubar,
   Meter,
   Select,
-  Sidebar,
-  NavigationMenu,
-  NavigationSuite,
+  NavigationRail,
   NumberField,
   OTPField,
   Pagination,
@@ -550,45 +548,6 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(expandBtn!.textContent).toBe("Expand all");
   });
 
-  it("renders NavigationMenu as a semantic <nav> landmark and marks active link with aria-current='page'", () => {
-    act(() => {
-      root.render(
-        <PausedWrapper locale="en-US">
-          <NavigationMenu
-            brand="M3E"
-            items={[
-              { value: "home", label: "Overview", href: "#overview", active: true },
-              {
-                value: "docs",
-                label: "Foundations",
-                links: [
-                  {
-                    id: "tokens",
-                    title: "Design Tokens",
-                    description: "HCT & Springs",
-                    href: "#tokens",
-                  },
-                ],
-              },
-            ]}
-          />
-        </PausedWrapper>,
-      );
-    });
-
-    const nav = container.querySelector("nav.m3e-nav-menu");
-    expect(nav).not.toBeNull();
-    expect(nav!.getAttribute("aria-label")).toBe(
-      enUSMessages["navigation.siteMenuLabel"],
-    );
-    expect(nav!.getAttribute("role")).toBeNull();
-
-    const activeLink = container.querySelector<HTMLAnchorElement>(
-      ".m3e-nav-menu__link",
-    );
-    expect(activeLink?.getAttribute("aria-current")).toBe("page");
-  });
-
   it("forwards refs cleanly across Button, IconButton, Switch, Checkbox, Card, and TextField", () => {
     const btnRef = React.createRef<HTMLElement>();
     const iconBtnRef = React.createRef<HTMLElement>();
@@ -820,7 +779,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     ).toBeGreaterThanOrEqual(2);
   });
 
-  it("renders Combobox, RadioGroup, CheckboxGroup, multiline TextField, Menubar & bottom Sheet with localized labels", () => {
+  it("renders Combobox, RadioGroup, CheckboxGroup, multiline TextField & bottom Sheet with localized labels", () => {
     act(() => {
       root.render(
         <PausedWrapper locale="ja-JP">
@@ -836,15 +795,6 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
           <CheckboxGroup defaultValue={["x"]} aria-label="権限">
             <Checkbox value="x" label="Read" />
           </CheckboxGroup>
-          <Menubar
-            menus={[
-              {
-                id: "file",
-                label: "ファイル",
-                items: [{ id: "new", label: "新規" }],
-              },
-            ]}
-          />
           <Sheet open title="設定シート">
             Sheet content
           </Sheet>
@@ -1136,7 +1086,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(status?.textContent).toContain("已按版本号降序排列");
   });
 
-  it("renders TimePicker (24h dual ring), range DatePicker, Form/Fieldset, NavigationSuite & Skeleton", () => {
+  it("renders TimePicker (24h dual ring), range DatePicker, Form/Fieldset & Skeleton", () => {
     let pickedRange: { start: string; end: string } | null = null;
 
     act(() => {
@@ -1155,17 +1105,6 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
               <input name="username" defaultValue="m3e" />
             </Fieldset>
           </Form>
-          <NavigationSuite
-            layout="bar"
-            value="home"
-            onValueChange={() => {}}
-            items={[
-              { value: "home", label: "首页", icon: "⌂" },
-              { value: "tokens", label: "令牌", icon: "◈" },
-            ]}
-          >
-            <div>主体内容</div>
-          </NavigationSuite>
           <Skeleton shape="cookie9Sided" width={48} />
         </PausedWrapper>,
       );
@@ -1386,13 +1325,16 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(buttons.length).toBe(3);
   });
 
-  it("renders Sidebar anchor links with section titles, badgeLabel, and a compact SearchBar header", () => {
+  it("renders compact NavigationRail anchor links with section titles, badgeLabel, and a SearchBar header", () => {
     let selected = "theme-setup";
     act(() => {
       root.render(
         <PausedWrapper locale="zh-CN">
           <div>
-            <Sidebar
+            <NavigationRail
+              expanded
+              modal="auto"
+              density="compact"
               header={<SearchBar size="sm" placeholder="快速搜索组件" />}
               value={selected}
               onValueChange={(v) => {
@@ -1425,9 +1367,12 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(compactBar).not.toBeNull();
     expect(compactBar!.style.minHeight).toBe("40px");
 
-    const nav = container.querySelector<HTMLElement>("nav.m3e-sidebar");
-    expect(nav?.getAttribute("aria-label")).toBe("栏目");
-    expect(nav?.querySelector(".m3e-sidebar__header .m3e-search-bar")).not.toBeNull();
+    const nav = container.querySelector<HTMLElement>("nav.m3e-nav-rail--compact");
+    expect(nav?.getAttribute("data-modal")).toBe("auto");
+    expect(nav?.querySelector(".m3e-nav-rail__header .m3e-search-bar")).not.toBeNull();
+    expect(
+      nav?.querySelector<HTMLElement>(".m3e-nav-list__item")?.style.minHeight,
+    ).toBe("40px");
     expect(
       [...nav!.querySelectorAll(".m3e-nav-list__section-title")].map((el) => el.textContent),
     ).toEqual(["入门", "动作"]);
@@ -2155,7 +2100,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(link?.getAttribute("type")).toBeNull();
   });
 
-  it("renders Phase 1 M3E spec components: filter Chip, DockedToolbar, SearchView, and standard List", () => {
+  it("renders Phase 1 M3E spec components: filter Chip, SearchView, and standard List", () => {
     let chipClicks = 0;
     let submittedSearch = "";
     let clearedRecent = false;
@@ -2174,14 +2119,6 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
             >
               总结本周变更
             </Chip>
-
-            <DockedToolbar
-              items={[
-                { id: "share", label: "分享", icon: <span>S</span>, selected: true },
-                { id: "bookmark", label: "收藏", icon: <span>B</span>, separatorBefore: true },
-              ]}
-              primaryAction={<FAB aria-label="新建" icon={<span>+</span>} size="sm" />}
-            />
 
             <SearchView
               open
@@ -2216,14 +2153,6 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
       suggestionChip?.click();
     });
     expect(chipClicks).toBe(1);
-
-    const dockedToolbar = container.querySelector<HTMLElement>(".m3e-docked-toolbar");
-    expect(dockedToolbar?.getAttribute("role")).toBe("toolbar");
-    expect(dockedToolbar?.getAttribute("aria-label")).toBe(
-      zhCNMessages["dockedToolbar.ariaLabel"],
-    );
-    expect(dockedToolbar?.getAttribute("data-layout")).toBe("leading-actions");
-    expect(dockedToolbar?.querySelector(".m3e-docked-toolbar__primary")).not.toBeNull();
 
     const searchView = document.body.querySelector<HTMLElement>(
       ".m3e-search-view__modal-popup .m3e-search-view",
@@ -2485,17 +2414,13 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(pickedHex).toBe("#0B6B58");
   });
 
-  it("scopes M3E scrollbar tokens strictly to internal component scroll containers without global leakage", () => {
+  it("styles scrollbars via scoped webkit pseudo-elements without disabling overlay scrollbars", () => {
     const css = readFileSync(
       resolve(__dirname, "styles/m3e.css"),
       "utf8",
     );
-    expect(css).toContain("--m3e-scrollbar-thumb: var(--m3e-color-outline)");
-    expect(css).toContain("scrollbar-color: var(--m3e-scrollbar-thumb) var(--m3e-scrollbar-track)");
-    expect(css).toContain("@media (prefers-contrast: more)");
-    expect(css).toContain("@supports not (scrollbar-color: auto)");
-    expect(css).not.toMatch(/(?:^|\s)(?:html|body|:root|\*)::-webkit-scrollbar/);
-    expect(css).not.toMatch(/(?:html|body|:root|\*)\s*\{[^}]*scrollbar-color:/);
+    expect(css).not.toMatch(/scrollbar-color:|scrollbar-width:\s*thin/);
+    expect(css).not.toMatch(/(?:^|[\s,])(?:html|body|:root|\*)::-webkit-scrollbar/);
   });
 
   it("layers floating popup positioners above Dialog, Sheet, SearchView, and CommandPalette modals", () => {
@@ -2584,7 +2509,8 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
           >
             Publish
           </SplitButton>
-          <Sidebar
+          <NavigationRail
+            expanded
             value="b"
             onValueChange={() => {}}
             items={[
@@ -2612,7 +2538,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(menuKbds.length).toBe(2);
 
     expect(
-      container.querySelector(".m3e-sidebar .m3e-nav-list__divider"),
+      container.querySelector(".m3e-nav-rail .m3e-nav-list__divider"),
     ).not.toBeNull();
     expect(
       container.querySelector(".m3e-alert .m3e-icon-button.m3e-alert__close"),
@@ -2708,9 +2634,6 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     );
     expect(css).toContain(
       ".m3e-icon-button[data-toggle][data-selected]:hover:where(:not([data-disabled], [data-pressed]))",
-    );
-    expect(css).toContain(
-      ".m3e-docked-toolbar__button:hover:where(:not(:disabled, [data-selected], [data-pressed]))",
     );
     expect(css).toContain(
       '.m3e-chip-status[data-variant="solid"][data-tone="primary"]',

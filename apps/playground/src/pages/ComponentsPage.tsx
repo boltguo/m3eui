@@ -12,8 +12,8 @@ import {
   Card,
   Chip,
   CopyButton,
+  NavigationRail,
   type NavigationDestination,
-  Sidebar,
   SearchBar,
   Tab,
   Tabs,
@@ -156,7 +156,10 @@ export function ComponentsPage() {
 
   return (
     <div className="m3e-doc-layout">
-      <Sidebar
+      <NavigationRail
+        expanded
+        modal="auto"
+        density="compact"
         className="m3e-playground-sidebar"
         open={navOpen}
         onOpenChange={setNavOpen}
@@ -213,11 +216,11 @@ export function ComponentsPage() {
                 NEW
               </Chip>
             )}
-            {doc.primitive && (
-              <Chip tone="neutral" variant="outlined">
-                {doc.primitive}
+            {doc.primitive?.split(" · ").map((name) => (
+              <Chip key={name} tone="neutral" variant="outlined">
+                {name}
               </Chip>
-            )}
+            ))}
           </div>
           <p className="m3e-doc-header__subtitle">{resolve(doc.subtitle)}</p>
 

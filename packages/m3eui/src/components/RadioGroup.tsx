@@ -3,7 +3,9 @@
 import * as React from "react";
 import { Radio as BaseRadio } from "@base-ui/react/radio";
 import { RadioGroup as BaseRadioGroup } from "@base-ui/react/radio-group";
-import { RADIO_TOKENS } from "../tokens/index.js";
+import {
+  RADIO_TOKENS,
+} from "../tokens/topology.js";
 import { usePressHoldState } from "../hooks/useM3ESpring.js";
 import { FieldsetDisabledContext, useFieldsetDisabled } from "../internal/fieldOutline.js";
 import { FormFieldScope } from "../internal/formField.js";

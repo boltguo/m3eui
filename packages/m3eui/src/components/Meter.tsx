@@ -2,7 +2,9 @@
 
 import * as React from "react";
 import { Meter as BaseMeter } from "@base-ui/react/meter";
-import { METER_TOKENS } from "../tokens/index.js";
+import {
+  METER_TOKENS,
+} from "../tokens/topology.js";
 import { useM3EI18n } from "../context/M3EContext.js";
 import { useM3EScalarSpring } from "../hooks/useM3ESpring.js";
 

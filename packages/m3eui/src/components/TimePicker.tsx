@@ -7,7 +7,7 @@ import {
   SELECT_TOKENS,
   TIME_PICKER_TOKENS,
   resolveClockHandGeometry,
-} from "../tokens/index.js";
+} from "../tokens/topology.js";
 import { useM3EI18n } from "../context/M3EContext.js";
 import { useM3EPortalContainer } from "../context/M3EPortal.js";
 import {

@@ -2,7 +2,9 @@
 
 import * as React from "react";
 import { Tabs as BaseTabs } from "@base-ui/react/tabs";
-import { TABS_TOKENS } from "../tokens/index.js";
+import {
+  TABS_TOKENS,
+} from "../tokens/topology.js";
 import { usePressHoldState } from "../hooks/useM3ESpring.js";
 import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
 

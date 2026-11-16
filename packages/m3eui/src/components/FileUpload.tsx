@@ -1,7 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { FILE_UPLOAD_TOKENS } from "../tokens/index.js";
+import {
+  FILE_UPLOAD_TOKENS,
+} from "../tokens/topology.js";
 import { useM3EI18n } from "../context/M3EContext.js";
 import {
   useM3ECornerSpringRef,

@@ -5,8 +5,10 @@ import { Progress as BaseProgress } from "@base-ui/react/progress";
 import {
   PROGRESS_TOKENS,
   resolveCircularProgressArcs,
+} from "../tokens/topology.js";
+import {
   resolveLinearIndeterminateFractions,
-} from "../tokens/index.js";
+} from "../tokens/wavy.js";
 import { useM3ERuntime } from "../context/M3EContext.js";
 import { useOffscreen } from "../internal/useOffscreen.js";
 import { subscribeSpringFrame, useM3EScalarSpring } from "../hooks/useM3ESpring.js";

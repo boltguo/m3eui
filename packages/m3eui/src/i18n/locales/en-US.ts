@@ -76,14 +76,10 @@ export const enUSMessages: M3EMessages = {
   "progress.wavyLinearLabel": "Progress",
   "progress.wavyCircularLabel": "Circular progress",
 
-  "menubar.ariaLabel": "Application commands",
   "navigation.barLabel": "Primary",
   "navigation.railLabel": "Primary",
   "navigation.collapseRail": "Collapse navigation",
   "navigation.expandRail": "Expand navigation",
-  "navigation.suiteLabel": "Adaptive primary",
-  "navigation.sidebarLabel": "Section",
-  "navigation.siteMenuLabel": "Site",
 
   "numberField.decrement": "Decrease value",
   "numberField.increment": "Increase value",
@@ -132,11 +128,7 @@ export const enUSMessages: M3EMessages = {
   "topAppBar.actionsLabel": "App bar actions",
   "topAppBar.moreActions": "More actions",
   "dragHandle.ariaLabel": "Resize panes",
-  "pullToRefresh.pulling": "Pull to refresh",
-  "pullToRefresh.release": "Release to refresh",
-  "pullToRefresh.refreshing": "Refreshing",
 
-  "dockedToolbar.ariaLabel": "Docked toolbar",
   "searchView.back": "Back",
   "searchView.recentHeading": "Recent searches",
   "searchView.clearRecent": "Clear recent",

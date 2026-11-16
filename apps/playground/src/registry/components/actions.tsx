@@ -2,7 +2,6 @@ import * as React from "react";
 import {
   Button,
   ButtonGroup,
-  DockedToolbar,
   FAB,
   FABMenu,
   FloatingToolbar,
@@ -326,13 +325,13 @@ function ConnectedMultiGroupDemo() {
         variant="connected"
         selectionMode="multiple"
         buttonVariant="outlined"
+        size="sm"
         value={formats}
         onValueChange={setFormats}
         aria-label="Text formatting"
         items={[
           { value: "bold", label: "Bold", showCheckIcon: true },
           { value: "italic", label: "Italic", showCheckIcon: true },
-          { value: "underline", label: "Underline", showCheckIcon: true },
           {
             value: "code",
             label: "Code",
@@ -638,82 +637,6 @@ const COMMON_SPLIT_MENU = [
   { id: "schedule", label: "Schedule for 9:00 AM", shortcut: "⇧⌘L" },
   { id: "draft", label: "Save as template" },
 ] as const;
-
-function DockedToolbarScrollDemo() {
-  const feedRef = React.useRef<HTMLDivElement | null>(null);
-  const [behavior, setBehavior] = React.useState<"pinned" | "exit-always">("exit-always");
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", maxWidth: 480 }}>
-      <div className="demo-row" style={{ gap: 8 }}>
-        <Button
-          size="xs"
-          variant={behavior === "exit-always" ? "filled" : "outlined"}
-          onClick={() => setBehavior("exit-always")}
-        >
-          exit-always
-        </Button>
-        <Button
-          size="xs"
-          variant={behavior === "pinned" ? "filled" : "outlined"}
-          onClick={() => setBehavior("pinned")}
-        >
-          pinned
-        </Button>
-      </div>
-      <div
-        style={{
-          position: "relative",
-          height: 248,
-          borderRadius: 24,
-          overflow: "hidden",
-          border: "1px solid var(--m3e-color-outline-variant)",
-          background: "var(--m3e-color-surface)",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <div
-          ref={feedRef}
-          style={{
-            flex: 1,
-            overflowY: "auto",
-            padding: 14,
-            display: "flex",
-            flexDirection: "column",
-            gap: 8,
-          }}
-        >
-          {Array.from({ length: 10 }, (_, idx) => (
-            <div
-              key={idx}
-              style={{
-                padding: "10px 14px",
-                borderRadius: 12,
-                background: "var(--m3e-color-surface-container-low)",
-                fontSize: 13,
-              }}
-            >
-              Message thread #{idx + 1}
-            </div>
-          ))}
-        </div>
-        <DockedToolbar
-          scrollBehavior={behavior}
-          scrollTargetRef={feedRef}
-          maxVisibleActions={3}
-          items={[
-            { id: "search", label: "Search", icon: <SearchIcon size={18} /> },
-            { id: "folder", label: "Move", icon: <FolderIcon size={18} /> },
-            { id: "share", label: "Share", icon: <ShareIcon size={18} /> },
-            { id: "sparkle", label: "Summarize", icon: <SparkleIcon size={18} /> },
-          ]}
-          primaryAction={<FAB icon={<EditIcon size={20} />} aria-label="Compose" />}
-        />
-      </div>
-    </div>
-  );
-}
 
 export const ACTIONS_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   /* ---------------------------------------------------------------------- */
@@ -1735,7 +1658,7 @@ const [subscribed, setSubscribed] = React.useState(false);
         },
         description: {
           zh: "设置 selectionMode=\"multiple\" 可同时激活多个格式开关，适用于富文本编辑器工具条或多重筛选器。",
-          en: "Set selectionMode=\"multiple\" to allow independent formatting toggles such as Bold, Italic, Underline, and Code.",
+          en: "Set selectionMode=\"multiple\" to allow independent formatting toggles such as Bold, Italic, and Code.",
         },
         code: `const [formats, setFormats] = React.useState(["bold", "code"]);
 
@@ -1743,13 +1666,13 @@ const [subscribed, setSubscribed] = React.useState(false);
   variant="connected"
   selectionMode="multiple"
   buttonVariant="outlined"
+  size="sm"
   value={formats}
   onValueChange={setFormats}
   aria-label="Text formatting"
   items={[
     { value: "bold", label: "Bold", showCheckIcon: true },
     { value: "italic", label: "Italic", showCheckIcon: true },
-    { value: "underline", label: "Underline", showCheckIcon: true },
     { value: "code", label: "Code", icon: <CodeBracketsIcon />, showCheckIcon: true },
   ]}
 />`,
@@ -1772,7 +1695,7 @@ const [subscribed, setSubscribed] = React.useState(false);
     items={[
       { value: "day", label: "Day" },
       { value: "week", label: "Week" },
-      { value: "quarter", label: "Quarter (Locked)", disabled: true },
+      { value: "quarter", label: "Quarter", disabled: true },
     ]}
   />
   <ButtonGroup
@@ -1781,7 +1704,7 @@ const [subscribed, setSubscribed] = React.useState(false);
     items={[
       { value: "day", label: "Day" },
       { value: "week", label: "Week" },
-      { value: "quarter", label: "Quarter (Locked)", disabled: true },
+      { value: "quarter", label: "Quarter", disabled: true },
     ]}
   />
   <ButtonGroup
@@ -1790,7 +1713,7 @@ const [subscribed, setSubscribed] = React.useState(false);
     items={[
       { value: "day", label: "Day" },
       { value: "week", label: "Week" },
-      { value: "quarter", label: "Quarter (Locked)", disabled: true },
+      { value: "quarter", label: "Quarter", disabled: true },
     ]}
   />
 </div>`,
@@ -1803,7 +1726,7 @@ const [subscribed, setSubscribed] = React.useState(false);
               items={[
                 { value: "day", label: "Day" },
                 { value: "week", label: "Week" },
-                { value: "quarter", label: "Quarter (Locked)", disabled: true },
+                { value: "quarter", label: "Quarter", disabled: true },
               ]}
             />
             <ButtonGroup
@@ -1813,7 +1736,7 @@ const [subscribed, setSubscribed] = React.useState(false);
               items={[
                 { value: "day", label: "Day" },
                 { value: "week", label: "Week" },
-                { value: "quarter", label: "Quarter (Locked)", disabled: true },
+                { value: "quarter", label: "Quarter", disabled: true },
               ]}
             />
             <ButtonGroup
@@ -1823,7 +1746,7 @@ const [subscribed, setSubscribed] = React.useState(false);
               items={[
                 { value: "day", label: "Day" },
                 { value: "week", label: "Week" },
-                { value: "quarter", label: "Quarter (Locked)", disabled: true },
+                { value: "quarter", label: "Quarter", disabled: true },
               ]}
             />
           </div>
@@ -2730,108 +2653,6 @@ const [subscribed, setSubscribed] = React.useState(false);
             description: {
               zh: "工具栏区域无障碍名称。",
               en: "Accessible label for the toolbar landmark.",
-            },
-          },
-        ],
-      },
-    ],
-  },
-  {
-    slug: "docked-toolbar",
-    title: "DockedToolbar",
-    primitive: "@base-ui/react/toolbar",
-    subtitle: {
-      zh: "贴底全宽操作栏，可带主操作与滚动隐藏。",
-      en: "Full-width bottom action bar with optional primary action and scroll-away.",
-    },
-    importStatement: 'import { DockedToolbar } from "m3eui";',
-    scenarios: [
-      {
-        id: "docked-toolbar-layouts",
-        title: { zh: "排布与主操作", en: "Layout & primary action" },
-        description: { zh: "spaced、centered、leading-actions 三种排布。", en: "spaced, centered, or leading-actions layouts." },
-        code: `<DockedToolbar
-  items={[
-    { id: "edit", label: "Edit", icon: <EditIcon />, selected: true },
-    { id: "copy", label: "Copy", icon: <CopyIcon /> },
-    { id: "share", label: "Share", icon: <ShareIcon /> },
-  ]}
-  primaryAction={<Button variant="filled" size="sm">Publish</Button>}
-/>`,
-        render: () => (
-          <div style={{ width: "100%", maxWidth: 520, borderRadius: 16, overflow: "hidden", border: "1px solid var(--m3e-color-outline-variant)" }}>
-            <DockedToolbar
-              elevated={false}
-              style={{ borderBlockStart: "none" }}
-              aria-label="Editor docked toolbar"
-              items={[
-                { id: "edit", label: "Edit", icon: <EditIcon size={18} />, selected: true },
-                { id: "copy", label: "Copy", icon: <CopyIcon size={18} /> },
-                { id: "share", label: "Share", icon: <ShareIcon size={18} /> },
-              ]}
-              primaryAction={
-                <Button variant="filled" size="sm" leadingIcon={<SendIcon size={16} />}>
-                  Publish
-                </Button>
-              }
-            />
-          </div>
-        ),
-      },
-      {
-        id: "docked-toolbar-scroll",
-        title: { zh: "溢出与滚动隐藏", en: "Overflow & scroll-away" },
-        description: { zh: "超出 maxVisibleActions 的动作收进菜单；主操作 FAB 自动去阴影。", en: "Actions beyond maxVisibleActions overflow into a menu; the FAB is flattened." },
-        code: `<DockedToolbar
-  scrollBehavior="exit-always"
-  scrollTargetRef={feedRef}
-  maxVisibleActions={3}
-  items={actions}
-  primaryAction={<FAB icon={<EditIcon />} aria-label="Compose" />}
-/>`,
-        render: () => <DockedToolbarScrollDemo />,
-      },
-    ],
-    apis: [
-      {
-        title: "DockedToolbar Props",
-        rows: [
-          {
-            name: "items",
-            type: "readonly FloatingToolbarItemSpec[]",
-            required: true,
-            description: {
-              zh: "快捷动作按钮列表（48px 触控热区，圆角随选中/按压弹簧形变）。",
-              en: "Action items rendered as 48px spring-morphing toolbar buttons.",
-            },
-          },
-          {
-            name: "primaryAction / layout",
-            type: 'React.ReactNode / "spaced" | "centered" | "leading-actions"',
-            defaultValue: 'undefined / "spaced"',
-            description: {
-              zh: "右侧主动作槽位与按钮排布模式。",
-              en: "Trailing primary action slot and horizontal alignment mode.",
-            },
-          },
-          {
-            name: "maxVisibleActions",
-            type: "number",
-            description: { zh: "超出的动作收进溢出菜单。", en: "Extra actions move into an overflow menu." },
-          },
-          {
-            name: "scrollBehavior / scrollTargetRef / hidden",
-            type: '"pinned" | "exit-always" / React.RefObject<HTMLElement | Window | null> / boolean',
-            defaultValue: '"pinned"',
-            description: { zh: "向下滚动时隐藏，或受控隐藏。", en: "Hide on downward scroll, or control visibility." },
-          },
-          {
-            name: "elevated",
-            type: "boolean",
-            defaultValue: "true",
-            description: {
-              zh: "是否启用容器抬升阴影。",
-              en: "Applies surface-container elevation shadow.",
             },
           },
         ],

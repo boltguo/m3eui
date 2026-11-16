@@ -8,14 +8,12 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
     tokenSources: [
       "NAVIGATION_TOKENS",
       "NAVIGATION_RAIL_TOKENS",
-      "NAVIGATION_SUITE_TOKENS",
       "EXPRESSIVE_MOTION_SCHEME",
     ],
     aospSources: [
       "NavigationRail.kt",
       "WideNavigationRail.kt",
       "NavigationDrawer.kt",
-      "NavigationSuiteScaffold.kt",
     ],
     inspirationAndRationale: [
       {
@@ -25,6 +23,10 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
       {
         title: "Spring width",
         body: "Toggling expansion animates width 96 ↔ 220 under defaultSpatial. Items switch between 56 × 32 vertical indicator pills and 56px full-row capsules (r = 28, 12 pressed).",
+      },
+      {
+        title: "Compact density for in-section lists",
+        body: "density=\"compact\" serves long lists inside one section (docs, settings): 40px rows (r = 20, 8 pressed), 280 wide, sticky below the top bar (--m3e-nav-rail-top). modal=\"auto\" keeps it inline at ≥ 840 and moves the same list into the modal drawer below.",
       },
     ],
     geometryAndMotionTables: [
@@ -38,16 +40,19 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
           ["NavigationRail (collapsed)", "width 96, pad 20", "24", "56 × 32 pill (r = 16) + optional FAB header", "Pill scaleX 0.35 → 1 via fastSpatial"],
           ["NavigationRail (expanded)", "220–360", "24", "56 row (r = 28 rest / 12 pressed)", "Width via defaultSpatial; press via fastSpatial"],
           ["NavigationRail (modal)", "220–360", "large (end corners, RTL-mirrored)", "56 row", "Swipe-dismissible drawer, elevation level2"],
+          ["NavigationRail (compact)", "280, pad 12, sticky", "24", "40 row (r = 20 rest / 8 pressed)", "Press via fastSpatial"],
         ],
       },
       {
-        id: "navigation-suite-breakpoints",
-        title: "NavigationSuite container breakpoints (NAVIGATION_SUITE_TOKENS)",
-        columns: ["Container width (W)", "Layout", "Surface"],
+        id: "navigation-rail-compact",
+        title: "Compact density & modal=\"auto\"",
+        caption: "NAVIGATION_RAIL_TOKENS.compact*, autoModalBreakpoint",
+        columns: ["Metric", "Value"],
         rows: [
-          ["W < 600", "\"bar\"", "NavigationBar"],
-          ["600 <= W < 840", "\"rail\"", "NavigationRail (collapsed)"],
-          ["W >= 840", "\"expanded-rail\"", "NavigationRail (expanded, collapsible)"],
+          ["Width / padding", "280 / 12"],
+          ["Item height / radius", "40 / 20 rest, 8 pressed"],
+          ["Sticky offset", "--m3e-nav-rail-top (default 0)"],
+          ["modal=\"auto\" breakpoint", "inline ≥ 840, modal drawer below"],
         ],
       },
     ],
@@ -59,7 +64,7 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
     crossPlatformNotes: [
       {
         target: "Jetpack Compose",
-        guidance: "NavigationRail, WideNavigationRail(state), ModalWideNavigationRail, NavigationSuiteScaffold.",
+        guidance: "NavigationRail, WideNavigationRail(state), ModalWideNavigationRail.",
       },
       {
         target: "SwiftUI",
@@ -79,11 +84,6 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
       {
         label: "AOSP Compose Material 3 — WideNavigationRail.kt",
         url: "https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/WideNavigationRail.kt",
-        kind: "aosp-source",
-      },
-      {
-        label: "AOSP Compose Material 3 Adaptive — NavigationSuiteScaffold.kt",
-        url: "https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/material3/material3-adaptive-navigation-suite/src/commonMain/kotlin/androidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffold.kt",
         kind: "aosp-source",
       },
       {
@@ -509,11 +509,10 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
   menu: {
     provenance: "official-m3e",
     provenanceSummary:
-      "Official M3E vertical menu with gaps (DropdownMenu, ContextMenu) ported from AOSP Menu.kt, paired with a desktop single-tab-stop Menubar.",
+      "Official M3E vertical menu with gaps (DropdownMenu, ContextMenu) ported from AOSP Menu.kt.",
     tokenSources: [
       "SEGMENTED_MENU_TOKENS",
       "resolveSegmentedMenuItemCorners",
-      "MENUBAR_TOKENS",
       "EXPRESSIVE_MOTION_SCHEME",
     ],
     aospSources: [
@@ -528,15 +527,11 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
         title: "Grouped Menu Geometry (16px - 4px = 12px)",
         body: "Each group is its own surface-container-low surface at elevation level 2 with no outline. Groups stack with a 2px gap: the first group keeps 16px top corners and 8px bottom corners, middle groups use 8px, and the last group mirrors the first. Inside a group, 44px items sit 4px from the edge, so boundary items take concentric 12px outer corners (16 - 4) and 4px inner corners. Items carry no resting fill; hover, focus, and press add a state layer only, and a checked item becomes a 12px tertiary-container shape.",
       },
-      {
-        title: "Desktop Productivity Menubar vs Site NavigationMenu",
-        body: "Menubar models desktop command bars (File / Edit / View) inside a 40px full-pill bar (20px radius, 4px padding, concentric 32px-tall / 16px-radius triggers → 8px pressed): the entire bar is a single Tab stop with instant hover/arrow menu switching and infinite recursive submenus.",
-      },
     ],
     geometryAndMotionTables: [
       {
         id: "menu-surface-matrix",
-        title: "Menu & Menubar Tokens (Logical Pixels)",
+        title: "Menu Tokens (Logical Pixels)",
         columns: [
           "Surface / Component",
           "Container Geometry",
@@ -550,12 +545,6 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
             "min-height: 44, pad-inline: 12, icon 20, icon gap 12 (8 on coarse pointers)",
             "Outer 12 / Inner 4 → Checked [12,12,12,12] (tertiary-container)",
           ],
-          [
-            "Menubar",
-            "height: 40, r = 20, pad = 4",
-            "Trigger height: 32, pad-inline: 14",
-            "Concentric trigger r = 16 rest → 8 pressed (fastSpatial)",
-          ],
         ],
       },
     ],
@@ -564,6 +553,7 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
       "Items preceded by separatorBefore = true (and the item immediately preceding a separator) MUST be treated as group boundaries (isFirstInGroup / isLastInGroup) receiving 12px outer corners.",
       "When any sibling item in a menu level defines an icon or checkbox state, iconless siblings MUST reserve an aligned leading icon gutter (hasAnyLeadingSlot) so labels align vertically.",
       "Submenu carets MUST mirror horizontally (scale: -1 1) when direction === 'rtl'.",
+      "Segmented surfaces follow AOSP DropdownMenuGroup: once hovered, a group the pointer leaves (e.g. into a submenu) morphs to CornerSmall 8px on all corners via fastSpatial; touch input never triggers it.",
     ],
     crossPlatformNotes: [
       {
@@ -579,12 +569,12 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
       {
         target: "Flutter",
         guidance:
-          "Use MenuAnchor and MenuBar with MenuStyle(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), padding: EdgeInsets.all(4)).",
+          "Use MenuAnchor with MenuStyle(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), padding: EdgeInsets.all(4)).",
       },
       {
         target: "Vue / Svelte / Web",
         guidance:
-          "Keep DropdownMenu and Menubar modal={false} with Portal collision positioning so scrolling or clicking outside dismisses cleanly without layout-shifting body scrollbars.",
+          "Keep DropdownMenu modal={false} with Portal collision positioning so scrolling or clicking outside dismisses cleanly without layout-shifting body scrollbars.",
       },
     ],
     references: [
@@ -599,7 +589,7 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
         kind: "aosp-source",
       },
       {
-        label: "WAI-ARIA APG — Menu and Menubar Pattern",
+        label: "WAI-ARIA APG — Menu Pattern",
         url: "https://www.w3.org/WAI/ARIA/apg/patterns/menubar/",
         kind: "aria-apg",
       },
@@ -989,98 +979,6 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
     ],
   },
 
-  "navigation-suite": {
-    provenance: "official-m3e",
-    provenanceSummary:
-      "Adaptive primary navigation that picks NavigationBar, NavigationRail, or the expanded rail from its container width.",
-    tokenSources: ["NAVIGATION_SUITE_TOKENS", "NAVIGATION_TOKENS", "NAVIGATION_RAIL_TOKENS"],
-    aospSources: ["NavigationSuiteScaffold.kt"],
-    inspirationAndRationale: [
-      {
-        title: "One item list",
-        body: "The same items render as a bar, a collapsed rail, or an expanded rail. Selection and badges carry across layout changes because the state lives outside the surface.",
-      },
-    ],
-    geometryAndMotionTables: [
-      {
-        id: "navigation-suite-breakpoints",
-        title: "NavigationSuite breakpoints",
-        caption: "NAVIGATION_SUITE_TOKENS",
-        columns: ["Container width (W)", "Layout", "Surface"],
-        rows: [
-          ["W < 600", "\"bar\"", "NavigationBar"],
-          ["600 ≤ W < 840", "\"rail\"", "NavigationRail (collapsed)"],
-          ["W ≥ 840", "\"expanded-rail\"", "NavigationRail (expanded, collapsible)"],
-        ],
-      },
-    ],
-    invariants: [
-      "layout overrides the breakpoint choice; the default \"auto\" measures the container with ResizeObserver.",
-      "Before the first measurement every surface renders and container queries show one, so server markup needs no window size.",
-    ],
-    crossPlatformNotes: [
-      { target: "Jetpack Compose", guidance: "NavigationSuiteScaffold with NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo." },
-      { target: "Flutter", guidance: "Switch NavigationBar / NavigationRail with LayoutBuilder at 600 and 840." },
-    ],
-    references: [
-      { label: "Material 3 — Applying layout: window size classes", url: "https://m3.material.io/foundations/layout/applying-layout/window-size-classes", kind: "m3-spec" },
-      {
-        label: "AOSP Compose Material 3 Adaptive — NavigationSuiteScaffold.kt",
-        url: "https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/material3/material3-adaptive-navigation-suite/src/commonMain/kotlin/androidx/compose/material3/adaptive/navigationsuite/NavigationSuiteScaffold.kt",
-        kind: "aosp-source",
-      },
-    ],
-  },
-
-  sidebar: {
-    provenance: "m3e-web-adaptation",
-    provenanceSummary:
-      "Secondary navigation for documentation and settings pages: a sticky in-page list on wide windows and a modal panel on narrow ones.",
-    tokenSources: ["SIDEBAR_TOKENS", "NAVIGATION_RAIL_TOKENS"],
-    aospSources: ["NavigationDrawer.kt"],
-    inspirationAndRationale: [
-      {
-        title: "Secondary, not primary",
-        body: "NavigationRail switches app sections. Sidebar lists the pages inside one section, so it uses 40px items (r = 20) instead of the rail's 56px rows and scrolls with long lists.",
-      },
-      {
-        title: "Same list, two containers",
-        body: "At ≥ 840 the list sits in the page and sticks below the top bar (--m3e-sidebar-top). Below 840 the same items move into a modal panel that closes on selection.",
-      },
-    ],
-    geometryAndMotionTables: [
-      {
-        id: "sidebar-geometry",
-        title: "Sidebar metrics",
-        caption: "SIDEBAR_TOKENS",
-        columns: ["Metric", "Value"],
-        rows: [
-          ["Width (wide)", "280 (--m3e-sidebar-width)"],
-          ["Modal max width", "360"],
-          ["Padding", "12 (--m3e-sidebar-pad)"],
-          ["Item height / radius", "40 / 20 rest, 8 pressed"],
-          ["Wide breakpoint", "840"],
-          ["Modal corner", "16 (large, end corners, RTL-mirrored)"],
-          ["Modal surface", "surface-container, elevation level2"],
-        ],
-      },
-    ],
-    invariants: [
-      "Renders a nav landmark with a localized aria-label (navigation.sidebarLabel) unless aria-label is given.",
-      "The current item has aria-current; section titles are plain labels, not links or tab stops.",
-      "The modal panel traps focus, closes on Escape and selection, and mirrors its slide edge and corners in RTL.",
-    ],
-    crossPlatformNotes: [
-      { target: "SwiftUI", guidance: "NavigationSplitView sidebar column with List(selection:)." },
-      { target: "Flutter", guidance: "A ListView beside the content at ≥ 840, a Drawer below." },
-    ],
-    references: [
-      { label: "Material 3 — Navigation drawer", url: "https://m3.material.io/components/navigation-drawer/specs", kind: "m3-spec" },
-      { label: "WAI-ARIA APG — Landmarks: navigation", url: "https://www.w3.org/WAI/ARIA/apg/patterns/landmarks/examples/navigation.html", kind: "aria-apg" },
-      { label: "Base UI — Drawer", url: "https://base-ui.com/react/components/drawer", kind: "base-ui" },
-    ],
-  },
-
   "context-menu": {
     provenance: "official-m3e",
     provenanceSummary:
@@ -1122,95 +1020,6 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
       { label: "Material 3 — Menus", url: "https://m3.material.io/components/menus/specs", kind: "m3-spec" },
       { label: "WAI-ARIA APG — Menu Pattern", url: "https://www.w3.org/WAI/ARIA/apg/patterns/menubar/", kind: "aria-apg" },
       { label: "Base UI — Context Menu", url: "https://base-ui.com/react/components/context-menu", kind: "base-ui" },
-    ],
-  },
-
-  menubar: {
-    provenance: "m3e-web-adaptation",
-    provenanceSummary:
-      "A desktop command bar (File / Edit / View) whose menus use the M3E segmented menu surface.",
-    tokenSources: ["MENUBAR_TOKENS", "SEGMENTED_MENU_TOKENS"],
-    aospSources: ["Menu.kt"],
-    inspirationAndRationale: [
-      {
-        title: "Concentric pill",
-        body: "A 40px full-round bar with 4px padding holds 32px triggers at r = 16, which tighten to 8 when pressed.",
-      },
-      {
-        title: "One tab stop",
-        body: "The whole bar is a single Tab stop. Arrow keys move between triggers; once a menu is open, hovering or arrowing to another trigger switches menus instantly.",
-      },
-    ],
-    geometryAndMotionTables: [
-      {
-        id: "menubar-geometry",
-        title: "Menubar metrics",
-        caption: "MENUBAR_TOKENS",
-        columns: ["Metric", "Value"],
-        rows: [
-          ["Bar height / radius", "40 / 20"],
-          ["Bar padding", "4"],
-          ["Trigger height / padding-inline", "32 / 14"],
-          ["Trigger radius", "16 rest → 8 pressed (fastSpatial)"],
-          ["Menus", "Segmented menu surface (see Menu)"],
-        ],
-      },
-    ],
-    invariants: [
-      "Renders role=\"menubar\" with roving tabindex across triggers.",
-      "Left / Right arrows wrap and mirror in RTL; Down opens the focused menu.",
-      "Escape closes the open menu and returns focus to its trigger.",
-    ],
-    crossPlatformNotes: [
-      { target: "Flutter", guidance: "MenuBar with SubmenuButton." },
-      { target: "macOS", guidance: "Map to the native app menu instead of drawing one in the window." },
-    ],
-    references: [
-      { label: "WAI-ARIA APG — Menubar Pattern", url: "https://www.w3.org/WAI/ARIA/apg/patterns/menubar/", kind: "aria-apg" },
-      { label: "Base UI — Menubar", url: "https://base-ui.com/react/components/menubar", kind: "base-ui" },
-    ],
-  },
-
-  "navigation-menu": {
-    provenance: "m3e-web-adaptation",
-    provenanceSummary:
-      "Website top navigation with disclosure panels of links, built on Base UI NavigationMenu.",
-    tokenSources: ["SHAPE_CORNER_TOKENS", "EXPRESSIVE_MOTION_SCHEME"],
-    inspirationAndRationale: [
-      {
-        title: "Links, not commands",
-        body: "Menubar runs commands. NavigationMenu is a list of links: triggers are disclosure buttons, panels hold anchors, and Tab moves through them in reading order.",
-      },
-      {
-        title: "Shared viewport",
-        body: "All panels render into one viewport, so switching triggers morphs its size instead of closing one popup and opening another.",
-      },
-    ],
-    geometryAndMotionTables: [
-      {
-        id: "navigation-menu-geometry",
-        title: "NavigationMenu metrics",
-        columns: ["Metric", "Value"],
-        rows: [
-          ["Bar", "min-height 56, padding 8 × 14, full radius, surface-container"],
-          ["Trigger / link", "min-height 40, padding-inline 16, full radius"],
-          ["Panel", "radius 24, surface-container-high"],
-          ["Featured card", "radius 18, padding 16, secondary-container"],
-          ["Viewport resize", "width and height, 220ms cubic-bezier(0.2, 0, 0, 1)"],
-        ],
-      },
-    ],
-    invariants: [
-      "Triggers expose aria-expanded; panels are not menus and keep normal link semantics.",
-      "The current page link has aria-current=\"page\".",
-      "Escape closes the panel and returns focus to its trigger.",
-    ],
-    crossPlatformNotes: [
-      { target: "Web", guidance: "On narrow windows, move the same links into a Sheet or NavigationRail modal instead of shrinking the bar." },
-    ],
-    references: [
-      { label: "WAI-ARIA APG — Disclosure Navigation Menu", url: "https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/examples/disclosure-navigation/", kind: "aria-apg" },
-      { label: "Base UI — Navigation Menu", url: "https://base-ui.com/react/components/navigation-menu", kind: "base-ui" },
     ],
   },
 };

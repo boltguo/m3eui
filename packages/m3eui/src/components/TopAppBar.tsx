@@ -6,7 +6,7 @@ import {
   TOP_APP_BAR_SPECS,
   type TopAppBarVariant,
   resolveTopAppBarGeometry,
-} from "../tokens/index.js";
+} from "../tokens/topology.js";
 import { useM3EI18n } from "../context/M3EContext.js";
 import { useM3EScalarSpringEffect } from "../hooks/useM3ESpring.js";
 import { IconButton } from "./IconButton.js";

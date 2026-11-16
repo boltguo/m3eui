@@ -2,7 +2,9 @@
 
 import * as React from "react";
 import { Button as BaseButton } from "@base-ui/react/button";
-import { CARD_TOKENS } from "../tokens/index.js";
+import {
+  CARD_TOKENS,
+} from "../tokens/topology.js";
 import { usePressHoldState } from "../hooks/useM3ESpring.js";
 
 export type CardVariant = "elevated" | "filled" | "outlined";

@@ -1,5 +1,7 @@
 import * as React from "react";
-import type { M3EShapeName } from "../tokens/index.js";
+import type {
+  M3EShapeName,
+} from "../tokens/shapes.js";
 import { useM3EI18n } from "../context/M3EContext.js";
 import { MaterialShapeView } from "./MaterialShapeView.js";
 

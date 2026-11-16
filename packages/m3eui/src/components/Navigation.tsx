@@ -3,16 +3,14 @@
 import * as React from "react";
 import {
   NAVIGATION_RAIL_TOKENS,
-  NAVIGATION_SUITE_TOKENS,
   NAVIGATION_TOKENS,
-} from "../tokens/index.js";
+} from "../tokens/topology.js";
 import { useM3ERuntime } from "../context/M3EContext.js";
 import {
   useM3EScalarSpring,
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
 import { Badge } from "./Badge.js";
-import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
 import {
   NavList,
   NavModal,
@@ -224,13 +222,16 @@ function MenuToggleSvg({
 
 export interface M3ENavigationRailProps<Value extends string = string> {
   readonly items: readonly NavigationDestination<Value>[];
-  readonly value: Value;
+  readonly value: Value | null;
   readonly onValueChange: (value: Value) => void;
   readonly expanded?: boolean;
   readonly defaultExpanded?: boolean;
   readonly onExpandedChange?: (expanded: boolean) => void;
   readonly collapsible?: boolean;
-  readonly modal?: boolean;
+  /** `"auto"`: inline at ≥ 840px, modal below. */
+  readonly modal?: boolean | "auto";
+  /** `"compact"`: 40px items, 280px wide, sticky — long in-section lists. */
+  readonly density?: "standard" | "compact";
   readonly open?: boolean;
   readonly defaultOpen?: boolean;
   readonly onOpenChange?: (open: boolean) => void;
@@ -242,11 +243,33 @@ export interface M3ENavigationRailProps<Value extends string = string> {
   readonly style?: React.CSSProperties;
 }
 
-const RAIL_LIST_METRICS = {
-  itemHeight: NAVIGATION_RAIL_TOKENS.itemHeight,
-  itemRadius: NAVIGATION_RAIL_TOKENS.itemRadius,
-  itemPressedRadius: NAVIGATION_RAIL_TOKENS.itemPressedRadius,
+const RAIL_METRICS = {
+  standard: {
+    itemHeight: NAVIGATION_RAIL_TOKENS.itemHeight,
+    itemRadius: NAVIGATION_RAIL_TOKENS.itemRadius,
+    itemPressedRadius: NAVIGATION_RAIL_TOKENS.itemPressedRadius,
+  },
+  compact: {
+    itemHeight: NAVIGATION_RAIL_TOKENS.compactItemHeight,
+    itemRadius: NAVIGATION_RAIL_TOKENS.compactItemRadius,
+    itemPressedRadius: NAVIGATION_RAIL_TOKENS.compactItemPressedRadius,
+  },
 } as const;
+
+const WIDE_QUERY = `(min-width: ${NAVIGATION_RAIL_TOKENS.autoModalBreakpoint}px)`;
+
+function subscribeWide(onChange: () => void): () => void {
+  if (typeof window.matchMedia !== "function") return () => {};
+  const mq = window.matchMedia(WIDE_QUERY);
+  mq.addEventListener("change", onChange);
+  return () => mq.removeEventListener("change", onChange);
+}
+
+function getWide(): boolean {
+  return typeof window.matchMedia !== "function" || window.matchMedia(WIDE_QUERY).matches;
+}
+
+const noopSubscribe = () => () => {};
 
 export function NavigationRail<Value extends string = string>({
   items,
@@ -257,6 +280,7 @@ export function NavigationRail<Value extends string = string>({
   onExpandedChange,
   collapsible = false,
   modal = false,
+  density = "standard",
   open,
   defaultOpen = false,
   onOpenChange,
@@ -269,21 +293,35 @@ export function NavigationRail<Value extends string = string>({
 }: M3ENavigationRailProps<Value>): React.JSX.Element {
   const { direction, t } = useM3ERuntime();
   const resolvedLabel = ariaLabel ?? t("navigation.railLabel");
+  const compact = density === "compact";
+  const metrics = RAIL_METRICS[density];
+  const padding = compact
+    ? NAVIGATION_RAIL_TOKENS.compactPadding
+    : NAVIGATION_RAIL_TOKENS.padding;
+  const expandedWidth = compact
+    ? NAVIGATION_RAIL_TOKENS.compactWidth
+    : NAVIGATION_RAIL_TOKENS.expandedMinWidth;
   const [isExpanded, setExpanded] = useControllableOpen(
     controlledExpanded,
     defaultExpanded,
     onExpandedChange,
   );
   const [isOpen, setOpen] = useControllableOpen(open, defaultOpen, onOpenChange);
+  const wide = React.useSyncExternalStore(
+    modal === "auto" ? subscribeWide : noopSubscribe,
+    modal === "auto" ? getWide : () => true,
+    () => true,
+  );
   const springWidth = useM3EScalarSpring(
-    isExpanded
-      ? NAVIGATION_RAIL_TOKENS.expandedMinWidth
-      : NAVIGATION_RAIL_TOKENS.collapsedWidth,
+    isExpanded ? expandedWidth : NAVIGATION_RAIL_TOKENS.collapsedWidth,
     "defaultSpatial",
   );
+  const paddingVar = { "--m3e-nav-rail-padding": `${padding}px` } as React.CSSProperties;
+  const cx = (base: string) =>
+    [base, compact ? "m3e-nav-rail--compact" : "", className ?? ""].filter(Boolean).join(" ");
 
-  if (modal) {
-    return (
+  const modalSurface =
+    modal === true || (modal === "auto" && !wide) ? (
       <NavModal
         open={isOpen}
         onOpenChange={setOpen}
@@ -291,14 +329,10 @@ export function NavigationRail<Value extends string = string>({
         aria-label={resolvedLabel}
         cornerRadius={NAVIGATION_RAIL_TOKENS.modalCornerRadius}
         maxWidth={NAVIGATION_RAIL_TOKENS.expandedMaxWidth}
-        className={
-          className
-            ? `m3e-nav-rail m3e-nav-rail--modal ${className}`
-            : "m3e-nav-rail m3e-nav-rail--modal"
-        }
+        className={cx("m3e-nav-rail m3e-nav-rail--modal")}
         style={{
-          minWidth: `${NAVIGATION_RAIL_TOKENS.expandedMinWidth}px`,
-          padding: `${NAVIGATION_RAIL_TOKENS.padding}px`,
+          minWidth: `${expandedWidth}px`,
+          ...paddingVar,
           ...style,
         }}
       >
@@ -306,7 +340,7 @@ export function NavigationRail<Value extends string = string>({
         <NavList
           items={items}
           value={value}
-          metrics={RAIL_LIST_METRICS}
+          metrics={metrics}
           onSelect={(v) => {
             onValueChange(v);
             setOpen(false);
@@ -314,172 +348,68 @@ export function NavigationRail<Value extends string = string>({
         />
         {footer ? <div className="m3e-nav-rail__footer">{footer}</div> : null}
       </NavModal>
-    );
-  }
+    ) : null;
+
+  if (modal === true) return modalSurface!;
 
   return (
-    <nav
-      aria-label={resolvedLabel}
-      className={className ? `m3e-nav-rail ${className}` : "m3e-nav-rail"}
-      data-expanded={isExpanded ? "" : undefined}
-      style={{
-        width: `${Math.max(NAVIGATION_RAIL_TOKENS.collapsedWidth, springWidth).toFixed(1)}px`,
-        padding: `${NAVIGATION_RAIL_TOKENS.padding}px`,
-        ...style,
-      }}
-    >
-      {collapsible || header ? (
-        <div className="m3e-nav-rail__top">
-          {collapsible ? (
-            <button
-              type="button"
-              aria-expanded={isExpanded}
-              aria-label={
-                isExpanded
-                  ? t("navigation.collapseRail")
-                  : t("navigation.expandRail")
-              }
-              className="m3e-nav-rail__toggle"
-              onClick={() => setExpanded(!isExpanded)}
-            >
-              <MenuToggleSvg expanded={isExpanded} rtl={direction === "rtl"} />
-            </button>
-          ) : null}
-          {header ? <div className="m3e-nav-rail__header">{header}</div> : null}
-        </div>
-      ) : null}
-
-      {isExpanded ? (
-        <NavList
-          items={items}
-          value={value}
-          metrics={RAIL_LIST_METRICS}
-          onSelect={onValueChange}
-        />
-      ) : (
-        <div className="m3e-nav-rail__items">
-          {items.map((item) => (
-            <NavItemButton
-              key={item.value}
-              item={item}
-              active={item.value === value}
-              onSelect={onValueChange}
-            />
-          ))}
-        </div>
-      )}
-      {isExpanded && footer ? (
-        <div className="m3e-nav-rail__footer">{footer}</div>
-      ) : null}
-    </nav>
-  );
-}
-
-export type NavigationSuiteLayout = "auto" | "bar" | "rail" | "expanded-rail";
-
-export interface M3ENavigationSuiteProps<Value extends string = string> {
-  readonly items: readonly NavigationDestination<Value>[];
-  readonly value: Value;
-  readonly onValueChange: (value: Value) => void;
-  readonly layout?: NavigationSuiteLayout;
-  readonly header?: React.ReactNode;
-  readonly children: React.ReactNode;
-  readonly "aria-label"?: string;
-  readonly className?: string;
-  readonly style?: React.CSSProperties;
-}
-
-export function NavigationSuite<Value extends string = string>({
-  items,
-  value,
-  onValueChange,
-  layout = "auto",
-  header,
-  children,
-  "aria-label": ariaLabel,
-  className,
-  style,
-}: M3ENavigationSuiteProps<Value>): React.JSX.Element {
-  const { t } = useM3ERuntime();
-  const resolvedLabel = ariaLabel ?? t("navigation.suiteLabel");
-  const hostRef = React.useRef<HTMLDivElement | null>(null);
-  const [measuredWidth, setMeasuredWidth] = React.useState<number | null>(null);
-
-  useIsoLayoutEffect(() => {
-    const el = hostRef.current;
-    if (!el || layout !== "auto") return undefined;
-    const update = () => {
-      const w = el.getBoundingClientRect().width;
-      if (w > 0) {
-        setMeasuredWidth(w);
-      } else if (typeof window !== "undefined") {
-        setMeasuredWidth(window.innerWidth > 0 ? window.innerWidth : 800);
-      }
-    };
-    update();
-    if (typeof ResizeObserver === "undefined") return undefined;
-    const ro = new ResizeObserver(() => update());
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [layout]);
-
-  const resolvedMode: NavigationSuiteLayout =
-    layout !== "auto"
-      ? layout
-      : measuredWidth === null
-        ? "auto"
-        : measuredWidth < NAVIGATION_SUITE_TOKENS.compactMaxWidth
-          ? "bar"
-          : measuredWidth < NAVIGATION_SUITE_TOKENS.mediumMaxWidth
-            ? "rail"
-            : "expanded-rail";
-  const shows = (mode: NavigationSuiteLayout) =>
-    resolvedMode === "auto" || resolvedMode === mode;
-
-  return (
-    <div
-      ref={hostRef}
-      className={className ? `m3e-nav-suite ${className}` : "m3e-nav-suite"}
-      data-layout={resolvedMode}
-      style={style}
-    >
-      <div className="m3e-nav-suite__auto-shell">
-        {shows("rail") ? (
-          <div className="m3e-nav-suite__slot m3e-nav-suite__slot--rail">
-            <NavigationRail
-              items={items}
-              value={value}
-              onValueChange={onValueChange}
-              header={header}
-              aria-label={resolvedLabel}
-            />
+    <>
+      <nav
+        aria-label={resolvedLabel}
+        className={cx("m3e-nav-rail")}
+        data-expanded={isExpanded ? "" : undefined}
+        data-modal={modal === "auto" ? "auto" : undefined}
+        style={{
+          width: `${Math.max(NAVIGATION_RAIL_TOKENS.collapsedWidth, springWidth).toFixed(1)}px`,
+          ...paddingVar,
+          ...style,
+        }}
+      >
+        {collapsible || header ? (
+          <div className="m3e-nav-rail__top">
+            {collapsible ? (
+              <button
+                type="button"
+                aria-expanded={isExpanded}
+                aria-label={
+                  isExpanded
+                    ? t("navigation.collapseRail")
+                    : t("navigation.expandRail")
+                }
+                className="m3e-nav-rail__toggle"
+                onClick={() => setExpanded(!isExpanded)}
+              >
+                <MenuToggleSvg expanded={isExpanded} rtl={direction === "rtl"} />
+              </button>
+            ) : null}
+            {header ? <div className="m3e-nav-rail__header">{header}</div> : null}
           </div>
         ) : null}
-        {shows("expanded-rail") ? (
-          <div className="m3e-nav-suite__slot m3e-nav-suite__slot--expanded-rail">
-            <NavigationRail
-              items={items}
-              defaultExpanded
-              collapsible
-              value={value}
-              onValueChange={onValueChange}
-              header={header}
-              aria-label={resolvedLabel}
-            />
+
+        {isExpanded ? (
+          <NavList
+            items={items}
+            value={value}
+            metrics={metrics}
+            onSelect={onValueChange}
+          />
+        ) : (
+          <div className="m3e-nav-rail__items">
+            {items.map((item) => (
+              <NavItemButton
+                key={item.value}
+                item={item}
+                active={item.value === value}
+                onSelect={onValueChange}
+              />
+            ))}
           </div>
+        )}
+        {isExpanded && footer ? (
+          <div className="m3e-nav-rail__footer">{footer}</div>
         ) : null}
-        <div className="m3e-nav-suite__content">{children}</div>
-        {shows("bar") ? (
-          <div className="m3e-nav-suite__slot m3e-nav-suite__slot--bar">
-            <NavigationBar
-              items={items}
-              value={value}
-              onValueChange={onValueChange}
-              aria-label={resolvedLabel}
-            />
-          </div>
-        ) : null}
-      </div>
-    </div>
+      </nav>
+      {modalSurface}
+    </>
   );
 }

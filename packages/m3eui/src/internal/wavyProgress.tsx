@@ -12,7 +12,7 @@ import {
   buildIndeterminateCircularWavyGeometry,
   buildIndeterminateLinearWavyGeometry,
   resolveDeterminateWaveAmplitude,
-} from "../tokens/index.js";
+} from "../tokens/wavy.js";
 import { useM3ERuntime } from "../context/M3EContext.js";
 import { useOffscreen } from "./useOffscreen.js";
 

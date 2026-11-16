@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Button, Card, Chip, IconButton, useM3EToast } from "m3eui";
+import { Button, Card, Chip, DataTable, useM3EToast } from "m3eui";
 import { usePlaygroundStrings } from "../i18n";
 import { serializeDesignSpecToMarkdown } from "../registry/design";
 import type {
@@ -18,168 +18,33 @@ const REF_KIND_LABELS: Readonly<Record<DesignReferenceKind, string>> = {
   "base-ui": "Base UI",
 };
 
-function ChevronInlineIcon({
-  direction,
-}: {
-  readonly direction: "left" | "right";
-}) {
-  return (
-    <svg
-      width={15}
-      height={15}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      {direction === "left" ? (
-        <polyline points="15 18 9 12 15 6" />
-      ) : (
-        <polyline points="9 18 15 12 9 6" />
-      )}
-    </svg>
-  );
-}
-
 function DesignContractTableCard({
-  slug,
   table,
 }: {
-  readonly slug: string;
   readonly table: DesignContractTable;
 }) {
-  const headingId = `design-table-${slug}-${table.id}`;
-  const scrollerRef = React.useRef<HTMLDivElement>(null);
-  const [scrollState, setScrollState] = React.useState({
-    hasOverflow: false,
-    canScrollLeft: false,
-    canScrollRight: false,
-  });
-
-  const syncScrollState = React.useCallback(() => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const maxScroll = Math.max(0, el.scrollWidth - el.clientWidth);
-    const hasOverflow = maxScroll > 2;
-    const canScrollLeft = hasOverflow && el.scrollLeft > 2;
-    const canScrollRight = hasOverflow && el.scrollLeft < maxScroll - 2;
-    setScrollState((prev) =>
-      prev.hasOverflow === hasOverflow &&
-      prev.canScrollLeft === canScrollLeft &&
-      prev.canScrollRight === canScrollRight
-        ? prev
-        : { hasOverflow, canScrollLeft, canScrollRight },
-    );
-  }, []);
-
-  React.useEffect(() => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    syncScrollState();
-    if (typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver(() => syncScrollState());
-    ro.observe(el);
-    if (el.firstElementChild) {
-      ro.observe(el.firstElementChild);
-    }
-    return () => ro.disconnect();
-  }, [syncScrollState, table]);
-
-  const scrollHorizontal = (direction: -1 | 1) => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const step = Math.max(200, Math.round(el.clientWidth * 0.55));
-    el.scrollBy({ left: direction * step, behavior: "smooth" });
-  };
-
   return (
-    <div className="m3e-api-card m3e-design-table-card">
-      <div className="m3e-api-card__header m3e-design-table-header">
-        <div className="m3e-design-table-header__copy">
-          <h3 id={headingId} className="m3e-api-card__title">
-            {table.title}
-          </h3>
-          {table.caption && (
-            <p className="m3e-api-card__desc">{table.caption}</p>
-          )}
-        </div>
-
-        {scrollState.hasOverflow && (
-          <div
-            className="m3e-design-table-header__controls"
-            role="group"
-            aria-label={`Scroll ${table.title} horizontally`}
-          >
-            <IconButton
-              size="xs"
-              variant="standard"
-              disabled={!scrollState.canScrollLeft}
-              aria-label="Scroll table left"
-              icon={<ChevronInlineIcon direction="left" />}
-              onClick={() => scrollHorizontal(-1)}
-            />
-            <IconButton
-              size="xs"
-              variant="standard"
-              disabled={!scrollState.canScrollRight}
-              aria-label="Scroll table right"
-              icon={<ChevronInlineIcon direction="right" />}
-              onClick={() => scrollHorizontal(1)}
-            />
+    <DataTable
+        className="m3e-api-card"
+        toolbar={
+          <div>
+            <h3 className="m3e-api-card__title">{table.title}</h3>
+            {table.caption && <p className="m3e-api-card__desc">{table.caption}</p>}
           </div>
-        )}
-      </div>
-
-      <div
-        ref={scrollerRef}
-        tabIndex={0}
-        role="region"
-        aria-labelledby={headingId}
-        onScroll={syncScrollState}
-        data-scrolled-left={scrollState.canScrollLeft ? "" : undefined}
-        className="m3e-api-table-scroll m3e-design-table-region"
-      >
-        <table className="m3e-api-table m3e-design-table">
-          <thead>
-            <tr>
-              {table.columns.map((col) => (
-                <th key={col} scope="col">
-                  {col}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {table.rows.map((row, rowIdx) => (
-              <tr key={`${table.id}-r-${rowIdx}`}>
-                {row.map((cell, cellIdx) =>
-                  cellIdx === 0 ? (
-                    <th
-                      key={`${table.id}-c-${rowIdx}-${cellIdx}`}
-                      scope="row"
-                      className="m3e-design-table__key"
-                    >
-                      <code>{cell}</code>
-                    </th>
-                  ) : (
-                    <td
-                      key={`${table.id}-c-${rowIdx}-${cellIdx}`}
-                      data-prose={cell.length > 28 ? "" : undefined}
-                      className="m3e-design-table__cell"
-                    >
-                      {cell}
-                    </td>
-                  ),
-                )}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+        }
+        caption={table.title}
+        hideCaption
+        density="compact"
+        rows={table.rows}
+        getRowKey={(_, i) => `${table.id}-${i}`}
+        columns={table.columns.map((col, c) => ({
+          id: `c${c}`,
+          header: col,
+          isRowHeader: c === 0,
+          sticky: c === 0 ? ("start" as const) : undefined,
+          cell: (row: readonly string[]) => (c === 0 ? <code>{row[c]}</code> : row[c]),
+        }))}
+      />
   );
 }
 
@@ -247,7 +112,7 @@ export function DesignSpecView({
             {spec.tokenSources.length > 0 && (
               <div className="m3e-design-meta-group">
                 <span className="m3e-design-meta-label">
-                  Token Contract (<code>m3eui/tokens</code>)
+                  Token Contract (<code>src/tokens</code>)
                 </span>
                 <div className="m3e-design-code-chips">
                   {spec.tokenSources.map((src) => (
@@ -314,7 +179,6 @@ export function DesignSpecView({
           {spec.geometryAndMotionTables.map((table) => (
             <DesignContractTableCard
               key={table.id}
-              slug={doc.slug}
               table={table}
             />
           ))}

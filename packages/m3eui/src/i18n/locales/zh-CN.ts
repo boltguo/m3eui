@@ -76,14 +76,10 @@ export const zhCNMessages: M3EMessages = {
   "progress.wavyLinearLabel": "进度",
   "progress.wavyCircularLabel": "环形进度",
 
-  "menubar.ariaLabel": "应用命令",
   "navigation.barLabel": "主栏",
   "navigation.railLabel": "侧边轨",
   "navigation.collapseRail": "收起侧边轨",
   "navigation.expandRail": "展开侧边轨",
-  "navigation.suiteLabel": "自适应主栏",
-  "navigation.sidebarLabel": "栏目",
-  "navigation.siteMenuLabel": "站点",
 
   "numberField.decrement": "减小数值",
   "numberField.increment": "增大数值",
@@ -132,11 +128,7 @@ export const zhCNMessages: M3EMessages = {
   "topAppBar.actionsLabel": "应用栏快捷操作",
   "topAppBar.moreActions": "更多操作",
   "dragHandle.ariaLabel": "调整分栏大小",
-  "pullToRefresh.pulling": "下拉刷新",
-  "pullToRefresh.release": "释放立即刷新",
-  "pullToRefresh.refreshing": "正在刷新",
 
-  "dockedToolbar.ariaLabel": "底部停靠工具栏",
   "searchView.back": "返回",
   "searchView.recentHeading": "最近搜索",
   "searchView.clearRecent": "清空历史",

@@ -418,7 +418,7 @@ export const FEEDBACK_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>
       },
     ],
     invariants: [
-      "Sheet containers use `surface-container-low` (`--m3e-color-surface-container-low`) with a `1px outline-variant` border and `elevation-3` shadow to separate cleanly from base `surface` backgrounds.",
+      "Sheet containers use `surface-container-low` (`--m3e-color-surface-container-low`) with no outline and `elevation-1`, matching AOSP `SheetBottomTokens`; the surface bleeds past the docked edge so spring overshoot never exposes a gap.",
       "Because the `32×4px` drag handle is purely visual (`aria-hidden=\"true\"`), sheets MUST remain dismissible by keyboard (`Escape`), backdrop click, and an accessible close button (`showCloseButton`, localized via `t(\"sheet.close\")`, enabled by default on `SideSheet`).",
       "`BottomSheet` width MUST clamp to `640px` (`SHEET_TOKENS.bottomMaxWidth`) on tablet and desktop viewports rather than stretching full-bleed across widescreen monitors.",
       "Logical `side=\"start\"` and `side=\"end\"` MUST resolve against the active `M3EProvider` direction (`ltr` / `rtl`) so corner tuples, viewport docking, and swipe-dismiss vectors mirror in unison.",

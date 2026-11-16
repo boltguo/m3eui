@@ -76,14 +76,10 @@ export const arSAMessages: M3EMessages = {
   "progress.wavyLinearLabel": "التقدم",
   "progress.wavyCircularLabel": "التقدم الدائري",
 
-  "menubar.ariaLabel": "أوامر التطبيق",
   "navigation.barLabel": "الرئيسي",
   "navigation.railLabel": "المسار الجانبي",
   "navigation.collapseRail": "طي المسار الجانبي",
   "navigation.expandRail": "توسيع المسار الجانبي",
-  "navigation.suiteLabel": "الرئيسي التكيفي",
-  "navigation.sidebarLabel": "القسم",
-  "navigation.siteMenuLabel": "الموقع",
 
   "numberField.decrement": "إنقاص القيمة",
   "numberField.increment": "زيادة القيمة",
@@ -132,11 +128,7 @@ export const arSAMessages: M3EMessages = {
   "topAppBar.actionsLabel": "إجراءات الشريط العلوي",
   "topAppBar.moreActions": "المزيد من الإجراءات",
   "dragHandle.ariaLabel": "تغيير حجم الألواح",
-  "pullToRefresh.pulling": "اسحب للتحديث",
-  "pullToRefresh.release": "أفلت للتحديث",
-  "pullToRefresh.refreshing": "جارٍ التحديث",
 
-  "dockedToolbar.ariaLabel": "شريط الأدوات السفلي المثبت",
   "searchView.back": "رجوع",
   "searchView.recentHeading": "عمليات البحث الأخيرة",
   "searchView.clearRecent": "مسح السجل",

@@ -5,7 +5,7 @@ import { OTPField as BaseOTPField } from "@base-ui/react/otp-field";
 import {
   OTP_FIELD_TOKENS,
   resolveOtpSlotCorners,
-} from "../tokens/index.js";
+} from "../tokens/topology.js";
 import { useM3ERuntime } from "../context/M3EContext.js";
 import {
   useM3ECornerSpringRef,

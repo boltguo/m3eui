@@ -10,11 +10,15 @@ import { Toast as BaseToast } from "@base-ui/react/toast";
 import { Tooltip as BaseTooltip } from "@base-ui/react/tooltip";
 import {
   type ColorPlatform,
-  type ColorSchemeVariant,
   type M3EThemeTokens,
+} from "../tokens/color.js";
+import {
+  type ColorSchemeVariant,
+} from "../tokens/color-variants.js";
+import {
   MOTION_SCHEMES,
   type MotionSchemeName,
-} from "../tokens/index.js";
+} from "../tokens/motion.js";
 import { M3EToastViewportHost } from "../components/Toast.js";
 import {
   M3EToastManagerContext,

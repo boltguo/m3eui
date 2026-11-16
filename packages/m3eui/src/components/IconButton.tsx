@@ -7,7 +7,7 @@ import {
   type IconButtonVariant,
   type IconButtonWidthVariant,
   resolveIconButtonGeometry,
-} from "../tokens/index.js";
+} from "../tokens/topology.js";
 import { isToggleProps } from "../internal/toggleProps.js";
 import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3ECornerSpringRef, usePressHoldState } from "../hooks/useM3ESpring.js";

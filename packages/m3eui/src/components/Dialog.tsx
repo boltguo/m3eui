@@ -3,7 +3,9 @@
 import * as React from "react";
 import { AlertDialog as BaseAlertDialog } from "@base-ui/react/alert-dialog";
 import { Dialog as BaseDialog } from "@base-ui/react/dialog";
-import { DIALOG_TOKENS } from "../tokens/index.js";
+import {
+  DIALOG_TOKENS,
+} from "../tokens/topology.js";
 import { useM3EI18n } from "../context/M3EContext.js";
 import { useM3EPortalContainer } from "../context/M3EPortal.js";
 

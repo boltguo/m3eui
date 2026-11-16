@@ -12,13 +12,9 @@ import {
   FileUploadDropzone,
   Kbd,
   type M3EUploadFileItem,
-  PullToRefreshBox,
   ScrollArea,
   Snippet,
 } from "m3eui";
-import {
-  RefreshIcon,
-} from "../../layout/Icons";
 import type { ComponentDocSpec } from "../types";
 import { useCopyResolver } from "../../i18n";
 
@@ -155,21 +151,49 @@ function KbdDemo() {
   );
 }
 
-function DividerDemo() {
+function DividerInsetDemo() {
+  const copy = useCopyResolver();
+  const rows = [
+    copy({ zh: "通知", en: "Notifications" }),
+    copy({ zh: "隐私", en: "Privacy" }),
+    copy({ zh: "存储", en: "Storage" }),
+  ];
   return (
-    <div className="demo-panel" style={{ maxWidth: 440, gap: 14 }}>
-      <div style={{ fontSize: 13.5, fontWeight: 600 }}>Full-width & Inset</div>
+    <div className="demo-panel" style={{ maxWidth: 400, gap: 0, padding: "4px 0" }}>
+      {rows.map((row, idx) => (
+        <React.Fragment key={row}>
+          {idx > 0 ? <Divider inset /> : null}
+          <div style={{ padding: "12px 16px", fontSize: 14 }}>{row}</div>
+        </React.Fragment>
+      ))}
       <Divider />
-      <div style={{ fontSize: 13, paddingInlineStart: 16 }}>Indented item row</div>
-      <Divider inset />
-      <Divider label="OR CONTINUE WITH" />
-      <div className="demo-row" style={{ height: 28, gap: 12, fontSize: 13 }}>
-        <span>Tokens</span>
-        <Divider orientation="vertical" />
-        <span>Motion</span>
-        <Divider orientation="vertical" />
-        <span>Shapes</span>
+      <div style={{ padding: "12px 16px", fontSize: 14 }}>
+        {copy({ zh: "关于", en: "About" })}
       </div>
+    </div>
+  );
+}
+
+function DividerLabelDemo() {
+  const copy = useCopyResolver();
+  return (
+    <div className="demo-panel" style={{ maxWidth: 360, gap: 16 }}>
+      <Button variant="filled">{copy({ zh: "邮箱登录", en: "Sign in with email" })}</Button>
+      <Divider label={copy({ zh: "或", en: "OR" })} />
+      <Button variant="outlined">{copy({ zh: "通行密钥", en: "Use a passkey" })}</Button>
+    </div>
+  );
+}
+
+function DividerVerticalDemo() {
+  const copy = useCopyResolver();
+  return (
+    <div className="demo-row" style={{ height: 24, gap: 12, fontSize: 13.5 }}>
+      <span>{copy({ zh: "令牌", en: "Tokens" })}</span>
+      <Divider orientation="vertical" />
+      <span>{copy({ zh: "动效", en: "Motion" })}</span>
+      <Divider orientation="vertical" />
+      <span>{copy({ zh: "形状", en: "Shapes" })}</span>
     </div>
   );
 }
@@ -209,119 +233,32 @@ function ScrollAreaDemo() {
   );
 }
 
-function DragHandleSplitPaneDemo() {
+function DragHandleDemo({ orientation }: { readonly orientation: "vertical" | "horizontal" }) {
   const copy = useCopyResolver();
-  const rowRef = React.useRef<HTMLDivElement | null>(null);
-  const colRef = React.useRef<HTMLDivElement | null>(null);
-  const [split, setSplit] = React.useState(40);
-  const [rowSplit, setRowSplit] = React.useState(55);
-
+  const hostRef = React.useRef<HTMLDivElement | null>(null);
+  const [split, setSplit] = React.useState(orientation === "vertical" ? 40 : 55);
+  const vertical = orientation === "vertical";
   return (
-    <div className="demo-panes-stack">
-      <div ref={rowRef} className="demo-panes">
-        <div className="demo-pane" style={{ flex: `0 0 calc(${split}% - 12px)` }}>
-          <strong>{copy({ zh: "列表", en: "List" })}</strong>
-          <code>{Math.round(split)}%</code>
-        </div>
-        <DragHandle containerRef={rowRef} value={split} onValueChange={setSplit} min={25} max={75} />
-        <div className="demo-pane" style={{ flex: 1 }}>
-          <strong>{copy({ zh: "详情", en: "Detail" })}</strong>
-          <code>{Math.round(100 - split)}%</code>
-        </div>
+    <div
+      ref={hostRef}
+      className={vertical ? "demo-panes" : "demo-panes demo-panes--column"}
+    >
+      <div className="demo-pane" style={{ flex: `0 0 calc(${split}% - 12px)` }}>
+        <strong>{vertical ? copy({ zh: "列表", en: "List" }) : copy({ zh: "编辑器", en: "Editor" })}</strong>
+        <code>{Math.round(split)}%</code>
       </div>
-
-      <div ref={colRef} className="demo-panes demo-panes--column">
-        <div className="demo-pane" style={{ flex: `0 0 calc(${rowSplit}% - 12px)` }}>
-          <strong>{copy({ zh: "编辑器", en: "Editor" })}</strong>
-          <code>{Math.round(rowSplit)}%</code>
-        </div>
-        <DragHandle
-          orientation="horizontal"
-          containerRef={colRef}
-          value={rowSplit}
-          onValueChange={setRowSplit}
-          min={25}
-          max={75}
-        />
-        <div className="demo-pane" style={{ flex: 1 }}>
-          <strong>{copy({ zh: "终端", en: "Terminal" })}</strong>
-          <code>{Math.round(100 - rowSplit)}%</code>
-        </div>
+      <DragHandle
+        orientation={orientation}
+        containerRef={hostRef}
+        value={split}
+        onValueChange={setSplit}
+        min={25}
+        max={75}
+      />
+      <div className="demo-pane" style={{ flex: 1 }}>
+        <strong>{vertical ? copy({ zh: "详情", en: "Detail" }) : copy({ zh: "终端", en: "Terminal" })}</strong>
+        <code>{Math.round(100 - split)}%</code>
       </div>
-    </div>
-  );
-}
-
-function PullToRefreshDemo() {
-  const [refreshing, setRefreshing] = React.useState(false);
-  const [variant, setVariant] = React.useState<"contained" | "circular">("contained");
-  const [revision, setRevision] = React.useState(1);
-
-  const triggerRefresh = React.useCallback(() => {
-    setRefreshing(true);
-    window.setTimeout(() => {
-      setRevision((r) => r + 1);
-      setRefreshing(false);
-    }, 1100);
-  }, []);
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", maxWidth: 460 }}>
-      <div className="demo-row" style={{ gap: 8 }}>
-        <Button
-          size="xs"
-          variant={variant === "contained" ? "filled" : "outlined"}
-          onClick={() => setVariant("contained")}
-        >
-          contained
-        </Button>
-        <Button
-          size="xs"
-          variant={variant === "circular" ? "filled" : "outlined"}
-          onClick={() => setVariant("circular")}
-        >
-          circular
-        </Button>
-        <Button
-          size="xs"
-          variant="tonal"
-          leadingIcon={<RefreshIcon size={15} />}
-          disabled={refreshing}
-          onClick={triggerRefresh}
-        >
-          Refresh
-        </Button>
-      </div>
-      <PullToRefreshBox
-        refreshing={refreshing}
-        onRefresh={triggerRefresh}
-        indicatorVariant={variant}
-        style={{
-          height: 220,
-          borderRadius: 20,
-          border: "1px solid var(--m3e-color-outline-variant)",
-          background: "var(--m3e-color-surface-container-low)",
-        }}
-      >
-        <div style={{ padding: 14, display: "flex", flexDirection: "column", gap: 8 }}>
-          {Array.from({ length: 6 }, (_, idx) => (
-            <div
-              key={idx}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                padding: "10px 14px",
-                borderRadius: 12,
-                background: "var(--m3e-color-surface)",
-                fontSize: 13,
-              }}
-            >
-              <span>Feed snapshot #{idx + 1}</span>
-              <code style={{ fontSize: 12 }}>v{revision}</code>
-            </div>
-          ))}
-        </div>
-      </PullToRefreshBox>
     </div>
   );
 }
@@ -563,17 +500,42 @@ import { parseShortcutKeys } from "m3eui/tokens";
     primitive: "@base-ui/react/separator",
     scenarios: [
       {
-        id: "divider-variants",
-        title: { zh: "通栏、内缩、嵌字与垂直分割", en: "Full, Inset, Labeled & Vertical" },
+        id: "divider-inset",
+        title: { zh: "通栏与内缩", en: "Full-width & inset" },
         description: {
-          zh: "inset 使用逻辑属性 margin-inline-start: 16px，在 RTL 下自动切换为右侧留白。",
-          en: "Logical inset spacing adapts automatically in RTL layouts.",
+          zh: "inset 让同组条目之间的分割线从 16px 处开始，通栏分隔不同分组；RTL 自动镜像。",
+          en: "Inset dividers separate items within a group; full-width ones separate groups. RTL mirrors.",
         },
-        code: `<Divider />
+        code: `<Row />
 <Divider inset />
-<Divider label="OR CONTINUE WITH" />
-<Divider orientation="vertical" />`,
-        render: () => <DividerDemo />,
+<Row />
+<Divider />
+<Row />`,
+        render: () => <DividerInsetDemo />,
+      },
+      {
+        id: "divider-label",
+        title: { zh: "文字标签", en: "Labeled" },
+        description: {
+          zh: "label 居中嵌入文字，用于分隔两组可选操作。",
+          en: "label centers text in the line to separate alternative actions.",
+        },
+        code: `<Button>Sign in with email</Button>
+<Divider label="OR" />
+<Button variant="outlined">Use a passkey</Button>`,
+        render: () => <DividerLabelDemo />,
+      },
+      {
+        id: "divider-vertical",
+        title: { zh: "垂直", en: "Vertical" },
+        description: {
+          zh: "在行内元素之间纵向分隔，高度随父容器拉伸。",
+          en: "Separates inline items; stretches to the row height.",
+        },
+        code: `<span>Tokens</span>
+<Divider orientation="vertical" />
+<span>Motion</span>`,
+        render: () => <DividerVerticalDemo />,
       },
     ],
     apis: [
@@ -648,8 +610,8 @@ import { parseShortcutKeys } from "m3eui/tokens";
     importStatement: 'import { DragHandle } from "m3eui";',
     scenarios: [
       {
-        id: "drag-handle-split-pane",
-        title: { zh: "左右与上下窗格", en: "Side-by-side & stacked panes" },
+        id: "drag-handle-vertical",
+        title: { zh: "左右窗格", en: "Side-by-side panes" },
         description: {
           zh: "把手放在两块窗格之间 24px 的空隙里；方向键、Home / End 调整，RTL 自动镜像。",
           en: "The handle sits in the 24px gap between two panes. Arrow keys and Home / End resize; RTL mirrors.",
@@ -659,7 +621,21 @@ import { parseShortcutKeys } from "m3eui/tokens";
   <DragHandle containerRef={hostRef} value={split} onValueChange={setSplit} min={25} max={75} />
   <div style={{ flex: 1 }}>Detail</div>
 </div>`,
-        render: () => <DragHandleSplitPaneDemo />,
+        render: () => <DragHandleDemo orientation="vertical" />,
+      },
+      {
+        id: "drag-handle-horizontal",
+        title: { zh: "上下窗格", en: "Stacked panes" },
+        description: {
+          zh: "orientation=\"horizontal\" 时把手横置，上下拖动调整高度。",
+          en: "With orientation=\"horizontal\" the handle lies flat and resizes height.",
+        },
+        code: `<div ref={hostRef} style={{ display: "flex", flexDirection: "column" }}>
+  <div style={{ flex: \`0 0 calc(\${split}% - 12px)\` }}>Editor</div>
+  <DragHandle orientation="horizontal" containerRef={hostRef} value={split} onValueChange={setSplit} />
+  <div style={{ flex: 1 }}>Terminal</div>
+</div>`,
+        render: () => <DragHandleDemo orientation="horizontal" />,
       },
     ],
     apis: [
@@ -692,58 +668,4 @@ import { parseShortcutKeys } from "m3eui/tokens";
 
 export const EXPANSION_NAVIGATION_DOCS: readonly ComponentDocSpec[] = [];
 
-export const EXPANSION_FEEDBACK_DOCS: readonly ComponentDocSpec[] = [
-  {
-    slug: "pull-to-refresh",
-    title: "PullToRefreshBox",
-    isNew: true,
-    subtitle: {
-      zh: "AOSP M3E 下拉刷新容器（PullToRefreshBox），内置 0.5 阻尼下拉系数与 contained LoadingIndicator 多边形形变指示器。",
-      en: "AOSP M3E pull-to-refresh surface composing a contained LoadingIndicator polygon morph with 0.5 drag resistance.",
-    },
-    importStatement: 'import { PullToRefreshBox } from "m3eui";',
-    scenarios: [
-      {
-        id: "pull-to-refresh-box",
-        title: { zh: "多边形形变与圆环下拉刷新", en: "Contained Polygon & Circular Pull-to-Refresh" },
-        description: {
-          zh: "在列表顶部向下拖拽时按进度连续形变并旋转指示器，松手越过阈值触发 onRefresh。",
-          en: "Drag downward at scrollTop 0 to morph and rotate the M3E indicator; releasing past threshold triggers onRefresh.",
-        },
-        code: `<PullToRefreshBox
-  refreshing={refreshing}
-  onRefresh={handleRefresh}
-  indicatorVariant="contained"
->
-  {feedItems}
-</PullToRefreshBox>`,
-        render: () => <PullToRefreshDemo />,
-      },
-    ],
-    apis: [
-      {
-        title: "PullToRefresh & PullToRefreshBox Props",
-        rows: [
-          {
-            name: "refreshing / onRefresh",
-            type: "boolean / () => void",
-            required: true,
-            description: { zh: "当前是否处于刷新加载态与释放触发回调。", en: "Active refresh state and threshold release callback." },
-          },
-          {
-            name: "indicatorVariant",
-            type: '"contained" | "circular"',
-            defaultValue: '"contained"',
-            description: { zh: "指示器样式：M3E 7 形态多边形容器或经典圆弧。", en: "M3E contained polygon morph indicator or circular arc spinner." },
-          },
-          {
-            name: "threshold / maxDragDistance",
-            type: "number",
-            defaultValue: "80 / 132",
-            description: { zh: "触发刷新的位移阈值与最大阻尼下拉距离（px）。", en: "Trigger threshold and maximum damped pull offset in pixels." },
-          },
-        ],
-      },
-    ],
-  },
-];
+export const EXPANSION_FEEDBACK_DOCS: readonly ComponentDocSpec[] = [];

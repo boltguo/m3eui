@@ -52,7 +52,7 @@ export function serializeDesignSpecToMarkdown(
   if (doc.primitive) {
     lines.push(`- **Web Headless Primitive**: \`${doc.primitive}\``);
   }
-  lines.push(`- **Token Sources (\`m3eui/tokens\`)**: ${spec.tokenSources.map((t) => `\`${t}\``).join(", ")}`);
+  lines.push(`- **Token Sources (\`src/tokens\`)**: ${spec.tokenSources.map((t) => `\`${t}\``).join(", ")}`);
   if (spec.aospSources && spec.aospSources.length > 0) {
     lines.push(`- **AOSP Compose Sources**: ${spec.aospSources.map((s) => `\`${s}\``).join(", ")}`);
   }

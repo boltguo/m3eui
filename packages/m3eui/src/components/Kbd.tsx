@@ -1,9 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { KBD_SNIPPET_TOKENS, parseShortcutKeys } from "../tokens/index.js";
-
-export { parseShortcutKeys };
+import { KBD_SNIPPET_TOKENS } from "../tokens/topology.js";
 
 export type KbdKeyAlias =
   | "mod"

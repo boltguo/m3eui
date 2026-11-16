@@ -18,10 +18,14 @@ import {
 import { M3E_BUILT_IN_LOCALES, enUSMessages } from "../i18n/index.js";
 import {
   type ColorPlatform,
+} from "../tokens/color.js";
+import {
   type ColorSchemeVariant,
   M3E_COLOR_SCHEME_VARIANTS,
+} from "../tokens/color-variants.js";
+import {
   type MotionSchemeName,
-} from "../tokens/index.js";
+} from "../tokens/motion.js";
 import { M3E_PACKAGE_VERSION } from "../version.js";
 
 export const VALID_SCHEME_VARIANTS: readonly ColorSchemeVariant[] =

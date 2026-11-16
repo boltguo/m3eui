@@ -1,6 +1,8 @@
 import * as React from "react";
 import { Toast as BaseToast } from "@base-ui/react/toast";
-import { SNACKBAR_TOKENS } from "../tokens/index.js";
+import {
+  SNACKBAR_TOKENS,
+} from "../tokens/topology.js";
 import { useM3EPortalContainer } from "../context/M3EPortal.js";
 import { useM3ERuntime, useM3EI18n } from "../context/M3EContext.js";
 import { M3EToastManagerContext } from "../internal/toastManager.js";

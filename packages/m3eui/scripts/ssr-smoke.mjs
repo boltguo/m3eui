@@ -33,8 +33,8 @@ const cases = {
   List: () => h(m3e.List, null, h(m3e.ListItem, { headline: "Row" })),
   NavigationRail: () =>
     h(m3e.NavigationRail, { items: options, value: "a", onValueChange() {}, defaultExpanded: true }),
-  Sidebar: () =>
-    h(m3e.Sidebar, { items: options, value: "a", onValueChange() {} }),
+  CompactNavigationRail: () =>
+    h(m3e.NavigationRail, { items: options, value: null, onValueChange() {}, expanded: true, modal: "auto", density: "compact" }),
 };
 
 const errors = [];

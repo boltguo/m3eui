@@ -77,14 +77,10 @@ export interface M3EMessages {
   readonly "progress.wavyLinearLabel": string;
   readonly "progress.wavyCircularLabel": string;
 
-  readonly "menubar.ariaLabel": string;
   readonly "navigation.barLabel": string;
   readonly "navigation.railLabel": string;
   readonly "navigation.collapseRail": string;
   readonly "navigation.expandRail": string;
-  readonly "navigation.suiteLabel": string;
-  readonly "navigation.sidebarLabel": string;
-  readonly "navigation.siteMenuLabel": string;
 
   readonly "numberField.decrement": string;
   readonly "numberField.increment": string;
@@ -133,11 +129,7 @@ export interface M3EMessages {
   readonly "topAppBar.actionsLabel": string;
   readonly "topAppBar.moreActions": string;
   readonly "dragHandle.ariaLabel": string;
-  readonly "pullToRefresh.pulling": string;
-  readonly "pullToRefresh.release": string;
-  readonly "pullToRefresh.refreshing": string;
 
-  readonly "dockedToolbar.ariaLabel": string;
   readonly "searchView.back": string;
   readonly "searchView.recentHeading": string;
   readonly "searchView.clearRecent": string;

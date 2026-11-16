@@ -3,7 +3,9 @@
 import * as React from "react";
 import { Checkbox as BaseCheckbox } from "@base-ui/react/checkbox";
 import { CheckboxGroup as BaseCheckboxGroup } from "@base-ui/react/checkbox-group";
-import { CHECKBOX_TOKENS } from "../tokens/index.js";
+import {
+  CHECKBOX_TOKENS,
+} from "../tokens/topology.js";
 import { useM3EScalarSpring, usePressHoldState } from "../hooks/useM3ESpring.js";
 import { FieldsetDisabledContext, useFieldsetDisabled } from "../internal/fieldOutline.js";
 import { FormFieldScope, useFormReset } from "../internal/formField.js";

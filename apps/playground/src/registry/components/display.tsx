@@ -651,17 +651,15 @@ function DataTableCompactStickyDemo(): React.JSX.Element {
   ];
 
   return (
-    <div style={{ maxHeight: 280, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-      <DataTable
-        caption={copy({ zh: "物理弹簧采样日志（紧凑粘性表头）", en: "Spring telemetry log (compact sticky header)" })}
-        hideCaption
-        density="compact"
-        stickyHeader
-        columns={columns}
-        rows={COMPACT_LOG_ROWS}
-        getRowKey={(r) => r.id}
-      />
-    </div>
+    <DataTable
+      caption={copy({ zh: "物理弹簧采样日志（紧凑粘性表头）", en: "Spring telemetry log (compact sticky header)" })}
+      hideCaption
+      density="compact"
+      stickyHeader
+      columns={columns}
+      rows={COMPACT_LOG_ROWS}
+      getRowKey={(r) => r.id}
+    />
   );
 }
 
@@ -1847,22 +1845,20 @@ const columns: readonly M3EDataTableColumn<ServiceRow>[] = [
           en: "Compact Density & Sticky Header",
         },
         description: {
-          zh: "设置 density=\"compact\" 将行高收敛至 40px，搭配 stickyHeader 在限高滚动容器中锁定表头。",
-          en: "Use density=\"compact\" (40px rows) and stickyHeader inside a bounded scroll container.",
+          zh: "设置 density=\"compact\" 将行高收敛至 40px，搭配 stickyHeader 在限高滚动区域中锁定表头。",
+          en: "Use density=\"compact\" (40px rows) and stickyHeader with a bounded scroll height.",
         },
         code: `import { DataTable } from "m3eui";
 
-<div style={{ maxHeight: 280, overflow: "hidden" }}>
-  <DataTable
-    caption="Spring telemetry log"
-    hideCaption
-    density="compact"
-    stickyHeader
-    columns={columns}
-    rows={logRows}
-    getRowKey={(r) => r.id}
-  />
-</div>`,
+<DataTable
+  caption="Spring telemetry log"
+  hideCaption
+  density="compact"
+  stickyHeader
+  columns={columns}
+  rows={logRows}
+  getRowKey={(r) => r.id}
+/>`,
         render: () => <DataTableCompactStickyDemo />,
       },
       {

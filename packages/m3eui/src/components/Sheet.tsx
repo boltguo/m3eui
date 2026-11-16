@@ -2,7 +2,9 @@
 
 import * as React from "react";
 import { Drawer as BaseDrawer } from "@base-ui/react/drawer";
-import { SHEET_TOKENS } from "../tokens/index.js";
+import {
+  SHEET_TOKENS,
+} from "../tokens/topology.js";
 import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3EPortalContainer } from "../context/M3EPortal.js";
 

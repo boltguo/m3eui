@@ -76,14 +76,10 @@ export const jaJPMessages: M3EMessages = {
   "progress.wavyLinearLabel": "進行状況",
   "progress.wavyCircularLabel": "円形の進行状況",
 
-  "menubar.ariaLabel": "アプリケーションコマンド",
   "navigation.barLabel": "メイン",
   "navigation.railLabel": "サイドレール",
   "navigation.collapseRail": "サイドレールを折りたたむ",
   "navigation.expandRail": "サイドレールを展開",
-  "navigation.suiteLabel": "アダプティブメイン",
-  "navigation.sidebarLabel": "セクション",
-  "navigation.siteMenuLabel": "サイト",
 
   "numberField.decrement": "値を減らす",
   "numberField.increment": "値を増やす",
@@ -132,11 +128,7 @@ export const jaJPMessages: M3EMessages = {
   "topAppBar.actionsLabel": "アプリバーの操作",
   "topAppBar.moreActions": "その他の操作",
   "dragHandle.ariaLabel": "ペインのサイズを変更",
-  "pullToRefresh.pulling": "引っ張って更新",
-  "pullToRefresh.release": "離して更新",
-  "pullToRefresh.refreshing": "更新中",
 
-  "dockedToolbar.ariaLabel": "下部固定ツールバー",
   "searchView.back": "戻る",
   "searchView.recentHeading": "最近の検索",
   "searchView.clearRecent": "履歴を消去",

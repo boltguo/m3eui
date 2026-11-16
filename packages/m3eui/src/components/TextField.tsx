@@ -2,7 +2,9 @@ import * as React from "react";
 import { useFormReset } from "../internal/formField.js";
 import { Field as BaseField } from "@base-ui/react/field";
 import { Input as BaseInput } from "@base-ui/react/input";
-import { TEXT_FIELD_TOKENS } from "../tokens/index.js";
+import {
+  TEXT_FIELD_TOKENS,
+} from "../tokens/topology.js";
 import { useM3EI18n } from "../context/M3EContext.js";
 import {
   FieldErrorIconSvg,
