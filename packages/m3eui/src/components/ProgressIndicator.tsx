@@ -1,21 +1,18 @@
 "use client";
 
 import * as React from "react";
-import { Meter as BaseMeter } from "@base-ui/react/meter";
 import { Progress as BaseProgress } from "@base-ui/react/progress";
 import {
-  METER_TOKENS,
   PROGRESS_TOKENS,
   resolveCircularProgressArcs,
+  resolveLinearIndeterminateFractions,
 } from "../tokens/index.js";
-import { useM3E, useM3EI18n } from "../context/M3EContext.js";
-import {
-  subscribeSpringFrame,
-  useM3EScalarSpring,
-} from "../hooks/useM3ESpring.js";
+import { useM3ERuntime } from "../context/M3EContext.js";
+import { useOffscreen } from "../internal/useOffscreen.js";
+import { subscribeSpringFrame, useM3EScalarSpring } from "../hooks/useM3ESpring.js";
 import { formatLocalizedPercent } from "../i18n/index.js";
+import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
 
-const LINEAR_INDETERMINATE_DURATION_MS = 1800;
 const CIRCULAR_INDETERMINATE_DURATION_MS = 6000;
 const CIRCULAR_STEP_DURATION_MS = 1500;
 const CIRCULAR_STEP_ACTIVE_MS = 300;
@@ -119,11 +116,11 @@ export function LinearProgressIndicator({
     direction,
     locale,
     paused: contextPaused,
-    playbackRate,
+    motionRef,
     prefersReducedMotion,
     t,
-  } = useM3E();
-  const isPaused = pausedProp ?? contextPaused;
+  } = useM3ERuntime();
+  const pausedByOwner = pausedProp ?? contextPaused;
   const isIndet = indeterminate || value === null || value === undefined;
   const clampedPct = isIndet ? 0 : Math.max(0, Math.min(100, value));
   const smoothPct = useM3EScalarSpring(clampedPct, "defaultSpatial");
@@ -137,6 +134,8 @@ export function LinearProgressIndicator({
     displayPct <= 1 || displayPct >= 99 ? 0 : PROGRESS_TOKENS.trackGap;
 
   const trackRef = React.useRef<HTMLDivElement | null>(null);
+  const offscreen = useOffscreen(trackRef, isIndet);
+  const isPaused = pausedByOwner || offscreen;
   const trackWidthRef = React.useRef<number>(240);
   const activeSeg1Ref = React.useRef<HTMLSpanElement | null>(null);
   const activeSeg2Ref = React.useRef<HTMLSpanElement | null>(null);
@@ -145,7 +144,7 @@ export function LinearProgressIndicator({
   const trackSeg2Ref = React.useRef<HTMLSpanElement | null>(null);
   const elapsedMsRef = React.useRef<number>(0);
 
-  React.useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     const el = trackRef.current;
     if (!el) return undefined;
     const syncWidth = () => {
@@ -192,33 +191,12 @@ export function LinearProgressIndicator({
     };
 
     const renderLinearAt = (rawElapsedMs: number) => {
-      const tMs =
-        ((rawElapsedMs % LINEAR_INDETERMINATE_DURATION_MS) +
-          LINEAR_INDETERMINATE_DURATION_MS) %
-        LINEAR_INDETERMINATE_DURATION_MS;
-
-      const l1Head = solveCubicBezier(0.2, 0, 0.8, 1, clamp01(tMs / 1000));
-      const l1Tail = solveCubicBezier(
-        0.4,
-        0,
-        1,
-        1,
-        clamp01((tMs - 333) / 850),
-      );
-      const l2Head = solveCubicBezier(
-        0,
-        0,
-        0.65,
-        1,
-        clamp01((tMs - 1000) / 567),
-      );
-      const l2Tail = solveCubicBezier(
-        0.1,
-        0,
-        0.45,
-        1,
-        clamp01((tMs - 1267) / 533),
-      );
+      const {
+        line1Head: l1Head,
+        line1Tail: l1Tail,
+        line2Head: l2Head,
+        line2Tail: l2Tail,
+      } = resolveLinearIndeterminateFractions(rawElapsedMs);
 
       const safeW = Math.max(48, trackWidthRef.current);
       const gapFrac = PROGRESS_TOKENS.trackGap / safeW;
@@ -258,13 +236,13 @@ export function LinearProgressIndicator({
       return undefined;
     }
 
-    const rate = Math.max(0.05, playbackRate);
     return subscribeSpringFrame((dtSec) => {
+      const rate = Math.max(0.05, motionRef.current.playbackRate);
       elapsedMsRef.current += dtSec * 1000 * rate;
       renderLinearAt(elapsedMsRef.current);
       return true;
     });
-  }, [isIndet, direction, isPaused, playbackRate, prefersReducedMotion]);
+  }, [isIndet, direction, isPaused, prefersReducedMotion]);
 
   const indetSegBaseStyle: React.CSSProperties = {
     position: "absolute",
@@ -421,11 +399,11 @@ export function CircularProgressIndicator({
   const {
     locale,
     paused: contextPaused,
-    playbackRate,
+    motionRef,
     prefersReducedMotion,
     t,
-  } = useM3E();
-  const isPaused = pausedProp ?? contextPaused;
+  } = useM3ERuntime();
+  const pausedByOwner = pausedProp ?? contextPaused;
   const resolvedAriaLabel = ariaLabel ?? t("progress.circularLabel");
   const resolvedShowValue = showValue || showValueLabel;
   const isIndet = indeterminate || value === null || value === undefined;
@@ -444,6 +422,9 @@ export function CircularProgressIndicator({
 
   const center = spec.size / 2;
   const indetGroupRef = React.useRef<SVGGElement | null>(null);
+  const rootRef = React.useRef<HTMLDivElement | null>(null);
+  const offscreen = useOffscreen(rootRef, isIndet);
+  const isPaused = pausedByOwner || offscreen;
   const indetTrackRef = React.useRef<SVGCircleElement | null>(null);
   const indetActiveRef = React.useRef<SVGCircleElement | null>(null);
   const elapsedMsRef = React.useRef<number>(0);
@@ -544,16 +525,17 @@ export function CircularProgressIndicator({
       return undefined;
     }
 
-    const rate = Math.max(0.05, playbackRate);
     return subscribeSpringFrame((dtSec) => {
+      const rate = Math.max(0.05, motionRef.current.playbackRate);
       elapsedMsRef.current += dtSec * 1000 * rate;
       renderCircularAt(elapsedMsRef.current);
       return true;
     });
-  }, [isIndet, isPaused, playbackRate, prefersReducedMotion, spec.size, spec.strokeWidth, center]);
+  }, [isIndet, isPaused, prefersReducedMotion, spec.size, spec.strokeWidth, center]);
 
   return (
     <BaseProgress.Root
+      ref={rootRef}
       id={id}
       value={isIndet ? null : Math.round(clamped)}
       min={0}
@@ -648,82 +630,5 @@ export function CircularProgressIndicator({
         </span>
       ) : null}
     </BaseProgress.Root>
-  );
-}
-
-export interface M3EMeterProps {
-  readonly id?: string;
-  readonly value: number;
-  readonly min?: number;
-  readonly max?: number;
-  readonly label: React.ReactNode;
-  readonly valueText?: string;
-  readonly className?: string;
-  readonly style?: React.CSSProperties;
-}
-
-export function Meter({
-  id,
-  value,
-  min = 0,
-  max = 100,
-  label,
-  valueText,
-  className,
-  style,
-}: M3EMeterProps): React.JSX.Element {
-  const { locale } = useM3EI18n();
-  const ratio =
-    max > min ? Math.max(0, Math.min(1, (value - min) / (max - min))) : 0;
-  const smoothPct = useM3EScalarSpring(ratio * 100, "defaultSpatial");
-  const pct = Math.max(0, Math.min(100, smoothPct));
-
-  const tone =
-    ratio >= METER_TOKENS.criticalThreshold
-      ? "critical"
-      : ratio >= METER_TOKENS.warningThreshold
-        ? "warning"
-        : "normal";
-
-  const gapPx = pct <= 1 || pct >= 99 ? 0 : METER_TOKENS.trackGap;
-
-  return (
-    <BaseMeter.Root
-      id={id}
-      value={value}
-      min={min}
-      max={max}
-      locale={locale}
-      className={className ? `m3e-meter ${className}` : "m3e-meter"}
-      data-tone={tone}
-      style={style}
-    >
-      <div className="m3e-meter__header">
-        <BaseMeter.Label className="m3e-meter__label">{label}</BaseMeter.Label>
-        {valueText ? (
-          <span className="m3e-meter__value">{valueText}</span>
-        ) : (
-          <BaseMeter.Value className="m3e-meter__value" />
-        )}
-      </div>
-
-      <BaseMeter.Track
-        className="m3e-meter__track"
-        style={{ height: `${METER_TOKENS.height}px`, gap: `${gapPx}px` }}
-      >
-        {pct > 0.2 ? (
-          <BaseMeter.Indicator
-            className="m3e-meter__indicator"
-            data-tone={tone}
-            style={{
-              flex: `0 0 calc(${pct.toFixed(2)}% - ${(gapPx / 2).toFixed(1)}px)`,
-            }}
-          />
-        ) : null}
-        {pct < 99.8 ? (
-          <div className="m3e-meter__rest" aria-hidden="true" />
-        ) : null}
-      </BaseMeter.Track>
-    </BaseMeter.Root>
   );
 }

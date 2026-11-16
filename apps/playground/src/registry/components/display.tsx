@@ -24,7 +24,6 @@ import {
   Pagination,
   SearchBar,
   SegmentedList,
-  SegmentedListItem,
   Skeleton,
   Slider,
   SuggestionChip,
@@ -823,7 +822,7 @@ function SegmentedListSelectableDemo(): React.JSX.Element {
     <div style={{ maxWidth: 520 }}>
       <SegmentedList aria-label={copy({ zh: "设计系统特性开关", en: "Design system capabilities" })}>
         {options.map((opt) => (
-          <SegmentedListItem
+          <ListItem
             key={opt.id}
             headline={opt.headline}
             supportingText={opt.supporting}
@@ -845,7 +844,7 @@ function SegmentedListControlsDemo(): React.JSX.Element {
   return (
     <div style={{ maxWidth: 540 }}>
       <SegmentedList aria-label={copy({ zh: "工作区成员与通知控制", en: "Workspace notifications and controls" })}>
-        <SegmentedListItem
+        <ListItem
           leading={<Avatar fallback="AL" size="sm" shape="cookie9Sided" />}
           headline={copy({ zh: "实时构建推送", en: "Live Build Push Alerts" })}
           supportingText={copy({
@@ -863,7 +862,7 @@ function SegmentedListControlsDemo(): React.JSX.Element {
             </span>
           }
         />
-        <SegmentedListItem
+        <ListItem
           leading={<Avatar fallback="WD" size="sm" shape="clover8Leaf" />}
           headline={copy({ zh: "每周性能周报", en: "Weekly Performance Digest" })}
           supportingText={copy({
@@ -881,7 +880,7 @@ function SegmentedListControlsDemo(): React.JSX.Element {
             </span>
           }
         />
-        <SegmentedListItem
+        <ListItem
           leading={<Avatar fallback="SG" size="sm" shape="pentagon" />}
           headline={copy({ zh: "生产密钥轮换策略", en: "Production Key Rotation" })}
           supportingText={copy({
@@ -894,7 +893,7 @@ function SegmentedListControlsDemo(): React.JSX.Element {
             </Chip>
           }
         />
-        <SegmentedListItem
+        <ListItem
           disabled
           leading={<Avatar fallback="LK" size="sm" shape="square" />}
           headline={copy({ zh: "旧版 Webhook 转发（已停用）", en: "Legacy Webhook Relay (Deprecated)" })}
@@ -2307,14 +2306,14 @@ const [loading, setLoading] = React.useState(true);
   /* ---------------------------- 3. SegmentedList -------------------------- */
   {
     slug: "segmented-list",
-    title: "SegmentedList & List",
+    title: "List",
     category: "display",
     subtitle: {
       zh: "同时涵盖 M3E 分段圆角列表 SegmentedList 与经典 M3 连续分割线列表 List（支持 full / inset 分割线）。",
       en: "Expressive grouped SegmentedList with spring seam corners alongside standard M3 continuous List and ListItem.",
     },
     importStatement:
-      'import { SegmentedList, SegmentedListItem, List, ListItem } from "m3eui";',
+      'import { SegmentedList, List, ListItem } from "m3eui";',
     primitive: "@base-ui/react/button",
     scenarios: [
       {
@@ -2327,18 +2326,18 @@ const [loading, setLoading] = React.useState(true);
           zh: "列表自动感知子项索引：首项顶部 16px、中间接缝 4px、末项底部 16px，悬停与按压时独立进行四元圆角物理回弹。",
           en: "Automatically assigns 16px outer caps and 4px inner seam corners across items, animating each corner via fastSpatial springs.",
         },
-        code: `import { SegmentedList, SegmentedListItem } from "m3eui";
+        code: `import { SegmentedList, ListItem } from "m3eui";
 
 <SegmentedList aria-label="Project quick links">
-  <SegmentedListItem
+  <ListItem
     headline="Color & Contrast Tokens"
     supportingText="HCT palettes, tone contrast curves, and CSS custom properties"
   />
-  <SegmentedListItem
+  <ListItem
     headline="Motion Physics & Springs"
     supportingText="Second-order harmonic oscillator specs for spatial and effects tokens"
   />
-  <SegmentedListItem
+  <ListItem
     headline="Polygon Morphing Shapes"
     supportingText="35 normalized AOSP rounded polygons and SVG clip-path helpers"
   />
@@ -2346,17 +2345,17 @@ const [loading, setLoading] = React.useState(true);
         render: () => (
           <div style={{ maxWidth: 520 }}>
             <SegmentedList aria-label="Project quick links">
-              <SegmentedListItem
+              <ListItem
                 leading={<SparkleIcon size={17} />}
                 headline="Color & Contrast Tokens"
                 supportingText="HCT palettes, tone contrast curves, and CSS custom properties"
               />
-              <SegmentedListItem
+              <ListItem
                 leading={<BarChartIcon size={17} />}
                 headline="Motion Physics & Springs"
                 supportingText="Second-order harmonic oscillator specs for spatial and effects tokens"
               />
-              <SegmentedListItem
+              <ListItem
                 leading={<SettingsGearIcon size={17} />}
                 headline="Polygon Morphing Shapes"
                 supportingText="35 normalized AOSP rounded polygons and SVG clip-path helpers"
@@ -2375,12 +2374,12 @@ const [loading, setLoading] = React.useState(true);
           zh: "当 selected 为 true 时，列表项四角圆角自动膨胀为 16px 并切换前置勾选徽标，从紧邻分组中视觉凸显。",
           en: "Selected items expand all four corners to 16px and replace the leading slot with a checkmark badge.",
         },
-        code: `import { Chip, SegmentedList, SegmentedListItem } from "m3eui";
+        code: `import { Chip, SegmentedList, ListItem } from "m3eui";
 
 const [selected, setSelected] = React.useState(["expressive"]);
 
 <SegmentedList aria-label="Capabilities">
-  <SegmentedListItem
+  <ListItem
     headline="Expressive Spring Physics"
     supportingText="Selected items detach into full 16px rounded corners"
     selected={selected.includes("expressive")}
@@ -2400,16 +2399,16 @@ const [selected, setSelected] = React.useState(["expressive"]);
           zh: "支持组合前置多边形 Avatar、双行描述、尾部 Switch 开关、状态 Chip 以及 disabled 禁用项。",
           en: "Combine leading polygon Avatars, supporting descriptions, trailing Switches or Chips, and disabled rows.",
         },
-        code: `import { Avatar, Chip, SegmentedList, SegmentedListItem, Switch } from "m3eui";
+        code: `import { Avatar, Chip, SegmentedList, ListItem, Switch } from "m3eui";
 
 <SegmentedList aria-label="Workspace notifications">
-  <SegmentedListItem
+  <ListItem
     leading={<Avatar fallback="AL" size="sm" shape="cookie9Sided" />}
     headline="Live Build Push Alerts"
     supportingText="Notify immediately when CI pipelines fail"
     trailing={<Switch checked={pushEnabled} onCheckedChange={setPushEnabled} />}
   />
-  <SegmentedListItem
+  <ListItem
     disabled
     leading={<Avatar fallback="LK" size="sm" shape="square" />}
     headline="Legacy Webhook Relay (Deprecated)"
@@ -2471,8 +2470,8 @@ const [selected, setSelected] = React.useState(["expressive"]);
             type: "React.ReactNode",
             required: true,
             description: {
-              zh: "由 SegmentedListItem 组成的列表子元素。",
-              en: "SegmentedListItem elements to group and index.",
+              zh: "由 ListItem 组成的列表子元素。",
+              en: "ListItem elements to group and index.",
             },
           },
           {
@@ -2494,7 +2493,7 @@ const [selected, setSelected] = React.useState(["expressive"]);
         ],
       },
       {
-        title: "SegmentedListItem Props",
+        title: "ListItem Props",
         rows: [
           {
             name: "headline",
@@ -3056,7 +3055,7 @@ const [filters, setFilters] = React.useState(["spring", "a11y"]);
   /* ------------------------- 5. Avatar & AvatarGroup ---------------------- */
   {
     slug: "avatar",
-    title: "Avatar & AvatarGroup",
+    title: "Avatar",
     category: "display",
     subtitle: {
       zh: "支持 35 种 AOSP 多边形裁切的单体头像 Avatar 与叠放溢出计数头像组 AvatarGroup。",
@@ -3945,7 +3944,7 @@ const [loading, setLoading] = React.useState(true);
   /* -------------------------- 10. MaterialShapeView ----------------------- */
   {
     slug: "material-shape",
-    title: "MaterialShapeView",
+    title: "MaterialShape",
     category: "display",
     subtitle: {
       zh: "AOSP Material Shapes 多边形渲染与形变引擎，支持全部 35 种规范圆角多边形之间的手动插值或二阶物理弹簧平滑过渡。",

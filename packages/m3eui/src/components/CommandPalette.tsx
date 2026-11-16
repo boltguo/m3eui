@@ -6,7 +6,7 @@ import { useM3EI18n } from "../context/M3EContext.js";
 import { useM3EPortalContainer } from "../context/M3EPortal.js";
 import { parseShortcutKeys } from "../tokens/index.js";
 import { Empty } from "./Empty.js";
-import { Kbd } from "./KbdAndSnippet.js";
+import { Kbd } from "./Kbd.js";
 
 export interface CommandPaletteItem {
   readonly id: string;
@@ -61,35 +61,21 @@ export function CommandPalette({
   open: controlledOpen,
   defaultOpen = false,
   onOpenChange,
-  groups,
-  items = [],
   enableShortcut = false,
-  placeholder,
-  emptyMessage,
-  footerHint,
   "aria-label": ariaLabel,
+  ...bodyProps
 }: M3ECommandPaletteProps): React.JSX.Element {
   const { t } = useM3EI18n();
   const portalContainer = useM3EPortalContainer();
   const [uncontrolledOpen, setUncontrolledOpen] =
     React.useState<boolean>(defaultOpen);
   const isOpen = controlledOpen ?? uncontrolledOpen;
-
-  const [query, setQuery] = React.useState<string>("");
-  const [activeIndex, setActiveIndex] = React.useState<number>(0);
-  const lastCompositionEndAtRef = React.useRef<number>(-Infinity);
-
-  const listboxId = React.useId();
-  const optionPrefix = React.useId();
+  const resolvedAriaLabel = ariaLabel ?? t("command.ariaLabel");
 
   const setOpen = React.useCallback(
     (next: boolean) => {
       if (controlledOpen === undefined) {
         setUncontrolledOpen(next);
-      }
-      if (!next) {
-        setQuery("");
-        setActiveIndex(0);
       }
       onOpenChange?.(next);
     },
@@ -107,6 +93,49 @@ export function CommandPalette({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [enableShortcut, isOpen, setOpen]);
+
+  return (
+    <BaseDialog.Root open={isOpen} onOpenChange={setOpen}>
+      <BaseDialog.Portal container={portalContainer}>
+        <BaseDialog.Backdrop className="m3e-dialog__backdrop" />
+        <BaseDialog.Popup
+          aria-label={resolvedAriaLabel}
+          className="m3e-command-palette"
+        >
+          <CommandPaletteBody
+            {...bodyProps}
+            ariaLabel={resolvedAriaLabel}
+            onClose={() => setOpen(false)}
+          />
+        </BaseDialog.Popup>
+      </BaseDialog.Portal>
+    </BaseDialog.Root>
+  );
+}
+
+function CommandPaletteBody({
+  groups,
+  items = [],
+  placeholder,
+  emptyMessage,
+  footerHint,
+  ariaLabel,
+  onClose,
+}: Pick<
+  M3ECommandPaletteProps,
+  "groups" | "items" | "placeholder" | "emptyMessage" | "footerHint"
+> & {
+  readonly ariaLabel: string;
+  readonly onClose: () => void;
+}): React.JSX.Element {
+  const { t } = useM3EI18n();
+  const [query, setQuery] = React.useState<string>("");
+  const [activeIndex, setActiveIndex] = React.useState<number>(0);
+  const lastCompositionEndAtRef = React.useRef<number>(-Infinity);
+  const listRef = React.useRef<HTMLDivElement | null>(null);
+
+  const listboxId = React.useId();
+  const optionPrefix = React.useId();
 
   const normalizedGroups = React.useMemo<readonly CommandPaletteGroup[]>(() => {
     const baseGroups: readonly CommandPaletteGroup[] = groups
@@ -155,9 +184,17 @@ export function CommandPalette({
   const activeItem =
     clampedActive >= 0 ? flatSelectable[clampedActive] : undefined;
 
+  const activeId = activeItem?.id;
+  React.useEffect(() => {
+    if (activeId === undefined) return;
+    listRef.current
+      ?.querySelector<HTMLElement>("[data-highlighted]")
+      ?.scrollIntoView({ block: "nearest" });
+  }, [activeId]);
+
   const runItem = (item: CommandPaletteItem) => {
     if (item.disabled) return;
-    setOpen(false);
+    onClose();
     item.onSelect();
   };
 
@@ -191,120 +228,113 @@ export function CommandPalette({
   };
 
   return (
-    <BaseDialog.Root open={isOpen} onOpenChange={setOpen}>
-      <BaseDialog.Portal container={portalContainer}>
-        <BaseDialog.Backdrop className="m3e-dialog__backdrop" />
-        <BaseDialog.Popup
-          aria-label={ariaLabel ?? t("command.ariaLabel")}
-          className="m3e-command-palette"
-        >
-          <div className="m3e-command-palette__input-bar">
-            <span className="m3e-command-palette__search-icon" aria-hidden="true">
-              <CommandSearchSvg />
-            </span>
-            <input
-              type="text"
-              role="combobox"
-              aria-expanded={true}
-              aria-controls={listboxId}
-              aria-activedescendant={
-                activeItem ? `${optionPrefix}-${activeItem.id}` : undefined
-              }
-              aria-label={ariaLabel ?? t("command.ariaLabel")}
-              placeholder={placeholder ?? t("command.placeholder")}
-              value={query}
-              autoFocus
-              className="m3e-command-palette__input"
-              onCompositionEnd={(e) => {
-                lastCompositionEndAtRef.current = e.nativeEvent.timeStamp;
-              }}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={handleInputKeyDown}
-            />
-          </div>
+    <>
+      <div className="m3e-command-palette__input-bar">
+        <span className="m3e-command-palette__search-icon" aria-hidden="true">
+          <CommandSearchSvg />
+        </span>
+        <input
+          type="text"
+          role="combobox"
+          aria-expanded={true}
+          aria-controls={listboxId}
+          aria-activedescendant={
+            activeItem ? `${optionPrefix}-${activeItem.id}` : undefined
+          }
+          aria-label={ariaLabel}
+          placeholder={placeholder ?? t("command.placeholder")}
+          value={query}
+          autoFocus
+          className="m3e-command-palette__input"
+          onCompositionEnd={(e) => {
+            lastCompositionEndAtRef.current = e.nativeEvent.timeStamp;
+          }}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handleInputKeyDown}
+        />
+      </div>
 
-          <div
-            id={listboxId}
-            role="listbox"
-            aria-label={ariaLabel ?? t("command.ariaLabel")}
-            className="m3e-command-palette__list"
-          >
-            {normalizedGroups.length === 0 ? (
-              <Empty
-                compact
-                className="m3e-command-palette__empty"
-                title={emptyMessage ?? t("command.empty")}
-              />
-            ) : (
-              normalizedGroups.map((group) => (
-                <div key={group.id} className="m3e-command-palette__group">
-                  {group.heading ? (
-                    <div className="m3e-command-palette__group-heading">
-                      {group.heading}
-                    </div>
-                  ) : null}
-                  {group.items.map((item) => {
-                    const isHighlighted = activeItem?.id === item.id;
-                    return (
-                      <div
-                        key={item.id}
-                        id={`${optionPrefix}-${item.id}`}
-                        role="option"
-                        aria-selected={isHighlighted}
-                        aria-disabled={item.disabled || undefined}
-                        className="m3e-command-palette__item"
-                        data-highlighted={isHighlighted ? "" : undefined}
-                        data-disabled={item.disabled ? "" : undefined}
-                        onMouseEnter={() => {
-                          if (!item.disabled) {
-                            const idx = flatSelectable.findIndex(
-                              (s) => s.id === item.id,
-                            );
-                            if (idx >= 0) setActiveIndex(idx);
-                          }
-                        }}
-                        onClick={() => runItem(item)}
-                      >
-                        {item.icon ? (
-                          <span
-                            className="m3e-command-palette__item-icon"
-                            aria-hidden="true"
-                          >
-                            {item.icon}
-                          </span>
-                        ) : null}
-                        <span className="m3e-command-palette__item-copy">
-                          <span className="m3e-command-palette__item-label">
-                            {item.label}
-                          </span>
-                          {item.description ? (
-                            <span className="m3e-command-palette__item-desc">
-                              {item.description}
-                            </span>
-                          ) : null}
-                        </span>
-                        {item.shortcut ? (
-                          <Kbd
-                            size="sm"
-                            className="m3e-command-palette__kbd"
-                            keys={parseShortcutKeys(item.shortcut)}
-                          >
-                            {item.shortcut}
-                          </Kbd>
-                        ) : null}
-                      </div>
-                    );
-                  })}
+      <div
+        ref={listRef}
+        id={listboxId}
+        role="listbox"
+        aria-label={ariaLabel}
+        className="m3e-command-palette__list"
+      >
+        {normalizedGroups.length === 0 ? (
+          <Empty
+            compact
+            className="m3e-command-palette__empty"
+            title={emptyMessage ?? t("command.empty")}
+          />
+        ) : (
+          normalizedGroups.map((group) => (
+            <div key={group.id} className="m3e-command-palette__group">
+              {group.heading ? (
+                <div className="m3e-command-palette__group-heading">
+                  {group.heading}
                 </div>
-              ))
-            )}
-          </div>
+              ) : null}
+              {group.items.map((item) => {
+                const isHighlighted = activeItem?.id === item.id;
+                return (
+                  <div
+                    key={item.id}
+                    id={`${optionPrefix}-${item.id}`}
+                    role="option"
+                    aria-selected={isHighlighted}
+                    aria-disabled={item.disabled || undefined}
+                    className="m3e-command-palette__item"
+                    data-highlighted={isHighlighted ? "" : undefined}
+                    data-disabled={item.disabled ? "" : undefined}
+                    onMouseEnter={() => {
+                      if (!item.disabled) {
+                        const idx = flatSelectable.findIndex(
+                          (s) => s.id === item.id,
+                        );
+                        if (idx >= 0) setActiveIndex(idx);
+                      }
+                    }}
+                    onClick={() => runItem(item)}
+                  >
+                    {item.icon ? (
+                      <span
+                        className="m3e-command-palette__item-icon"
+                        aria-hidden="true"
+                      >
+                        {item.icon}
+                      </span>
+                    ) : null}
+                    <span className="m3e-command-palette__item-copy">
+                      <span className="m3e-command-palette__item-label">
+                        {item.label}
+                      </span>
+                      {item.description ? (
+                        <span className="m3e-command-palette__item-desc">
+                          {item.description}
+                        </span>
+                      ) : null}
+                    </span>
+                    {item.shortcut ? (
+                      <Kbd
+                        size="sm"
+                        className="m3e-command-palette__kbd"
+                        keys={parseShortcutKeys(item.shortcut)}
+                      >
+                        {item.shortcut}
+                      </Kbd>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          ))
+        )}
+      </div>
 
-          <div className="m3e-command-palette__footer">
-            <span>{footerHint ?? t("command.navigateHint")}</span>
-          </div>
-        </BaseDialog.Popup>
-      </BaseDialog.Portal>
-    </BaseDialog.Root>
+      <div className="m3e-command-palette__footer">
+        <span>{footerHint ?? t("command.navigateHint")}</span>
+      </div>
+    </>
   );
 }

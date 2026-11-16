@@ -11,17 +11,17 @@ import {
   NavigationDrawer,
   type NavigationDestination,
   SearchBar,
-  useM3E,
+  useM3EI18n,
 } from "m3eui";
 import m3ePkg from "../../../../packages/m3eui/package.json";
 import { useCopyResolver, usePlaygroundStrings } from "../i18n";
-import { BLOCKS_REGISTRY } from "../registry/blocks";
 import {
-  ALL_COMPONENT_DOCS,
+  BLOCK_CATALOG,
+  COMPONENT_CATALOG,
+  COMPONENT_CATALOG_BY_CATEGORY,
   COMPONENT_CATEGORY_ORDER,
-  COMPONENTS_BY_CATEGORY,
-} from "../registry/components";
-import { DOC_GUIDES } from "../registry/docs";
+  DOC_CATALOG,
+} from "../registry/catalog";
 import { SiteHeader } from "./SiteHeader";
 import { GITHUB_REPO_URL } from "./Icons";
 import { ThemeStudioSheet } from "./ThemeStudioSheet";
@@ -34,7 +34,7 @@ export interface SiteOutletContext {
 export function SiteLayout() {
   const ui = usePlaygroundStrings();
   const resolve = useCopyResolver();
-  const { locale, setLocale } = useM3E();
+  const { locale, setLocale } = useM3EI18n();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -74,11 +74,11 @@ export function SiteLayout() {
     let prefix = "";
     if (path.startsWith("/components")) {
       const slug = path.split("/")[2];
-      const doc = ALL_COMPONENT_DOCS.find((c) => c.slug === slug);
+      const doc = COMPONENT_CATALOG.find((c) => c.slug === slug);
       prefix = doc ? `${doc.title} · ${ui.navComponents}` : ui.navComponents;
     } else if (path.startsWith("/docs")) {
       const slug = path.split("/")[2] ?? "introduction";
-      const guide = DOC_GUIDES.find((g) => g.slug === slug);
+      const guide = DOC_CATALOG.find((g) => g.slug === slug);
       prefix = guide ? `${resolve(guide.title)} · ${ui.navDocs}` : ui.navDocs;
     } else if (path.startsWith("/blocks")) {
       prefix = ui.navBlocks;
@@ -132,10 +132,9 @@ export function SiteLayout() {
       {
         id: "docs",
         heading: ui.cmdGroups.docs,
-        items: DOC_GUIDES.map((g) => ({
+        items: DOC_CATALOG.map((g) => ({
           id: `doc-${g.slug}`,
           label: resolve(g.title),
-          description: resolve(g.subtitle),
           keywords: [g.slug],
           onSelect: () => navigate(`/docs/${g.slug}`),
         })),
@@ -143,21 +142,21 @@ export function SiteLayout() {
       {
         id: "components",
         heading: ui.cmdGroups.components,
-        items: ALL_COMPONENT_DOCS.map((c) => ({
+        items: COMPONENT_CATALOG.map((c) => ({
           id: `comp-${c.slug}`,
           label: c.title,
-          description: resolve(c.subtitle),
-          keywords: [c.slug, c.category, ui.componentCategories[c.category]],
+          description: ui.componentCategories[c.category],
+          keywords: [c.slug, c.category, ui.componentCategories[c.category], ...(c.keywords ?? [])],
           onSelect: () => navigate(`/components/${c.slug}`),
         })),
       },
       {
         id: "blocks",
         heading: ui.cmdGroups.blocks,
-        items: BLOCKS_REGISTRY.map((blk) => ({
+        items: BLOCK_CATALOG.map((blk) => ({
           id: `block-${blk.slug}`,
           label: `${blk.slug} — ${resolve(blk.title)}`,
-          description: resolve(blk.description),
+          description: ui.blockCategories[blk.category],
           keywords: [blk.slug, blk.category],
           onSelect: () => navigate(`/blocks#${blk.slug}`),
         })),
@@ -180,7 +179,7 @@ export function SiteLayout() {
         { value: "/blocks", label: ui.navBlocks, section: ui.cmdGroups.pages },
       ].filter((item) => matchesFilter(String(item.label)));
 
-      const docItems: NavigationDestination<string>[] = DOC_GUIDES.filter((g) =>
+      const docItems: NavigationDestination<string>[] = DOC_CATALOG.filter((g) =>
         matchesFilter(`${resolve(g.title)} ${g.slug}`),
       ).map((g) => ({
         value: `/docs/${g.slug}`,
@@ -188,7 +187,7 @@ export function SiteLayout() {
         section: ui.navDocs,
       }));
 
-      const blockItems: NavigationDestination<string>[] = BLOCKS_REGISTRY.filter(
+      const blockItems: NavigationDestination<string>[] = BLOCK_CATALOG.filter(
         (b) => matchesFilter(`${resolve(b.title)} ${b.slug} ${b.category}`),
       ).map((b) => ({
         value: `/blocks#${b.slug}`,
@@ -198,8 +197,8 @@ export function SiteLayout() {
 
       const componentItems: NavigationDestination<string>[] =
         COMPONENT_CATEGORY_ORDER.flatMap((cat) => {
-          const filtered = COMPONENTS_BY_CATEGORY[cat].filter((c) =>
-            matchesFilter(`${c.title} ${c.slug} ${resolve(c.subtitle)}`),
+          const filtered = COMPONENT_CATALOG_BY_CATEGORY[cat].filter((c) =>
+            matchesFilter(`${c.title} ${c.slug} ${c.keywords?.join(" ") ?? ""}`),
           );
           const sectionTitle = `${ui.componentCategories[cat]} (${filtered.length})`;
           return filtered.map((c) => ({
@@ -302,7 +301,9 @@ export function SiteLayout() {
       />
 
       <div id="main-content" tabIndex={-1} className="m3e-site-main-wrap">
-        <Outlet context={outletCtx} />
+        <React.Suspense fallback={null}>
+          <Outlet context={outletCtx} />
+        </React.Suspense>
       </div>
 
       <footer className="m3e-site-footer">

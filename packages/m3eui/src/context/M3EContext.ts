@@ -191,7 +191,7 @@ const DEFAULT_DARK: M3ESemanticColorRoles = {
   scrim: "#000000",
 };
 
-const DEFAULT_THEME: M3EThemeTokens = /* @__PURE__ */ (() => {
+export const M3E_DEFAULT_THEME: M3EThemeTokens = /* @__PURE__ */ (() => {
   const cssLightDarkVars: Record<string, string> = {};
   for (const key of Object.keys(DEFAULT_LIGHT) as SemanticColorRoleKey[]) {
     const cssVar = `--m3e-color-${key.replace(/[A-Z]/g, (ch) => `-${ch.toLowerCase()}`)}`;
@@ -274,12 +274,47 @@ export const M3EContext = React.createContext<M3EContextValue>({
   debugGeometry: false,
   setDebugGeometry: () => {},
   prefersReducedMotion: false,
-  themeTokens: DEFAULT_THEME,
+  themeTokens: M3E_DEFAULT_THEME,
   exportConfigJson: buildDefaultConfigJson,
 });
 
 export function useM3E(): M3EContextValue {
   return React.useContext(M3EContext);
+}
+
+export interface M3EMotionRuntime {
+  readonly motionScheme: MotionScheme;
+  readonly playbackRate: number;
+}
+
+export interface M3ERuntimeValue {
+  readonly locale: M3ELocale;
+  readonly setLocale: (locale: M3ELocale) => void;
+  readonly direction: TextDirection;
+  readonly messages: M3EMessages;
+  readonly t: M3ETranslateFn;
+  readonly paused: boolean;
+  readonly debugGeometry: boolean;
+  readonly prefersReducedMotion: boolean;
+  readonly motionRef: { readonly current: M3EMotionRuntime };
+}
+
+export const M3ERuntimeContext = React.createContext<M3ERuntimeValue>({
+  locale: "en-US",
+  setLocale: () => {},
+  direction: "ltr",
+  messages: enUSMessages,
+  t: DEFAULT_TRANSLATOR,
+  paused: false,
+  debugGeometry: false,
+  prefersReducedMotion: false,
+  motionRef: {
+    current: { motionScheme: EXPRESSIVE_MOTION_SCHEME, playbackRate: 1 },
+  },
+});
+
+export function useM3ERuntime(): M3ERuntimeValue {
+  return React.useContext(M3ERuntimeContext);
 }
 
 export function useM3EI18n(): {
@@ -289,7 +324,5 @@ export function useM3EI18n(): {
   readonly messages: M3EMessages;
   readonly t: M3ETranslateFn;
 } {
-  const { locale, setLocale, direction, messages, t } =
-    React.useContext(M3EContext);
-  return { locale, setLocale, direction, messages, t };
+  return React.useContext(M3ERuntimeContext);
 }

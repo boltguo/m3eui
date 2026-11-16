@@ -5,7 +5,7 @@ import {
   DRAG_HANDLE_TOKENS,
   resolveDragHandleGeometry,
 } from "../tokens/index.js";
-import { useM3E } from "../context/M3EContext.js";
+import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3EScalarSpring } from "../hooks/useM3ESpring.js";
 
 export interface M3EDragHandleProps
@@ -62,7 +62,7 @@ export const DragHandle = React.forwardRef<HTMLDivElement, M3EDragHandleProps>(
     },
     forwardedRef,
   ): React.JSX.Element {
-    const { debugGeometry, direction, t } = useM3E();
+    const { debugGeometry, direction, t } = useM3ERuntime();
     const isRtl = direction === "rtl";
     const resolvedAriaLabel = ariaLabel ?? t("dragHandle.ariaLabel");
 

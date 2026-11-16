@@ -29,6 +29,7 @@ import {
   generateM3EThemeTokens,
   getShapeMorphPair,
   interpolateMorphCubics,
+  createMorphPair,
   resolveAccordionItemCorners,
   resolveCarouselItemFrame,
   resolveCarouselKeylineStrategy,
@@ -236,7 +237,7 @@ describe("m3eui/tokens — Normalized Polygon Morphs & Wavy Progress", () => {
 
     const indet = buildIndeterminateLinearWavyGeometry({
       width: 240,
-      cycleFraction: 0.45,
+      cycleFraction: 0.3,
       phasePx: 8,
     });
     expect(indet.activePaths.length).toBe(1);
@@ -252,7 +253,21 @@ describe("m3eui/tokens — Normalized Polygon Morphs & Wavy Progress", () => {
     );
   });
 
-  it("normalizes all 35 official MaterialShapes cleanly inside [0..1] and morphs arbitrary pairs 1:1", () => {
+  it("retargets a mid-flight morph from the current outline", () => {
+    const current = interpolateMorphCubics(getShapeMorphPair("circle", "cookie9Sided"), 0.5);
+    const pair = createMorphPair(
+      {
+        ...getMaterialShape("circle"),
+        cubics: current,
+        features: current.map((c) => ({ type: "edge" as const, cubics: [c] })),
+      },
+      getMaterialShape("heart"),
+    );
+    expect(pair.startCubics.length).toBe(pair.endCubics.length);
+    expect(pair.startCubics[0]!.slice(0, 2)).toEqual(current[0]!.slice(0, 2));
+  });
+
+  it("normalizes all 35 official MaterialShapes cleanly inside [0..1] and morphs arbitrary pairs", () => {
     expect(M3E_ALL_SHAPE_NAMES.length).toBe(35);
     expect(Object.keys(MATERIAL_SHAPES).length).toBe(35);
 
@@ -356,7 +371,7 @@ describe("m3eui/tokens — IconButton, SplitButton & FloatingToolbar", () => {
     expect(resolveSegmentedMenuItemCorners({ index: 0, count: 3 })).toEqual([12, 12, 4, 4]);
     expect(resolveSegmentedMenuItemCorners({ index: 1, count: 3 })).toEqual([4, 4, 4, 4]);
     expect(resolveSegmentedMenuItemCorners({ index: 2, count: 3 })).toEqual([4, 4, 12, 12]);
-    expect(resolveSegmentedMenuItemCorners({ index: 1, count: 3, isHighlighted: true })).toEqual([
+    expect(resolveSegmentedMenuItemCorners({ index: 1, count: 3, isSelected: true })).toEqual([
       12, 12, 12, 12,
     ]);
   });
@@ -559,18 +574,18 @@ describe("m3eui/tokens — RTL Corner Mirroring & Clock Geometry", () => {
     expect(h12.angleDeg).toBe(0);
     expect(h12.isInnerRing).toBe(false);
     expect(h12.offsetX).toBeCloseTo(0, 2);
-    expect(h12.offsetY).toBeCloseTo(-92, 2);
+    expect(h12.offsetY).toBeCloseTo(-101, 2);
 
     const h15 = resolveClockHandGeometry({ mode: "hour", value: 15, use24Hour: true });
     expect(h15.angleDeg).toBe(90);
     expect(h15.isInnerRing).toBe(true);
-    expect(h15.radius).toBe(58);
-    expect(h15.offsetX).toBeCloseTo(58, 2);
+    expect(h15.radius).toBe(69);
+    expect(h15.offsetX).toBeCloseTo(69, 2);
     expect(h15.offsetY).toBeCloseTo(0, 2);
 
     const m45 = resolveClockHandGeometry({ mode: "minute", value: 45 });
     expect(m45.angleDeg).toBe(270);
-    expect(m45.offsetX).toBeCloseTo(-92, 2);
+    expect(m45.offsetX).toBeCloseTo(-101, 2);
     expect(m45.offsetY).toBeCloseTo(0, 1);
   });
 });
@@ -826,7 +841,7 @@ describe("m3eui/tokens — AOSP Compose Material 3 Expressive 1.5.0 Parity", () 
     expect(leftPeek.maskWidth).toBeCloseTo(rightPeek.maskWidth, 1);
   });
 
-  it("resolves DragHandle, BottomAppBar, PullToRefresh, and VibrantMenu token contracts", () => {
+  it("resolves DragHandle, BottomAppBar, PullToRefreshBox, and VibrantMenu token contracts", () => {
     expect(DRAG_HANDLE_TOKENS).toMatchObject({
       width: 4,
       height: 48,
@@ -857,7 +872,7 @@ describe("m3eui/tokens — AOSP Compose Material 3 Expressive 1.5.0 Parity", () 
     expect(PULL_TO_REFRESH_TOKENS.positionalThreshold).toBe(80);
     expect(PULL_TO_REFRESH_TOKENS.dragMultiplier).toBe(0.5);
     expect(VIBRANT_MENU_TOKENS).toMatchObject({
-      groupGap: 4,
+      groupGap: 2,
       groupRadius: 16,
       itemOuterRadius: 12,
       itemInnerRadius: 4,

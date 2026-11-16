@@ -2,7 +2,8 @@ import * as React from "react";
 import { Toast as BaseToast } from "@base-ui/react/toast";
 import { SNACKBAR_TOKENS } from "../tokens/index.js";
 import { useM3EPortalContainer } from "../context/M3EPortal.js";
-import { useM3E, useM3EI18n } from "../context/M3EContext.js";
+import { useM3ERuntime, useM3EI18n } from "../context/M3EContext.js";
+import { M3EToastManagerContext } from "../internal/toastManager.js";
 
 export type M3EToastType =
   | "default"
@@ -47,31 +48,8 @@ function CloseGlyph() {
   );
 }
 
-export function showM3EToast(
-  manager: Pick<
-    ReturnType<typeof BaseToast.useToastManager<M3EToastData>>,
-    "add"
-  >,
-  options: ShowM3EToastOptions,
-): string {
-  const resolvedType: M3EToastType = options.type ?? "default";
-  return manager.add({
-    id: options.id,
-    title: options.title,
-    description: options.description,
-    priority: resolvedType === "error" ? "high" : "low",
-    timeout: options.timeout ?? (options.actionLabel ? 10000 : 4000),
-    type: resolvedType,
-    data: {
-      actionLabel: options.actionLabel,
-      onAction: options.onAction,
-      showClose: options.showClose ?? true,
-    },
-  });
-}
-
 export function M3EToastViewportHost(): React.JSX.Element {
-  const { direction } = useM3E();
+  const { direction } = useM3ERuntime();
   const { t } = useM3EI18n();
   const portalContainer = useM3EPortalContainer();
   const { toasts, close } = BaseToast.useToastManager<M3EToastData>();
@@ -145,19 +123,33 @@ export function M3EToastViewportHost(): React.JSX.Element {
   );
 }
 
-export const M3EToastViewport = M3EToastViewportHost;
+export function useM3EToast(): {
+  readonly toast: (options: ShowM3EToastOptions) => string;
+  readonly close: (id?: string) => void;
+} {
+  const manager = React.useContext(M3EToastManagerContext);
 
-export function useM3EToast() {
-  const manager = BaseToast.useToastManager<M3EToastData>();
-
-  const toast = React.useCallback(
-    (options: ShowM3EToastOptions): string => showM3EToast(manager, options),
+  return React.useMemo(
+    () => ({
+      toast: (options) => {
+        if (!manager) return "";
+        const type: M3EToastType = options.type ?? "default";
+        return manager.add({
+          id: options.id,
+          title: options.title,
+          description: options.description,
+          priority: type === "error" ? "high" : "low",
+          timeout: options.timeout ?? (options.actionLabel ? 10000 : 4000),
+          type,
+          data: {
+            actionLabel: options.actionLabel,
+            onAction: options.onAction,
+            showClose: options.showClose ?? true,
+          },
+        });
+      },
+      close: (id) => manager?.close(id),
+    }),
     [manager],
   );
-
-  return {
-    toast,
-    close: manager.close,
-    toasts: manager.toasts,
-  };
 }

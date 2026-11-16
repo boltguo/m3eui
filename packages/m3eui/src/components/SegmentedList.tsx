@@ -6,19 +6,19 @@ import {
   type CornerTuple,
   resolveSegmentedListCorners,
 } from "../tokens/index.js";
-import { useM3E } from "../context/M3EContext.js";
+import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3ECornerSpringRef, usePressHoldState } from "../hooks/useM3ESpring.js";
 
 export type ListVariant = "segmented" | "standard";
 export type ListDividerMode = "none" | "full" | "inset";
 
-interface SegmentedListItemContextValue {
+interface ListItemContextValue {
   readonly index: number;
   readonly count: number;
   readonly variant: ListVariant;
 }
 
-const SegmentedListItemContext = React.createContext<SegmentedListItemContextValue>({
+const ListItemContext = React.createContext<ListItemContextValue>({
   index: 0,
   count: 1,
   variant: "segmented",
@@ -54,12 +54,12 @@ export function SegmentedList({
       style={style}
     >
       {validChildren.map((child, index) => (
-        <SegmentedListItemContext.Provider
+        <ListItemContext.Provider
           key={child.key ?? index}
           value={{ index, count, variant }}
         >
           <li className="m3e-segmented-list__li">{child}</li>
-        </SegmentedListItemContext.Provider>
+        </ListItemContext.Provider>
       ))}
     </ul>
   );
@@ -69,7 +69,7 @@ export function List(props: SegmentedListProps): React.JSX.Element {
   return <SegmentedList variant="standard" {...props} />;
 }
 
-export interface SegmentedListItemProps {
+export interface ListItemProps {
   readonly headline: React.ReactNode;
   readonly supportingText?: React.ReactNode;
   readonly leading?: React.ReactNode;
@@ -107,7 +107,7 @@ function formatTupleBadge(c: CornerTuple): string {
   return `r:${a}/${b}/${d}/${e}`;
 }
 
-export function SegmentedListItem({
+export function ListItem({
   headline,
   supportingText,
   leading,
@@ -119,9 +119,9 @@ export function SegmentedListItem({
   onClick,
   className,
   style,
-}: SegmentedListItemProps): React.JSX.Element {
-  const { index, count, variant } = React.useContext(SegmentedListItemContext);
-  const { debugGeometry } = useM3E();
+}: ListItemProps): React.JSX.Element {
+  const { index, count, variant } = React.useContext(ListItemContext);
+  const { debugGeometry } = useM3ERuntime();
   const selected = Boolean(selectedProp);
   const isInteractive = interactiveProp ?? Boolean(onClick);
   const trackHoverCorners = variant === "segmented" && isInteractive && !disabled;
@@ -293,4 +293,3 @@ export function SegmentedListItem({
   );
 }
 
-export const ListItem = SegmentedListItem;

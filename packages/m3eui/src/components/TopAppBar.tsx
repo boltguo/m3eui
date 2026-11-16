@@ -8,9 +8,10 @@ import {
   resolveTopAppBarGeometry,
 } from "../tokens/index.js";
 import { useM3EI18n } from "../context/M3EContext.js";
-import { useM3EScalarSpring } from "../hooks/useM3ESpring.js";
+import { useM3EScalarSpringEffect } from "../hooks/useM3ESpring.js";
 import { IconButton } from "./IconButton.js";
-import { DropdownMenu, type M3EMenuItemSpec } from "./MenuAndPopover.js";
+import { DropdownMenu, type M3EMenuItemSpec } from "./Menu.js";
+import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
 
 export type TopAppBarScrollBehavior =
   | "pinned"
@@ -64,7 +65,7 @@ export function AppBarRow({
   const rowRef = React.useRef<HTMLDivElement | null>(null);
   const [fitSlots, setFitSlots] = React.useState<number>(maxVisibleItems);
 
-  React.useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     const el = rowRef.current;
     if (!el) return;
     const syncSlots = () => {
@@ -179,10 +180,14 @@ export function TopAppBar({
 }: M3ETopAppBarProps): React.JSX.Element {
   const { t } = useM3EI18n();
   const hasSubtitle = Boolean(subtitle);
+  const headerRef = React.useRef<HTMLElement | null>(null);
   const [autoState, setAutoState] = React.useState({
-    fraction: 0,
-    scrolled: false,
+    elevated: false,
+    twoRow: true,
   });
+  const writeFraction = React.useCallback((t: number) => {
+    headerRef.current?.style.setProperty("--m3e-top-app-bar-t", t.toFixed(4));
+  }, []);
 
   const maxCollapsePx = React.useMemo(() => {
     const exp = resolveTopAppBarGeometry({
@@ -228,41 +233,40 @@ export function TopAppBar({
         scrollBehavior === "pinned"
           ? 0
           : Math.max(0, Math.min(1, collapseOffset / maxCollapsePx));
-      const nextScrolled = y > 4;
+      const elevated = y > 4 || nextFraction > 0.08;
+      const twoRow = nextFraction < 0.72;
 
+      writeFraction(nextFraction);
       setAutoState((prev) =>
-        Math.abs(prev.fraction - nextFraction) < 0.005 &&
-        prev.scrolled === nextScrolled
+        prev.elevated === elevated && prev.twoRow === twoRow
           ? prev
-          : { fraction: nextFraction, scrolled: nextScrolled },
+          : { elevated, twoRow },
       );
     };
 
     sync();
     target.addEventListener("scroll", sync, { passive: true });
     return () => target.removeEventListener("scroll", sync);
-  }, [scrollBehavior, scrollTargetRef, maxCollapsePx]);
+  }, [scrollBehavior, scrollTargetRef, maxCollapsePx, writeFraction]);
 
-  const effectiveFraction =
-    controlledFraction ?? (scrollBehavior ? autoState.fraction : 0);
-  const effectiveScrolled =
-    controlledScrolled ?? (scrollBehavior ? autoState.scrolled : undefined);
-
-  const smoothFraction = useM3EScalarSpring(
-    Math.max(0, Math.min(1, effectiveFraction)),
-    "fastSpatial",
-  );
-  const geo = resolveTopAppBarGeometry({
-    variant,
-    collapsedFraction: smoothFraction,
-    scrolled: effectiveScrolled,
-    hasSubtitle,
+  const isControlled = controlledFraction !== undefined || !scrollBehavior;
+  const controlledT = Math.max(0, Math.min(1, controlledFraction ?? 0));
+  useM3EScalarSpringEffect(controlledT, "fastSpatial", (t) => {
+    if (isControlled) writeFraction(t);
   });
+
+  const expandedGeo = resolveTopAppBarGeometry({ variant, collapsedFraction: 0, hasSubtitle });
+  const collapsedH = TOP_APP_BAR_SPECS.collapsedHeight;
+  const isElevated = isControlled
+    ? Boolean(controlledScrolled) || controlledT > 0.08
+    : controlledScrolled ?? autoState.elevated;
+  const isTwoRow = isControlled ? controlledT < 0.72 : autoState.twoRow;
+  const T = "var(--m3e-top-app-bar-t, 0)";
+  const [initialT] = React.useState(isControlled ? controlledT : 0);
 
   const isCentered = variant === "center-aligned";
   const isFlexible =
     variant === "medium-flexible" || variant === "large-flexible";
-  const tFrac = Math.max(0, Math.min(1, smoothFraction));
 
   const hasActionItems = Boolean(actionItems && actionItems.length > 0);
   const hasActions = hasActionItems || Boolean(actions);
@@ -271,7 +275,7 @@ export function TopAppBar({
   const actionsInnerRef = React.useRef<HTMLDivElement | null>(null);
   const [balancedSidePx, setBalancedSidePx] = React.useState<number>(0);
 
-  React.useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     if (!isCentered) {
       setBalancedSidePx((prev) => (prev === 0 ? prev : 0));
       return undefined;
@@ -317,14 +321,8 @@ export function TopAppBar({
 
   const expandedTitleStyle: React.CSSProperties = {
     fontFamily: `var(--m3e-typescale-${expTitleScale}-font, var(--m3e-font-brand))`,
-    fontSize:
-      tFrac <= 0.001
-        ? `var(--m3e-typescale-${expTitleScale}-size, ${expTitleRem}rem)`
-        : `calc(var(--m3e-typescale-${expTitleScale}-size, ${expTitleRem}rem) * ${(1 - tFrac).toFixed(3)} + var(--m3e-typescale-title-large-size, 1.375rem) * ${tFrac.toFixed(3)})`,
-    lineHeight:
-      tFrac <= 0.001
-        ? `var(--m3e-typescale-${expTitleScale}-line-height, ${expLineRem}rem)`
-        : `calc(var(--m3e-typescale-${expTitleScale}-line-height, ${expLineRem}rem) * ${(1 - tFrac).toFixed(3)} + var(--m3e-typescale-title-large-line-height, 1.75rem) * ${tFrac.toFixed(3)})`,
+    fontSize: `calc(var(--m3e-typescale-${expTitleScale}-size, ${expTitleRem}rem) * (1 - ${T}) + var(--m3e-typescale-title-large-size, 1.375rem) * ${T})`,
+    lineHeight: `calc(var(--m3e-typescale-${expTitleScale}-line-height, ${expLineRem}rem) * (1 - ${T}) + var(--m3e-typescale-title-large-line-height, 1.75rem) * ${T})`,
     fontWeight: `var(--m3e-typescale-${expTitleScale}-weight, 400)`,
     letterSpacing: `var(--m3e-typescale-${expTitleScale}-tracking, 0em)`,
   };
@@ -341,17 +339,10 @@ export function TopAppBar({
     lineHeight: `var(--m3e-typescale-${expSubScale}-line-height, ${expSubLineRem}rem)`,
     fontWeight: `var(--m3e-typescale-${expSubScale}-weight, 500)`,
     letterSpacing: `var(--m3e-typescale-${expSubScale}-tracking, ${expSubTracking})`,
-    opacity: geo.subtitleOpacity,
+    opacity: `max(0, 1 - ${T} * 1.4)`,
   };
 
-  const inlineRowOpacity = isFlexible
-    ? Math.max(0, Math.min(1, (tFrac - 0.6) / 0.24))
-    : 1;
-  const expandedRowOpacity = Math.max(0, Math.min(1, (0.76 - tFrac) / 0.24));
-  const expandedAvailableHeight = Math.max(
-    0,
-    geo.height - TOP_APP_BAR_SPECS.collapsedHeight,
-  );
+  const expandedExtraPx = Math.max(0, expandedGeo.height - collapsedH);
 
   const actionsNode =
     actionItems && actionItems.length > 0 ? (
@@ -374,9 +365,11 @@ export function TopAppBar({
     <header
       className={className ? `m3e-top-app-bar ${className}` : "m3e-top-app-bar"}
       data-variant={variant}
-      data-elevated={geo.isElevated ? "" : undefined}
+      ref={headerRef}
+      data-elevated={isElevated ? "" : undefined}
       style={{
-        minHeight: `${geo.height.toFixed(1)}px`,
+        ["--m3e-top-app-bar-t" as string]: initialT,
+        minHeight: `calc(${expandedGeo.height}px - ${expandedGeo.height - collapsedH}px * ${T})`,
         paddingInline: `${TOP_APP_BAR_SPECS.horizontalPadding}px`,
         ...style,
       }}
@@ -403,12 +396,12 @@ export function TopAppBar({
         <div
           className="m3e-top-app-bar__inline-titles"
           data-centered={isCentered ? "" : undefined}
-          aria-hidden={isFlexible && geo.isTwoRow ? true : undefined}
+          aria-hidden={isFlexible && isTwoRow ? true : undefined}
           style={
             isFlexible
               ? {
-                  opacity: Number(inlineRowOpacity.toFixed(3)),
-                  pointerEvents: geo.isTwoRow ? "none" : undefined,
+                  opacity: `clamp(0, (${T} - 0.6) / 0.24, 1)`,
+                  pointerEvents: isTwoRow ? "none" : undefined,
                 }
               : undefined
           }
@@ -464,13 +457,13 @@ export function TopAppBar({
       {isFlexible ? (
         <div
           className="m3e-top-app-bar__expanded-row"
-          aria-hidden={!geo.isTwoRow ? true : undefined}
+          aria-hidden={!isTwoRow ? true : undefined}
           style={{
-            maxHeight: `${expandedAvailableHeight.toFixed(1)}px`,
+            maxHeight: `calc(${expandedExtraPx}px * (1 - ${T}))`,
             overflow: "hidden",
-            opacity: Number(expandedRowOpacity.toFixed(3)),
-            paddingBottom: `${(8 * (1 - tFrac)).toFixed(2)}px`,
-            pointerEvents: !geo.isTwoRow ? "none" : undefined,
+            opacity: `clamp(0, (0.76 - ${T}) / 0.24, 1)`,
+            paddingBottom: `calc(8px * (1 - ${T}))`,
+            pointerEvents: !isTwoRow ? "none" : undefined,
           }}
         >
           <div className="m3e-top-app-bar__title" style={expandedTitleStyle}>

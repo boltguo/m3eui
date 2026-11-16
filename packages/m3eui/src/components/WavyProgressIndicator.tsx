@@ -13,12 +13,13 @@ import {
   buildIndeterminateLinearWavyGeometry,
   resolveDeterminateWaveAmplitude,
 } from "../tokens/index.js";
-import { useM3E } from "../context/M3EContext.js";
+import { useM3ERuntime } from "../context/M3EContext.js";
+import { useOffscreen } from "../internal/useOffscreen.js";
 
 const MAX_LINEAR_TRACK_SEGMENTS = 3;
 const MAX_LINEAR_ACTIVE_SEGMENTS = 2;
 
-export interface WavyProgressIndicatorProps {
+export interface LinearWavyProgressIndicatorProps {
   readonly value?: number | null;
   readonly amplitude?: number;
   readonly wavelength?: number;
@@ -30,7 +31,7 @@ export interface WavyProgressIndicatorProps {
   readonly style?: React.CSSProperties;
 }
 
-export function WavyProgressIndicator({
+export function LinearWavyProgressIndicator({
   value = null,
   amplitude: amplitudeOverride,
   wavelength,
@@ -40,20 +41,21 @@ export function WavyProgressIndicator({
   "aria-label": ariaLabel,
   className,
   style,
-}: WavyProgressIndicatorProps): React.JSX.Element {
+}: LinearWavyProgressIndicatorProps): React.JSX.Element {
   const {
-    playbackRate,
+    motionRef,
     paused: contextPaused,
     prefersReducedMotion,
     direction,
     locale,
     t,
-  } = useM3E();
+  } = useM3ERuntime();
   const resolvedAriaLabel = ariaLabel ?? t("progress.wavyLinearLabel");
-  const isPaused = pausedProp ?? contextPaused;
   const isIndeterminate = value === null || value === undefined;
 
   const containerRef = React.useRef<HTMLDivElement | null>(null);
+  const offscreen = useOffscreen(containerRef);
+  const isPaused = (pausedProp ?? contextPaused) || offscreen;
   const trackPathRefs = React.useRef<(SVGPathElement | null)[]>([]);
   const activePathRefs = React.useRef<(SVGPathElement | null)[]>([]);
   const stopDotRef = React.useRef<SVGCircleElement | null>(null);
@@ -220,7 +222,7 @@ export function WavyProgressIndicator({
     const step = (now: number) => {
       const dtMs = Math.min(64, Math.max(0, now - lastNow));
       lastNow = now;
-      const rate = prefersReducedMotion ? Math.min(0.4, playbackRate) : playbackRate;
+      const rate = prefersReducedMotion ? Math.min(0.4, motionRef.current.playbackRate) : motionRef.current.playbackRate;
       const dtScaledMs = dtMs * rate;
 
       const prev = stateRef.current;
@@ -282,7 +284,6 @@ export function WavyProgressIndicator({
     isIndeterminate,
     effectiveWavelength,
     isPaused,
-    playbackRate,
     prefersReducedMotion,
     computeGeometry,
     applyGeometryToDom,
@@ -365,7 +366,6 @@ export function WavyProgressIndicator({
   );
 }
 
-export const LinearWavyProgressIndicator = WavyProgressIndicator;
 
 export interface CircularWavyProgressIndicatorProps {
   readonly value?: number | null;
@@ -395,14 +395,16 @@ export function CircularWavyProgressIndicator({
   style,
 }: CircularWavyProgressIndicatorProps): React.JSX.Element {
   const {
-    playbackRate,
+    motionRef,
     paused: contextPaused,
     prefersReducedMotion,
     locale,
     t,
-  } = useM3E();
+  } = useM3ERuntime();
   const resolvedAriaLabel = ariaLabel ?? t("progress.wavyCircularLabel");
-  const isPaused = pausedProp ?? contextPaused;
+  const rootRef = React.useRef<HTMLDivElement | null>(null);
+  const offscreen = useOffscreen(rootRef);
+  const isPaused = (pausedProp ?? contextPaused) || offscreen;
   const isIndeterminate = value === null || value === undefined;
 
   const trackPathRef = React.useRef<SVGPathElement | null>(null);
@@ -533,8 +535,8 @@ export function CircularWavyProgressIndicator({
       const dtMs = Math.min(64, Math.max(0, now - lastNow));
       lastNow = now;
       const rate = prefersReducedMotion
-        ? Math.min(0.4, playbackRate)
-        : playbackRate;
+        ? Math.min(0.4, motionRef.current.playbackRate)
+        : motionRef.current.playbackRate;
       const dtScaledMs = dtMs * rate;
 
       const prev = stateRef.current;
@@ -598,7 +600,6 @@ export function CircularWavyProgressIndicator({
   }, [
     isIndeterminate,
     isPaused,
-    playbackRate,
     prefersReducedMotion,
     computeGeometry,
     applyGeometryToDom,
@@ -617,6 +618,7 @@ export function CircularWavyProgressIndicator({
 
   return (
     <Progress.Root
+      ref={rootRef}
       value={isIndeterminate ? null : Math.round(targetProgress * 100)}
       locale={locale}
       aria-label={resolvedAriaLabel}

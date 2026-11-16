@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { PULL_TO_REFRESH_TOKENS } from "../tokens/index.js";
-import { useM3E } from "../context/M3EContext.js";
+import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3EScalarSpring } from "../hooks/useM3ESpring.js";
 import { ContainedLoadingIndicator } from "./LoadingIndicator.js";
 
@@ -66,7 +66,7 @@ function CircularPullSpinner({
   );
 }
 
-export function PullToRefresh({
+export function PullToRefreshBox({
   refreshing,
   onRefresh,
   enabled = true,
@@ -78,7 +78,7 @@ export function PullToRefresh({
   className,
   style,
 }: M3EPullToRefreshProps): React.JSX.Element {
-  const { t } = useM3E();
+  const { t } = useM3ERuntime();
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const [pullDistance, setPullDistance] = React.useState<number>(0);
   const [isPulling, setIsPulling] = React.useState<boolean>(false);
@@ -269,4 +269,3 @@ export function PullToRefresh({
   );
 }
 
-export const PullToRefreshBox = PullToRefresh;

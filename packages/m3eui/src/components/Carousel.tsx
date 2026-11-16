@@ -8,7 +8,8 @@ import {
   resolveCarouselKeylineStrategy,
   resolveCarouselSnapOffset,
 } from "../tokens/index.js";
-import { useM3E } from "../context/M3EContext.js";
+import { useM3ERuntime } from "../context/M3EContext.js";
+import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
 
 export interface CarouselItemSpec {
   readonly id: string;
@@ -106,6 +107,27 @@ function scrollTrackToOffset(
   el.scrollLeft = targetLeft;
 }
 
+function resolveSlideGeometry(
+  strategy: Parameters<typeof resolveCarouselItemFrame>[0]["strategy"],
+  index: number,
+  count: number,
+  scrollOffset: number,
+  containerWidth: number,
+  rtlSign: number,
+) {
+  const frame = resolveCarouselItemFrame({ strategy, index, count, scrollOffset });
+  const slotWidth = Math.max(40, frame.slotWidth || containerWidth);
+  return {
+    slotWidth,
+    maskWidth: Math.max(24, frame.maskWidth || slotWidth),
+    isFocal: frame.isFocal,
+    cornerRadius: frame.cornerRadius,
+    zIndex: frame.zIndex,
+    captionOpacity: Math.max(0, Math.min(1, (frame.prominence - 0.35) / 0.55)),
+    translateX: rtlSign * frame.offsetDelta,
+  };
+}
+
 export function Carousel({
   items,
   "aria-label": ariaLabel,
@@ -120,7 +142,7 @@ export function Carousel({
   className,
   style,
 }: M3ECarouselProps): React.JSX.Element {
-  const { debugGeometry, t, direction, prefersReducedMotion: reducedMotion } = useM3E();
+  const { debugGeometry, t, direction, prefersReducedMotion: reducedMotion } = useM3ERuntime();
   const isRtl = direction === "rtl";
   const rtlSign = isRtl ? -1 : 1;
   const resolvedAriaLabel = ariaLabel ?? t("carousel.listLabel");
@@ -138,7 +160,7 @@ export function Carousel({
   const trackRef = React.useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = React.useState<number>(680);
 
-  React.useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     const el = trackRef.current;
     if (!el) return;
     const syncWidth = () => {
@@ -256,15 +278,16 @@ export function Carousel({
     (nextRaw: number, options?: { readonly instant?: boolean }) => {
       if (count <= 0) return;
       const canWrap = loop && count >= 3;
-      const next = canWrap
+      const requested = canWrap
         ? ((nextRaw % count) + count) % count
         : Math.max(0, Math.min(count - 1, nextRaw));
+      const next = controlledIndex ?? requested;
 
+      if (requested !== currentIdx) onActiveIndexChange?.(requested);
       if (controlledIndex === undefined) {
-        setUncontrolledIdx(next);
+        setUncontrolledIdx(requested);
+        announceSlide(requested);
       }
-      onActiveIndexChange?.(next);
-      announceSlide(next);
 
       const targetOffset = resolveCarouselSnapOffset({
         strategy,
@@ -299,6 +322,7 @@ export function Carousel({
       count,
       loop,
       controlledIndex,
+      currentIdx,
       onActiveIndexChange,
       announceSlide,
       strategy,
@@ -311,7 +335,7 @@ export function Carousel({
   const prevControlledRef = React.useRef<number | undefined>(controlledIndex);
   const prevLayoutKeyRef = React.useRef<string>("");
 
-  React.useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     const layoutKey = `${containerWidth}:${variant}:${count}:${isRtl}`;
     const controlledChanged =
       controlledIndex !== undefined &&
@@ -333,6 +357,7 @@ export function Carousel({
       setScrollOffset(targetOffset);
       if (el) scrollTrackToOffset(el, targetOffset, isRtl, false);
     } else if (controlledChanged) {
+      announceSlide(currentIdx);
       const useSmooth = !reducedMotion && Boolean(el && el.clientWidth > 0);
       if (useSmooth && el) {
         pendingTargetRef.current = { index: currentIdx, offset: targetOffset };
@@ -352,6 +377,7 @@ export function Carousel({
     strategy,
     reducedMotion,
     clearPendingTarget,
+    announceSlide,
   ]);
 
   const dragSessionRef = React.useRef<{
@@ -386,17 +412,18 @@ export function Carousel({
         return;
       }
       const nearest = findNearestSnapIndex(finalOffset);
+      const isControlled = controlledIndex !== undefined;
       const snapTarget = resolveCarouselSnapOffset({
         strategy,
-        index: nearest,
+        index: isControlled ? currentIdx : nearest,
         count,
       });
       if (nearest !== currentIdx) {
-        if (controlledIndex === undefined) {
+        if (!isControlled) {
           setUncontrolledIdx(nearest);
+          announceSlide(nearest);
         }
         onActiveIndexChange?.(nearest);
-        announceSlide(nearest);
       }
       const el = trackRef.current;
       if (el && Math.abs(finalOffset - snapTarget) > 1.5) {
@@ -435,14 +462,47 @@ export function Carousel({
     return () => el.removeEventListener("scrollend", onScrollEnd);
   }, [isRtl, clearPendingTarget, settleNativeScroll]);
 
+  const paintFrames = React.useCallback(
+    (track: HTMLElement, offset: number) => {
+      const slots = track.children;
+      for (let idx = 0; idx < slots.length && idx < count; idx++) {
+        const slide = slots[idx]!.firstElementChild as HTMLElement | null;
+        if (!slide) continue;
+        const g = resolveSlideGeometry(strategy, idx, count, offset, containerWidth, rtlSign);
+        const slot = slots[idx] as HTMLElement;
+        slot.style.flex = `0 0 ${g.slotWidth.toFixed(2)}px`;
+        slot.style.inlineSize = `${g.slotWidth.toFixed(2)}px`;
+        slide.style.width = `${g.maskWidth.toFixed(2)}px`;
+        slide.style.borderRadius = `${g.cornerRadius.toFixed(1)}px`;
+        slide.style.zIndex = String(g.zIndex);
+        slide.style.transform = `translate3d(${g.translateX.toFixed(2)}px, 0, 0)`;
+        slide.toggleAttribute("data-unmasked", idx === currentIdx || g.isFocal);
+        const inner = slide.firstElementChild as HTMLElement | null;
+        if (!inner) continue;
+        inner.style.inlineSize = `${g.slotWidth.toFixed(2)}px`;
+        const scrim = inner.querySelector<HTMLElement>(".m3e-carousel__scrim");
+        if (scrim) scrim.style.opacity = String(0.35 + 0.65 * g.captionOpacity);
+        const caption = inner.querySelector<HTMLElement>(".m3e-carousel__caption");
+        if (caption) {
+          caption.style.opacity = String(g.captionOpacity);
+          caption.style.translate = `0px ${((1 - g.captionOpacity) * 8).toFixed(1)}px`;
+        }
+      }
+    },
+    [strategy, count, containerWidth, rtlSign, currentIdx],
+  );
+
+  useIsoLayoutEffect(() => {
+    if (trackRef.current) paintFrames(trackRef.current, scrollOffset);
+  }, [scrollOffset, paintFrames]);
+
   const handleTrackScroll = React.useCallback(() => {
     const el = trackRef.current;
     if (!el) return;
     if (rafRef.current === null) {
       rafRef.current = window.requestAnimationFrame(() => {
         rafRef.current = null;
-        const curr = readNormalizedScrollLeft(el, isRtl);
-        setScrollOffset(curr);
+        paintFrames(el, readNormalizedScrollLeft(el, isRtl));
       });
     }
     // Skip active-index recomputation while a click or key press has a pending target
@@ -452,9 +512,11 @@ export function Carousel({
     }
     settleTimerRef.current = window.setTimeout(() => {
       settleTimerRef.current = null;
-      settleNativeScroll(readNormalizedScrollLeft(el, isRtl));
+      const finalOffset = readNormalizedScrollLeft(el, isRtl);
+      setScrollOffset(finalOffset);
+      settleNativeScroll(finalOffset);
     }, 120);
-  }, [isRtl, settleNativeScroll]);
+  }, [isRtl, settleNativeScroll, paintFrames]);
 
   const finishDrag = React.useCallback(
     (e: React.PointerEvent<HTMLDivElement>, cancelled: boolean) => {
@@ -594,7 +656,7 @@ export function Carousel({
             active: true,
             pointerId: e.pointerId,
             startX: e.clientX,
-            startScrollOffset: scrollOffset,
+            startScrollOffset: readNormalizedScrollLeft(e.currentTarget, isRtl),
             lastX: e.clientX,
             lastTime: performance.now(),
             velocityPxPerMs: 0,
@@ -626,7 +688,6 @@ export function Carousel({
             0,
             Math.min(maxScrollOffset, session.startScrollOffset - dx * rtlSign),
           );
-          setScrollOffset(nextOffset);
           scrollTrackToOffset(e.currentTarget, nextOffset, isRtl, false);
         }}
         onPointerUp={(e) => finishDrag(e, false)}
@@ -657,20 +718,9 @@ export function Carousel({
         }}
       >
         {items.map((item, idx) => {
-          const frame = resolveCarouselItemFrame({
-            strategy,
-            index: idx,
-            count,
-            scrollOffset,
-          });
-          const slotWidth = Math.max(40, frame.slotWidth || containerWidth);
-          const maskWidth = Math.max(24, frame.maskWidth || slotWidth);
-          const isFocal = idx === currentIdx || frame.isFocal;
-          const captionOpacity = Math.max(
-            0,
-            Math.min(1, (frame.prominence - 0.35) / 0.55),
-          );
-          const translateX = rtlSign * frame.offsetDelta;
+          const g = resolveSlideGeometry(strategy, idx, count, scrollOffset, containerWidth, rtlSign);
+          const { slotWidth, maskWidth, captionOpacity, translateX } = g;
+          const isFocal = idx === currentIdx || g.isFocal;
 
           return (
             <div
@@ -715,9 +765,9 @@ export function Carousel({
                 }}
                 style={{
                   width: `${maskWidth.toFixed(2)}px`,
-                  borderRadius: `${frame.cornerRadius.toFixed(1)}px`,
+                  borderRadius: `${g.cornerRadius.toFixed(1)}px`,
                   background: item.background,
-                  zIndex: frame.zIndex,
+                  zIndex: g.zIndex,
                   transform: `translate3d(${translateX.toFixed(2)}px, 0, 0)`,
                 }}
               >
@@ -755,7 +805,7 @@ export function Carousel({
                 {debugGeometry ? (
                   <span className="m3e-debug-badge" aria-hidden="true">
                     {Math.round(maskWidth)}/{Math.round(slotWidth)}px r:
-                    {frame.cornerRadius.toFixed(0)}
+                    {g.cornerRadius.toFixed(0)}
                   </span>
                 ) : null}
               </div>

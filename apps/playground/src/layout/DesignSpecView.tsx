@@ -225,7 +225,7 @@ export function DesignSpecView({
                   : "M3E Web Extrapolation"}
               </Chip>
               <Chip tone="secondary" variant="tonal">
-                1:1 Logical Pixel Contract (px · dp · pt · lp)
+                Units: px · dp · pt · lp
               </Chip>
             </div>
 

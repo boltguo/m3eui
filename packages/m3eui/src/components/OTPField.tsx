@@ -1,11 +1,12 @@
 import * as React from "react";
+import { useFormReset } from "../internal/formField.js";
 import { Field as BaseField } from "@base-ui/react/field";
 import { OTPField as BaseOTPField } from "@base-ui/react/otp-field";
 import {
   OTP_FIELD_TOKENS,
   resolveOtpSlotCorners,
 } from "../tokens/index.js";
-import { useM3E } from "../context/M3EContext.js";
+import { useM3ERuntime } from "../context/M3EContext.js";
 import {
   useM3ECornerSpringRef,
   usePressHoldState,
@@ -47,7 +48,7 @@ function OTPSlotCell({
   readonly isLastInGroup: boolean;
   readonly disabled: boolean;
 }) {
-  const { t } = useM3E();
+  const { t } = useM3ERuntime();
   const [focused, setFocused] = React.useState(false);
   const { isPressed, pressHandlers } = usePressHoldState(disabled);
 
@@ -111,7 +112,7 @@ export function OTPField({
   className,
   style,
 }: M3EOTPFieldProps): React.JSX.Element {
-  const { t } = useM3E();
+  const { t } = useM3ERuntime();
   const isDisabled = useFieldsetDisabled(disabled);
   const generatedId = React.useId();
   const firstInputId = id ?? generatedId;
@@ -125,16 +126,11 @@ export function OTPField({
   );
   const currentVal = controlledValue ?? uncontrolledVal;
 
-  React.useEffect(() => {
-    if (controlledValue !== undefined) return;
-    const form = wrapRef.current?.closest("form");
-    if (!form) return;
-    const onReset = () => {
-      setUncontrolledVal(defaultValRef.current);
-    };
-    form.addEventListener("reset", onReset);
-    return () => form.removeEventListener("reset", onReset);
-  }, [controlledValue]);
+  useFormReset(
+    wrapRef,
+    () => setUncontrolledVal(defaultValRef.current),
+    controlledValue === undefined,
+  );
 
   React.useEffect(() => {
     if (

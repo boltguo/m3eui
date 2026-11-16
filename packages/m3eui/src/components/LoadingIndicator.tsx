@@ -12,7 +12,8 @@ import {
   cubicsToSvgPath,
   interpolateMorphCubics,
 } from "../tokens/shapes.js";
-import { useM3E } from "../context/M3EContext.js";
+import { useM3ERuntime } from "../context/M3EContext.js";
+import { useOffscreen } from "../internal/useOffscreen.js";
 import { subscribeSpringFrame } from "../hooks/useM3ESpring.js";
 
 export interface LoadingIndicatorProps {
@@ -36,10 +37,12 @@ export function LoadingIndicator({
   className,
   style,
 }: LoadingIndicatorProps): React.JSX.Element {
-  const { playbackRate, paused: contextPaused, prefersReducedMotion, t } = useM3E();
+  const { motionRef, paused: contextPaused, prefersReducedMotion, t } = useM3ERuntime();
   const resolvedAriaLabel = ariaLabel ?? t("loading.label");
-  const isPaused = pausedProp ?? contextPaused;
   const isDeterminate = typeof determinateProgress === "number";
+  const rootRef = React.useRef<HTMLDivElement | null>(null);
+  const offscreen = useOffscreen(rootRef, !isDeterminate);
+  const isPaused = (pausedProp ?? contextPaused) || offscreen;
   const resolvedSequence =
     morphSequence ??
     (isDeterminate
@@ -132,13 +135,14 @@ export function LoadingIndicator({
       return;
     }
 
-    const rate = prefersReducedMotion ? Math.min(0.4, playbackRate) : playbackRate;
     return subscribeSpringFrame((dtSec) => {
+      const baseRate = motionRef.current.playbackRate;
+      const rate = prefersReducedMotion ? Math.min(0.4, baseRate) : baseRate;
       virtualElapsedMsRef.current += dtSec * 1000 * rate;
       renderAt(virtualElapsedMsRef.current);
       return true;
     });
-  }, [isDeterminate, isPaused, playbackRate, prefersReducedMotion, resolvedSequence, size, scaleFactor]);
+  }, [isDeterminate, isPaused, motionRef, prefersReducedMotion, resolvedSequence, size, scaleFactor]);
 
   const ariaValueNow = isDeterminate
     ? Math.round(Math.max(0, Math.min(1, determinateProgress ?? 0)) * 100)
@@ -146,6 +150,7 @@ export function LoadingIndicator({
 
   return (
     <div
+      ref={rootRef}
       role="progressbar"
       aria-label={resolvedAriaLabel}
       aria-valuemin={isDeterminate ? 0 : undefined}

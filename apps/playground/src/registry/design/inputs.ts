@@ -36,7 +36,7 @@ export const INPUTS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>> 
         id: "text-field-geometry",
         title: "Container & Typography Geometry (`TEXT_FIELD_TOKENS`)",
         caption:
-          "All metrics in 1:1 logical pixels (px / dp / pt). Corner tuples follow [topLeft, topRight, bottomRight, bottomLeft].",
+          "Units: px (= dp / pt). Corner tuples follow [topLeft, topRight, bottomRight, bottomLeft].",
         columns: [
           "Variant & Label Mode",
           "Min Height",
@@ -304,8 +304,8 @@ export const INPUTS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>> 
     aospSources: ["ExposedDropdownMenu.kt", "MenuTokens.kt"],
     inspirationAndRationale: [
       {
-        title: "Strict Concentric Popup Geometry (`16px - 6px = 10px`)",
-        body: "A popup with `popupRadius = 16px` and `popupPadding = 6px` requires resting option rows to have `itemRadius = 16 - 6 = 10px` so outer and inner arcs share the exact same center of curvature. When selected, the active row expands slightly into a `12px` `secondary-container` pill (`itemSelectedRadius = 12px`) via `fastSpatial`, while pointer press tightens corners to `6px`.",
+        title: "Shared Menu Geometry",
+        body: "The popup reuses `SEGMENTED_MENU_TOKENS`: 16px container, 4px padding, 44px rows. Rows take positional corners (first 12/4, middle 4, last 4/12) and morph to a 12px `tertiary-container` shape when selected.",
       },
       {
         title: "Zero-Jitter Bold-Width Reservation",
@@ -489,7 +489,7 @@ export const INPUTS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>> 
     invariants: [
       "DOM focus MUST remain inside `<input role=\"combobox\">` during popup filtering; arrow keys move virtual highlight via `aria-activedescendant` with `autoHighlight` selecting the top match on `Enter`.",
       "Floating label floats whenever `isFocused || value !== null || inputText.length > 0`, shifting `inset-inline-start: -28px` in outlined mode to align over the leading `17×17px` search glyph.",
-      "Popup and option corners obey `popupRadius (16) - popupPadding (6) = itemRadius (10)`, morphing to `12px` on selection (`fastSpatial` `ζ = 0.6, k = 800`) and `6px` on pointer press.",
+      "Popup and option corners follow `resolveSegmentedMenuItemCorners`, identical to DropdownMenu.",
       "Clear button (`t(\"combobox.clear\")`) and empty state (`t(\"combobox.empty\")`) source all accessible strings from `useM3EI18n()` with zero hardcoded copy.",
     ],
     crossPlatformNotes: [
@@ -776,7 +776,7 @@ export const INPUTS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>> 
   "time-picker": {
     provenance: "official-m3e",
     provenanceSummary:
-      "Implements the official Material 3 Expressive analog clock dial and keyboard input `TimePicker` (`TimePicker` and `TimePickerField`), aligned with AOSP `TimePicker.kt` polar dual-ring geometry (`248px` dial, `92px` outer / `58px` inner rings) and `fastSpatial` shortest-arc hand physics.",
+      "Implements the official Material 3 Expressive analog clock dial and keyboard input `TimePicker` (`TimePicker` and `TimePickerField`), aligned with AOSP `TimePicker.kt` polar dual-ring geometry (`256px` dial, `101px` outer / `69px` inner rings) and `fastSpatial` shortest-arc hand physics.",
     tokenSources: [
       "TIME_PICKER_TOKENS",
       "resolveClockHandGeometry",
@@ -786,12 +786,12 @@ export const INPUTS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>> 
     aospSources: ["TimePicker.kt", "TimePickerTokens.kt"],
     inspirationAndRationale: [
       {
-        title: "248px Polar Dual-Ring Dial (`92px` Outer & `58px` Inner)",
-        body: "In 12-hour locales, hours `12, 1..11` sit on a single `92px` radius ring paired with a connected vertical `AM/PM` toggle. In 24-hour locales, `00..11` occupy the `92px` outer ring (`36×36px` targets) and `12..23` occupy a concentric `58px` inner ring (`30×30px` targets) partitioned at radial midpoint `(92 + 58) / 2 = 75px` (with a `< 14px` center pin dead-zone).",
+        title: "256px Polar Dual-Ring Dial (`101px` Outer & `69px` Inner)",
+        body: "In 12-hour locales, hours `12, 1..11` sit on a single `101px` radius ring paired with a connected vertical `AM/PM` toggle. In 24-hour locales, `00..11` occupy the `101px` outer ring (`36×36px` targets) and `12..23` occupy a concentric `69px` inner ring (`30×30px` targets) partitioned at radial midpoint `(101 + 69) / 2 = 85px` (with a `< 14px` center pin dead-zone).",
       },
       {
         title: "Shortest-Arc `[-180°, +180°]` Unwrapping & Radial Spring",
-        body: "Naively animating raw `[0°, 360°)` angles causes the clock hand to whip `330°` backwards when crossing `11 → 12` or `55 → 00`. `TimePicker` accumulates unwrapped angles constrained to `delta ∈ [-180°, +180°]` while simultaneously springing selector radius (`92px ↔ 58px`) via `fastSpatial` (`ζ = 0.6, k = 800`).",
+        body: "Naively animating raw `[0°, 360°)` angles causes the clock hand to whip `330°` backwards when crossing `11 → 12` or `55 → 00`. `TimePicker` accumulates unwrapped angles constrained to `delta ∈ [-180°, +180°]` while simultaneously springing selector radius (`101px ↔ 69px`) via `fastSpatial` (`ζ = 0.6, k = 800`).",
       },
       {
         title: "Lossless Analog Dial ↔ Keyboard Mode Toggle",
@@ -829,7 +829,7 @@ export const INPUTS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>> 
           ],
           [
             "Polar Clock Dial & Selector Hand",
-            "Dial `248 × 248px`; Outer `r = 92px` (`36px` cells); Inner `r = 58px` (`30px` cells)",
+            "Dial `256 × 256px`; Outer `r = 101px`; Inner `r = 69px`; selector `48px`",
             "Full circles (`9999px`); Center pin `8px`, selector bob `42px`, stem `2px`",
             "Dial `surface-container-highest`; Pin/stem/bob `primary`, active numeral `on-primary`",
           ],
@@ -847,12 +847,12 @@ export const INPUTS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>> 
           ],
           [
             "Hand Length `r` (24h Outer ↔ Inner)",
-            "`92px` (`00..11` or minutes) ↔ `58px` (`12..23`)",
+            "`101px` (`00..11` or minutes) ↔ `69px` (`12..23`)",
             "`fastSpatial` (`ζ = 0.6, k = 800`)",
           ],
           [
-            "Segment & Period Press Corners",
-            "Field `12px → 8px`; Period inner seam `4px → 2px`",
+            "Segment Press Corners",
+            "Field `8px → 4px`; period selector is one 8px outlined container with a 1px divider",
             "`fastSpatial` (`ζ = 0.6, k = 800`) + `usePressHoldState` (`95ms`)",
           ],
         ],

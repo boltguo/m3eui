@@ -5,7 +5,8 @@ import {
   type SpringPhysicsSpec,
   stepSpringSimulation,
 } from "../tokens/index.js";
-import { useM3E } from "../context/M3EContext.js";
+import { useM3ERuntime } from "../context/M3EContext.js";
+import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
 
 type SpringFrameSubscriber = (dtSec: number) => boolean;
 
@@ -54,10 +55,10 @@ export function subscribeSpringFrame(subscriber: SpringFrameSubscriber): () => v
 
 function resolveEffectiveSpringParams(
   baseSpec: SpringPhysicsSpec,
-  playbackRate: number,
+  rate: number,
   prefersReducedMotion: boolean,
 ): { readonly dampingRatio: number; readonly stiffness: number } {
-  const clampedRate = Math.max(0.05, Math.min(2, playbackRate));
+  const clampedRate = Math.max(0.05, Math.min(2, rate));
   const dampingRatio = prefersReducedMotion ? 1.0 : baseSpec.dampingRatio;
   const rawStiffness = prefersReducedMotion
     ? Math.max(baseSpec.stiffness, 900)
@@ -81,7 +82,7 @@ export function useM3EScalarSpringEffect(
   tokenKey: MotionTokenKey,
   onUpdate: (value: number) => void,
 ): void {
-  const { motionScheme, playbackRate, prefersReducedMotion, paused } = useM3E();
+  const { motionRef, prefersReducedMotion, paused } = useM3ERuntime();
   const stateRef = React.useRef<{ value: number; velocity: number }>({
     value: target,
     velocity: 0,
@@ -106,8 +107,8 @@ export function useM3EScalarSpringEffect(
     }
 
     const params = resolveEffectiveSpringParams(
-      motionScheme[tokenKey],
-      playbackRate,
+      motionRef.current.motionScheme[tokenKey],
+      motionRef.current.playbackRate,
       prefersReducedMotion,
     );
 
@@ -128,7 +129,7 @@ export function useM3EScalarSpringEffect(
       callbackRef.current(next.value);
       return !next.settled;
     });
-  }, [target, tokenKey, motionScheme, playbackRate, prefersReducedMotion, paused]);
+  }, [target, tokenKey, prefersReducedMotion, paused]);
 }
 
 export function useM3EScalarSpring(
@@ -140,8 +141,6 @@ export function useM3EScalarSpring(
   return current;
 }
 
-const useIsoLayoutEffect =
-  typeof window !== "undefined" ? React.useLayoutEffect : React.useEffect;
 
 export function useM3ECornerSpringRef<T extends HTMLElement = HTMLElement>(
   target: CornerTuple,
@@ -153,12 +152,11 @@ export function useM3ECornerSpringRef<T extends HTMLElement = HTMLElement>(
   readonly debugCornersAttr: string | undefined;
 } {
   const {
-    motionScheme,
-    playbackRate,
+    motionRef,
     prefersReducedMotion,
     paused,
     debugGeometry,
-  } = useM3E();
+  } = useM3ERuntime();
   const nodeRef = React.useRef<T | null>(null);
   const currentRef = React.useRef<CornerTuple>(target);
   const velocityRef = React.useRef<[number, number, number, number]>([0, 0, 0, 0]);
@@ -211,8 +209,8 @@ export function useM3ECornerSpringRef<T extends HTMLElement = HTMLElement>(
     }
 
     const params = resolveEffectiveSpringParams(
-      motionScheme[tokenKey],
-      playbackRate,
+      motionRef.current.motionScheme[tokenKey],
+      motionRef.current.playbackRate,
       prefersReducedMotion,
     );
     const stepOpts = {
@@ -246,8 +244,6 @@ export function useM3ECornerSpringRef<T extends HTMLElement = HTMLElement>(
     t2,
     t3,
     tokenKey,
-    motionScheme,
-    playbackRate,
     prefersReducedMotion,
     paused,
     flushToDom,
@@ -292,7 +288,7 @@ export function useM3ECornerSpring(
   readonly corners: CornerTuple;
   readonly borderRadiusCss: string;
 } {
-  const { motionScheme, playbackRate, prefersReducedMotion, paused } = useM3E();
+  const { motionRef, prefersReducedMotion, paused } = useM3ERuntime();
   const [corners, setCorners] = React.useState<CornerTuple>(target);
   const currentRef = React.useRef<CornerTuple>(target);
   const velocityRef = React.useRef<[number, number, number, number]>([0, 0, 0, 0]);
@@ -327,8 +323,8 @@ export function useM3ECornerSpring(
     }
 
     const params = resolveEffectiveSpringParams(
-      motionScheme[tokenKey],
-      playbackRate,
+      motionRef.current.motionScheme[tokenKey],
+      motionRef.current.playbackRate,
       prefersReducedMotion,
     );
     const stepOpts = {
@@ -358,7 +354,7 @@ export function useM3ECornerSpring(
 
       return !(s0.settled && s1.settled && s2.settled && s3.settled);
     });
-  }, [t0, t1, t2, t3, tokenKey, motionScheme, playbackRate, prefersReducedMotion, paused]);
+  }, [t0, t1, t2, t3, tokenKey, prefersReducedMotion, paused]);
 
   return {
     corners,
@@ -367,7 +363,7 @@ export function useM3ECornerSpring(
 }
 
 export function usePressHoldState(disabled = false, baseMinHoldMs = 95) {
-  const { playbackRate } = useM3E();
+  const { motionRef } = useM3ERuntime();
   const [isPressed, setIsPressed] = React.useState(false);
   const downTimeRef = React.useRef<number | null>(null);
   const releaseTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -417,7 +413,7 @@ export function usePressHoldState(disabled = false, baseMinHoldMs = 95) {
     }
     const now =
       typeof performance !== "undefined" ? performance.now() : Date.now();
-    const minHold = baseMinHoldMs / Math.max(0.1, playbackRate);
+    const minHold = baseMinHoldMs / Math.max(0.1, motionRef.current.playbackRate);
     const elapsed = now - downTimeRef.current;
     downTimeRef.current = null;
 
@@ -430,7 +426,7 @@ export function usePressHoldState(disabled = false, baseMinHoldMs = 95) {
         releaseTimerRef.current = null;
       }, minHold - elapsed);
     }
-  }, [baseMinHoldMs, playbackRate]);
+  }, [baseMinHoldMs]);
 
   const pressHandlers = React.useMemo(
     () => ({

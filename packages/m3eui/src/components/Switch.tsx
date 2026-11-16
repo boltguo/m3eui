@@ -3,9 +3,10 @@
 import * as React from "react";
 import { Switch as BaseSwitch } from "@base-ui/react/switch";
 import { SWITCH_TOKENS, resolveSwitchGeometry } from "../tokens/index.js";
-import { useM3E } from "../context/M3EContext.js";
-import { useM3EScalarSpring, usePressHoldState } from "../hooks/useM3ESpring.js";
+import { useM3ERuntime } from "../context/M3EContext.js";
+import { useM3EScalarSpringEffect, usePressHoldState } from "../hooks/useM3ESpring.js";
 import { useFieldsetDisabled } from "../internal/fieldOutline.js";
+import { FormFieldScope, useFormReset } from "../internal/formField.js";
 
 export interface M3ESwitchProps {
   readonly checked?: boolean;
@@ -85,11 +86,13 @@ export const Switch = React.forwardRef<HTMLElement, M3ESwitchProps>(
     },
     ref,
   ) {
-    const { debugGeometry, direction } = useM3E();
+    const { debugGeometry, direction } = useM3ERuntime();
     const isDisabled = useFieldsetDisabled(disabled);
     const [uncontrolledChecked, setUncontrolledChecked] =
       React.useState<boolean>(defaultChecked);
     const isChecked = controlledChecked ?? uncontrolledChecked;
+    const inputRef = React.useRef<HTMLInputElement | null>(null);
+    useFormReset(inputRef, () => setUncontrolledChecked(defaultChecked), controlledChecked === undefined);
 
     const { isPressed, pressHandlers } = usePressHoldState(isDisabled || readOnly);
 
@@ -104,20 +107,36 @@ export const Switch = React.forwardRef<HTMLElement, M3ESwitchProps>(
       hasUncheckedIcon: Boolean(resolvedUncheckedIcon),
     });
 
-    const springThumbSize = Math.max(
-      10,
-      useM3EScalarSpring(geo.thumbSize, "fastSpatial"),
-    );
-    const springOffsetPx = useM3EScalarSpring(geo.thumbOffsetPx, "fastSpatial");
-    const signedThumbX = direction === "rtl" ? -springOffsetPx : springOffsetPx;
-
+    const thumbRef = React.useRef<HTMLSpanElement | null>(null);
+    const thumbStateRef = React.useRef({
+      size: geo.thumbSize,
+      offsetPx: geo.thumbOffsetPx,
+    });
+    const rtlSign = direction === "rtl" ? -1 : 1;
+    const applyThumb = () => {
+      const el = thumbRef.current;
+      if (!el) return;
+      const { size, offsetPx } = thumbStateRef.current;
+      el.style.width = `${size.toFixed(2)}px`;
+      el.style.height = `${size.toFixed(2)}px`;
+      el.style.translate = `${(rtlSign * offsetPx).toFixed(2)}px -50%`;
+    };
+    useM3EScalarSpringEffect(geo.thumbSize, "fastSpatial", (val) => {
+      thumbStateRef.current.size = Math.max(10, val);
+      applyThumb();
+    });
+    useM3EScalarSpringEffect(geo.thumbOffsetPx, "fastSpatial", (val) => {
+      thumbStateRef.current.offsetPx = val;
+      applyThumb();
+    });
     const switchNode = (
+      <FormFieldScope name={name} disabled={isDisabled}>
       <BaseSwitch.Root
         ref={ref}
         id={id}
       name={name}
-      checked={controlledChecked}
-      defaultChecked={defaultChecked}
+      inputRef={inputRef}
+      checked={isChecked}
       disabled={isDisabled}
       readOnly={readOnly}
       required={required}
@@ -136,11 +155,12 @@ export const Switch = React.forwardRef<HTMLElement, M3ESwitchProps>(
       {...pressHandlers}
     >
       <BaseSwitch.Thumb
+        ref={thumbRef}
         className="m3e-switch__thumb"
         style={{
-          width: `${springThumbSize.toFixed(2)}px`,
-          height: `${springThumbSize.toFixed(2)}px`,
-          translate: `${signedThumbX.toFixed(2)}px -50%`,
+          width: `${thumbStateRef.current.size.toFixed(2)}px`,
+          height: `${thumbStateRef.current.size.toFixed(2)}px`,
+          translate: `${(rtlSign * thumbStateRef.current.offsetPx).toFixed(2)}px -50%`,
         }}
       >
         {isChecked && resolvedCheckedIcon ? (
@@ -169,10 +189,11 @@ export const Switch = React.forwardRef<HTMLElement, M3ESwitchProps>(
       </BaseSwitch.Thumb>
       {debugGeometry ? (
         <span className="m3e-debug-badge" aria-hidden="true">
-          ⌀{Math.round(springThumbSize)}@{Math.round(springOffsetPx)}
+          ⌀{Math.round(geo.thumbSize)}@{Math.round(geo.thumbOffsetPx)}
         </span>
       ) : null}
     </BaseSwitch.Root>
+      </FormFieldScope>
   );
 
   if (!label) {

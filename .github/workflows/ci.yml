@@ -38,3 +38,13 @@ jobs:
 
       - name: Run Vitest unit & DOM test suite
         run: pnpm test
+
+      - name: React 18 SSR smoke test on packed tarball
+        run: |
+          SMOKE_DIR="$(mktemp -d)"
+          pnpm --filter m3eui exec npm pack --pack-destination "$SMOKE_DIR"
+          cp packages/m3eui/scripts/ssr-smoke.mjs "$SMOKE_DIR/"
+          cd "$SMOKE_DIR"
+          npm init -y > /dev/null
+          npm install --no-audit --no-fund react@18 react-dom@18 ./m3eui-*.tgz
+          node ssr-smoke.mjs

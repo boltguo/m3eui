@@ -184,7 +184,7 @@ const ZH_CN: PlaygroundStrings = {
   mobileNavHeadline: "m3eui 导航目录",
   heroTitle: "Material 3 Expressive React 组件库",
   heroDesc:
-    "基于 AOSP Monet SPEC_2025 动态色彩引擎、解析物理弹簧 ODE、35 种圆角多边形与全量 CLDR / BiDi 国际化构建的生产级设计系统。",
+    "源自 Android 源码的弹簧物理、形状形变与动态色彩，构建于 Base UI 之上。",
   browseComponentsBtn: "浏览组件",
   browseBlocksBtn: "探索 Blocks",
   readDocsBtn: "阅读指南",
@@ -306,7 +306,7 @@ const EN_US: PlaygroundStrings = {
   mobileNavHeadline: "m3eui Navigation",
   heroTitle: "Material 3 Expressive for React",
   heroDesc:
-    "Production-ready design system powered by self-contained AOSP Monet SPEC_2025 dynamic color, analytical SpringSimulation ODE physics, 35 morphing polygons, and full CLDR / BiDi i18n.",
+    "Spring physics, shape morphing, and dynamic color ported from the Android source, built on Base UI.",
   browseComponentsBtn: "Browse Components",
   browseBlocksBtn: "Explore Blocks",
   readDocsBtn: "Read Docs",
@@ -428,7 +428,7 @@ const JA_JP: PlaygroundStrings = {
   mobileNavHeadline: "m3eui ナビゲーション",
   heroTitle: "Material 3 Expressive React ライブラリ",
   heroDesc:
-    "AOSP Monet SPEC_2025 動的カラー、解析スプリング物理 ODE、35 種類のポリゴンモーフィング、CLDR / BiDi 多言語対応を内蔵したコンポーネントシステム。",
+    "Android ソース由来のスプリング物理、シェイプモーフィング、ダイナミックカラー。Base UI 上に構築。",
   browseComponentsBtn: "コンポーネント一覧",
   browseBlocksBtn: "Blocks を探索",
   readDocsBtn: "ガイドを読む",
@@ -550,7 +550,7 @@ const AR_SA: PlaygroundStrings = {
   mobileNavHeadline: "تنقل m3eui",
   heroTitle: "مكتبة Material 3 Expressive لـ React",
   heroDesc:
-    "نظام تصميم متكامل مبني على محرك ألوان AOSP Monet SPEC_2025 الديناميكي، وفيزياء النوابض التحليلية، و35 مضلعاً متحولاً، ودعم كامل للتدويل واتجاه RTL.",
+    "فيزياء نابضية وتحوّل أشكال وألوان ديناميكية منقولة من مصدر Android، مبنية على Base UI.",
   browseComponentsBtn: "تصفح المكونات",
   browseBlocksBtn: "استكشاف القوالب",
   readDocsBtn: "قراءة الدليل",

@@ -8,10 +8,12 @@ import {
   type SliderSize,
   resolveSliderThumbGeometry,
 } from "../tokens/index.js";
-import { useM3E } from "../context/M3EContext.js";
+import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3EScalarSpringEffect } from "../hooks/useM3ESpring.js";
 import { formatLocalizedNumber } from "../i18n/index.js";
 import { useFieldsetDisabled } from "../internal/fieldOutline.js";
+import { FormFieldScope } from "../internal/formField.js";
+import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
 
 export type SliderValue = number | readonly [number, number];
 
@@ -231,7 +233,7 @@ export function Slider<Value extends SliderValue = number>({
   className,
   style,
 }: M3ESliderProps<Value>): React.JSX.Element {
-  const { debugGeometry, direction, locale, t } = useM3E();
+  const { debugGeometry, direction, locale, t } = useM3ERuntime();
   const isVertical = orientation === "vertical";
   const isDisabled = useFieldsetDisabled(disabled);
   const labelId = React.useId();
@@ -251,10 +253,11 @@ export function Slider<Value extends SliderValue = number>({
   const trackRef = React.useRef<HTMLDivElement | null>(null);
   const [trackLengthPx, setTrackLengthPx] = React.useState<number>(240);
 
-  const values =
+  const values = (
     controlledValue !== undefined
       ? normalizeValues(controlledValue, defaultAnchorValue)
-      : uncontrolledValues;
+      : uncontrolledValues
+  ).map((v) => Math.min(max, Math.max(min, v)));
 
   const isRange = values.length > 1;
   const isCentered = centered && !isRange;
@@ -265,7 +268,7 @@ export function Slider<Value extends SliderValue = number>({
   const p0 = clamp01((values[0]! - min) / span);
   const p1 = isRange ? clamp01((values[1]! - min) / span) : p0;
 
-  React.useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     const el = trackRef.current;
     if (!el) return;
     const readLength = (cr?: DOMRectReadOnly): number => {
@@ -931,19 +934,7 @@ export function Slider<Value extends SliderValue = number>({
   const hasFlankingIcons =
     !insetIconsInsideTrack && Boolean(startIcon || endIcon);
 
-  const resolvedBaseValue: number | number[] | undefined =
-    controlledValue === undefined
-      ? undefined
-      : isRangeTuple(controlledValue)
-        ? [controlledValue[0], controlledValue[1]]
-        : controlledValue;
-
-  const resolvedBaseDefaultValue: number | number[] =
-    defaultValue === undefined
-      ? defaultAnchorValue
-      : isRangeTuple(defaultValue)
-        ? [defaultValue[0], defaultValue[1]]
-        : defaultValue;
+  const resolvedBaseValue: number | number[] = isRange ? [...values] : values[0]!;
 
   const toSliderValue = (next: number | readonly number[]): Value =>
     (Array.isArray(next)
@@ -951,11 +942,11 @@ export function Slider<Value extends SliderValue = number>({
       : next) as Value;
 
   return (
+    <FormFieldScope name={name} disabled={isDisabled}>
     <BaseSlider.Root
       id={id}
       orientation={orientation}
       value={resolvedBaseValue}
-      defaultValue={resolvedBaseDefaultValue}
       min={min}
       max={max}
       step={step}
@@ -1020,5 +1011,6 @@ export function Slider<Value extends SliderValue = number>({
         controlNode
       )}
     </BaseSlider.Root>
+    </FormFieldScope>
   );
 }

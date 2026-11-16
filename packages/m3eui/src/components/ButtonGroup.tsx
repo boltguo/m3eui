@@ -16,7 +16,7 @@ import {
   resolveSegmentedMenuItemCorners,
 } from "../tokens/index.js";
 import { useM3EPortalContainer } from "../context/M3EPortal.js";
-import { useM3E } from "../context/M3EContext.js";
+import { useM3ERuntime } from "../context/M3EContext.js";
 import {
   useM3ECornerSpringRef,
   useM3EScalarSpring,
@@ -24,6 +24,7 @@ import {
 } from "../hooks/useM3ESpring.js";
 import { ButtonGroupItemContext } from "../internal/buttonGroupContext.js";
 import { Button, type ButtonVariant, ToggleButton } from "./Button.js";
+import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
 
 export interface ButtonGroupOption {
   readonly value: string;
@@ -91,7 +92,6 @@ interface OverflowMenuSurfaceProps {
   readonly index: number;
   readonly count: number;
   readonly isSelected: boolean;
-  readonly highlighted: boolean;
 }
 
 function OverflowMenuSurface({
@@ -100,13 +100,11 @@ function OverflowMenuSurface({
   index,
   count,
   isSelected,
-  highlighted,
 }: OverflowMenuSurfaceProps) {
   const { ref: incomingRef, style: incomingStyle, ...restItemProps } = itemProps;
   const corners = resolveSegmentedMenuItemCorners({
     index,
     count,
-    isHighlighted: highlighted,
     isSelected,
   });
   const { ref, borderRadiusCss } = useM3ECornerSpringRef<HTMLDivElement>(
@@ -165,14 +163,13 @@ function OverflowMenuItem({
         closeOnClick
         onClick={onSelect}
         className="m3e-segmented-menu__item"
-        render={(props, state) => (
+        render={(props) => (
           <OverflowMenuSurface
             itemProps={props as OverflowMenuSurfaceProps["itemProps"]}
             item={item}
             index={index}
             count={count}
             isSelected={isSelected}
-            highlighted={state.highlighted}
           />
         )}
       />
@@ -187,14 +184,13 @@ function OverflowMenuItem({
         closeOnClick
         onClick={onSelect}
         className="m3e-segmented-menu__item"
-        render={(props, state) => (
+        render={(props) => (
           <OverflowMenuSurface
             itemProps={props as OverflowMenuSurfaceProps["itemProps"]}
             item={item}
             index={index}
             count={count}
             isSelected={isSelected}
-            highlighted={state.highlighted}
           />
         )}
       />
@@ -206,14 +202,13 @@ function OverflowMenuItem({
       disabled={item.disabled}
       onClick={onSelect}
       className="m3e-segmented-menu__item"
-      render={(props, state) => (
+      render={(props) => (
         <OverflowMenuSurface
           itemProps={props as OverflowMenuSurfaceProps["itemProps"]}
           item={item}
           index={index}
           count={count}
           isSelected={isSelected}
-          highlighted={state.highlighted}
         />
       )}
     />
@@ -338,7 +333,7 @@ export function ButtonGroup({
   "aria-label": ariaLabel,
   className,
 }: M3EButtonGroupProps): React.JSX.Element {
-  const { debugGeometry, direction, t } = useM3E();
+  const { debugGeometry, direction, t } = useM3ERuntime();
   const [uncontrolledValue, setUncontrolledValue] =
     React.useState<readonly string[]>(defaultValue);
   const selectedValues = controlledValue ?? uncontrolledValue;
@@ -347,8 +342,15 @@ export function ButtonGroup({
   const measureRowRef = React.useRef<HTMLDivElement | null>(null);
   const [autoLimit, setAutoLimit] = React.useState<number | null>(null);
   const spec = BUTTON_SIZE_SPECS[size];
+  const itemsSignature = items
+    .map(
+      (i) =>
+        `${i.value}:${typeof i.label === "string" || typeof i.label === "number" ? i.label : ""}:${Boolean(i.icon)}:${Boolean(i.checkedIcon)}:${Boolean(i.showCheckIcon)}`,
+    )
+    .join("|");
+  const itemCount = items.length;
 
-  React.useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     if (!autoOverflow) {
       setAutoLimit((prev) => (prev === null ? prev : null));
       return;
@@ -369,7 +371,7 @@ export function ButtonGroup({
       const childWidths = children.map((node) =>
         node.getBoundingClientRect().width,
       );
-      if (childWidths.length !== items.length || childWidths.some((w) => w <= 0)) {
+      if (childWidths.length !== itemCount || childWidths.some((w) => w <= 0)) {
         return;
       }
 
@@ -379,10 +381,10 @@ export function ButtonGroup({
           : BUTTON_GROUP_TOKENS.standardGap;
       const totalAll =
         childWidths.reduce((acc, w) => acc + w, 0) +
-        Math.max(0, items.length - 1) * gapPx;
+        Math.max(0, itemCount - 1) * gapPx;
 
       if (totalAll <= containerWidth + 0.5) {
-        setAutoLimit((prev) => (prev === items.length ? prev : items.length));
+        setAutoLimit((prev) => (prev === itemCount ? prev : itemCount));
         return;
       }
 
@@ -399,7 +401,7 @@ export function ButtonGroup({
           break;
         }
       }
-      const nextLimit = Math.max(1, Math.min(items.length - 1, fitCount));
+      const nextLimit = Math.max(1, Math.min(itemCount - 1, fitCount));
       setAutoLimit((prev) => (prev === nextLimit ? prev : nextLimit));
     };
 
@@ -422,7 +424,8 @@ export function ButtonGroup({
     };
   }, [
     autoOverflow,
-    items,
+    itemsSignature,
+    itemCount,
     selectionMode,
     size,
     spec.iconSize,
@@ -459,18 +462,16 @@ export function ButtonGroup({
     visibleItems.map(() => 0),
   );
 
-  const itemKeySignature = visibleItems
-    .map(
-      (i) =>
-        `${i.value}:${Boolean(i.icon)}:${Boolean(i.checkedIcon)}:${Boolean(i.showCheckIcon)}`,
-    )
-    .join("|");
+  const visibleCount = visibleItems.length;
+  const visibleItemsRef = React.useRef(visibleItems);
+  visibleItemsRef.current = visibleItems;
 
-  React.useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     let cancelled = false;
     const measureItems = () => {
       if (cancelled) return;
-      const elements = visibleItems.map((_, idx) => itemRefs.current[idx]);
+      const currentItems = visibleItemsRef.current;
+      const elements = currentItems.map((_, idx) => itemRefs.current[idx]);
       const savedStyles = elements.map((el) => {
         if (!el) return null;
         const prev = {
@@ -486,7 +487,7 @@ export function ButtonGroup({
         if (!el) return 0;
         const rawWidth = el.getBoundingClientRect().width;
         if (rawWidth <= 0) return 0;
-        const item = visibleItems[idx];
+        const item = currentItems[idx];
         const reservesCheckSlot =
           selectionMode !== "none" &&
           Boolean(item && !item.icon && (item.showCheckIcon || item.checkedIcon));
@@ -526,10 +527,10 @@ export function ButtonGroup({
       cancelled = true;
     };
   }, [
-    itemKeySignature,
+    itemsSignature,
+    visibleCount,
     selectionMode,
     size,
-    visibleItems,
     spec.paddingHorizontal,
     spec.iconSize,
     spec.iconGap,
@@ -554,19 +555,18 @@ export function ButtonGroup({
   }, []);
 
   const liveWidths = React.useMemo(() => {
-    if (baseWidths.length !== visibleItems.length) return [];
+    if (baseWidths.length !== visibleCount) return [];
     if (expandedRatio <= 0) return baseWidths;
     const maxSafeSquish = Math.max(8, Math.floor(spec.paddingHorizontal * 0.75));
-    const compressionLimits = visibleItems.map(() => maxSafeSquish);
+    const compressionLimits = baseWidths.map(() => maxSafeSquish);
     return computeButtonGroupWidths({
       baseWidths,
       pressProgress,
       expandedRatio,
       compressionLimits,
     });
-  }, [baseWidths, pressProgress, expandedRatio, visibleItems, spec.paddingHorizontal]);
+  }, [baseWidths, pressProgress, expandedRatio, visibleCount, spec.paddingHorizontal]);
 
-  const visibleCount = visibleItems.length;
   const totalSlots = hasOverflow ? visibleCount + 1 : visibleCount;
   const hasMeasuredWidths = liveWidths.length === visibleCount;
 
@@ -637,25 +637,30 @@ export function ButtonGroup({
             onPressChange: (p) => handlePressFlag(idx, p),
           }}
         >
-          <Button
-            ref={(el) => {
-              itemRefs.current[idx] = el;
-            }}
-            size={size}
-            variant={buttonVariant}
+          <Toolbar.Button
             disabled={item.disabled}
-            leadingIcon={item.icon}
-            onClick={() => onAction?.(item.value)}
-            className="m3e-button-group__item"
-            style={lockedWidthStyle}
-          >
-            {item.label}
-            {debugGeometry && Math.abs(deltaWidth) >= 0.4 ? (
-              <span style={{ fontSize: 10, opacity: 0.85, marginInlineStart: 4 }}>
-                ({deltaWidth > 0 ? `+${deltaWidth.toFixed(0)}` : deltaWidth.toFixed(0)}px)
-              </span>
-            ) : null}
-          </Button>
+            render={
+              <Button
+                ref={(el) => {
+                  itemRefs.current[idx] = el;
+                }}
+                size={size}
+                variant={buttonVariant}
+                disabled={item.disabled}
+                leadingIcon={item.icon}
+                onClick={() => onAction?.(item.value)}
+                className="m3e-button-group__item"
+                style={lockedWidthStyle}
+              >
+                {item.label}
+                {debugGeometry && Math.abs(deltaWidth) >= 0.4 ? (
+                  <span style={{ fontSize: 10, opacity: 0.85, marginInlineStart: 4 }}>
+                    ({deltaWidth > 0 ? `+${deltaWidth.toFixed(0)}` : deltaWidth.toFixed(0)}px)
+                  </span>
+                ) : null}
+              </Button>
+            }
+          />
         </ButtonGroupItemContext.Provider>
       );
     }

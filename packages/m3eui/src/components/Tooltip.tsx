@@ -71,6 +71,8 @@ export function RichTooltip({
   disabled = false,
 }: M3ERichTooltipProps): React.JSX.Element {
   const portalContainer = useM3EPortalContainer();
+  const [open, setOpen] = React.useState(false);
+  const pointerTypeRef = React.useRef("");
   const popupStyle: React.CSSProperties = {
     borderRadius: `${TOOLTIP_TOKENS.richRadius}px`,
     paddingBlock: `${TOOLTIP_TOKENS.richPaddingBlock}px`,
@@ -80,8 +82,21 @@ export function RichTooltip({
 
   if (action) {
     return (
-      <BasePopover.Root modal={false} open={disabled ? false : undefined}>
+      <BasePopover.Root
+        modal={false}
+        open={!disabled && open}
+        onOpenChange={setOpen}
+      >
         <BasePopover.Trigger
+          onPointerDown={(e) => {
+            pointerTypeRef.current = e.pointerType;
+          }}
+          onClickCapture={(e) => {
+            if (disabled || open || pointerTypeRef.current !== "touch") return;
+            e.preventDefault();
+            e.stopPropagation();
+            setOpen(true);
+          }}
           openOnHover={!disabled}
           delay={delay}
           closeDelay={180}

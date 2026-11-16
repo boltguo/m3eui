@@ -1,12 +1,20 @@
 import * as React from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router";
-import { type M3EConfig, M3EProvider } from "m3eui";
+import { M3EProvider } from "m3eui";
+import { generateM3EThemeTokens } from "m3eui/tokens";
 import m3eProjectConfig from "../../../m3e.json";
 import { SiteLayout } from "./layout/SiteLayout";
-import { BlocksPage } from "./pages/BlocksPage";
-import { ComponentsPage } from "./pages/ComponentsPage";
-import { DocsPage } from "./pages/DocsPage";
 import { HomePage } from "./pages/HomePage";
+
+const BlocksPage = React.lazy(() =>
+  import("./pages/BlocksPage").then((m) => ({ default: m.BlocksPage })),
+);
+const ComponentsPage = React.lazy(() =>
+  import("./pages/ComponentsPage").then((m) => ({ default: m.ComponentsPage })),
+);
+const DocsPage = React.lazy(() =>
+  import("./pages/DocsPage").then((m) => ({ default: m.DocsPage })),
+);
 
 function RedirectToBlocks() {
   const { hash } = useLocation();
@@ -15,7 +23,7 @@ function RedirectToBlocks() {
 
 export function App(): React.JSX.Element {
   return (
-    <M3EProvider config={m3eProjectConfig as M3EConfig}>
+    <M3EProvider config={m3eProjectConfig} themeEngine={generateM3EThemeTokens}>
       <BrowserRouter>
         <Routes>
           <Route element={<SiteLayout />}>

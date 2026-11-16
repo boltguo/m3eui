@@ -560,6 +560,11 @@ export const EXPANSION_INPUTS_DOCS: readonly ComponentDocSpec[] = [
             description: { zh: "颜色变更时返回规范化大写 HEX。", en: "Emits normalized 6-digit uppercase HEX." },
           },
           {
+            name: "onValueCommitted",
+            type: "(hex: string) => void",
+            description: { zh: "松开滑块、确认输入或点选色块时触发。", en: "Fires on slider release, confirmed input, or swatch pick." },
+          },
+          {
             name: "swatches / showTonalRamp",
             type: "readonly string[] / boolean",
             defaultValue: "DEFAULT_SWATCHES / true",
@@ -573,28 +578,17 @@ export const EXPANSION_INPUTS_DOCS: readonly ComponentDocSpec[] = [
 
 export const EXPANSION_DISPLAY_DOCS: readonly ComponentDocSpec[] = [
   {
-    slug: "kbd-snippet",
-    title: "Kbd, CopyButton & Snippet",
+    slug: "kbd",
+    title: "Kbd",
     category: "display",
     isNew: true,
     subtitle: {
-      zh: "用于文档、CLI 命令条与快捷键提示的语义化按键徽标、弹簧复制按钮与单/多行代码胶囊。",
-      en: "Semantic keyboard keycaps, spring-animated clipboard button, and copyable CLI command snippets.",
+      zh: "语义化键帽，按平台把 mod / shift / alt / enter 映射为对应符号。",
+      en: "Semantic keycaps mapping mod, shift, alt, and enter to platform glyphs.",
     },
-    importStatement: 'import { Kbd, CopyButton, Snippet } from "m3eui";',
+    importStatement:
+      'import { Kbd } from "m3eui";',
     scenarios: [
-      {
-        id: "snippet-copy",
-        title: { zh: "命令行代码条与独立复制按钮", en: "CLI Snippets & CopyButton" },
-        description: {
-          zh: "Snippet 前缀提示符（$）不参与复制；CopyButton 复制后切换对勾图标并通过 aria-live 播报。",
-          en: "Prompt symbols are excluded from copied text; CopyButton announces state via aria-live.",
-        },
-        code: `<Snippet code="pnpm add m3eui @base-ui/react" />
-<Snippet variant="outlined" code={["npx m3eui init", "npx m3eui doctor"]} />
-<CopyButton value="https://m3e.dev/tokens.json" variant="tonal" />`,
-        render: () => <SnippetAndCopyDemo />,
-      },
       {
         id: "kbd-keys",
         title: { zh: "快捷键徽标 (Kbd)", en: "Keyboard Shortcut Keycaps" },
@@ -612,7 +606,52 @@ import { parseShortcutKeys } from "m3eui/tokens";
     ],
     apis: [
       {
-        title: "Snippet, CopyButton & Kbd Props",
+        title: "Kbd Props",
+        rows: [
+          {
+            name: "keys / size",
+            type: 'readonly KbdKeyAlias[] / "sm" | "md"',
+            defaultValue: 'undefined / "md"',
+            description: { zh: "按键别名数组与徽标尺寸。", en: "Modifier/key aliases and keycap height." },
+          },
+          {
+            name: "parseShortcutKeys(shortcut)",
+            type: "(shortcut: string) => KbdKeyAlias[]",
+            defaultValue: 'from "m3eui/tokens"',
+            description: { zh: "将快捷键字符串（如 \"⌘K\"、\"Ctrl+Shift+P\"）解析为 Kbd 按键序列。", en: "Parses shortcut strings (e.g., \"⌘K\", \"Ctrl+Shift+P\") into Kbd key tokens." },
+          },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "snippet",
+    title: "Snippet",
+    category: "display",
+    isNew: true,
+    subtitle: {
+      zh: "可复制的命令行片段与独立的 CopyButton，复制状态通过 aria-live 播报。",
+      en: "Copyable CLI snippet and standalone CopyButton with aria-live copy status.",
+    },
+    importStatement:
+      'import { Snippet, CopyButton } from "m3eui";',
+    scenarios: [
+      {
+        id: "snippet-copy",
+        title: { zh: "命令行代码条与独立复制按钮", en: "CLI Snippets & CopyButton" },
+        description: {
+          zh: "Snippet 前缀提示符（$）不参与复制；CopyButton 复制后切换对勾图标并通过 aria-live 播报。",
+          en: "Prompt symbols are excluded from copied text; CopyButton announces state via aria-live.",
+        },
+        code: `<Snippet code="pnpm add m3eui @base-ui/react" />
+<Snippet variant="outlined" code={["npx m3eui init", "npx m3eui doctor"]} />
+<CopyButton value="https://m3e.dev/tokens.json" variant="tonal" />`,
+        render: () => <SnippetAndCopyDemo />,
+      },
+    ],
+    apis: [
+      {
+        title: "Snippet & CopyButton Props",
         rows: [
           {
             name: "Snippet.code / symbol / variant",
@@ -625,18 +664,6 @@ import { parseShortcutKeys } from "m3eui/tokens";
             type: 'string / "ghost" | "tonal" | "outlined" / number',
             defaultValue: '- / "ghost" / 1800',
             description: { zh: "写入剪贴板的文本、按钮外观与复位毫秒数。", en: "Clipboard text, button style, and reset timeout." },
-          },
-          {
-            name: "Kbd.keys / size",
-            type: 'readonly KbdKeyAlias[] / "sm" | "md"',
-            defaultValue: 'undefined / "md"',
-            description: { zh: "按键别名数组与徽标尺寸。", en: "Modifier/key aliases and keycap height." },
-          },
-          {
-            name: "parseShortcutKeys(shortcut)",
-            type: "(shortcut: string) => KbdKeyAlias[]",
-            defaultValue: 'from "m3eui/tokens"',
-            description: { zh: "将快捷键字符串（如 \"⌘K\"、\"Ctrl+Shift+P\"）解析为 Kbd 按键序列。", en: "Parses shortcut strings (e.g., \"⌘K\", \"Ctrl+Shift+P\") into Kbd key tokens." },
           },
         ],
       },
@@ -804,7 +831,7 @@ export const EXPANSION_NAVIGATION_DOCS: readonly ComponentDocSpec[] = [
         title: { zh: "动作溢出收纳与滚动自动隐藏", en: "Overflow Actions & Scroll Exit-Always" },
         description: {
           zh: "超出 maxVisibleActions 的动作自动折叠入溢出菜单；内嵌 FAB 通过上下文自动设为零高度阴影。",
-          en: "Collapses excess actions into an overflow menu and flattens the trailing FAB via FabElevationContext.",
+          en: "Collapses excess actions into an overflow menu and flattens the trailing FAB automatically.",
         },
         code: `<BottomAppBar
   scrollBehavior="exit-always"
@@ -846,14 +873,14 @@ export const EXPANSION_NAVIGATION_DOCS: readonly ComponentDocSpec[] = [
 export const EXPANSION_FEEDBACK_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "pull-to-refresh",
-    title: "PullToRefresh",
+    title: "PullToRefreshBox",
     category: "feedback",
     isNew: true,
     subtitle: {
-      zh: "AOSP M3E 下拉刷新容器（PullToRefresh / PullToRefreshBox），内置 0.5 阻尼下拉系数与 ContainedLoadingIndicator 多边形旋转形变指示器。",
+      zh: "AOSP M3E 下拉刷新容器（PullToRefreshBox），内置 0.5 阻尼下拉系数与 ContainedLoadingIndicator 多边形旋转形变指示器。",
       en: "AOSP M3E pull-to-refresh surface composing ContainedLoadingIndicator polygon morphing with 0.5 drag resistance.",
     },
-    importStatement: 'import { PullToRefresh, PullToRefreshBox } from "m3eui";',
+    importStatement: 'import { PullToRefreshBox } from "m3eui";',
     scenarios: [
       {
         id: "pull-to-refresh-box",

@@ -1,7 +1,12 @@
 import * as React from "react";
+import { useFormReset } from "../internal/formField.js";
 import { Combobox as BaseCombobox } from "@base-ui/react/combobox";
 import { Field as BaseField } from "@base-ui/react/field";
-import { SELECT_TOKENS } from "../tokens/index.js";
+import {
+  SEGMENTED_MENU_TOKENS,
+  SELECT_TOKENS,
+  resolveSegmentedMenuItemCorners,
+} from "../tokens/index.js";
 import { useM3EPortalContainer } from "../context/M3EPortal.js";
 import { useM3EI18n } from "../context/M3EContext.js";
 import {
@@ -111,23 +116,17 @@ function CheckSvg() {
 function ComboboxOptionRow({
   option,
   isSelected,
+  index,
 }: {
   readonly option: ComboboxOption;
   readonly isSelected: boolean;
+  readonly index: number;
 }) {
   const { isPressed, pressHandlers } = usePressHoldState(Boolean(option.disabled));
-  const targetRadius = Math.max(
-    4,
-    isPressed
-      ? SELECT_TOKENS.itemPressedRadius
-      : isSelected
-        ? SELECT_TOKENS.itemSelectedRadius
-        : SELECT_TOKENS.itemRadius,
-  );
-
+  const count = BaseCombobox.useFilteredItems().length;
   const { ref, borderRadiusCss } = useM3ECornerSpringRef<HTMLDivElement>(
-    [targetRadius, targetRadius, targetRadius, targetRadius],
-    isSelected ? "fastSpatial" : "defaultEffects",
+    resolveSegmentedMenuItemCorners({ index, count, isSelected }),
+    "fastSpatial",
   );
   const hasDescription = Boolean(option.description);
 
@@ -137,10 +136,11 @@ function ComboboxOptionRow({
       value={option}
       disabled={option.disabled}
       className="m3e-select__item"
+      data-pressed={isPressed ? "" : undefined}
       style={{
-        minHeight: hasDescription ? "56px" : "42px",
-        paddingBlock: hasDescription ? "10px" : "8px",
-        paddingInline: "12px",
+        minHeight: hasDescription ? "56px" : `${SEGMENTED_MENU_TOKENS.itemHeight}px`,
+        paddingBlock: hasDescription ? "8px" : undefined,
+        paddingInline: `${SEGMENTED_MENU_TOKENS.itemPaddingInline}px`,
         borderRadius: borderRadiusCss,
       }}
       {...pressHandlers}
@@ -216,16 +216,11 @@ export const Combobox = React.forwardRef<HTMLInputElement, M3EComboboxProps>(
     const [isOpen, setIsOpen] = React.useState(false);
     const [isFocused, setIsFocused] = React.useState(false);
 
-    React.useEffect(() => {
-      if (controlledValue !== undefined) return;
-      const form = inputRef.current?.form;
-      if (!form) return;
-      const onReset = () => {
-        setUncontrolledValue(defaultValRef.current);
-      };
-      form.addEventListener("reset", onReset);
-      return () => form.removeEventListener("reset", onReset);
-    }, [controlledValue]);
+    useFormReset(
+      inputRef,
+      () => setUncontrolledValue(defaultValRef.current),
+      controlledValue === undefined,
+    );
 
     const rawCurrentValue =
       controlledValue !== undefined ? controlledValue : uncontrolledValue;
@@ -424,7 +419,7 @@ export const Combobox = React.forwardRef<HTMLInputElement, M3EComboboxProps>(
               <BaseCombobox.Popup
                 className="m3e-select__popup m3e-combobox__popup"
                 style={{
-                  borderRadius: `${SELECT_TOKENS.popupRadius}px`,
+                  borderRadius: `${SEGMENTED_MENU_TOKENS.containerRadius}px`,
                 }}
               >
                 <BaseCombobox.Empty className="m3e-combobox__empty">
@@ -433,14 +428,14 @@ export const Combobox = React.forwardRef<HTMLInputElement, M3EComboboxProps>(
                 <BaseCombobox.List
                   className="m3e-select__list"
                   style={{
-                    padding: `${SELECT_TOKENS.popupPadding}px`,
-                    gap: `${SELECT_TOKENS.itemGap}px`,
+                    padding: `${SEGMENTED_MENU_TOKENS.containerPadding}px`,
                   }}
                 >
-                  {(option: ComboboxOption) => (
+                  {(option: ComboboxOption, index: number) => (
                     <ComboboxOptionRow
                       key={option.value}
                       option={option}
+                      index={index}
                       isSelected={resolvedCurrentValue?.value === option.value}
                     />
                   )}
@@ -555,16 +550,11 @@ export const MultiCombobox = React.forwardRef<
   const [isOpen, setIsOpen] = React.useState(false);
   const [isFocused, setIsFocused] = React.useState(false);
 
-  React.useEffect(() => {
-    if (controlledValue !== undefined) return;
-    const form = inputRef.current?.form;
-    if (!form) return;
-    const onReset = () => {
-      setUncontrolledValues(defaultValRef.current);
-    };
-    form.addEventListener("reset", onReset);
-    return () => form.removeEventListener("reset", onReset);
-  }, [controlledValue]);
+  useFormReset(
+    inputRef,
+    () => setUncontrolledValues(defaultValRef.current),
+    controlledValue === undefined,
+  );
 
   const rawCurrentValues =
     controlledValue !== undefined ? controlledValue : uncontrolledValues;
@@ -842,7 +832,7 @@ export const MultiCombobox = React.forwardRef<
             <BaseCombobox.Popup
               className="m3e-select__popup m3e-combobox__popup"
               style={{
-                borderRadius: `${SELECT_TOKENS.popupRadius}px`,
+                borderRadius: `${SEGMENTED_MENU_TOKENS.containerRadius}px`,
               }}
             >
               <BaseCombobox.Empty className="m3e-combobox__empty">
@@ -851,14 +841,14 @@ export const MultiCombobox = React.forwardRef<
               <BaseCombobox.List
                 className="m3e-select__list"
                 style={{
-                  padding: `${SELECT_TOKENS.popupPadding}px`,
-                  gap: `${SELECT_TOKENS.itemGap}px`,
+                  padding: `${SEGMENTED_MENU_TOKENS.containerPadding}px`,
                 }}
               >
-                {(option: ComboboxOption) => (
+                {(option: ComboboxOption, index: number) => (
                   <ComboboxOptionRow
                     key={option.value}
                     option={option}
+                    index={index}
                     isSelected={selectedValueSet.has(option.value)}
                   />
                 )}

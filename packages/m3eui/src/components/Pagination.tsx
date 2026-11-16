@@ -264,6 +264,54 @@ export function Pagination({
     });
   }, [showSummary, totalItems, currentPage, pageSize, locale, t]);
 
+  const renderStep = (dir: "prev" | "next") => {
+    const isPrev = dir === "prev";
+    const spring = isPrev ? prevSpring : nextSpring;
+    const stepDisabled = isPrev ? prevStepDisabled : nextStepDisabled;
+    const targetPage = currentPage + (isPrev ? -1 : 1);
+    const href = stepDisabled ? undefined : getItemHref?.(targetPage);
+    const shared = {
+      "aria-label": t(isPrev ? "pagination.previous" : "pagination.next"),
+      className: "m3e-pagination__btn m3e-pagination__btn--step",
+      "data-pressed": (isPrev ? prevPressed : nextPressed) ? "" : undefined,
+      style: {
+        minInlineSize: `${boxSize}px`,
+        blockSize: `${boxSize}px`,
+        borderRadius: spring.borderRadiusCss,
+      },
+      ...(isPrev ? prevHandlers : nextHandlers),
+    };
+    const glyph = <ChevronStepSvg direction={dir} />;
+    if (href) {
+      return (
+        <a
+          {...shared}
+          ref={spring.ref as React.Ref<HTMLAnchorElement>}
+          href={href}
+          onClick={(e) => {
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
+              return;
+            }
+            commitPage(targetPage);
+          }}
+        >
+          {glyph}
+        </a>
+      );
+    }
+    return (
+      <button
+        {...shared}
+        ref={spring.ref as React.Ref<HTMLButtonElement>}
+        type="button"
+        disabled={stepDisabled}
+        onClick={() => commitPage(targetPage)}
+      >
+        {glyph}
+      </button>
+    );
+  };
+
   return (
     <nav
       aria-label={ariaLabel ?? t("pagination.ariaLabel")}
@@ -277,23 +325,7 @@ export function Pagination({
 
       <ul className="m3e-pagination__list">
         <li className="m3e-pagination__li">
-          <button
-            ref={prevSpring.ref}
-            type="button"
-            disabled={prevStepDisabled}
-            aria-label={t("pagination.previous")}
-            className="m3e-pagination__btn m3e-pagination__btn--step"
-            data-pressed={prevPressed ? "" : undefined}
-            style={{
-              minInlineSize: `${boxSize}px`,
-              blockSize: `${boxSize}px`,
-              borderRadius: prevSpring.borderRadiusCss,
-            }}
-            onClick={() => commitPage(currentPage - 1)}
-            {...prevHandlers}
-          >
-            <ChevronStepSvg direction="prev" />
-          </button>
+          {renderStep("prev")}
         </li>
 
         {tokens.map((tok) => {
@@ -322,23 +354,7 @@ export function Pagination({
         })}
 
         <li className="m3e-pagination__li">
-          <button
-            ref={nextSpring.ref}
-            type="button"
-            disabled={nextStepDisabled}
-            aria-label={t("pagination.next")}
-            className="m3e-pagination__btn m3e-pagination__btn--step"
-            data-pressed={nextPressed ? "" : undefined}
-            style={{
-              minInlineSize: `${boxSize}px`,
-              blockSize: `${boxSize}px`,
-              borderRadius: nextSpring.borderRadiusCss,
-            }}
-            onClick={() => commitPage(currentPage + 1)}
-            {...nextHandlers}
-          >
-            <ChevronStepSvg direction="next" />
-          </button>
+          {renderStep("next")}
         </li>
       </ul>
     </nav>

@@ -4,7 +4,7 @@ import * as React from "react";
 import { Dialog as BaseDialog } from "@base-ui/react/dialog";
 import { Popover as BasePopover } from "@base-ui/react/popover";
 import { DATE_PICKER_TOKENS, SELECT_TOKENS } from "../tokens/index.js";
-import { useM3E } from "../context/M3EContext.js";
+import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3EPortalContainer } from "../context/M3EPortal.js";
 import { usePressHoldState } from "../hooks/useM3ESpring.js";
 import {
@@ -30,6 +30,8 @@ import {
   TimePicker,
   parsePlainTime,
 } from "./TimePicker.js";
+import { FormHiddenValue } from "../internal/formField.js";
+import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
 
 export type PlainDateString = `${number}-${string}-${string}` | string;
 
@@ -231,8 +233,12 @@ function isMonthSteppable(
     month: stepped.month,
     day: getDaysInMonth(stepped.year, stepped.month),
   });
-  if (minDate && comparePlainDates(lastOfMonth, minDate) < 0) return false;
-  if (maxDate && comparePlainDates(firstOfMonth, maxDate) > 0) return false;
+  if (deltaMonths < 0 && minDate && comparePlainDates(lastOfMonth, minDate) < 0) {
+    return false;
+  }
+  if (deltaMonths > 0 && maxDate && comparePlainDates(firstOfMonth, maxDate) > 0) {
+    return false;
+  }
   return true;
 }
 
@@ -337,7 +343,7 @@ export function DockedDatePicker({
   className,
   style,
 }: M3EDockedDatePickerProps): React.JSX.Element {
-  const { locale, direction, t } = useM3E();
+  const { locale, direction, t } = useM3ERuntime();
   const resolvedTitle = title ?? t("datePicker.title");
   const resolvedFirstDay = firstDayOfWeek ?? getLocaleFirstDayOfWeek(locale);
   const weekdayLabels = React.useMemo(
@@ -365,7 +371,7 @@ export function DockedDatePicker({
   const dayButtonRefs = React.useRef<Record<number, HTMLButtonElement | null>>({});
   const pendingFocusDayRef = React.useRef<number | null>(null);
 
-  React.useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     if (pendingFocusDayRef.current !== null) {
       const d = pendingFocusDayRef.current;
       pendingFocusDayRef.current = null;
@@ -740,7 +746,7 @@ export function DateRangePicker({
   className,
   style,
 }: M3EDateRangePickerProps): React.JSX.Element {
-  const { locale, direction, t } = useM3E();
+  const { locale, direction, t } = useM3ERuntime();
   const resolvedTitle = title ?? t("datePicker.rangeTitle");
   const resolvedFirstDay = firstDayOfWeek ?? getLocaleFirstDayOfWeek(locale);
   const weekdayLabels = React.useMemo(
@@ -781,7 +787,7 @@ export function DateRangePicker({
   const dayButtonRefs = React.useRef<Record<number, HTMLButtonElement | null>>({});
   const pendingFocusDayRef = React.useRef<number | null>(null);
 
-  React.useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     if (pendingFocusDayRef.current !== null) {
       const d = pendingFocusDayRef.current;
       pendingFocusDayRef.current = null;
@@ -1242,7 +1248,7 @@ export function DatePickerField({
   className,
   style,
 }: M3EDatePickerFieldProps): React.JSX.Element {
-  const { locale } = useM3E();
+  const { locale } = useM3ERuntime();
   const portalContainer = useM3EPortalContainer();
   const isDisabled = useFieldsetDisabled(disabled);
   const generatedId = React.useId();
@@ -1294,14 +1300,12 @@ export function DatePickerField({
           {labelNode}
         </label>
       ) : null}
-      {name ? (
-        <input
-          type="hidden"
-          name={name}
-          value={currentIso}
-          disabled={isDisabled}
-        />
-      ) : null}
+      <FormHiddenValue
+        name={name}
+        value={currentIso}
+        disabled={isDisabled}
+        required={required}
+      />
       <BasePopover.Root
         open={readOnly ? false : open}
         onOpenChange={(next) => {
@@ -1443,7 +1447,7 @@ export function DateRangePickerField({
   className,
   style,
 }: M3EDateRangePickerFieldProps): React.JSX.Element {
-  const { locale } = useM3E();
+  const { locale } = useM3ERuntime();
   const portalContainer = useM3EPortalContainer();
   const isDisabled = useFieldsetDisabled(disabled);
   const generatedId = React.useId();
@@ -1502,14 +1506,12 @@ export function DateRangePickerField({
           {labelNode}
         </label>
       ) : null}
-      {name ? (
-        <input
-          type="hidden"
-          name={name}
-          value={`${activeRange.start}/${activeRange.end}`}
-          disabled={isDisabled}
-        />
-      ) : null}
+      <FormHiddenValue
+        name={name}
+        value={`${activeRange.start}/${activeRange.end}`}
+        disabled={isDisabled}
+        required={required}
+      />
       <BasePopover.Root
         open={readOnly ? false : open}
         onOpenChange={(next) => {
@@ -1610,7 +1612,7 @@ export function DateRangePickerField({
   );
 }
 
-export interface M3EModalDatePickerProps {
+export interface M3EDatePickerDialogProps {
   readonly open?: boolean;
   readonly defaultOpen?: boolean;
   readonly onOpenChange?: (open: boolean) => void;
@@ -1628,7 +1630,6 @@ export interface M3EModalDatePickerProps {
   readonly title?: React.ReactNode;
 }
 
-export type M3EDatePickerDialogProps = M3EModalDatePickerProps;
 
 function EditModePencilSvg() {
   return (
@@ -1648,7 +1649,7 @@ function EditModePencilSvg() {
   );
 }
 
-export function ModalDatePicker({
+export function DatePickerDialog({
   open: controlledOpen,
   defaultOpen = false,
   onOpenChange,
@@ -1664,8 +1665,8 @@ export function ModalDatePicker({
   maxDate,
   isDateDisabled,
   title,
-}: M3EModalDatePickerProps): React.JSX.Element {
-  const { locale, t } = useM3E();
+}: M3EDatePickerDialogProps): React.JSX.Element {
+  const { locale, t } = useM3ERuntime();
   const portalContainer = useM3EPortalContainer();
   const today = React.useMemo(() => getTodayPlainDate(), []);
   const defaultEndIso = React.useMemo(
@@ -1879,7 +1880,6 @@ export function ModalDatePicker({
   );
 }
 
-export const DatePickerDialog = ModalDatePicker;
 
 export interface PlainDateTimeValue {
   readonly date: PlainDateString;
@@ -1929,7 +1929,7 @@ export function DateTimePickerField({
   className,
   style,
 }: M3EDateTimePickerFieldProps): React.JSX.Element {
-  const { locale } = useM3E();
+  const { locale } = useM3ERuntime();
   const portalContainer = useM3EPortalContainer();
   const isDisabled = useFieldsetDisabled(disabled);
   const generatedId = React.useId();
@@ -1996,14 +1996,12 @@ export function DateTimePickerField({
           {labelNode}
         </label>
       ) : null}
-      {name ? (
-        <input
-          type="hidden"
-          name={name}
-          value={`${current.date}T${current.time}`}
-          disabled={isDisabled}
-        />
-      ) : null}
+      <FormHiddenValue
+        name={name}
+        value={`${current.date}T${current.time}`}
+        disabled={isDisabled}
+        required={required}
+      />
       <BasePopover.Root
         open={readOnly ? false : open}
         onOpenChange={(next) => {

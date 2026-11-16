@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useFormReset } from "../internal/formField.js";
 import { Field as BaseField } from "@base-ui/react/field";
 import { Input as BaseInput } from "@base-ui/react/input";
 import { TEXT_FIELD_TOKENS } from "../tokens/index.js";
@@ -179,16 +180,11 @@ export const TextField = React.forwardRef<HTMLInputElement, M3ETextFieldProps>(
     const [showPassword, setShowPassword] = React.useState(false);
     const [isFocused, setIsFocused] = React.useState(false);
 
-    React.useEffect(() => {
-      if (controlledValue !== undefined) return;
-      const form = inputRef.current?.form;
-      if (!form) return;
-      const onReset = () => {
-        setUncontrolledValue(defaultValRef.current);
-      };
-      form.addEventListener("reset", onReset);
-      return () => form.removeEventListener("reset", onReset);
-    }, [controlledValue]);
+    useFormReset(
+      inputRef,
+      () => setUncontrolledValue(defaultValRef.current),
+      controlledValue === undefined,
+    );
 
     const currentVal = controlledValue ?? uncontrolledValue;
     const isPopulated = currentVal.length > 0;
@@ -471,16 +467,11 @@ export const TextareaField = React.forwardRef<
     React.useState<string>(defaultValue);
   const [isFocused, setIsFocused] = React.useState(false);
 
-  React.useEffect(() => {
-    if (controlledValue !== undefined) return;
-    const form = textareaRef.current?.form;
-    if (!form) return;
-    const onReset = () => {
-      setUncontrolledValue(defaultValRef.current);
-    };
-    form.addEventListener("reset", onReset);
-    return () => form.removeEventListener("reset", onReset);
-  }, [controlledValue]);
+  useFormReset(
+    textareaRef,
+    () => setUncontrolledValue(defaultValRef.current),
+    controlledValue === undefined,
+  );
 
   const currentVal = controlledValue ?? uncontrolledValue;
   const isPopulated = currentVal.length > 0;

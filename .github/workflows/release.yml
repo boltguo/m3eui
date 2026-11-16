@@ -54,6 +54,10 @@ jobs:
                 fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
                 console.log("Synced packages/m3eui/package.json version ->", ver);
               }
+              fs.writeFileSync(
+                "packages/m3eui/src/version.ts",
+                `export const M3E_PACKAGE_VERSION = "${ver}";\n`,
+              );
               const schemaPath = "packages/m3eui/m3e.schema.json";
               const schema = JSON.parse(fs.readFileSync(schemaPath, "utf8"));
               schema.$id = `https://unpkg.com/m3eui@${ver}/m3e.schema.json`;

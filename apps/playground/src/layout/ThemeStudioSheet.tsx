@@ -83,6 +83,8 @@ export function ThemeStudioSheet({
   } = useM3E();
   const { toast } = useM3EToast();
   const [copiedJson, setCopiedJson] = React.useState(false);
+  const [seedDraft, setSeedDraft] = React.useState(seedHex);
+  React.useEffect(() => setSeedDraft(seedHex), [seedHex]);
 
   const seedPresets = React.useMemo(
     () => [
@@ -191,6 +193,7 @@ export function ThemeStudioSheet({
               })}
 
               <Popover
+                aria-label={ui.seedCustomAria}
                 side="bottom"
                 align="end"
                 trigger={
@@ -213,8 +216,9 @@ export function ThemeStudioSheet({
                 }
               >
                 <ColorPicker
-                  value={seedHex}
-                  onValueChange={setSeedHex}
+                  value={seedDraft}
+                  onValueChange={setSeedDraft}
+                  onValueCommitted={setSeedHex}
                 />
               </Popover>
             </div>

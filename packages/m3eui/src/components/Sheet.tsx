@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Drawer as BaseDrawer } from "@base-ui/react/drawer";
 import { SHEET_TOKENS } from "../tokens/index.js";
-import { useM3E } from "../context/M3EContext.js";
+import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3EPortalContainer } from "../context/M3EPortal.js";
 
 export type SheetSide = "bottom" | "start" | "end" | "right" | "left";
@@ -88,7 +88,7 @@ export function Sheet({
   className,
   style,
 }: M3ESheetProps): React.JSX.Element {
-  const { direction, t } = useM3E();
+  const { direction, t } = useM3ERuntime();
   const portalContainer = useM3EPortalContainer();
   const physicalSide: "bottom" | "right" | "left" =
     side === "bottom"

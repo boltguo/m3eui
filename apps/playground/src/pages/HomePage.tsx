@@ -2,66 +2,47 @@ import * as React from "react";
 import { Link, useNavigate, useOutletContext } from "react-router";
 import type { M3EShapeName } from "m3eui/tokens";
 import {
-  Alert,
-  AlertDialog,
-  AlertDialogClose,
-  AssistChip,
-  AvatarGroup,
-  Badge,
-  Breadcrumb,
+  Avatar,
+  BottomSheet,
   Button,
   ButtonGroup,
   Card,
+  Checkbox,
   Chip,
   CircularWavyProgressIndicator,
-  ColorPicker,
-  ColorPickerField,
-  ContextMenu,
-  CopyButton,
-  DataTable,
-  DateRangePickerField,
-  DockedToolbar,
-  Empty,
+  Dialog,
+  DialogClose,
+  DropdownMenu,
+  ExtendedFAB,
   FAB,
-  Fieldset,
-  FileUpload,
   FilterChip,
-  FloatingToolbar,
-  Form,
+  IconButton,
   IconToggleButton,
-  Kbd,
+  LinearProgressIndicator,
   LinearWavyProgressIndicator,
+  ListItem,
   LoadingIndicator,
-  type M3EDataTableColumn,
-  type M3EDataTableSortState,
-  type M3EUploadFileItem,
   MaterialShapeView,
-  Menubar,
-  Meter,
-  NavigationSuite,
-  type NavigationSuiteLayout,
-  NumberField,
-  OTPField,
-  Pagination,
-  type PlainDateRange,
+  NavigationBar,
+  Radio,
+  RadioGroup,
   SearchBar,
+  SegmentedList,
   Select,
-  SideSheet,
   Skeleton,
   Slider,
   Snippet,
   SplitButton,
   Switch,
   TextField,
-  TimePickerField,
-  ToggleButton,
   Tooltip,
   useM3E,
+  useM3EI18n,
   useM3EToast,
 } from "m3eui";
-import { useCopyResolver, usePlaygroundStrings } from "../i18n";
+import { type LocalizedCopy, useCopyResolver, usePlaygroundStrings } from "../i18n";
 import {
-  BarChartIcon,
+  BellIcon,
   DownloadIcon,
   EditIcon,
   FolderIcon,
@@ -69,197 +50,326 @@ import {
   GitHubIcon,
   HeartIcon,
   HomeGlyph,
-  SearchIcon,
+  PlusIcon,
+  SendIcon,
   SettingsGearIcon,
   ShareIcon,
-  ShieldCheckIcon,
-  SparkleIcon,
   TrashIcon,
+  UsersIcon,
 } from "../layout/Icons";
 import type { SiteOutletContext } from "../layout/SiteLayout";
-import { SeedSwatchDot } from "../layout/ThemeStudioSheet";
-import { BLOCKS_REGISTRY } from "../registry/blocks";
 import {
-  ALL_COMPONENT_DOCS,
+  BLOCK_CATALOG,
+  COMPONENT_CATALOG,
+  COMPONENT_CATALOG_BY_CATEGORY,
   COMPONENT_CATEGORY_ORDER,
-  COMPONENTS_BY_CATEGORY,
-} from "../registry/components";
+} from "../registry/catalog";
 
 const HERO_SHAPES: readonly M3EShapeName[] = [
   "cookie9Sided",
-  "clover8Leaf",
+  "flower",
+  "clover4Leaf",
   "sunny",
-  "softBoom",
-  "pentagon",
+  "softBurst",
   "pill",
+  "gem",
+  "puffy",
 ];
 
-interface EdgeNodeRow {
-  readonly id: string;
-  readonly service: string;
-  readonly region: string;
-  readonly status: "healthy" | "syncing" | "degraded";
-  readonly p99Ms: number;
+const HERO_SLOTS = [
+  { id: "a", offset: 0, size: 264, fill: "var(--m3e-color-primary)" },
+  { id: "b", offset: 2, size: 168, fill: "var(--m3e-color-tertiary-container)" },
+  { id: "c", offset: 4, size: 136, fill: "var(--m3e-color-secondary-container)" },
+  { id: "d", offset: 6, size: 88, fill: "var(--m3e-color-tertiary)" },
+] as const;
+
+function GlyphSvg({ d, filled }: { readonly d: string; readonly filled?: boolean }) {
+  return (
+    <svg
+      width={24}
+      height={24}
+      viewBox="0 0 24 24"
+      fill={filled ? "currentColor" : "none"}
+      stroke="currentColor"
+      strokeWidth={filled ? 0 : 2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d={d} />
+    </svg>
+  );
 }
 
-const EDGE_NODE_ROWS: readonly EdgeNodeRow[] = [
-  { id: "edge-01", service: "HCT Token CDN", region: "ap-northeast-1", status: "healthy", p99Ms: 14 },
-  { id: "edge-02", service: "Spring ODE Engine", region: "us-west-2", status: "healthy", p99Ms: 18 },
-  { id: "edge-03", service: "Polygon SVG Edge", region: "eu-central-1", status: "syncing", p99Ms: 29 },
-  { id: "edge-04", service: "BiDi Locale Sync", region: "ap-east-1", status: "degraded", p99Ms: 78 },
-  { id: "edge-05", service: "WCAG Audit Gate", region: "us-east-1", status: "healthy", p99Ms: 16 },
-];
+const PlayGlyph = () => <GlyphSvg filled d="M8 5.5v13a1 1 0 0 0 1.5.86l11-6.5a1 1 0 0 0 0-1.72l-11-6.5A1 1 0 0 0 8 5.5Z" />;
+const PauseGlyph = () => <GlyphSvg filled d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" />;
+const PrevGlyph = () => <GlyphSvg filled d="M6 5h2v14H6zM20 6.2v11.6a.8.8 0 0 1-1.25.66L10 12.66a.8.8 0 0 1 0-1.32l8.75-5.8A.8.8 0 0 1 20 6.2Z" />;
+const NextGlyph = () => <GlyphSvg filled d="M16 5h2v14h-2zM4 6.2v11.6a.8.8 0 0 0 1.25.66L14 12.66a.8.8 0 0 0 0-1.32l-8.75-5.8A.8.8 0 0 0 4 6.2Z" />;
+const MoreGlyph = () => <GlyphSvg filled d="M12 7a1.75 1.75 0 1 0 0-3.5A1.75 1.75 0 0 0 12 7Zm0 6.75a1.75 1.75 0 1 0 0-3.5 1.75 1.75 0 0 0 0 3.5Zm0 6.75a1.75 1.75 0 1 0 0-3.5 1.75 1.75 0 0 0 0 3.5Z" />;
 
-interface WorkspaceAsset {
-  readonly id: string;
+function Scene({
+  title,
+  to,
+  className,
+  children,
+}: {
   readonly title: string;
-  readonly group: string;
-  readonly shape: M3EShapeName;
+  readonly to: string;
+  readonly className?: string;
+  readonly children: React.ReactNode;
+}) {
+  return (
+    <section className={className ? `home-scene ${className}` : "home-scene"}>
+      <Link to={to} className="home-scene__title">
+        {title}
+      </Link>
+      {children}
+    </section>
+  );
 }
 
-const INITIAL_WORKSPACE_ASSETS: readonly WorkspaceAsset[] = [
-  { id: "ast-1", title: "Button Corner Topology", group: "m3e.actions", shape: "cookie9Sided" },
-  { id: "ast-2", title: "HCT SPEC_2025 Ramp", group: "m3e.color", shape: "clover8Leaf" },
-  { id: "ast-3", title: "Spatial Spring Presets", group: "m3e.motion", shape: "sunny" },
-  { id: "ast-4", title: "BiDi Logical Matrix", group: "m3e.i18n", shape: "pentagon" },
-];
-
-const HeroBannerSection = React.memo(function HeroBannerSection({
-  openStudio,
+const Hero = React.memo(function Hero({
   openCommandPalette,
 }: {
-  readonly openStudio: () => void;
   readonly openCommandPalette: () => void;
 }) {
   const ui = usePlaygroundStrings();
   const resolve = useCopyResolver();
   const navigate = useNavigate();
-  const [heroShapeIdx, setHeroShapeIdx] = React.useState(0);
-  const currentHeroShape = HERO_SHAPES[heroShapeIdx % HERO_SHAPES.length]!;
+  const [step, setStep] = React.useState(0);
 
   return (
-    <Card variant="filled" className="docs-hero-card">
-      <div className="docs-hero__top">
-        <div className="docs-hero__copy">
-          <div className="docs-hero__chips">
-            <Chip tone="primary" icon={<SparkleIcon size={13} />}>
-              Material 3 Expressive · SPEC 2025
-            </Chip>
-            <Chip tone="secondary" variant="outlined">
-              {ALL_COMPONENT_DOCS.length} {ui.navComponents} · {BLOCKS_REGISTRY.length} Blocks
-            </Chip>
-          </div>
-
-          <h1 className="docs-hero__title">{ui.heroTitle}</h1>
-          <p className="docs-hero__desc">{ui.heroDesc}</p>
-
-          <div className="demo-row" style={{ gap: 10, paddingTop: 4 }}>
-            <SplitButton
+    <header className="home-hero">
+      <div className="home-hero__copy">
+        <h1 className="home-hero__title">{ui.heroTitle}</h1>
+        <p className="home-hero__desc">{ui.heroDesc}</p>
+        <div className="home-hero__actions">
+          <Button size="md" variant="filled" onClick={() => navigate("/docs")}>
+            {resolve({ zh: "开始使用", en: "Get started" })}
+          </Button>
+          <Button
+            size="md"
+            variant="tonal"
+            onClick={() => navigate("/components/button")}
+          >
+            {ui.browseComponentsBtn}
+          </Button>
+          <Tooltip content="GitHub">
+            <IconButton
               size="md"
-              variant="filled"
-              leadingIcon={<SparkleIcon size={16} />}
-              onClick={() => navigate("/components/button")}
-              menuTriggerLabel={ui.browseComponentsBtn}
-              menuItems={[
-                {
-                  id: "jump-actions",
-                  label: ui.componentCategories.actions,
-                  shortcut: "G A",
-                  onSelect: () => navigate("/components/button"),
-                },
-                {
-                  id: "jump-inputs",
-                  label: ui.componentCategories.inputs,
-                  shortcut: "G I",
-                  onSelect: () => navigate("/components/color-picker"),
-                },
-                {
-                  id: "jump-display",
-                  label: ui.componentCategories.display,
-                  shortcut: "G D",
-                  onSelect: () => navigate("/components/data-table"),
-                },
-                {
-                  id: "jump-nav",
-                  label: ui.componentCategories.navigation,
-                  shortcut: "G N",
-                  onSelect: () => navigate("/components/command-palette"),
-                },
-              ]}
-            >
-              {ui.browseComponentsBtn}
-            </SplitButton>
-
-            <Button
-              variant="tonal"
-              size="md"
-              onClick={() => navigate("/blocks")}
-            >
-              {ui.browseBlocksBtn}
-            </Button>
-
-            <Button
               variant="outlined"
-              size="md"
-              leadingIcon={<SearchIcon size={15} />}
-              onClick={openCommandPalette}
-            >
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                <span>{resolve({ zh: "快速检索", en: "Quick Jump" })}</span>
-                <Kbd size="sm" keys={["mod", "k"]} />
-              </span>
-            </Button>
-
-            <Button
-              variant="outlined"
-              size="md"
+              icon={<GitHubIcon size={22} />}
+              aria-label="GitHub"
               href={GITHUB_REPO_URL}
               target="_blank"
               rel="noopener noreferrer"
-              leadingIcon={<GitHubIcon size={16} />}
-            >
-              GitHub
-            </Button>
-
-            <Button variant="text" size="md" onClick={openStudio}>
-              {ui.openStudioBtn}
-            </Button>
-          </div>
-
-          <div className="docs-hero__install-row">
-            <Snippet code="pnpm add m3eui" className="docs-hero__snippet" />
-            <Snippet code="npx m3eui init" className="docs-hero__snippet" />
-          </div>
+            />
+          </Tooltip>
         </div>
-
-        <Tooltip content={ui.switchPolygonTooltip}>
-          <Card
-            variant="outlined"
-            interactive
-            className="docs-hero__emblem"
-            onClick={() => setHeroShapeIdx((i) => i + 1)}
-          >
-            <div className="docs-hero__emblem-mark">
-              <MaterialShapeView
-                shape={currentHeroShape}
-                size={88}
-                fill="var(--m3e-color-primary)"
-              />
-              <span className="docs-hero__emblem-glyph" aria-hidden="true">
-                M3
-              </span>
-            </div>
-            <span className="docs-hero__emblem-caption">
-              {currentHeroShape}
-            </span>
-          </Card>
-        </Tooltip>
+        <div className="home-hero__install">
+          <Snippet code="npx m3eui init" />
+          <Button variant="text" size="sm" onClick={openCommandPalette}>
+            {resolve({ zh: "搜索组件", en: "Search components" })}
+          </Button>
+        </div>
       </div>
-    </Card>
+
+      <button
+        type="button"
+        className="home-hero__art"
+        aria-label={ui.switchPolygonTooltip}
+        onClick={() => setStep((s) => s + 1)}
+      >
+        {HERO_SLOTS.map((slot) => (
+          <span key={slot.id} className={`home-hero__shape home-hero__shape--${slot.id}`}>
+            <MaterialShapeView
+              shape={HERO_SHAPES[(step + slot.offset) % HERO_SHAPES.length]!}
+              size={slot.size}
+              fill={slot.fill}
+            />
+          </span>
+        ))}
+      </button>
+    </header>
   );
 });
 
-const BentoThemeStudioCard = React.memo(function BentoThemeStudioCard() {
+interface Mail {
+  readonly id: string;
+  readonly from: string;
+  readonly subject: LocalizedCopy;
+  readonly time: LocalizedCopy;
+  readonly shape: M3EShapeName;
+  readonly unread?: boolean;
+}
+
+const MAILS: readonly Mail[] = [
+  { id: "m1", from: "Ada", subject: { zh: "周五的设计评审改到下午三点", en: "Design review moved to 3 pm Friday" }, time: "9:41", shape: "cookie9Sided", unread: true },
+  { id: "m2", from: "Kenji", subject: { zh: "新图标已经上传到共享盘", en: "New icons are in the shared drive" }, time: "8:15", shape: "clover4Leaf", unread: true },
+  { id: "m3", from: "Lena", subject: { zh: "周末一起去爬山吗？", en: "Hiking this weekend?" }, time: "7:02", shape: "sunny" },
+  { id: "m4", from: "Omar", subject: { zh: "发票已付，谢谢", en: "Invoice paid, thank you" }, time: "6:30", shape: "pentagon" },
+  { id: "m5", from: "Priya", subject: { zh: "原型链接更新了", en: "Prototype link updated" }, time: { zh: "周一", en: "Mon" }, shape: "flower" },
+  { id: "m6", from: "Tomás", subject: { zh: "午饭吃什么？", en: "Lunch today?" }, time: { zh: "周日", en: "Sun" }, shape: "gem" },
+];
+
+type PhoneTab = "inbox" | "people" | "files" | "settings";
+
+const PhoneScene = React.memo(function PhoneScene() {
+  const resolve = useCopyResolver();
+  const { toast } = useM3EToast();
+  const [tab, setTab] = React.useState<PhoneTab>("inbox");
+  const [unreadOnly, setUnreadOnly] = React.useState(false);
+  const [selected, setSelected] = React.useState("m1");
+  const mails = unreadOnly ? MAILS.filter((m) => m.unread) : MAILS;
+
+  return (
+    <Scene
+      title={resolve({ zh: "导航", en: "Navigation" })}
+      to="/components/navigation"
+      className="home-scene--phone"
+    >
+      <div className="home-phone">
+        <div className="home-phone__body">
+          <SearchBar
+            size="sm"
+            placeholder={resolve({ zh: "搜索邮件", en: "Search mail" })}
+            aria-label={resolve({ zh: "搜索邮件", en: "Search mail" })}
+          />
+          <div className="home-row">
+            <FilterChip selected={!unreadOnly} onSelectedChange={() => setUnreadOnly(false)}>
+              {resolve({ zh: "全部", en: "All" })}
+            </FilterChip>
+            <FilterChip selected={unreadOnly} onSelectedChange={() => setUnreadOnly(true)}>
+              {resolve({ zh: "未读", en: "Unread" })}
+            </FilterChip>
+          </div>
+          <SegmentedList aria-label={resolve({ zh: "收件箱", en: "Inbox" })}>
+            {mails.map((mail) => (
+              <ListItem
+                key={mail.id}
+                interactive
+                selected={selected === mail.id}
+                onClick={() => setSelected(mail.id)}
+                leading={<Avatar size="md" shape={mail.shape} fallback={mail.from[0]} />}
+                headline={mail.from}
+                supportingText={resolve(mail.subject)}
+                trailing={<span className="home-phone__time">{resolve(mail.time)}</span>}
+              />
+            ))}
+          </SegmentedList>
+          <FAB
+            className="home-phone__fab"
+            variant="tertiary"
+            icon={<EditIcon size={22} />}
+            aria-label={resolve({ zh: "写邮件", en: "Compose" })}
+            onClick={() =>
+              toast({ title: resolve({ zh: "草稿已保存", en: "Draft saved" }) })
+            }
+          />
+        </div>
+        <NavigationBar<PhoneTab>
+          value={tab}
+          onValueChange={setTab}
+          items={[
+            { value: "inbox", label: resolve({ zh: "收件箱", en: "Inbox" }), icon: <HomeGlyph size={22} />, badgeCount: 2 },
+            { value: "people", label: resolve({ zh: "联系人", en: "People" }), icon: <UsersIcon size={22} /> },
+            { value: "files", label: resolve({ zh: "文件", en: "Files" }), icon: <FolderIcon size={22} />, badgeDot: true },
+            { value: "settings", label: resolve({ zh: "设置", en: "Settings" }), icon: <SettingsGearIcon size={22} /> },
+          ]}
+        />
+      </div>
+    </Scene>
+  );
+});
+
+const TRACKS: readonly { readonly title: string; readonly artist: string; readonly shape: M3EShapeName }[] = [
+  { title: "Soft Burst", artist: "The Polygons", shape: "softBurst" },
+  { title: "Nine Sided", artist: "Cookie Cutter", shape: "cookie9Sided" },
+  { title: "Four Leaf", artist: "Clover Club", shape: "clover4Leaf" },
+];
+
+const PlayerScene = React.memo(function PlayerScene() {
+  const resolve = useCopyResolver();
+  const [playing, setPlaying] = React.useState(false);
+  const [progress, setProgress] = React.useState(36);
+  const [trackIdx, setTrackIdx] = React.useState(0);
+  const track = TRACKS[trackIdx]!;
+
+  React.useEffect(() => {
+    if (!playing) return;
+    const id = window.setInterval(() => {
+      setProgress((p) => (p >= 100 ? 0 : p + 1));
+    }, 600);
+    return () => window.clearInterval(id);
+  }, [playing]);
+
+  const skip = (delta: number) => {
+    setTrackIdx((i) => (i + delta + TRACKS.length) % TRACKS.length);
+    setProgress(0);
+  };
+
+  return (
+    <Scene
+      title={resolve({ zh: "进度", en: "Progress" })}
+      to="/components/progress-indicator"
+      className="home-scene--player"
+    >
+      <div className="home-player__art">
+        <MaterialShapeView
+          shape={track.shape}
+          size={132}
+          fill="var(--m3e-color-tertiary)"
+        />
+      </div>
+      <div className="home-player__meta">
+        <div>
+          <strong>{track.title}</strong>
+          <span>{track.artist}</span>
+        </div>
+        <IconToggleButton
+          icon={<HeartIcon size={20} />}
+          aria-label={resolve({ zh: "收藏", en: "Favorite" })}
+          variant="standard"
+        />
+      </div>
+      <LinearWavyProgressIndicator
+        value={progress}
+        paused={!playing}
+        aria-label={resolve({ zh: "播放进度", en: "Playback progress" })}
+      />
+      <div className="home-player__controls">
+        <IconButton
+          variant="tonal"
+          icon={<PrevGlyph />}
+          aria-label={resolve({ zh: "上一首", en: "Previous" })}
+          onClick={() => skip(-1)}
+        />
+        <IconToggleButton
+          size="lg"
+          widthVariant="wide"
+          variant="filled"
+          pressed={playing}
+          onPressedChange={setPlaying}
+          icon={<PlayGlyph />}
+          checkedIcon={<PauseGlyph />}
+          aria-label={resolve({ zh: "播放", en: "Play" })}
+        />
+        <IconButton
+          variant="tonal"
+          icon={<NextGlyph />}
+          aria-label={resolve({ zh: "下一首", en: "Next" })}
+          onClick={() => skip(1)}
+        />
+      </div>
+    </Scene>
+  );
+});
+
+const ThemeScene = React.memo(function ThemeScene({
+  openStudio,
+}: {
+  readonly openStudio: () => void;
+}) {
   const ui = usePlaygroundStrings();
   const resolve = useCopyResolver();
   const {
@@ -267,1111 +377,362 @@ const BentoThemeStudioCard = React.memo(function BentoThemeStudioCard() {
     setSeedHex,
     schemeVariant,
     setSchemeVariant,
-    motionSchemeName,
-    setMotionSchemeName,
+    resolvedColorMode,
+    setColorMode,
   } = useM3E();
 
-  const [draftSeedHex, setDraftSeedHex] = React.useState(seedHex);
-  const latestDraftRef = React.useRef(seedHex);
-  const isDraggingRangeRef = React.useRef(false);
-
-  React.useEffect(() => {
-    latestDraftRef.current = seedHex;
-    setDraftSeedHex(seedHex);
-  }, [seedHex]);
-
-  React.useEffect(() => {
-    const flushDragCommit = () => {
-      if (!isDraggingRangeRef.current) return;
-      isDraggingRangeRef.current = false;
-      const committed = latestDraftRef.current;
-      React.startTransition(() => {
-        setSeedHex(committed);
-      });
-    };
-    window.addEventListener("pointerup", flushDragCommit, true);
-    window.addEventListener("pointercancel", flushDragCommit, true);
-    return () => {
-      window.removeEventListener("pointerup", flushDragCommit, true);
-      window.removeEventListener("pointercancel", flushDragCommit, true);
-    };
-  }, [setSeedHex]);
-
-  const handleSeedCommit = React.useCallback(
-    (nextHex: string) => {
-      latestDraftRef.current = nextHex;
-      setDraftSeedHex(nextHex);
-      if (!isDraggingRangeRef.current) {
-        React.startTransition(() => {
-          setSeedHex(nextHex);
-        });
-      }
-    },
-    [setSeedHex],
-  );
-
-  const seeds = React.useMemo(
-    () => [
-      { hex: "#6750A4", name: ui.seedPurple },
-      { hex: "#0B6B58", name: ui.seedJade },
-      { hex: "#1A73E8", name: ui.seedOcean },
-      { hex: "#B3261E", name: ui.seedVermilion },
-      { hex: "#7D5260", name: ui.seedRose },
-    ],
-    [ui.seedJade, ui.seedOcean, ui.seedPurple, ui.seedRose, ui.seedVermilion],
-  );
+  const seeds = [
+    { hex: "#6750A4", name: ui.seedPurple },
+    { hex: "#0B6B58", name: ui.seedJade },
+    { hex: "#1A73E8", name: ui.seedOcean },
+    { hex: "#B3261E", name: ui.seedVermilion },
+    { hex: "#7D5260", name: ui.seedRose },
+  ];
 
   return (
-    <Card variant="outlined" className="m3e-bento-card m3e-bento-card--wide">
-      <div className="m3e-bento-card__head">
-        <strong>
-          {resolve({
-            zh: "HCT 动态色板与弹簧物理工作台",
-            en: "HCT Brand Studio & Spring Physics",
-          })}
-        </strong>
-        <Link to="/components/color-picker" className="m3e-inline-more-link">
-          ColorPicker →
-        </Link>
-      </div>
-
-      <div className="m3e-bento-color-split">
-        <div className="m3e-bento-stack">
-          <div className="demo-row" style={{ gap: 8 }}>
-            {seeds.map((s) => (
-              <ToggleButton
-                key={s.hex}
-                size="xs"
-                variant="outlined"
-                shape="square"
-                pressed={draftSeedHex.toLowerCase() === s.hex.toLowerCase()}
-                leadingIcon={<SeedSwatchDot hex={s.hex} />}
-                onPressedChange={() => {
-                  isDraggingRangeRef.current = false;
-                  latestDraftRef.current = s.hex;
-                  setDraftSeedHex(s.hex);
-                  setSeedHex(s.hex);
-                }}
-              >
-                {s.name}
-              </ToggleButton>
-            ))}
-          </div>
-
-          <ColorPickerField
-            label={resolve({ zh: "全局 HCT 种子色", en: "Global HCT Seed" })}
-            value={draftSeedHex}
-            onValueChange={handleSeedCommit}
-          />
-
-          <ButtonGroup
-            variant="connected"
-            size="xs"
-            selectionMode="single"
-            aria-label="Scheme variant"
-            items={[
-              { value: "expressive", label: "Expressive" },
-              { value: "tonalSpot", label: "TonalSpot" },
-              { value: "vibrant", label: "Vibrant" },
-              { value: "neutral", label: "Neutral" },
-            ]}
-            value={[schemeVariant]}
-            onValueChange={(vals) => {
-              if (vals[0]) setSchemeVariant(vals[0] as typeof schemeVariant);
-            }}
-          />
-
-          <Switch
-            showIcons
-            checked={motionSchemeName === "expressive"}
-            onCheckedChange={(v) =>
-              setMotionSchemeName(v ? "expressive" : "standard")
-            }
-            label={ui.expressiveSpringLabel}
-          />
-
-          <Snippet code={`npx m3eui init --seed "${draftSeedHex}"`} />
-        </div>
-
-        <div
-          className="m3e-bento-color-picker-wrap"
-          onPointerDownCapture={(e) => {
-            const target = e.target as HTMLElement | null;
-            if (target instanceof HTMLInputElement && target.type === "range") {
-              isDraggingRangeRef.current = true;
-            }
-          }}
-        >
-          <ColorPicker
-            value={draftSeedHex}
-            onValueChange={handleSeedCommit}
-            className="m3e-bento-color-picker"
-          />
-        </div>
-      </div>
-    </Card>
-  );
-});
-
-const BentoPasskeyCard = React.memo(function BentoPasskeyCard() {
-  const resolve = useCopyResolver();
-  const { toast } = useM3EToast();
-  const [liked, setLiked] = React.useState(true);
-  const [workspaceDomain, setWorkspaceDomain] = React.useState("aurora");
-  const [otpCode, setOtpCode] = React.useState("202588");
-  const authScore = Math.min(
-    100,
-    Math.round((otpCode.length / 6) * 72 + (workspaceDomain ? 28 : 0)),
-  );
-
-  return (
-    <Card variant="outlined" className="m3e-bento-card">
-      <div className="m3e-bento-card__head">
-        <strong>
-          {resolve({
-            zh: "通行密钥、强度表与 2FA 验证",
-            en: "Passkey, Meter & 2FA OTP",
-          })}
-        </strong>
-        <Link to="/components/otp-field" className="m3e-inline-more-link">
-          OTPField →
-        </Link>
-      </div>
-
-      <div className="demo-row" style={{ justifyContent: "space-between", gap: 8 }}>
-        <AssistChip
-          icon={<ShieldCheckIcon size={14} />}
-          onClick={() =>
-            toast({
-              type: "success",
-              title: resolve({ zh: "FIDO2 通行密钥已就绪", en: "FIDO2 Passkey ready" }),
-            })
-          }
-        >
-          FIDO2 Passkey
-        </AssistChip>
-
-        <Badge count={liked ? 9 : 8} color="primary">
-          <IconToggleButton
-            variant="outlined"
-            size="xs"
-            pressed={liked}
-            onPressedChange={setLiked}
-            aria-label="Bookmark"
-            icon={<HeartIcon filled={liked} size={15} />}
-          />
-        </Badge>
-      </div>
-
-      <TextField
-        label={resolve({ zh: "工作区域名", en: "Workspace URL" })}
-        prefixText="https://"
-        suffixText=".m3e.app"
-        value={workspaceDomain}
-        onValueChange={setWorkspaceDomain}
-        clearable
-      />
-
-      <div className="m3e-bento-otp-box">
-        <OTPField
-          length={6}
-          separatorAfterIndex={2}
-          value={otpCode}
-          onValueChange={setOtpCode}
-        />
-      </div>
-
-      <Meter
-        value={authScore}
-        label={resolve({ zh: "会话信任等级", en: "Session assurance" })}
-        valueText={`${authScore}%`}
-      />
-
-      <div className="demo-row" style={{ justifyContent: "space-between", gap: 8 }}>
-        <SplitButton
-          size="sm"
-          variant="filled"
-          disabled={otpCode.length < 6}
-          onClick={() =>
-            toast({
-              type: "success",
-              title: resolve({ zh: "二步验证通过", en: "2FA session verified" }),
-            })
-          }
-          menuTriggerLabel="2FA options"
-          menuItems={[
-            {
-              id: "resend-otp",
-              label: resolve({ zh: "重新填充验证码", en: "Refill OTP code" }),
-              shortcut: "⌘R",
-              onSelect: () => setOtpCode("202588"),
-            },
-            {
-              id: "clear-otp",
-              label: resolve({ zh: "清空验证码", en: "Clear OTP digits" }),
-              onSelect: () => setOtpCode(""),
-            },
-          ]}
-        >
-          {resolve({ zh: "验证会话", en: "Verify 2FA" })}
-        </SplitButton>
-
-        <CopyButton value={`https://${workspaceDomain || "app"}.m3e.app`} variant="tonal" />
-      </div>
-    </Card>
-  );
-});
-
-const BentoDataExplorerCard = React.memo(function BentoDataExplorerCard() {
-  const resolve = useCopyResolver();
-  const { toast } = useM3EToast();
-  const [tableQuery, setTableQuery] = React.useState("");
-  const [statusFilter, setStatusFilter] = React.useState<"all" | EdgeNodeRow["status"]>("all");
-  const [tableLoading, setTableLoading] = React.useState(false);
-  const [selectedRows, setSelectedRows] = React.useState<string[]>(["edge-01", "edge-02"]);
-  const [tableSort, setTableSort] = React.useState<M3EDataTableSortState | null>({
-    columnId: "p99Ms",
-    direction: "ascending",
-  });
-  const [tablePage, setTablePage] = React.useState(1);
-
-  const filteredTableRows = React.useMemo(() => {
-    const q = tableQuery.trim().toLowerCase();
-    return EDGE_NODE_ROWS.filter((r) => {
-      if (statusFilter !== "all" && r.status !== statusFilter) return false;
-      if (!q) return true;
-      return (
-        r.service.toLowerCase().includes(q) ||
-        r.region.toLowerCase().includes(q) ||
-        r.id.toLowerCase().includes(q)
-      );
-    });
-  }, [statusFilter, tableQuery]);
-
-  const pageSize = 3;
-  const totalPages = Math.max(1, Math.ceil(filteredTableRows.length / pageSize));
-  const safePage = Math.min(tablePage, totalPages);
-  const visibleRows = filteredTableRows.slice(
-    (safePage - 1) * pageSize,
-    safePage * pageSize,
-  );
-
-  const tableColumns = React.useMemo<readonly M3EDataTableColumn<EdgeNodeRow>[]>(
-    () => [
-      {
-        id: "service",
-        header: resolve({ zh: "边缘服务", en: "Service" }),
-        isRowHeader: true,
-        sortable: true,
-        sortAccessor: (r) => r.service,
-        cell: (r) => <strong style={{ fontSize: 13 }}>{r.service}</strong>,
-      },
-      {
-        id: "region",
-        header: resolve({ zh: "可用区", en: "Region" }),
-        cell: (r) => (
-          <code style={{ fontSize: 12, color: "var(--m3e-color-on-surface-variant)" }}>
-            {r.region}
-          </code>
-        ),
-      },
-      {
-        id: "status",
-        header: resolve({ zh: "状态", en: "Health" }),
-        cell: (r) => (
-          <Chip
-            size="sm"
-            dot
-            tone={
-              r.status === "healthy"
-                ? "success"
-                : r.status === "syncing"
-                  ? "primary"
-                  : "warning"
-            }
-          >
-            {r.status === "healthy"
-              ? resolve({ zh: "正常", en: "Healthy" })
-              : r.status === "syncing"
-                ? resolve({ zh: "同步中", en: "Syncing" })
-                : resolve({ zh: "降级", en: "Degraded" })}
-          </Chip>
-        ),
-      },
-      {
-        id: "p99Ms",
-        header: "P99",
-        align: "end",
-        sortable: true,
-        sortAccessor: (r) => r.p99Ms,
-        cell: (r) => (
-          <span style={{ fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
-            {r.p99Ms} ms
-          </span>
-        ),
-      },
-    ],
-    [resolve],
-  );
-
-  return (
-    <Card variant="outlined" className="m3e-bento-card m3e-bento-card--wide">
-      <div className="m3e-bento-card__head">
-        <Breadcrumb
-          separator="chevron"
-          items={[
-            { key: "root", label: "m3eui", icon: <HomeGlyph size={13} /> },
-            { key: "clusters", label: resolve({ zh: "边缘集群", en: "Clusters" }) },
-            { key: "nodes", label: resolve({ zh: "节点检索", en: "Edge Explorer" }) },
-          ]}
-        />
-        <div className="demo-row" style={{ gap: 12 }}>
-          <Switch
-            checked={tableLoading}
-            onCheckedChange={setTableLoading}
-            label="Skeleton"
-          />
-          <Link to="/components/data-table" className="m3e-inline-more-link">
-            DataTable →
-          </Link>
-        </div>
-      </div>
-
-      <div className="demo-row" style={{ justifyContent: "space-between", gap: 10 }}>
-        <div style={{ flex: "1 1 220px", maxInlineSize: 340 }}>
-          <SearchBar
-            size="sm"
-            value={tableQuery}
-            onValueChange={(v) => {
-              setTableQuery(v);
-              setTablePage(1);
-            }}
-            placeholder={resolve({ zh: "检索服务或可用区…", en: "Filter service or region…" })}
-            trailingSlot={<Kbd size="sm" keys={["/"]} />}
-          />
-        </div>
-
-        <div className="demo-row" style={{ gap: 6 }}>
-          {(["all", "healthy", "syncing", "degraded"] as const).map((st) => (
-            <FilterChip
-              key={st}
-              selected={statusFilter === st}
-              onSelectedChange={() => {
-                setStatusFilter(st);
-                setTablePage(1);
-              }}
-            >
-              {st === "all"
-                ? resolve({ zh: "全部", en: "All" })
-                : st === "healthy"
-                  ? resolve({ zh: "正常", en: "Healthy" })
-                  : st === "syncing"
-                    ? resolve({ zh: "同步中", en: "Syncing" })
-                    : resolve({ zh: "降级", en: "Degraded" })}
-            </FilterChip>
-          ))}
-        </div>
-      </div>
-
-      {tableLoading ? (
-        <div className="m3e-bento-stack">
-          <Skeleton variant="rounded" height={34} />
-          <Skeleton variant="text" />
-          <Skeleton variant="text" width="86%" />
-        </div>
-      ) : (
-        <DataTable
-          caption="Edge cluster nodes"
-          hideCaption
-          selectable
-          selectedRowKeys={selectedRows}
-          onSelectedRowKeysChange={setSelectedRows}
-          sort={tableSort}
-          onSortChange={setTableSort}
-          columns={tableColumns}
-          rows={visibleRows}
-          getRowKey={(r) => r.id}
-          emptyMessage={
-            <Empty
-              compact
-              title={resolve({ zh: "未匹配到边缘节点", en: "No matching nodes" })}
-              actions={
-                <Button
-                  size="xs"
-                  variant="tonal"
-                  onClick={() => {
-                    setTableQuery("");
-                    setStatusFilter("all");
-                  }}
-                >
-                  {resolve({ zh: "重置", en: "Reset" })}
-                </Button>
+    <Scene
+      title={resolve({ zh: "动态色彩", en: "Dynamic color" })}
+      to="/docs"
+      className="home-scene--theme"
+    >
+      <div className="home-row">
+        {seeds.map((seed) => (
+          <Tooltip key={seed.hex} content={seed.name}>
+            <IconToggleButton
+              variant="outlined"
+              pressed={seedHex.toLowerCase() === seed.hex.toLowerCase()}
+              onPressedChange={() =>
+                React.startTransition(() => setSeedHex(seed.hex))
               }
-            />
-          }
-          footer={
-            <Pagination
-              page={safePage}
-              totalPages={totalPages}
-              totalItems={filteredTableRows.length}
-              pageSize={pageSize}
-              showSummary
-              size="sm"
-              onPageChange={setTablePage}
-            />
-          }
-        />
-      )}
-
-      <div className="m3e-bento-bulk-bar">
-        {selectedRows.length > 0 ? (
-          <>
-            <Chip tone="primary">
-              {resolve({
-                zh: `已选中 ${selectedRows.length} 项`,
-                en: `${selectedRows.length} selected`,
-              })}
-            </Chip>
-
-            <FloatingToolbar
-              theme="vibrant"
-              aria-label="Bulk node actions"
-              items={[
-                {
-                  id: "sync",
-                  label: resolve({ zh: "触发同步", en: "Sync" }),
-                  icon: <SparkleIcon size={18} />,
-                  selected: true,
-                  onClick: () =>
-                    toast({
-                      type: "success",
-                      title: resolve({
-                        zh: `已同步 ${selectedRows.length} 个边缘节点`,
-                        en: `Synced ${selectedRows.length} node(s)`,
-                      }),
-                    }),
-                },
-                {
-                  id: "export",
-                  label: resolve({ zh: "导出快照", en: "Export CSV" }),
-                  icon: <DownloadIcon size={18} />,
-                  onClick: () =>
-                    toast({
-                      title: resolve({ zh: "已导出遥测 CSV", en: "Exported telemetry CSV" }),
-                    }),
-                },
-                {
-                  id: "clear",
-                  label: resolve({ zh: "清空选择", en: "Clear selection" }),
-                  icon: <TrashIcon size={18} />,
-                  separatorBefore: true,
-                  onClick: () => setSelectedRows([]),
-                },
-              ]}
-              companionFab={
-                <FAB
-                  size="sm"
-                  icon={<ShareIcon size={18} />}
-                  aria-label="Broadcast"
-                  onClick={() =>
-                    toast({
-                      title: resolve({ zh: "已广播集群配置", en: "Broadcasted cluster config" }),
-                    })
-                  }
+              icon={
+                <span
+                  className="home-theme__dot"
+                  style={{ backgroundColor: seed.hex }}
                 />
               }
+              aria-label={seed.name}
             />
-          </>
-        ) : (
-          <Button
-            size="xs"
-            variant="tonal"
-            onClick={() => setSelectedRows(["edge-01", "edge-02"])}
-          >
-            {resolve({
-              zh: "勾选表格行以唤醒批量悬浮工具栏",
-              en: "Select rows to reveal Bulk FloatingToolbar",
-            })}
-          </Button>
-        )}
+          </Tooltip>
+        ))}
       </div>
-    </Card>
+      <ButtonGroup
+        variant="connected"
+        size="sm"
+        selectionMode="single"
+        aria-label={resolve({ zh: "配色方案", en: "Scheme variant" })}
+        value={[schemeVariant]}
+        onValueChange={(next) => {
+          const picked = next[0];
+          if (picked) {
+            React.startTransition(() =>
+              setSchemeVariant(picked as typeof schemeVariant),
+            );
+          }
+        }}
+        items={[
+          { value: "expressive", label: "Expressive" },
+          { value: "tonalSpot", label: "Tonal" },
+          { value: "vibrant", label: "Vibrant" },
+          { value: "neutral", label: "Neutral" },
+        ]}
+      />
+      <div className="home-theme__roles" aria-hidden="true">
+        {["primary", "secondary", "tertiary"].map((role) => (
+          <React.Fragment key={role}>
+            <span style={{ backgroundColor: `var(--m3e-color-${role})` }} />
+            <span style={{ backgroundColor: `var(--m3e-color-${role}-container)` }} />
+          </React.Fragment>
+        ))}
+      </div>
+      <div className="home-theme__foot">
+        <Switch
+          label={resolve({ zh: "深色", en: "Dark" })}
+          checked={resolvedColorMode === "dark"}
+          onCheckedChange={(dark) => setColorMode(dark ? "dark" : "light")}
+        />
+        <Button variant="text" size="sm" onClick={openStudio}>
+          {ui.openStudioBtn}
+        </Button>
+      </div>
+    </Scene>
   );
 });
 
-const BentoWavyMediaCard = React.memo(function BentoWavyMediaCard() {
+const ActionsScene = React.memo(function ActionsScene() {
   const resolve = useCopyResolver();
-  const [playing, setPlaying] = React.useState(true);
-  const [progress, setProgress] = React.useState(68);
-  const [actionGroup, setActionGroup] = React.useState<string[]>(["spatial", "morph"]);
+  const { toast } = useM3EToast();
+  const [view, setView] = React.useState<string[]>(["week"]);
 
   return (
-    <Card variant="filled" className="m3e-bento-card">
-      <div className="m3e-bento-card__head">
-        <strong>
-          {resolve({
-            zh: "波浪进度、多边形与空间滑块",
-            en: "Wavy Media, Polygons & Slider",
-          })}
-        </strong>
-        <Link to="/components/progress-meter" className="m3e-inline-more-link">
-          WavyProgress →
-        </Link>
+    <Scene title={resolve({ zh: "按钮", en: "Buttons" })} to="/components/button">
+      <div className="home-row">
+        <Button variant="filled">{resolve({ zh: "保存", en: "Save" })}</Button>
+        <Button variant="tonal">{resolve({ zh: "分享", en: "Share" })}</Button>
+        <Button variant="outlined">{resolve({ zh: "取消", en: "Cancel" })}</Button>
       </div>
-
-      <div className="demo-row" style={{ justifyContent: "space-between", gap: 12 }}>
-        <AvatarGroup
-          size="sm"
-          shape="clover8Leaf"
-          max={3}
-          items={[
-            { id: "a1", fallback: "M3" },
-            { id: "a2", fallback: "UI" },
-            { id: "a3", fallback: "HC" },
-            { id: "a4", fallback: "+2" },
-          ]}
-        />
-        <div className="demo-row" style={{ gap: 10 }}>
-          <CircularWavyProgressIndicator
-            value={progress}
-            paused={!playing}
-            size={40}
-            aria-label="Circular wavy progress"
-          />
-          <LoadingIndicator contained size={40} />
-        </div>
-      </div>
-
-      <LinearWavyProgressIndicator
-        value={progress}
-        paused={!playing}
-        aria-label="Linear wavy progress"
-      />
-
-      <Slider
-        size="sm"
-        min={0}
-        max={100}
-        value={progress}
-        onValueChange={(val) => {
-          if (typeof val === "number") setProgress(val);
-        }}
-        showValueBubble
-        aria-label="Wave progress"
-      />
-
       <ButtonGroup
         variant="standard"
-        size="xs"
-        selectionMode="multiple"
-        aria-label="Spring channels"
+        selectionMode="single"
+        aria-label={resolve({ zh: "视图", en: "View" })}
+        value={view}
+        onValueChange={(next) => {
+          if (next.length) setView(next);
+        }}
         items={[
-          { value: "spatial", label: "Spatial" },
-          { value: "effects", label: "Effects" },
-          { value: "morph", label: "Morph" },
+          { value: "day", label: resolve({ zh: "日", en: "Day" }) },
+          { value: "week", label: resolve({ zh: "周", en: "Week" }) },
+          { value: "month", label: resolve({ zh: "月", en: "Month" }) },
         ]}
-        value={actionGroup}
-        onValueChange={setActionGroup}
       />
-
-      <div className="demo-row" style={{ justifyContent: "space-between" }}>
-        <ToggleButton
-          size="xs"
-          variant="tonal"
-          pressed={playing}
-          onPressedChange={setPlaying}
-        >
-          {playing
-            ? resolve({ zh: "波浪运行中", en: "Wave Active" })
-            : resolve({ zh: "已暂停", en: "Paused" })}
-        </ToggleButton>
-        <Chip tone="primary" size="sm">
-          {progress}%
-        </Chip>
-      </div>
-    </Card>
-  );
-});
-
-const BentoWorkspaceCard = React.memo(function BentoWorkspaceCard() {
-  const ui = usePlaygroundStrings();
-  const resolve = useCopyResolver();
-  const { toast } = useM3EToast();
-  const { seedHex } = useM3E();
-  const [suiteMode, setSuiteMode] = React.useState<NavigationSuiteLayout>("auto");
-  const [navDest, setNavDest] = React.useState("tokens");
-  const [dockTool, setDockTool] = React.useState("grid");
-  const [assets, setAssets] = React.useState<readonly WorkspaceAsset[]>(INITIAL_WORKSPACE_ASSETS);
-  const [inspecting, setInspecting] = React.useState<WorkspaceAsset | null>(null);
-  const [inspectTitle, setInspectTitle] = React.useState("");
-  const [confirmArchive, setConfirmArchive] = React.useState<WorkspaceAsset | null>(null);
-
-  const openInspector = React.useCallback((asset: WorkspaceAsset) => {
-    setInspecting(asset);
-    setInspectTitle(asset.title);
-  }, []);
-
-  const menubarMenus = React.useMemo(
-    () => [
-      {
-        id: "file",
-        label: resolve({ zh: "文件", en: "File" }),
-        items: [
-          {
-            id: "new-spec",
-            label: resolve({ zh: "新建令牌草稿", en: "New Token Draft" }),
-            shortcut: "⌘N",
-            onSelect: () =>
-              toast({ title: resolve({ zh: "已新建令牌草稿", en: "Created token draft" }) }),
-          },
-          {
-            id: "restore-assets",
-            label: resolve({ zh: "重置示例资产", en: "Reset Sample Assets" }),
-            shortcut: "⇧⌘R",
-            onSelect: () => setAssets(INITIAL_WORKSPACE_ASSETS),
-          },
-        ],
-      },
-      {
-        id: "view",
-        label: resolve({ zh: "视图", en: "View" }),
-        items: [
-          {
-            id: "layout-auto",
-            label: "Auto",
-            shortcut: "⌘1",
-            onSelect: () => setSuiteMode("auto"),
-          },
-          {
-            id: "layout-rail",
-            label: "Rail",
-            shortcut: "⌘2",
-            onSelect: () => setSuiteMode("rail"),
-          },
-          {
-            id: "layout-bar",
-            label: "Bar",
-            shortcut: "⌘3",
-            onSelect: () => setSuiteMode("bar"),
-          },
-        ],
-      },
-    ],
-    [resolve, toast],
-  );
-
-  return (
-    <>
-      <Card variant="outlined" className="m3e-bento-card m3e-bento-card--wide">
-        <div className="m3e-bento-card__head">
-          <Menubar
-            menus={menubarMenus}
-            aria-label={resolve({ zh: "工作区菜单栏", en: "Workspace menubar" })}
-          />
-
-          <div className="demo-row" style={{ gap: 10 }}>
-            <ButtonGroup
-              variant="connected"
-              size="xs"
-              selectionMode="single"
-              aria-label="NavigationSuite layout"
-              items={[
-                { value: "auto", label: "Auto" },
-                { value: "rail", label: "Rail" },
-                { value: "bar", label: "Bar" },
-              ]}
-              value={[suiteMode]}
-              onValueChange={(vals) => {
-                const next = vals[0] as NavigationSuiteLayout | undefined;
-                if (next) setSuiteMode(next);
-              }}
-            />
-            <Link to="/components/navigation" className="m3e-inline-more-link">
-              NavigationSuite →
-            </Link>
-          </div>
-        </div>
-
-        <NavigationSuite
-          layout={suiteMode}
-          value={navDest}
-          onValueChange={setNavDest}
-          className="m3e-bento-suite"
-          items={[
-            {
-              value: "tokens",
-              label: resolve({ zh: "令牌", en: "Tokens" }),
-              icon: <SparkleIcon size={18} />,
-              badgeCount: assets.length,
-            },
-            {
-              value: "components",
-              label: resolve({ zh: "组件", en: "Library" }),
-              icon: <FolderIcon size={18} />,
-            },
-            {
-              value: "audits",
-              label: resolve({ zh: "门禁", en: "Audits" }),
-              icon: <ShieldCheckIcon size={18} />,
-              badgeDot: true,
-            },
-            {
-              value: "settings",
-              label: resolve({ zh: "设置", en: "Config" }),
-              icon: <SettingsGearIcon size={18} />,
-            },
+      <div className="home-row">
+        <SplitButton
+          variant="filled"
+          leadingIcon={<SendIcon size={18} />}
+          menuTriggerLabel={resolve({ zh: "更多发送方式", en: "More send options" })}
+          onClick={() => toast({ title: resolve({ zh: "已发送", en: "Sent" }) })}
+          menuItems={[
+            { id: "later", label: resolve({ zh: "定时发送", en: "Schedule send" }) },
+            { id: "draft", label: resolve({ zh: "存为草稿", en: "Save draft" }) },
           ]}
         >
-          <div className="m3e-bento-suite__canvas">
-            <div className="m3e-bento-asset-grid">
-              {assets.map((asset) => (
-                <ContextMenu
-                  key={asset.id}
-                  items={[
-                    {
-                      id: "inspect",
-                      label: resolve({ zh: "打开属性抽屉", en: "Inspect in SideSheet" }),
-                      shortcut: "⌘I",
-                      icon: <EditIcon size={14} />,
-                      onSelect: () => openInspector(asset),
-                    },
-                    {
-                      id: "share",
-                      label: resolve({ zh: "复制令牌路径", en: "Copy Token Path" }),
-                      shortcut: "⌘C",
-                      icon: <ShareIcon size={14} />,
-                      onSelect: () =>
-                        toast({ title: `${asset.group} · ${asset.title}` }),
-                    },
-                    {
-                      id: "archive",
-                      label: resolve({ zh: "归档资产", en: "Archive Asset" }),
-                      shortcut: "⌫",
-                      danger: true,
-                      separatorBefore: true,
-                      icon: <TrashIcon size={14} />,
-                      onSelect: () => setConfirmArchive(asset),
-                    },
-                  ]}
-                >
-                  <div>
-                    <Card
-                      variant="outlined"
-                      interactive
-                      className="m3e-bento-asset-card"
-                      onClick={() => openInspector(asset)}
-                    >
-                      <div className="m3e-bento-asset-row">
-                        <MaterialShapeView
-                          shape={asset.shape}
-                          size={32}
-                          fill="var(--m3e-color-secondary-container)"
-                        />
-                        <div className="m3e-bento-asset-meta">
-                          <strong>{asset.title}</strong>
-                          <span>{asset.group}</span>
-                        </div>
-                      </div>
-                    </Card>
-                  </div>
-                </ContextMenu>
-              ))}
-            </div>
-          </div>
-
-          <DockedToolbar
-            elevated={false}
-            aria-label="Workspace tools"
-            items={[
-              {
-                id: "grid",
-                label: "Grid",
-                icon: <FolderIcon size={17} />,
-                selected: dockTool === "grid",
-                onClick: () => setDockTool("grid"),
-              },
-              {
-                id: "metrics",
-                label: "Metrics",
-                icon: <BarChartIcon size={17} />,
-                selected: dockTool === "metrics",
-                onClick: () => setDockTool("metrics"),
-              },
-              {
-                id: "audit",
-                label: "WCAG",
-                icon: <ShieldCheckIcon size={17} />,
-                selected: dockTool === "audit",
-                onClick: () => setDockTool("audit"),
-              },
-            ]}
-            primaryAction={
-              assets[0] ? (
-                <Button
-                  size="xs"
-                  variant="tonal"
-                  leadingIcon={<EditIcon size={13} />}
-                  onClick={() => openInspector(assets[0]!)}
-                >
-                  SideSheet
-                </Button>
-              ) : undefined
-            }
-          />
-        </NavigationSuite>
-      </Card>
-
-      <SideSheet
-        open={inspecting !== null}
-        onOpenChange={(open) => {
-          if (!open) setInspecting(null);
-        }}
-        title={inspecting?.title ?? resolve({ zh: "资产检查器", en: "Asset Inspector" })}
-        description={inspecting ? `${inspecting.group} · ${seedHex.toUpperCase()}` : undefined}
-        footer={
-          <Button
-            size="sm"
+          {resolve({ zh: "发送", en: "Send" })}
+        </SplitButton>
+        <IconToggleButton
+          variant="tonal"
+          icon={<BellIcon size={20} />}
+          aria-label={resolve({ zh: "通知", en: "Notifications" })}
+          defaultPressed
+        />
+        <IconButton
+          variant="outlined"
+          icon={<ShareIcon size={20} />}
+          aria-label={resolve({ zh: "分享", en: "Share" })}
+        />
+      </div>
+      <div className="home-row">
+        {(["xs", "sm", "md", "lg"] as const).map((size) => (
+          <IconButton
+            key={size}
+            size={size}
             variant="filled"
-            fullWidth
-            onClick={() => {
-              if (inspecting && inspectTitle.trim()) {
-                setAssets((prev) =>
-                  prev.map((a) =>
-                    a.id === inspecting.id ? { ...a, title: inspectTitle.trim() } : a,
-                  ),
-                );
-              }
-              setInspecting(null);
-              toast({
-                type: "success",
-                title: resolve({ zh: "资产属性已更新", en: "Asset properties updated" }),
-              });
-            }}
-          >
-            {ui.done}
-          </Button>
-        }
-      >
-        {inspecting ? (
-          <div className="m3e-bento-stack">
-            <TextField
-              label={resolve({ zh: "资产名称", en: "Asset Title" })}
-              value={inspectTitle}
-              onValueChange={setInspectTitle}
-              clearable
-            />
-            <Snippet code={`import { ${inspecting.shape} } from "m3eui/tokens";`} />
-            <Alert
-              severity="success"
-              variant="tonal"
-              title={resolve({
-                zh: "逻辑属性与 RTL 双向镜像已自动就绪",
-                en: "CSS logical properties & RTL mirroring active",
-              })}
-            />
-          </div>
-        ) : null}
-      </SideSheet>
-
-      <AlertDialog
-        open={confirmArchive !== null}
-        onOpenChange={(open) => {
-          if (!open) setConfirmArchive(null);
-        }}
-        title={resolve({ zh: "确认归档该资产？", en: "Archive this asset?" })}
-        description={
-          confirmArchive
-            ? resolve({
-                zh: `「${confirmArchive.title}」将从工作区移除，可通过通知栏一键撤销。`,
-                en: `"${confirmArchive.title}" will be archived with instant Undo support.`,
-              })
-            : undefined
-        }
-        actions={
-          <>
-            <AlertDialogClose
-              render={
-                <Button variant="text">{resolve({ zh: "取消", en: "Cancel" })}</Button>
-              }
-            />
-            <Button
-              variant="filled"
-              intent="danger"
-              onClick={() => {
-                const target = confirmArchive;
-                setConfirmArchive(null);
-                if (!target) return;
-                setAssets((prev) => prev.filter((a) => a.id !== target.id));
-                toast({
-                  title: resolve({
-                    zh: `已归档 ${target.title}`,
-                    en: `Archived ${target.title}`,
-                  }),
-                  actionLabel: resolve({ zh: "撤销", en: "Undo" }),
-                  onAction: () => {
-                    setAssets((prev) =>
-                      prev.some((a) => a.id === target.id) ? prev : [...prev, target],
-                    );
-                  },
-                });
-              }}
-            >
-              {resolve({ zh: "确认归档", en: "Archive" })}
-            </Button>
-          </>
-        }
-      />
-    </>
+            icon={<PlusIcon size={size === "lg" ? 26 : 20} />}
+            aria-label={`${resolve({ zh: "添加", en: "Add" })} ${size.toUpperCase()}`}
+          />
+        ))}
+        <ExtendedFAB icon={<EditIcon size={22} />} variant="tertiary">
+          {resolve({ zh: "新建", en: "Create" })}
+        </ExtendedFAB>
+      </div>
+    </Scene>
   );
 });
 
-const BentoRolloutCard = React.memo(function BentoRolloutCard() {
+const ControlsScene = React.memo(function ControlsScene() {
   const resolve = useCopyResolver();
-  const { toast } = useM3EToast();
-  const [rolloutWindow, setRolloutWindow] = React.useState<PlainDateRange>({
-    start: "2026-11-16",
-    end: "2026-11-20",
-  });
-  const [releaseTime, setReleaseTime] = React.useState("14:30");
-  const [canaryPct, setCanaryPct] = React.useState<number | null>(25);
-  const [region, setRegion] = React.useState("ap-east");
-  const [artifacts, setArtifacts] = React.useState<M3EUploadFileItem[]>([
-    {
-      id: "art-1",
-      name: "m3e-theme.css",
-      size: 14_280,
-      status: "completed",
-    },
-  ]);
+  const [volume, setVolume] = React.useState(64);
 
   return (
-    <Card variant="outlined" className="m3e-bento-card">
-      <div className="m3e-bento-card__head">
-        <strong>
-          {resolve({
-            zh: "灰度发布窗口与产物上传",
-            en: "Release Rollout & FileUpload",
-          })}
-        </strong>
-        <Link to="/components/file-upload" className="m3e-inline-more-link">
-          FileUpload →
-        </Link>
+    <Scene title={resolve({ zh: "输入与选择", en: "Inputs" })} to="/components/text-field">
+      <TextField
+        label={resolve({ zh: "昵称", en: "Display name" })}
+        defaultValue="Ada"
+      />
+      <Select
+        label={resolve({ zh: "语言", en: "Language" })}
+        defaultValue="en"
+        options={[
+          { value: "en", label: "English" },
+          { value: "zh", label: "简体中文" },
+          { value: "ja", label: "日本語" },
+        ]}
+      />
+      <Slider
+        label={resolve({ zh: "音量", en: "Volume" })}
+        value={volume}
+        onValueChange={setVolume}
+        showValue
+      />
+      <div className="home-controls__toggles">
+        <Switch label={resolve({ zh: "通知", en: "Notifications" })} defaultChecked showIcons />
+        <Checkbox label={resolve({ zh: "每周摘要", en: "Weekly digest" })} defaultChecked />
       </div>
-
-      <Form
-        onSubmit={(e) => {
-          e.preventDefault();
-          toast({
-            type: "success",
-            title: resolve({
-              zh: "灰度发布计划已生效",
-              en: "Canary rollout scheduled",
-            }),
-            description: `${region} · ${canaryPct ?? 0}% · ${releaseTime}`,
-          });
-        }}
+      <RadioGroup
+        orientation="horizontal"
+        defaultValue="comfortable"
+        aria-label={resolve({ zh: "密度", en: "Density" })}
       >
-        <Fieldset
-          variant="plain"
-          legend={resolve({ zh: "发布参数与构建包", en: "Rollout Gate & Bundle" })}
-        >
-          <div className="m3e-bento-stack">
-            <DateRangePickerField
-              label={resolve({ zh: "灰度日期窗口", en: "Rollout Window" })}
-              value={rolloutWindow}
-              onValueChange={setRolloutWindow}
-            />
-
-            <div className="m3e-bento-inputs-grid">
-              <TimePickerField
-                label={resolve({ zh: "变更时刻", en: "Window Time" })}
-                value={releaseTime}
-                onValueChange={setReleaseTime}
-              />
-
-              <NumberField
-                label={resolve({ zh: "金丝雀 (%)", en: "Canary (%)" })}
-                min={5}
-                max={100}
-                step={5}
-                value={canaryPct}
-                onValueChange={setCanaryPct}
-              />
-            </div>
-
-            <Select
-              label={resolve({ zh: "目标区域", en: "Edge Region" })}
-              value={region}
-              onValueChange={(v) => {
-                if (v) setRegion(v);
-              }}
-              options={[
-                { value: "ap-east", label: "Asia Pacific · Tokyo" },
-                { value: "us-west", label: "US West · Oregon" },
-                { value: "eu-central", label: "EU Central · Zurich" },
-              ]}
-            />
-
-            <FileUpload
-              accept=".css,.json,.tgz,.svg"
-              maxFiles={3}
-              value={artifacts}
-              onValueChange={setArtifacts}
-            />
-
-            <Button type="submit" variant="filled" size="sm" fullWidth>
-              {resolve({ zh: "提交灰度发布", en: "Schedule Rollout" })}
-            </Button>
-          </div>
-        </Fieldset>
-      </Form>
-    </Card>
+        <Radio value="comfortable" label={resolve({ zh: "舒适", en: "Comfortable" })} />
+        <Radio value="compact" label={resolve({ zh: "紧凑", en: "Compact" })} />
+      </RadioGroup>
+    </Scene>
   );
 });
 
-const BlocksDirectorySection = React.memo(function BlocksDirectorySection() {
+const OverlaysScene = React.memo(function OverlaysScene() {
+  const resolve = useCopyResolver();
+  const { toast } = useM3EToast();
+  const [pinned, setPinned] = React.useState(true);
+
+  return (
+    <Scene title={resolve({ zh: "菜单与浮层", en: "Menus & overlays" })} to="/components/menu">
+      <div className="home-row">
+        <DropdownMenu
+          trigger={
+            <Button variant="tonal" trailingIcon={<MoreGlyph />}>
+              {resolve({ zh: "菜单", en: "Menu" })}
+            </Button>
+          }
+          items={[
+            { id: "edit", label: resolve({ zh: "编辑", en: "Edit" }), icon: <EditIcon size={20} />, shortcut: "⌘E" },
+            { id: "share", label: resolve({ zh: "分享", en: "Share" }), icon: <ShareIcon size={20} /> },
+            { id: "download", label: resolve({ zh: "下载", en: "Download" }), icon: <DownloadIcon size={20} /> },
+            {
+              id: "pin",
+              separatorBefore: true,
+              label: resolve({ zh: "置顶", en: "Pinned" }),
+              checked: pinned,
+              onCheckedChange: setPinned,
+            },
+            {
+              id: "delete",
+              separatorBefore: true,
+              danger: true,
+              label: resolve({ zh: "删除", en: "Delete" }),
+              icon: <TrashIcon size={20} />,
+            },
+          ]}
+        />
+        <Dialog
+          trigger={<Button variant="outlined">{resolve({ zh: "对话框", en: "Dialog" })}</Button>}
+          icon={<TrashIcon size={24} />}
+          title={resolve({ zh: "删除这封邮件？", en: "Delete this message?" })}
+          description={resolve({
+            zh: "删除后可在 30 天内从回收站恢复。",
+            en: "You can restore it from Trash within 30 days.",
+          })}
+          actions={
+            <>
+              <DialogClose
+                render={
+                  <Button variant="text">
+                    {resolve({ zh: "取消", en: "Cancel" })}
+                  </Button>
+                }
+              />
+              <DialogClose
+                render={
+                  <Button variant="filled">
+                    {resolve({ zh: "删除", en: "Delete" })}
+                  </Button>
+                }
+              />
+            </>
+          }
+        />
+        <BottomSheet
+          trigger={<Button variant="outlined">{resolve({ zh: "底部面板", en: "Sheet" })}</Button>}
+          title={resolve({ zh: "分享到", en: "Share to" })}
+        >
+          <SegmentedList>
+            <ListItem interactive leading={<UsersIcon size={22} />} headline={resolve({ zh: "团队", en: "Team" })} />
+            <ListItem interactive leading={<SendIcon size={22} />} headline={resolve({ zh: "邮件", en: "Email" })} />
+            <ListItem interactive leading={<FolderIcon size={22} />} headline={resolve({ zh: "保存到文件", en: "Save to files" })} />
+          </SegmentedList>
+        </BottomSheet>
+        <Button
+          variant="outlined"
+          onClick={() =>
+            toast({
+              type: "success",
+              title: resolve({ zh: "已归档", en: "Archived" }),
+            })
+          }
+        >
+          {resolve({ zh: "消息条", en: "Snackbar" })}
+        </Button>
+      </div>
+    </Scene>
+  );
+});
+
+const LoadingScene = React.memo(function LoadingScene() {
+  const resolve = useCopyResolver();
+  return (
+    <Scene title={resolve({ zh: "加载", en: "Loading" })} to="/components/loading-indicator">
+      <div className="home-loading">
+        <LoadingIndicator size={56} />
+        <LoadingIndicator contained size={56} />
+        <CircularWavyProgressIndicator
+          value={72}
+          size={56}
+          aria-label={resolve({ zh: "同步进度", en: "Sync progress" })}
+        />
+        <div className="home-loading__lines">
+          <LinearProgressIndicator
+            value={72}
+            aria-label={resolve({ zh: "上传进度", en: "Upload progress" })}
+          />
+          <Skeleton variant="text" width="80%" />
+          <Skeleton variant="text" width="56%" />
+        </div>
+      </div>
+    </Scene>
+  );
+});
+
+const Directory = React.memo(function Directory() {
+  const ui = usePlaygroundStrings();
+  return (
+    <section className="home-directory">
+      <h2 className="home-heading">
+        {ui.navComponents}
+        <span>{COMPONENT_CATALOG.length}</span>
+      </h2>
+      <div className="home-directory__grid">
+        {COMPONENT_CATEGORY_ORDER.map((cat) => (
+          <div key={cat} className="home-directory__group">
+            <h3>{ui.componentCategories[cat]}</h3>
+            <ul>
+              {COMPONENT_CATALOG_BY_CATEGORY[cat].map((doc) => (
+                <li key={doc.slug}>
+                  <Link to={`/components/${doc.slug}`}>{doc.title}</Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+});
+
+const Blocks = React.memo(function Blocks() {
   const ui = usePlaygroundStrings();
   const resolve = useCopyResolver();
   const navigate = useNavigate();
-  const { direction } = useM3E();
-  const inlineArrow = direction === "rtl" ? "←" : "→";
+  const { direction } = useM3EI18n();
 
   return (
-    <section className="m3e-home-directory">
-      <div className="m3e-home-directory__head">
-        <h2 className="m3e-section-heading" style={{ margin: 0 }}>
-          Blocks ({BLOCKS_REGISTRY.length})
-        </h2>
-        <Button
-          variant="tonal"
-          size="sm"
-          onClick={() => navigate("/blocks")}
-        >
-          {ui.browseBlocksBtn} {inlineArrow}
+    <section className="home-directory">
+      <h2 className="home-heading">
+        Blocks
+        <span>{BLOCK_CATALOG.length}</span>
+        <Button variant="text" size="sm" onClick={() => navigate("/blocks")}>
+          {ui.browseBlocksBtn} {direction === "rtl" ? "←" : "→"}
         </Button>
-      </div>
-
-      <div className="m3e-home-blocks-grid">
-        {BLOCKS_REGISTRY.map((blk) => (
+      </h2>
+      <div className="home-blocks">
+        {BLOCK_CATALOG.map((blk) => (
           <Card
             key={blk.slug}
-            variant="outlined"
+            variant="filled"
             interactive
-            className="m3e-home-block-card"
             onClick={() => navigate(`/blocks#${blk.slug}`)}
           >
-            <div className="m3e-home-block-card__top">
-              <Chip tone="primary" size="sm">
-                {ui.blockCategories[blk.category]}
-              </Chip>
-              <code className="m3e-home-block-card__slug">{blk.slug}</code>
-            </div>
-            <strong className="m3e-home-block-card__title">
-              {resolve(blk.title)}
-            </strong>
-            <p className="m3e-home-block-card__desc">
-              {resolve(blk.description)}
-            </p>
+            <Chip tone="primary" size="sm">
+              {ui.blockCategories[blk.category]}
+            </Chip>
+            <strong className="home-blocks__title">{resolve(blk.title)}</strong>
           </Card>
         ))}
       </div>
@@ -1379,87 +740,24 @@ const BlocksDirectorySection = React.memo(function BlocksDirectorySection() {
   );
 });
 
-const ComponentsDirectorySection = React.memo(function ComponentsDirectorySection() {
-  const ui = usePlaygroundStrings();
-  const navigate = useNavigate();
-  const { direction } = useM3E();
-  const inlineArrow = direction === "rtl" ? "←" : "→";
-
-  return (
-    <section className="m3e-home-directory">
-      <div className="m3e-home-directory__head">
-        <h2 className="m3e-section-heading" style={{ margin: 0 }}>
-          {ui.navComponents} ({ALL_COMPONENT_DOCS.length})
-        </h2>
-        <Button
-          variant="tonal"
-          size="sm"
-          onClick={() => navigate("/components/button")}
-        >
-          {ui.browseComponentsBtn} {inlineArrow}
-        </Button>
-      </div>
-
-      <div className="m3e-category-cards-grid">
-        {COMPONENT_CATEGORY_ORDER.map((cat) => {
-          const list = COMPONENTS_BY_CATEGORY[cat];
-          return (
-            <Card key={cat} variant="outlined" className="m3e-category-card">
-              <div className="m3e-category-card__head">
-                <strong>{ui.componentCategories[cat]}</strong>
-                <Chip tone="secondary" size="sm">
-                  {list.length}
-                </Chip>
-              </div>
-              <div className="m3e-category-card__pills">
-                {list.map((doc) => (
-                  <Button
-                    key={doc.slug}
-                    size="xs"
-                    variant="outlined"
-                    shape="square"
-                    render={<Link to={`/components/${doc.slug}`} />}
-                  >
-                    <span className="m3e-comp-pill__inner">
-                      <span>{doc.title}</span>
-                      {doc.isNew ? (
-                        <Chip tone="primary" variant="solid" size="sm">
-                          NEW
-                        </Chip>
-                      ) : null}
-                    </span>
-                  </Button>
-                ))}
-              </div>
-            </Card>
-          );
-        })}
-      </div>
-    </section>
-  );
-});
-
 export function HomePage() {
-  const { openStudio, openCommandPalette } = useOutletContext<SiteOutletContext>();
+  const { openStudio, openCommandPalette } =
+    useOutletContext<SiteOutletContext>();
 
   return (
-    <div className="m3e-home-container">
-      <HeroBannerSection
-        openStudio={openStudio}
-        openCommandPalette={openCommandPalette}
-      />
-
-      <section aria-label="Interactive Composite Showcase" className="m3e-bento-grid">
-        <BentoThemeStudioCard />
-        <BentoPasskeyCard />
-        <BentoDataExplorerCard />
-        <BentoWavyMediaCard />
-        <BentoWorkspaceCard />
-        <BentoRolloutCard />
-      </section>
-
-      <BlocksDirectorySection />
-      <ComponentsDirectorySection />
+    <div className="home">
+      <Hero openCommandPalette={openCommandPalette} />
+      <div className="home-stage">
+        <PhoneScene />
+        <PlayerScene />
+        <ThemeScene openStudio={openStudio} />
+        <ActionsScene />
+        <ControlsScene />
+        <OverlaysScene />
+        <LoadingScene />
+      </div>
+      <Directory />
+      <Blocks />
     </div>
   );
 }

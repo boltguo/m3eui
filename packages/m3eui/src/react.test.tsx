@@ -3,7 +3,8 @@ import { extname, join, resolve } from "node:path";
 import * as React from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { generateM3EThemeTokens } from "./tokens/index.js";
 import {
   Accordion,
   Alert,
@@ -62,7 +63,7 @@ import {
   MaterialShapeView,
   Menubar,
   Meter,
-  ModalDatePicker,
+  DatePickerDialog,
   MultiCombobox,
   MultiSelect,
   NavigationDrawer,
@@ -78,7 +79,7 @@ import {
   SearchBar,
   SearchView,
   SegmentedList,
-  SegmentedListItem,
+  ListItem,
   Select,
   SideSheet,
   Skeleton,
@@ -824,8 +825,8 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
             Compose
           </ExtendedFAB>
           <SegmentedList>
-            <SegmentedListItem selected headline="First item" supportingText="Sub" />
-            <SegmentedListItem headline="Second item" />
+            <ListItem selected headline="First item" supportingText="Sub" />
+            <ListItem headline="Second item" />
           </SegmentedList>
           <MaterialShapeView
             shape="cookie9Sided"
@@ -902,6 +903,74 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
         `button[aria-label="${jaJPMessages["sheet.close"]}"]`,
       ),
     ).not.toBeNull();
+  });
+
+  it("restores default values on form reset", async () => {
+    act(() => {
+      root.render(
+        <PausedWrapper>
+          <form id="reset-form">
+            <Checkbox name="cb" defaultChecked aria-label="Check" />
+            <Switch name="sw" defaultChecked aria-label="Switch" />
+          </form>
+        </PausedWrapper>,
+      );
+    });
+    const form = container.querySelector<HTMLFormElement>("#reset-form")!;
+    const cb = container.querySelector<HTMLElement>('[role="checkbox"]')!;
+    const sw = container.querySelector<HTMLElement>('[role="switch"]')!;
+    act(() => {
+      cb.click();
+      sw.click();
+    });
+    expect(cb.getAttribute("aria-checked")).toBe("false");
+    expect(sw.getAttribute("aria-checked")).toBe("false");
+    await act(async () => {
+      form.reset();
+    });
+    expect(container.querySelector('[role="checkbox"]')!.getAttribute("aria-checked")).toBe("true");
+    expect(container.querySelector('[role="switch"]')!.getAttribute("aria-checked")).toBe("true");
+  });
+
+  it("keeps empty, out-of-range, and future-bounded field values consistent", () => {
+    act(() => {
+      root.render(
+        <PausedWrapper>
+          <TimePickerField name="t" label="Time" defaultValue="" />
+          <Slider name="s" aria-label="Level" defaultValue={80} max={50} />
+          <DockedDatePicker defaultValue="2026-01-15" minDate="2026-04-01" />
+        </PausedWrapper>,
+      );
+    });
+    expect(container.querySelector<HTMLInputElement>('input[name="t"]')!.value).toBe("");
+    expect(container.querySelector<HTMLInputElement>('input[name="s"]')!.value).toBe("50");
+    expect(container.querySelector<HTMLInputElement>('.m3e-slider input[type="range"]')?.value).toBe("50");
+    const navButtons = container.querySelectorAll<HTMLButtonElement>(".m3e-date-picker__nav-btn");
+    expect(navButtons[0]!.disabled).toBe(true);
+    expect(navButtons[1]!.disabled).toBe(false);
+  });
+
+  it("stacks a Dialog opened inside a Sheet above the Sheet", () => {
+    act(() => {
+      root.render(
+        <PausedWrapper>
+          <BottomSheet open title="Sheet">
+            <Dialog open title="Confirm">
+              Body
+            </Dialog>
+          </BottomSheet>
+        </PausedWrapper>,
+      );
+    });
+
+    const sheet = document.body.querySelector(".m3e-sheet__viewport");
+    const dialog = document.body.querySelector(".m3e-dialog__viewport");
+    expect(sheet).not.toBeNull();
+    expect(dialog).not.toBeNull();
+    expect(
+      sheet!.compareDocumentPosition(dialog!) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(sheet!.contains(dialog)).toBe(false);
   });
 
   it("restores Slider active handle width (2px -> 4px) immediately on global window pointerup without requiring blur", () => {
@@ -1141,7 +1210,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     });
 
     const dialOptions = container.querySelectorAll(
-      '.m3e-time-picker__dial [role="option"]',
+      '.m3e-time-picker__dial button.m3e-time-picker__dial-num',
     );
     expect(dialOptions.length).toBe(24);
 
@@ -1682,7 +1751,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
 
     act(() => {
       root.render(
-        <M3EProvider initialSpecVersion="2025" syncDocumentRoot={false}>
+        <M3EProvider themeEngine={generateM3EThemeTokens} syncDocumentRoot={false}>
           <div
             ref={(node) => {
               scrollBoxRef.current = node;
@@ -1799,7 +1868,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
 
     // CLDR default hourCycle: ar-SA -> 12h (12 dial options + LTR digit container), zh-CN -> 24h (24 dial options)
     expect(
-      arScope?.querySelectorAll('.m3e-time-picker__dial [role="option"]').length,
+      arScope?.querySelectorAll('.m3e-time-picker__dial button.m3e-time-picker__dial-num').length,
     ).toBe(12);
     expect(
       arScope
@@ -1807,7 +1876,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
         ?.getAttribute("dir"),
     ).toBe("ltr");
     expect(
-      zhScope?.querySelectorAll('.m3e-time-picker__dial [role="option"]').length,
+      zhScope?.querySelectorAll('.m3e-time-picker__dial button.m3e-time-picker__dial-num').length,
     ).toBe(24);
 
     // Carousel localized aria-roledescription + RTL chevron mirroring
@@ -2173,7 +2242,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
       '.m3e-search-view[data-mode="docked"]',
     );
     expect(dockedSearchView?.querySelector('form[role="search"]')).not.toBeNull();
-    const recentList = dockedSearchView?.querySelector('ul[role="list"]');
+    const recentList = dockedSearchView?.querySelector('ul[role="listbox"]');
     expect(recentList).not.toBeNull();
     const clearRecentBtn = dockedSearchView?.querySelector<HTMLButtonElement>(
       ".m3e-search-view__clear-recent",
@@ -2276,7 +2345,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
               label="发布时间"
               defaultValue={{ date: "2026-06-15", time: "14:30" }}
             />
-            <ModalDatePicker
+            <DatePickerDialog
               open
               defaultValue="2026-06-15"
               onValueChange={(val) => {
@@ -2331,7 +2400,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     );
     expect(disabledDays.length).toBeGreaterThan(10);
 
-    // ModalDatePicker mode toggle & confirm
+    // DatePickerDialog mode toggle & confirm
     const modalPopup = document.body.querySelector(".m3e-modal-date-picker");
     expect(modalPopup).not.toBeNull();
     const confirmBtn = Array.from(
@@ -2344,6 +2413,9 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
   });
 
   it("renders retained Web utility components: FileUpload, Kbd/CopyButton/Snippet, and HCT ColorPicker", async () => {
+    const platformSpy = vi
+      .spyOn(navigator, "platform", "get")
+      .mockReturnValue("MacIntel");
     let copiedSnippet = "";
     let pickedHex = "#6750A4";
     let uploadItems = [
@@ -2395,6 +2467,17 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     // Kbd & Snippet
     const kbdText = container.querySelector("kbd.m3e-kbd")?.textContent;
     expect(kbdText).toBe("⌘⇧P");
+    platformSpy.mockReturnValue("Linux x86_64");
+    const linuxHost = document.createElement("div");
+    document.body.appendChild(linuxHost);
+    const linuxRoot = createRoot(linuxHost);
+    await act(async () => {
+      linuxRoot.render(<Kbd keys={["mod", "shift", "p"]} />);
+    });
+    expect(linuxHost.querySelector("kbd.m3e-kbd")?.textContent).toBe("Ctrl⇧P");
+    act(() => linuxRoot.unmount());
+    linuxHost.remove();
+    platformSpy.mockRestore();
     const snippetCopyBtn = container.querySelector<HTMLButtonElement>(
       ".m3e-snippet .m3e-copy-button",
     );

@@ -382,24 +382,11 @@ export function FileUpload({
       onFilesRejected?.(nextErrors);
     }
     if (didAcceptAny) {
-      if (isSingleMode) {
-        for (const prev of items) {
-          if (prev.previewUrl && createdUrlsRef.current.has(prev.previewUrl)) {
-            URL.revokeObjectURL(prev.previewUrl);
-            createdUrlsRef.current.delete(prev.previewUrl);
-          }
-        }
-      }
       commitItems(nextItems);
     }
   };
 
   const handleRemove = (id: string) => {
-    const target = items.find((i) => i.id === id);
-    if (target?.previewUrl && createdUrlsRef.current.has(target.previewUrl)) {
-      URL.revokeObjectURL(target.previewUrl);
-      createdUrlsRef.current.delete(target.previewUrl);
-    }
     commitItems(items.filter((i) => i.id !== id));
   };
 

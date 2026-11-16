@@ -71,7 +71,7 @@ export function serializeDesignSpecToMarkdown(
   lines.push("## 2. Platform-Agnostic Geometry & Motion Contract");
   lines.push("");
   lines.push(
-    "_All spatial metrics are 1:1 logical pixels (`px` on Web, `dp` on Android/Compose, `pt` on iOS/SwiftUI, `lp` on Flutter)._",
+    "_Units: logical pixels (`px` on Web, `dp` on Android/Compose, `pt` on iOS/SwiftUI, `lp` on Flutter)._",
   );
   lines.push("");
   for (const table of spec.geometryAndMotionTables) {

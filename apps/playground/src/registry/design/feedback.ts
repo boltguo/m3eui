@@ -29,7 +29,7 @@ export const FEEDBACK_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>
         id: "alert-geometry",
         title: "Inline Callout Geometry & Typography",
         caption:
-          "All metrics in 1:1 logical pixels (px / dp / pt). Corner tuples follow [topLeft, topRight, bottomRight, bottomLeft].",
+          "Units: px (= dp / pt). Corner tuples follow [topLeft, topRight, bottomRight, bottomLeft].",
         columns: [
           "Sub-element",
           "Dimensions / Spacing",
@@ -182,7 +182,7 @@ export const FEEDBACK_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>
         id: "dialog-geometry",
         title: "Modal Container & Slot Geometry (`DIALOG_TOKENS`)",
         caption:
-          "All metrics in 1:1 logical pixels (px / dp / pt). Corner tuples follow [topLeft, topRight, bottomRight, bottomLeft].",
+          "Units: px (= dp / pt). Corner tuples follow [topLeft, topRight, bottomRight, bottomLeft].",
         columns: [
           "Element",
           "Width / Size",
@@ -335,8 +335,8 @@ export const FEEDBACK_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>
         body: "`SideSheet` defaults to logical `side=\"end\"` rather than hardcoded `\"right\"`. `Sheet` reads `useM3EDirection()` (`ltr` vs. `rtl`) to resolve both physical anchor placement and `@base-ui/react/drawer` `swipeDirection`: in LTR, `side=\"end\"` docks on the right (`[28, 0, 0, 28]`) and swipes right to dismiss; in RTL, it docks on the left (`[0, 28, 28, 0]`) and swipes left to dismiss.",
       },
       {
-        title: "1:1 Gesture Tracking With Live Scrim Progress",
-        body: "While the user drags a `BottomSheet` (`32×4px` drag handle) or `SideSheet` (`[data-swiping]`), CSS transitions temporarily disengage (`transition: none`) so pointer translation tracks 1:1 with zero spring lag, while the backdrop scrim modulates continuously via `opacity: calc(1 - var(--drawer-swipe-progress, 0))` before handing off on release to `defaultSpatial` (`ζ = 0.8, k = 380`).",
+        title: "Direct Gesture Tracking With Live Scrim Progress",
+        body: "While the user drags a `BottomSheet` (`32×4px` drag handle) or `SideSheet` (`[data-swiping]`), CSS transitions temporarily disengage (`transition: none`) so pointer translation follows zero spring lag, while the backdrop scrim modulates continuously via `opacity: calc(1 - var(--drawer-swipe-progress, 0))` before handing off on release to `defaultSpatial` (`ζ = 0.8, k = 380`).",
       },
     ],
     geometryAndMotionTables: [
@@ -344,7 +344,7 @@ export const FEEDBACK_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>
         id: "sheet-geometry",
         title: "BottomSheet & SideSheet Geometry (`SHEET_TOKENS`)",
         caption:
-          "All metrics in 1:1 logical pixels (px / dp / pt). Corner tuples follow [topLeft, topRight, bottomRight, bottomLeft].",
+          "Units: px (= dp / pt). Corner tuples follow [topLeft, topRight, bottomRight, bottomLeft].",
         columns: [
           "Variant & Logical Side",
           "Dimensions",
@@ -407,7 +407,7 @@ export const FEEDBACK_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>
           [
             "Active Pointer Drag (`[data-swiping]`)",
             "`translate: var(--drawer-swipe-movement-x) var(--drawer-swipe-movement-y)`",
-            "`transition: none` (direct 1:1 pointer tracking)",
+            "`transition: none` (direct pointer tracking)",
           ],
           [
             "Backdrop Scrim (`42% scrim`)",
@@ -498,7 +498,7 @@ export const FEEDBACK_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>
         id: "toast-geometry",
         title: "Snackbar / Toast Container & Viewport Geometry (`SNACKBAR_TOKENS`)",
         caption:
-          "All metrics in 1:1 logical pixels (px / dp / pt). Corner tuples follow [topLeft, topRight, bottomRight, bottomLeft].",
+          "Units: px (= dp / pt). Corner tuples follow [topLeft, topRight, bottomRight, bottomLeft].",
         columns: [
           "Element",
           "Dimensions / Constraints",
@@ -618,10 +618,10 @@ export const FEEDBACK_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>
     ],
   },
 
-  "progress-meter": {
+  "progress-indicator": {
     provenance: "official-m3e",
     provenanceSummary:
-      "Implements the complete Material 3 Expressive progress and loading family—`LinearProgressIndicator`, `CircularProgressIndicator`, `LinearWavyProgressIndicator`, `CircularWavyProgressIndicator`, `LoadingIndicator`, and `ContainedLoadingIndicator`—directly ported from AOSP `ProgressIndicator.kt`, `WavyProgressIndicator.kt`, `LoadingIndicator.kt`, and `MaterialShapes.kt`, paired with a semantic web `Meter` (`@base-ui/react/meter`) adaptation.",
+      "Implements the complete Material 3 Expressive progress and loading family—`LinearProgressIndicator`, `CircularProgressIndicator`, `LinearWavyProgressIndicator`, `CircularWavyProgressIndicator`, `LoadingIndicator`, and `ContainedLoadingIndicator`—directly ported from AOSP `ProgressIndicator.kt`, `LinearWavyProgressIndicator.kt`, `LoadingIndicator.kt`, and `MaterialShapes.kt`, paired with a semantic web `Meter` (`@base-ui/react/meter`) adaptation.",
     tokenSources: [
       "PROGRESS_TOKENS",
       "WAVY_PROGRESS_TOKENS",
@@ -635,7 +635,7 @@ export const FEEDBACK_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>
     ],
     aospSources: [
       "ProgressIndicator.kt",
-      "WavyProgressIndicator.kt",
+      "LinearWavyProgressIndicator.kt",
       "LoadingIndicator.kt",
       "MaterialShapes.kt",
       "ProgressIndicatorTokens.kt",
@@ -659,7 +659,7 @@ export const FEEDBACK_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>
         id: "progress-meter-geometry",
         title: "Indicator, Wavy, Morphing & Meter Geometry",
         caption:
-          "All metrics in 1:1 logical pixels (px / dp / pt). Corner tuples follow [topLeft, topRight, bottomRight, bottomLeft].",
+          "Units: px (= dp / pt). Corner tuples follow [topLeft, topRight, bottomRight, bottomLeft].",
         columns: [
           "Component",
           "Dimensions / Stroke",
@@ -785,7 +785,7 @@ export const FEEDBACK_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>
         kind: "m3-spec",
       },
       {
-        label: "AOSP Jetpack Compose — WavyProgressIndicator.kt",
+        label: "AOSP Jetpack Compose — LinearWavyProgressIndicator.kt",
         url: "https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/WavyProgressIndicator.kt",
         kind: "aosp-source",
       },
@@ -830,7 +830,7 @@ export const FEEDBACK_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>
         id: "tooltip-geometry",
         title: "Plain & Rich Tooltip Geometry (`TOOLTIP_TOKENS`)",
         caption:
-          "All metrics in 1:1 logical pixels (px / dp / pt). Corner tuples follow [topLeft, topRight, bottomRight, bottomLeft].",
+          "Units: px (= dp / pt). Corner tuples follow [topLeft, topRight, bottomRight, bottomLeft].",
         columns: [
           "Variant",
           "Max Width & Offset",

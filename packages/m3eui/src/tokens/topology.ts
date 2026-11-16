@@ -601,12 +601,13 @@ export function resolveSplitButtonGeometry(
 export const SEGMENTED_MENU_TOKENS = {
   containerRadius: SHAPE_CORNER_TOKENS.large,
   containerPadding: 4,
-  itemGap: 2,
+  groupGap: 2,
+  groupInnerRadius: SHAPE_CORNER_TOKENS.small,
+  itemGap: 0,
   itemOuterRadius: SHAPE_CORNER_TOKENS.medium,
   itemInnerRadius: SHAPE_CORNER_TOKENS.extraSmall,
-  itemPressedRadius: SHAPE_CORNER_TOKENS.small,
   itemHeight: 44,
-  itemPaddingInline: 14,
+  itemPaddingInline: 12,
 } as const;
 
 export function resolveSegmentedMenuItemCorners(input: {
@@ -614,29 +615,18 @@ export function resolveSegmentedMenuItemCorners(input: {
   readonly count: number;
   readonly isFirstInGroup?: boolean;
   readonly isLastInGroup?: boolean;
-  readonly isHighlighted?: boolean;
   readonly isSelected?: boolean;
-  readonly isPressed?: boolean;
 }): CornerTuple {
   const {
     index,
     count,
     isFirstInGroup = index <= 0,
     isLastInGroup = index >= count - 1,
-    isHighlighted = false,
     isSelected = false,
-    isPressed = false,
   } = input;
-  const {
-    itemOuterRadius: outer,
-    itemInnerRadius: inner,
-    itemPressedRadius: pressed,
-  } = SEGMENTED_MENU_TOKENS;
+  const { itemOuterRadius: outer, itemInnerRadius: inner } = SEGMENTED_MENU_TOKENS;
 
-  if (isPressed) {
-    return [pressed, pressed, pressed, pressed];
-  }
-  if (count <= 1 || (isFirstInGroup && isLastInGroup) || isHighlighted || isSelected) {
+  if (count <= 1 || (isFirstInGroup && isLastInGroup) || isSelected) {
     return [outer, outer, outer, outer];
   }
   const topR = isFirstInGroup ? outer : inner;
@@ -889,7 +879,7 @@ export const DIALOG_TOKENS = {
   containerRadius: SHAPE_CORNER_TOKENS.extraLarge,
   padding: 24,
   minWidth: 280,
-  maxWidth: 520,
+  maxWidth: 560,
   iconSize: 24,
   actionGap: 8,
 } as const;
@@ -904,12 +894,6 @@ export const SELECT_TOKENS = {
   filledBottomRadius: SHAPE_CORNER_TOKENS.none,
   outsideLabelRadius: SHAPE_CORNER_TOKENS.medium,
   paddingInline: 16,
-  popupRadius: SHAPE_CORNER_TOKENS.large,
-  popupPadding: 6,
-  itemRadius: 10,
-  itemSelectedRadius: SHAPE_CORNER_TOKENS.medium,
-  itemPressedRadius: 6,
-  itemGap: 2,
 } as const;
 
 export const TOOLTIP_TOKENS = {
@@ -925,7 +909,7 @@ export const TOOLTIP_TOKENS = {
 export const SNACKBAR_TOKENS = {
   containerRadius: SHAPE_CORNER_TOKENS.extraSmall,
   minHeight: 48,
-  maxWidth: 420,
+  maxWidth: 600,
   paddingBlock: 12,
   paddingInline: 16,
   viewportGap: 10,
@@ -1025,7 +1009,7 @@ export const BADGE_TOKENS = {
 } as const;
 
 export const CARD_TOKENS = {
-  restRadius: SHAPE_CORNER_TOKENS.large,
+  restRadius: SHAPE_CORNER_TOKENS.medium,
   hoverRadius: SHAPE_CORNER_TOKENS.largeIncreased,
   pressedRadius: SHAPE_CORNER_TOKENS.medium,
   padding: 20,
@@ -1142,7 +1126,7 @@ export const EXTENDED_FAB_SPECS: Record<ExtendedFabSize, ExtendedFabSpec> = {
     pressedRadius: 18,
     iconSize: 32,
     paddingInline: 28,
-    iconGap: 16,
+    iconGap: 20,
     fontSize: 24,
   },
 };
@@ -2396,21 +2380,20 @@ export function flipCornersHorizontal(corners: CornerTuple): CornerTuple {
 
 export const TIME_PICKER_TOKENS = {
   containerRadius: SHAPE_CORNER_TOKENS.extraLarge,
-  padding: 22,
-  dialSize: 248,
-  outerRingRadius: 92,
-  innerRingRadius: 58,
+  padding: 24,
+  dialSize: 256,
+  outerRingRadius: 101,
+  innerRingRadius: 69,
   centerPinSize: 8,
-  selectorHandleSize: 42,
+  selectorHandleSize: 48,
   selectorTrackWidth: 2,
-  fieldWidth: 88,
-  fieldHeight: 68,
-  fieldRadius: SHAPE_CORNER_TOKENS.medium,
-  fieldPressedRadius: SHAPE_CORNER_TOKENS.small,
+  fieldWidth: 96,
+  fieldHeight: 80,
+  fieldRadius: SHAPE_CORNER_TOKENS.small,
+  fieldPressedRadius: SHAPE_CORNER_TOKENS.extraSmall,
   periodWidth: 52,
-  periodHeight: 68,
-  periodOuterRadius: SHAPE_CORNER_TOKENS.medium,
-  periodInnerRadius: SHAPE_CORNER_TOKENS.extraSmall,
+  periodHeight: 80,
+  periodRadius: SHAPE_CORNER_TOKENS.small,
 } as const;
 
 export interface ClockHandGeometry {
@@ -2463,26 +2446,26 @@ export function resolveClockHandGeometry(input: {
 }
 
 export const WIDE_NAVIGATION_RAIL_TOKENS = {
-  collapsedWidth: 84,
-  expandedWidth: 228,
-  itemHeight: 48,
-  itemRadius: 24,
+  collapsedWidth: 96,
+  expandedWidth: 220,
+  itemHeight: 56,
+  itemRadius: 28,
   itemPressedRadius: 12,
-  padding: 12,
+  padding: 20,
 } as const;
 
 export const NAVIGATION_DRAWER_TOKENS = {
   width: 280,
-  cornerRadius: SHAPE_CORNER_TOKENS.extraLarge,
-  itemHeight: 48,
-  itemRadius: 24,
+  cornerRadius: SHAPE_CORNER_TOKENS.large,
+  itemHeight: 56,
+  itemRadius: 28,
   itemPressedRadius: 12,
   padding: 12,
 } as const;
 
 export const NAVIGATION_SUITE_TOKENS = {
-  compactMaxWidth: 640,
-  mediumMaxWidth: 1024,
+  compactMaxWidth: 600,
+  mediumMaxWidth: 840,
 } as const;
 
 export const MENUBAR_TOKENS = {
@@ -2632,7 +2615,7 @@ export const PULL_TO_REFRESH_TOKENS = {
 
 export const VIBRANT_MENU_TOKENS = {
   containerPadding: 4,
-  groupGap: 4,
+  groupGap: 2,
   groupRadius: SHAPE_CORNER_TOKENS.large,
   itemOuterRadius: SHAPE_CORNER_TOKENS.medium,
   itemInnerRadius: SHAPE_CORNER_TOKENS.extraSmall,

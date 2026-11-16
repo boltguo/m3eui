@@ -34,7 +34,7 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
     geometryAndMotionTables: [
       {
         id: "card-surface-and-corner-matrix",
-        title: "Card Variant Surface & Corner Physics Matrix (1:1 px / dp / pt)",
+        title: "Card Variant Surface & Corner Physics Matrix (px = dp / pt)",
         caption: "Surface roles, border strokes, elevation, and corner radii from CARD_TOKENS",
         columns: [
           "Variant",
@@ -313,7 +313,7 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
       {
         target: "Jetpack Compose",
         guidance:
-          "Use SegmentedListItem with ListItemDefaults.segmentedShapes(index, count), overriding hoveredShape to match resting shape on pointer-capable Android/Desktop targets and verticalArrangement = Arrangement.spacedBy(2.dp).",
+          "Use ListItem with ListItemDefaults.segmentedShapes(index, count), overriding hoveredShape to match resting shape on pointer-capable Android/Desktop targets and verticalArrangement = Arrangement.spacedBy(2.dp).",
       },
       {
         target: "SwiftUI",
@@ -379,7 +379,7 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
       {
         id: "chip-family-matrix",
         title: "Chip Variant Geometry & Corner State Matrix (CHIP_TOKENS)",
-        caption: "All values in 1:1 logical pixels (px / dp / pt)",
+        caption: "Units: px (= dp / pt)",
         columns: [
           "Component",
           "Height",
@@ -944,11 +944,15 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
     inspirationAndRationale: [
       {
         title: "Why Pre-Normalized [0..1] Cubic Béziers Beat Ad-Hoc SVG Paths",
-        body: "Hand-drawing rounded stars or clovers separately in SwiftUI, Flutter, and Web leads to mismatched corner smoothing, winding inversions, and twisted morphs. m3eui ports the exact androidx.graphics.shapes RoundedPolygon tangent-rounding math into [0..1] × [0..1] space centered at (0.5, 0.5) with clockwise winding and 3-o'clock (0 rad) angular origin.",
+        body: "Hand-drawing rounded stars or clovers separately in SwiftUI, Flutter, and Web leads to mismatched corner smoothing, winding inversions, and twisted morphs. m3eui derives the shapes from androidx.graphics.shapes RoundedPolygon rounding into [0..1] × [0..1] space centered at (0.5, 0.5) with clockwise winding and 3-o'clock (0 rad) angular origin.",
       },
       {
         title: "1,225-Pair Arc-Length De Casteljau Subdivision (getShapeMorphPair)",
         body: "To morph cleanly between any two of the 35 shapes (e.g., 4-edge square → 12-lobe cookie12Sided), getShapeMorphPair computes the union of normalized cumulative arc-length cut points and subdivides both cubic loops via exact De Casteljau splitting so startCubics.length === endCubics.length. Every platform then performs pure linear 8-tuple interpolation C_k(p) = C_start + p × (C_end - C_start).",
+      },
+      {
+        title: "Differences From AOSP",
+        body: "Shape normalization, the oval vertex count, and how morph curves are subdivided differ from androidx.graphics.shapes. Outlines and morphs are close to Compose, not identical.",
       },
       {
         title: "Zero-Re-Render Spring Path Mutation & Overshoot Headroom",
@@ -959,7 +963,7 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
       {
         id: "material-shapes-catalog",
         title: "Official 35 MaterialShapes Geometric Taxonomy (M3E_ALL_SHAPE_NAMES)",
-        caption: "100% parity with AOSP androidx.compose.material3.MaterialShapes",
+        caption: "Same 35 names as androidx.compose.material3.MaterialShapes",
         columns: ["Family", "Count", "Canonical Shape Names (M3EShapeName)"],
         rows: [
           [

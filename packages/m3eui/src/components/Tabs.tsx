@@ -4,6 +4,7 @@ import * as React from "react";
 import { Tabs as BaseTabs } from "@base-ui/react/tabs";
 import { TABS_TOKENS } from "../tokens/index.js";
 import { usePressHoldState } from "../hooks/useM3ESpring.js";
+import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
 
 export type TabsVariant = "primary" | "secondary";
 
@@ -105,7 +106,7 @@ export function TabsList({
   const resolvedScrollable = scrollable ?? contextScrollable;
   const listRef = React.useRef<HTMLDivElement | null>(null);
 
-  React.useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     const listEl = listRef.current;
     if (!listEl) return;
     let cancelled = false;

@@ -32,6 +32,6 @@ export default defineConfig({
   },
   test: {
     environment: "happy-dom",
-    include: ["packages/**/*.test.ts", "packages/**/*.test.tsx"],
+    include: ["packages/**/*.test.ts", "packages/**/*.test.tsx", "apps/playground/src/**/*.test.ts"],
   },
 });

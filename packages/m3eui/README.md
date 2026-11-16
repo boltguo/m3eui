@@ -37,6 +37,16 @@ export function App() {
 }
 ```
 
+### Runtime theming
+
+Colors come from the generated theme CSS. To change seed, scheme variant, or contrast at runtime, pass the HCT engine:
+
+```tsx
+import { generateM3EThemeTokens } from "m3eui/tokens";
+
+<M3EProvider config={m3eConfig} themeEngine={generateM3EThemeTokens}>
+```
+
 ## Subpath Exports & CLI
 
 - `m3eui` — RSC-safe barrel for components, hooks, `M3EProvider`, `M3EPortal`, `CSPProvider`, `getM3EInitScript`, config, and tokens
@@ -54,10 +64,10 @@ export function App() {
 | Category | Exports |
 | :--- | :--- |
 | **Actions** | `Button`, `ToggleButton`, `IconButton`, `IconToggleButton`, `SplitButton`, `ButtonGroup`, `FloatingToolbar`, `DockedToolbar`, `FABMenu`, `FAB` (`xs`/`sm`/`md`/`lg`, default `sm`), `ExtendedFAB`, `CopyButton` |
-| **Inputs & Selection** | `Form`, `Fieldset`, `TextField`, `TextareaField`, `NumberField`, `OTPField`, `Select`, `MultiSelect`, `Combobox`, `MultiCombobox`, `FileUpload`, `FileUploadDropzone`, `ColorPicker`, `ColorPickerField`, `ColorSwatch`, `DockedDatePicker`, `DatePickerField`, `DateRangePicker`, `DateRangePickerField`, `DatePickerDialog`, `ModalDatePicker`, `DateTimePickerField`, `TimePicker`, `TimePickerField`, `TimePickerDialog`, `ModalTimePicker` (full `disabled`/`readOnly`/`invalid` parity), `Switch`, `Slider`, `Checkbox`, `CheckboxGroup`, `Radio`, `RadioGroup` |
-| **Display & Surfaces** | `Card`, `DataTable`, `Skeleton`, `SegmentedList`, `SegmentedListItem`, `List`, `ListItem`, `Chip`, `AssistChip`, `FilterChip`, `InputChip`, `SuggestionChip`, `Avatar`, `AvatarGroup`, `Badge`, `Carousel`, `Empty`, `Kbd`, `Snippet`, `Collapsible`, `Accordion`, `PreviewCard`, `ScrollArea`, `Divider`, `DragHandle`, `VerticalDragHandle`, `MaterialShapeView` |
+| **Inputs & Selection** | `Form`, `Fieldset`, `TextField`, `TextareaField`, `NumberField`, `OTPField`, `Select`, `MultiSelect`, `Combobox`, `MultiCombobox`, `FileUpload`, `FileUploadDropzone`, `ColorPicker`, `ColorPickerField`, `ColorSwatch`, `DockedDatePicker`, `DatePickerField`, `DateRangePicker`, `DateRangePickerField`, `DatePickerDialog`, `DateTimePickerField`, `TimePicker`, `TimePickerField`, `TimePickerDialog` (full `disabled`/`readOnly`/`invalid` parity), `Switch`, `Slider`, `Checkbox`, `CheckboxGroup`, `Radio`, `RadioGroup` |
+| **Display & Surfaces** | `Card`, `DataTable`, `Skeleton`, `SegmentedList`, `ListItem`, `List`, `ListItem`, `Chip`, `AssistChip`, `FilterChip`, `InputChip`, `SuggestionChip`, `Avatar`, `AvatarGroup`, `Badge`, `Carousel`, `Empty`, `Kbd`, `Snippet`, `Collapsible`, `Accordion`, `PreviewCard`, `ScrollArea`, `Divider`, `DragHandle`, `VerticalDragHandle`, `MaterialShapeView` |
 | **Navigation** | `NavigationSuite`, `NavigationBar`, `NavigationRail`, `WideNavigationRail`, `NavigationDrawer`, `NavigationMenu`, `TopAppBar`, `BottomAppBar`, `AppBarRow`, `SearchBar`, `SearchView`, `CommandPalette`, `Breadcrumb`, `Pagination`, `Menubar`, `Tabs`, `TabsList`, `Tab`, `TabsPanel` |
-| **Overlays & Feedback** | `Alert` (controlled/uncontrolled `open`), `Dialog`, `DialogClose`, `AlertDialog`, `AlertDialogClose`, `Sheet`, `BottomSheet`, `SideSheet`, `SheetClose`, `Popover`, `PopoverClose`, `DropdownMenu`, `ContextMenu`, `Tooltip`, `RichTooltip` (keyboard-gated `action` focus), `useM3EToast`, `PullToRefresh`, `PullToRefreshBox`, `LinearProgressIndicator`, `CircularProgressIndicator`, `Meter`, `LoadingIndicator`, `ContainedLoadingIndicator`, `WavyProgressIndicator`, `LinearWavyProgressIndicator`, `CircularWavyProgressIndicator` |
+| **Overlays & Feedback** | `Alert` (controlled/uncontrolled `open`), `Dialog`, `DialogClose`, `AlertDialog`, `AlertDialogClose`, `Sheet`, `BottomSheet`, `SideSheet`, `SheetClose`, `Popover`, `PopoverClose`, `DropdownMenu`, `ContextMenu`, `Tooltip`, `RichTooltip` (keyboard-gated `action` focus), `useM3EToast`, `PullToRefreshBox`, `LinearProgressIndicator`, `CircularProgressIndicator`, `Meter`, `LoadingIndicator`, `ContainedLoadingIndicator`, `LinearWavyProgressIndicator`, `CircularWavyProgressIndicator` |
 
 ## License
 

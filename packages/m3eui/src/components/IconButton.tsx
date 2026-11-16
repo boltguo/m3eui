@@ -8,7 +8,7 @@ import {
   type IconButtonWidthVariant,
   resolveIconButtonGeometry,
 } from "../tokens/index.js";
-import { useM3E } from "../context/M3EContext.js";
+import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3ECornerSpringRef, usePressHoldState } from "../hooks/useM3ESpring.js";
 import type { ButtonIntent } from "./Button.js";
 
@@ -88,7 +88,7 @@ export const IconButton = React.forwardRef<HTMLElement, M3EIconButtonProps>(
     },
     ref,
   ) {
-    const { debugGeometry } = useM3E();
+    const { debugGeometry } = useM3ERuntime();
     const isDisabled = disabled || loading;
     const { isPressed, pressHandlers } = usePressHoldState(isDisabled);
 
@@ -210,7 +210,7 @@ export const IconToggleButton = React.forwardRef<
   },
   ref,
 ) {
-  const { debugGeometry } = useM3E();
+  const { debugGeometry } = useM3ERuntime();
   const [uncontrolledPressed, setUncontrolledPressed] =
     React.useState<boolean>(defaultPressed);
   const isSelected = controlledPressed ?? uncontrolledPressed;

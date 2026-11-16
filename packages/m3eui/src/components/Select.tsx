@@ -1,7 +1,11 @@
 import * as React from "react";
 import { Field as BaseField } from "@base-ui/react/field";
 import { Select as BaseSelect } from "@base-ui/react/select";
-import { SELECT_TOKENS } from "../tokens/index.js";
+import {
+  SEGMENTED_MENU_TOKENS,
+  SELECT_TOKENS,
+  resolveSegmentedMenuItemCorners,
+} from "../tokens/index.js";
 import { useM3EPortalContainer } from "../context/M3EPortal.js";
 import { useM3EI18n } from "../context/M3EContext.js";
 import { formatLocalizedInteger } from "../i18n/index.js";
@@ -121,25 +125,20 @@ function CheckMarkSvg() {
 interface SelectOptionRowProps<Value extends string> {
   readonly option: SelectOption<Value>;
   readonly isSelected: boolean;
+  readonly index: number;
+  readonly count: number;
 }
 
 function SelectOptionRow<Value extends string>({
   option,
   isSelected,
+  index,
+  count,
 }: SelectOptionRowProps<Value>) {
   const { isPressed, pressHandlers } = usePressHoldState(Boolean(option.disabled));
-  const targetRadius = Math.max(
-    4,
-    isPressed
-      ? SELECT_TOKENS.itemPressedRadius
-      : isSelected
-        ? SELECT_TOKENS.itemSelectedRadius
-        : SELECT_TOKENS.itemRadius,
-  );
-
   const { ref, borderRadiusCss } = useM3ECornerSpringRef<HTMLDivElement>(
-    [targetRadius, targetRadius, targetRadius, targetRadius],
-    isSelected ? "fastSpatial" : "defaultEffects",
+    resolveSegmentedMenuItemCorners({ index, count, isSelected }),
+    "fastSpatial",
   );
   const hasDescription = Boolean(option.description);
 
@@ -150,10 +149,11 @@ function SelectOptionRow<Value extends string>({
       disabled={option.disabled}
       className="m3e-select__item"
       data-has-desc={hasDescription ? "" : undefined}
+      data-pressed={isPressed ? "" : undefined}
       style={{
-        minHeight: hasDescription ? "56px" : "42px",
-        paddingBlock: hasDescription ? "10px" : "8px",
-        paddingInline: "12px",
+        minHeight: hasDescription ? "56px" : `${SEGMENTED_MENU_TOKENS.itemHeight}px`,
+        paddingBlock: hasDescription ? "8px" : undefined,
+        paddingInline: `${SEGMENTED_MENU_TOKENS.itemPaddingInline}px`,
         borderRadius: borderRadiusCss,
       }}
       {...pressHandlers}
@@ -432,14 +432,13 @@ function SelectInner<Value extends string = string>(
             <BaseSelect.Popup
               className="m3e-select__popup"
               style={{
-                borderRadius: `${SELECT_TOKENS.popupRadius}px`,
+                borderRadius: `${SEGMENTED_MENU_TOKENS.containerRadius}px`,
               }}
             >
               <BaseSelect.List
                 className="m3e-select__list"
                 style={{
-                  padding: `${SELECT_TOKENS.popupPadding}px`,
-                  gap: `${SELECT_TOKENS.itemGap}px`,
+                  padding: `${SEGMENTED_MENU_TOKENS.containerPadding}px`,
                 }}
               >
                 {groups
@@ -451,19 +450,23 @@ function SelectInner<Value extends string = string>(
                         <BaseSelect.GroupLabel className="m3e-select__group-label">
                           {group.label}
                         </BaseSelect.GroupLabel>
-                        {group.options.map((opt) => (
+                        {group.options.map((opt, idx) => (
                           <SelectOptionRow
                             key={opt.value}
                             option={opt}
+                            index={idx}
+                            count={group.options.length}
                             isSelected={currentValue === opt.value}
                           />
                         ))}
                       </BaseSelect.Group>
                     ))
-                  : options.map((opt) => (
+                  : options.map((opt, idx) => (
                       <SelectOptionRow
                         key={opt.value}
                         option={opt}
+                        index={idx}
+                        count={options.length}
                         isSelected={currentValue === opt.value}
                       />
                     ))}
@@ -815,14 +818,13 @@ function MultiSelectInner<Value extends string = string>(
             <BaseSelect.Popup
               className="m3e-select__popup"
               style={{
-                borderRadius: `${SELECT_TOKENS.popupRadius}px`,
+                borderRadius: `${SEGMENTED_MENU_TOKENS.containerRadius}px`,
               }}
             >
               <BaseSelect.List
                 className="m3e-select__list"
                 style={{
-                  padding: `${SELECT_TOKENS.popupPadding}px`,
-                  gap: `${SELECT_TOKENS.itemGap}px`,
+                  padding: `${SEGMENTED_MENU_TOKENS.containerPadding}px`,
                 }}
               >
                 {groups
@@ -834,19 +836,23 @@ function MultiSelectInner<Value extends string = string>(
                         <BaseSelect.GroupLabel className="m3e-select__group-label">
                           {group.label}
                         </BaseSelect.GroupLabel>
-                        {group.options.map((opt) => (
+                        {group.options.map((opt, idx) => (
                           <SelectOptionRow
                             key={opt.value}
                             option={opt}
+                            index={idx}
+                            count={group.options.length}
                             isSelected={selectedSet.has(opt.value)}
                           />
                         ))}
                       </BaseSelect.Group>
                     ))
-                  : options.map((opt) => (
+                  : options.map((opt, idx) => (
                       <SelectOptionRow
                         key={opt.value}
                         option={opt}
+                        index={idx}
+                        count={options.length}
                         isSelected={selectedSet.has(opt.value)}
                       />
                     ))}

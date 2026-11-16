@@ -34,15 +34,10 @@ export default defineConfig({
     ],
   },
   build: {
+    chunkSizeWarningLimit: 700,
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes("/apps/playground/src/registry/blocks") || id.includes("/apps/playground/src/registry/composites")) {
-            return "playground-blocks";
-          }
-          if (id.includes("/apps/playground/src/registry/components/")) {
-            return "playground-components";
-          }
           if (id.includes("/packages/m3eui/src/tokens/")) {
             return "m3eui-tokens";
           }

@@ -4,7 +4,7 @@ export const ACTIONS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
   button: {
     provenance: "official-m3e",
     provenanceSummary:
-      "Canonical Material 3 Expressive five-size button and toggle button specification aligned 1:1 with AOSP Jetpack Compose Material 3 1.4/1.5.",
+      "Canonical Material 3 Expressive five-size button and toggle button specification based on AOSP Jetpack Compose Material 3 1.4/1.5.",
     tokenSources: ["BUTTON_SIZE_SPECS", "EXPRESSIVE_MOTION_SCHEME", "M3E_STATE_LAYER_TOKENS"],
     aospSources: [
       "Button.kt",
@@ -29,7 +29,7 @@ export const ACTIONS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
     geometryAndMotionTables: [
       {
         id: "button-size-matrix",
-        title: "Five-Size Logical Pixel Matrix (1:1 px / dp / pt)",
+        title: "Five-Size Logical Pixel Matrix (px = dp / pt)",
         caption: "Button & ToggleButton dimensions and corner radii across XS–XL",
         columns: [
           "Size",
@@ -370,7 +370,7 @@ export const ACTIONS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
     crossPlatformNotes: [
       {
         target: "Jetpack Compose",
-        guidance: "Maps 1:1 to SplitButtonLayout with SplitButtonDefaults.LeadingButton and SplitButtonDefaults.TrailingButton.",
+        guidance: "Corresponds to SplitButtonLayout with SplitButtonDefaults.LeadingButton and SplitButtonDefaults.TrailingButton.",
       },
       {
         target: "SwiftUI",
@@ -536,7 +536,7 @@ export const ACTIONS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
     crossPlatformNotes: [
       {
         target: "Jetpack Compose",
-        guidance: "Maps 1:1 to HorizontalFloatingToolbar and VerticalFloatingToolbar with FloatingToolbarDefaults.standardFloatingToolbarColors() / vibrantFloatingToolbarColors().",
+        guidance: "Corresponds to HorizontalFloatingToolbar and VerticalFloatingToolbar with FloatingToolbarDefaults.standardFloatingToolbarColors() / vibrantFloatingToolbarColors().",
       },
       {
         target: "SwiftUI",

@@ -12,6 +12,7 @@ import {
   resolveCrossPlatformSpring,
   roleKeyToCssVarName,
 } from "./tokens/index.js";
+import { M3E_COLOR_SCHEME_VARIANTS } from "./tokens/color-variants.js";
 import {
   type M3ELocale,
   type M3EMessageOverrides,
@@ -89,24 +90,56 @@ export function defineM3EConfig<const T extends M3EConfig>(config: T): T {
   return config;
 }
 
-export function resolveM3EConfig(config?: M3EConfig): ResolvedM3EConfig {
+type JsonWiden<T> = T extends string
+  ? string
+  : T extends object
+    ? { readonly [K in keyof T]?: JsonWiden<T[K]> }
+    : T;
+
+export type M3EConfigInput = JsonWiden<M3EConfig>;
+
+function oneOf<T extends string>(
+  value: string | undefined,
+  allowed: readonly T[],
+  fallback: T,
+): T {
+  return allowed.includes(value as T) ? (value as T) : fallback;
+}
+
+export function resolveM3EConfig(config?: M3EConfigInput): ResolvedM3EConfig {
   const style = config?.style === "standard" ? "standard" : "expressive";
   const seedHex = config?.theme?.seed ?? "#6750A4";
-  const schemeVariant =
-    config?.theme?.schemeVariant ??
-    (style === "standard" ? "tonalSpot" : "expressive");
-  const platform: ColorPlatform = config?.theme?.platform ?? "phone";
-  const colorMode = config?.theme?.colorMode ?? "system";
+  const schemeVariant = oneOf<ColorSchemeVariant>(
+    config?.theme?.schemeVariant,
+    M3E_COLOR_SCHEME_VARIANTS,
+    style === "standard" ? "tonalSpot" : "expressive",
+  );
+  const platform = oneOf<ColorPlatform>(
+    config?.theme?.platform,
+    ["phone", "watch"],
+    "phone",
+  );
+  const colorMode = oneOf<M3EColorModeSetting>(
+    config?.theme?.colorMode,
+    ["system", "light", "dark"],
+    "system",
+  );
   const contrastLevel = Math.max(
     -1,
     Math.min(1, config?.theme?.contrastLevel ?? 0),
   );
-  const motionScheme =
-    config?.theme?.motionScheme ??
-    (style === "standard" ? "standard" : "expressive");
+  const motionScheme = oneOf<MotionSchemeName>(
+    config?.theme?.motionScheme,
+    ["expressive", "standard"],
+    style === "standard" ? "standard" : "expressive",
+  );
 
   const locale: M3ELocale = config?.i18n?.locale ?? "en-US";
-  const directionMode: M3EDirectionSetting = config?.i18n?.direction ?? "auto";
+  const directionMode = oneOf<M3EDirectionSetting>(
+    config?.i18n?.direction,
+    ["auto", "ltr", "rtl"],
+    "auto",
+  );
   const resolvedDirection: TextDirection =
     directionMode === "auto"
       ? isRtlLocale(locale)
@@ -125,7 +158,7 @@ export function resolveM3EConfig(config?: M3EConfig): ResolvedM3EConfig {
     locale,
     directionMode,
     resolvedDirection,
-    messages: config?.i18n?.messages,
+    messages: config?.i18n?.messages as M3EMessageOverrides | undefined,
     cspNonce: config?.csp?.nonce || undefined,
     cspDisableStyleElements: Boolean(config?.csp?.disableStyleElements),
     cssOutput: config?.css?.output ?? "src/styles/m3e-theme.css",
@@ -207,7 +240,7 @@ export function generateM3EMotionCssVars(
   };
 }
 
-export function generateM3EStaticThemeCss(config?: M3EConfig): string {
+export function generateM3EStaticThemeCss(config?: M3EConfigInput): string {
   const resolved = resolveM3EConfig(config);
   const tokens = generateM3EThemeTokens({
     seedHex: resolved.seedHex,

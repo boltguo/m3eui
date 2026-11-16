@@ -64,6 +64,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 }
 ```
 
+### 运行时换色
+
+颜色默认来自生成的主题 CSS。需要在运行时切换种子色、配色方案或对比度时，传入 HCT 引擎：
+
+```tsx
+import { generateM3EThemeTokens } from "m3eui/tokens";
+
+<M3EProvider config={m3eConfig} themeEngine={generateM3EThemeTokens}>
+```
+
 ## 子路径导出
 
 | 路径 | 说明 |
@@ -95,10 +105,10 @@ npx m3eui doctor
 | :--- | :--- |
 | **容器与配置** | `M3EProvider`, `M3EPortal`, `CSPProvider`, `useM3E`, `useM3EI18n`, `useM3EPortalContainer`, `getM3EInitScript`, `defineM3EConfig`, `resolveM3EConfig`, `serializeM3EConfig`, `generateM3EStaticThemeCss`, `useM3EScalarSpring`, `useM3ECornerSpring`, `useM3ECornerSpringRef`, `usePressHoldState` |
 | **动作与工具栏** | `Button`, `ToggleButton`, `IconButton`, `IconToggleButton`, `SplitButton`, `ButtonGroup`, `FloatingToolbar`, `DockedToolbar`, `FABMenu`, `FAB`（`xs`/`sm`/`md`/`lg`，默认 `sm`）, `ExtendedFAB`, `CopyButton` |
-| **表单与选择** | `Form`, `Fieldset`, `TextField`, `TextareaField`, `NumberField`, `OTPField`, `Select`, `MultiSelect`, `Combobox`, `MultiCombobox`, `FileUpload`, `FileUploadDropzone`, `ColorPicker`, `ColorPickerField`, `ColorSwatch`, `DockedDatePicker`, `DatePickerField`, `DateRangePicker`, `DateRangePickerField`, `DatePickerDialog`, `ModalDatePicker`, `DateTimePickerField`, `TimePicker`, `TimePickerField`, `TimePickerDialog`, `ModalTimePicker`（完整支持 `disabled`/`readOnly`/`invalid`）, `Switch`, `Slider`, `Checkbox`, `CheckboxGroup`, `Radio`, `RadioGroup` |
-| **数据展示与表面** | `Card`, `DataTable`, `Skeleton`, `SegmentedList`, `SegmentedListItem`, `List`, `ListItem`, `Chip`, `AssistChip`, `FilterChip`, `InputChip`, `SuggestionChip`, `Avatar`, `AvatarGroup`, `Badge`, `Carousel`, `Empty`, `Kbd`, `Snippet`, `Collapsible`, `Accordion`, `PreviewCard`, `ScrollArea`, `Divider`, `DragHandle`, `VerticalDragHandle`, `MaterialShapeView` |
+| **表单与选择** | `Form`, `Fieldset`, `TextField`, `TextareaField`, `NumberField`, `OTPField`, `Select`, `MultiSelect`, `Combobox`, `MultiCombobox`, `FileUpload`, `FileUploadDropzone`, `ColorPicker`, `ColorPickerField`, `ColorSwatch`, `DockedDatePicker`, `DatePickerField`, `DateRangePicker`, `DateRangePickerField`, `DatePickerDialog`, `DateTimePickerField`, `TimePicker`, `TimePickerField`, `TimePickerDialog`（完整支持 `disabled`/`readOnly`/`invalid`）, `Switch`, `Slider`, `Checkbox`, `CheckboxGroup`, `Radio`, `RadioGroup` |
+| **数据展示与表面** | `Card`, `DataTable`, `Skeleton`, `SegmentedList`, `ListItem`, `List`, `ListItem`, `Chip`, `AssistChip`, `FilterChip`, `InputChip`, `SuggestionChip`, `Avatar`, `AvatarGroup`, `Badge`, `Carousel`, `Empty`, `Kbd`, `Snippet`, `Collapsible`, `Accordion`, `PreviewCard`, `ScrollArea`, `Divider`, `DragHandle`, `VerticalDragHandle`, `MaterialShapeView` |
 | **导航** | `NavigationSuite`, `NavigationBar`, `NavigationRail`, `WideNavigationRail`, `NavigationDrawer`, `NavigationMenu`, `TopAppBar`, `BottomAppBar`, `AppBarRow`, `SearchBar`, `SearchView`, `CommandPalette`, `Breadcrumb`, `Pagination`, `Menubar`, `Tabs`, `TabsList`, `Tab`, `TabsPanel` |
-| **浮层与反馈** | `Alert`（受控/非受控 `open`）, `Dialog`, `DialogClose`, `AlertDialog`, `AlertDialogClose`, `Sheet`, `BottomSheet`, `SideSheet`, `SheetClose`, `Popover`, `PopoverClose`, `DropdownMenu`, `ContextMenu`, `Tooltip`, `RichTooltip`（键盘触发自动聚焦 `action`）, `useM3EToast`, `PullToRefresh`, `PullToRefreshBox`, `LinearProgressIndicator`, `CircularProgressIndicator`, `Meter`, `LoadingIndicator`, `ContainedLoadingIndicator`, `WavyProgressIndicator`, `LinearWavyProgressIndicator`, `CircularWavyProgressIndicator` |
+| **浮层与反馈** | `Alert`（受控/非受控 `open`）, `Dialog`, `DialogClose`, `AlertDialog`, `AlertDialogClose`, `Sheet`, `BottomSheet`, `SideSheet`, `SheetClose`, `Popover`, `PopoverClose`, `DropdownMenu`, `ContextMenu`, `Tooltip`, `RichTooltip`（键盘触发自动聚焦 `action`）, `useM3EToast`, `PullToRefreshBox`, `LinearProgressIndicator`, `CircularProgressIndicator`, `Meter`, `LoadingIndicator`, `ContainedLoadingIndicator`, `LinearWavyProgressIndicator`, `CircularWavyProgressIndicator` |
 
 ## 本地开发
 

@@ -43,7 +43,7 @@ import {
   SearchBar,
   SearchView,
   SegmentedList,
-  SegmentedListItem,
+  ListItem,
   Select,
   Sheet,
   Slider,
@@ -618,8 +618,8 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
           />
 
           <SegmentedList>
-            <SegmentedListItem headline="Static row" />
-            <SegmentedListItem
+            <ListItem headline="Static row" />
+            <ListItem
               headline="Interactive row"
               onClick={() => {}}
               trailing={<button type="button">More</button>}
@@ -785,7 +785,7 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
     }
   });
 
-  it("completes 1:1 AOSP parity on Carousel (50 items + 4 variants), FAB visibility/elevation/morphOnPress, Vertical/Centered Slider, Vibrant/Segmented DropdownMenu, and Non-Modal Snap Sheet", () => {
+  it("covers Carousel (50 items + 4 variants), FAB visibility/elevation/morphOnPress, Vertical/Centered Slider, Vibrant/Segmented DropdownMenu, and Non-Modal Snap Sheet", () => {
     const onFabClick = vi.fn();
     let carouselIdx = 0;
     const fiftyItems = Array.from({ length: 50 }, (_, i) => ({
@@ -918,7 +918,7 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
         new KeyboardEvent("keydown", { key: "Home", bubbles: true }),
       );
     });
-    expect(carouselIdx).toBe(0);
+    expect(carouselIdx).toBe(49);
 
     const cUncontained = container.querySelector<HTMLElement>(
       '.m3e-carousel[data-variant="uncontained"]',

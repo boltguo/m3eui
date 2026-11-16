@@ -6,6 +6,7 @@ import { RadioGroup as BaseRadioGroup } from "@base-ui/react/radio-group";
 import { RADIO_TOKENS } from "../tokens/index.js";
 import { usePressHoldState } from "../hooks/useM3ESpring.js";
 import { FieldsetDisabledContext, useFieldsetDisabled } from "../internal/fieldOutline.js";
+import { FormFieldScope } from "../internal/formField.js";
 
 export interface M3ERadioGroupProps<Value extends string = string> {
   readonly children: React.ReactNode;
@@ -52,6 +53,7 @@ export function RadioGroup<Value extends string = string>({
   const isDisabled = useFieldsetDisabled(disabled);
   return (
     <FieldsetDisabledContext.Provider value={isDisabled}>
+      <FormFieldScope name={name} disabled={isDisabled}>
       <BaseRadioGroup
         value={value}
         defaultValue={defaultValue}
@@ -69,6 +71,7 @@ export function RadioGroup<Value extends string = string>({
       >
         {children}
       </BaseRadioGroup>
+      </FormFieldScope>
     </FieldsetDisabledContext.Provider>
   );
 }

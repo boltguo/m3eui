@@ -12,7 +12,6 @@ import {
   DockedDatePicker,
   Fieldset,
   Form,
-  ModalDatePicker,
   MultiCombobox,
   MultiSelect,
   NumberField,
@@ -1332,7 +1331,7 @@ export const INPUTS_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   /* ============================= 1. text-field ============================ */
   {
     slug: "text-field",
-    title: "TextField & TextareaField",
+    title: "TextField",
     category: "inputs",
     subtitle: {
       zh: "Material 3 Expressive 单行与多行文本输入框，支持 Outlined 缺口浮动标签与 Filled 填充容器、前后缀文本与图标、密码显隐、一键清空及实时字数校验。",
@@ -1894,7 +1893,7 @@ export const INPUTS_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   /* =============================== 3. select ============================== */
   {
     slug: "select",
-    title: "Select & MultiSelect",
+    title: "Select",
     category: "inputs",
     subtitle: {
       zh: "支持 Outlined 缺口浮动标签与 Filled 填充容器的单选 Select 与标签胶囊多选 MultiSelect，内置分组、一键清空及 +N 折叠。",
@@ -2243,7 +2242,7 @@ const [role, setRole] = useState<string | null>("maintainer");
   /* ============================== 4. combobox ============================= */
   {
     slug: "combobox",
-    title: "Combobox & MultiCombobox",
+    title: "Combobox",
     category: "inputs",
     subtitle: {
       zh: "可输入过滤的单选 Combobox 与多选胶囊 MultiCombobox，支持首项高亮、Backspace 移除末尾标签与空结果提示。",
@@ -2705,7 +2704,7 @@ const [selected, setSelected] = useState<ComboboxOption | null>(OPTIONS[1]);
       en: "Timezone-safe ISO PlainDate (`YYYY-MM-DD`) calendar suite comprising popover `DatePickerField`, inline `DockedDatePicker`, and dual-endpoint `DateRangePicker`.",
     },
     importStatement:
-      'import { DatePickerField, DateRangePickerField, DateTimePickerField, ModalDatePicker, DockedDatePicker, DateRangePicker } from "m3eui";',
+      'import { DatePickerField, DateRangePickerField, DateTimePickerField, DatePickerDialog, DockedDatePicker, DateRangePicker } from "m3eui";',
     primitive: "@base-ui/react/popover",
     scenarios: [
       {
@@ -2807,7 +2806,7 @@ const [range, setRange] = useState<PlainDateRange>({
         id: "date-picker-advanced-triggers",
         title: {
           zh: "区间选择框、日期时间一体与模态选择器",
-          en: "DateRangePickerField, DateTimePickerField & ModalDatePicker",
+          en: "DateRangePickerField, DateTimePickerField & DatePickerDialog",
         },
         description: {
           zh: "补齐弹出式区间选择框、日期+时间组合面板以及支持“日历网格 ⇄ 键盘输入”切换的 M3 模态日期对话框，全部原生支持 minDate / maxDate / isDateDisabled。",
@@ -2815,7 +2814,7 @@ const [range, setRange] = useState<PlainDateRange>({
         },
         code: `<DateRangePickerField label="Release window" minDate="2026-01-01" maxDate="2026-12-31" />
 <DateTimePickerField label="Maintenance slot" />
-<ModalDatePicker trigger={<Button variant="tonal" size="sm">Open ModalDatePicker</Button>} />`,
+<DatePickerDialog trigger={<Button variant="tonal" size="sm">Open DatePickerDialog</Button>} />`,
         render: () => (
           <div className="demo-panel" style={{ maxWidth: 440, gap: 14 }}>
             <DateRangePickerField
@@ -2829,13 +2828,13 @@ const [range, setRange] = useState<PlainDateRange>({
               defaultValue={{ date: "2026-05-15", time: "14:30" }}
             />
             <div>
-              <ModalDatePicker
+              <DatePickerDialog
                 defaultValue="2026-05-20"
                 minDate="2026-05-01"
                 maxDate="2026-06-30"
                 trigger={
                   <Button variant="tonal" size="sm">
-                    Open ModalDatePicker
+                    Open DatePickerDialog
                   </Button>
                 }
               />
@@ -2981,8 +2980,8 @@ const [range, setRange] = useState<PlainDateRange>({
             },
           },
           {
-            name: "ModalDatePicker",
-            type: "M3EModalDatePickerProps",
+            name: "DatePickerDialog",
+            type: "M3EDatePickerDialogProps",
             description: {
               zh: "M3 模态对话框日期选择器，支持日历网格与文本直输模式切换。",
               en: "M3 modal date dialog with calendar-to-text-input mode toggle.",
@@ -3239,7 +3238,7 @@ const [range, setRange] = useState<PlainDateRange>({
   /* =============================== 8. form ================================ */
   {
     slug: "form",
-    title: "Form & Fieldset",
+    title: "Form",
     category: "inputs",
     subtitle: {
       zh: "结构化表单容器与语义化字段分组组件，提供统一的顶置无障碍错误汇总横幅（`showErrorSummary`）、字段级 `errors` 映射与整组级联禁用能力。",

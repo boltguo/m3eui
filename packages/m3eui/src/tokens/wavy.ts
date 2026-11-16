@@ -9,15 +9,15 @@ export const WAVY_PROGRESS_TOKENS = {
   trackActiveGap: 4,
   stopIndicatorSize: 4,
   amplitudeTransitionMs: 500,
-  indeterminateCycleMs: 1800,
+  indeterminateCycleMs: 1750,
   firstLineHeadDelayMs: 0,
-  firstLineHeadDurationMs: 750,
-  firstLineTailDelayMs: 333,
-  firstLineTailDurationMs: 850,
-  secondLineHeadDelayMs: 1000,
-  secondLineHeadDurationMs: 567,
-  secondLineTailDelayMs: 1267,
-  secondLineTailDurationMs: 533,
+  firstLineHeadDurationMs: 1000,
+  firstLineTailDelayMs: 250,
+  firstLineTailDurationMs: 1000,
+  secondLineHeadDelayMs: 650,
+  secondLineHeadDurationMs: 850,
+  secondLineTailDelayMs: 900,
+  secondLineTailDurationMs: 850,
 } as const;
 
 export function resolveDeterminateWaveAmplitude(progress: number): number {
@@ -66,14 +66,27 @@ function segmentFractionAtPlayTime(
   playMs: number,
   delayMs: number,
   durationMs: number,
-  x1: number,
-  y1: number,
-  x2: number,
-  y2: number,
 ): number {
   if (playMs <= delayMs) return 0;
   if (playMs >= delayMs + durationMs) return 1;
-  return evalCubicBezierEasing(x1, y1, x2, y2, (playMs - delayMs) / durationMs);
+  return evalCubicBezierEasing(0.3, 0, 0.8, 0.15, (playMs - delayMs) / durationMs);
+}
+
+export function resolveLinearIndeterminateFractions(elapsedMs: number): {
+  readonly line1Head: number;
+  readonly line1Tail: number;
+  readonly line2Head: number;
+  readonly line2Tail: number;
+} {
+  const T = WAVY_PROGRESS_TOKENS;
+  const cycle = T.indeterminateCycleMs;
+  const playMs = ((elapsedMs % cycle) + cycle) % cycle;
+  return {
+    line1Head: segmentFractionAtPlayTime(playMs, T.firstLineHeadDelayMs, T.firstLineHeadDurationMs),
+    line1Tail: segmentFractionAtPlayTime(playMs, T.firstLineTailDelayMs, T.firstLineTailDurationMs),
+    line2Head: segmentFractionAtPlayTime(playMs, T.secondLineHeadDelayMs, T.secondLineHeadDurationMs),
+    line2Tail: segmentFractionAtPlayTime(playMs, T.secondLineTailDelayMs, T.secondLineTailDurationMs),
+  };
 }
 
 export function buildSinusoidSvgPath(params: {
@@ -241,42 +254,8 @@ export function buildIndeterminateLinearWavyGeometry(params: {
   const maxAmp = Math.max(0, (height - strokeWidth) / 2);
   const ampPx = Math.max(0, Math.min(1, amplitude)) * maxAmp;
 
-  const line1Head = segmentFractionAtPlayTime(
-    playMs,
-    WAVY_PROGRESS_TOKENS.firstLineHeadDelayMs,
-    WAVY_PROGRESS_TOKENS.firstLineHeadDurationMs,
-    0.2,
-    0,
-    0.8,
-    1,
-  );
-  const line1Tail = segmentFractionAtPlayTime(
-    playMs,
-    WAVY_PROGRESS_TOKENS.firstLineTailDelayMs,
-    WAVY_PROGRESS_TOKENS.firstLineTailDurationMs,
-    0.4,
-    0,
-    1,
-    1,
-  );
-  const line2Head = segmentFractionAtPlayTime(
-    playMs,
-    WAVY_PROGRESS_TOKENS.secondLineHeadDelayMs,
-    WAVY_PROGRESS_TOKENS.secondLineHeadDurationMs,
-    0,
-    0,
-    0.65,
-    1,
-  );
-  const line2Tail = segmentFractionAtPlayTime(
-    playMs,
-    WAVY_PROGRESS_TOKENS.secondLineTailDelayMs,
-    WAVY_PROGRESS_TOKENS.secondLineTailDurationMs,
-    0.1,
-    0,
-    0.45,
-    1,
-  );
+  const { line1Head, line1Tail, line2Head, line2Tail } =
+    resolveLinearIndeterminateFractions(playMs);
 
   const rawBars: Array<[number, number]> = [
     [usableStart + usableSpan * line2Tail, usableStart + usableSpan * line2Head],

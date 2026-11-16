@@ -167,6 +167,7 @@ export function Accordion({
     React.useState<string[]>(defaultValue);
   const openValues = controlledValue ?? uncontrolledValue;
   const openSet = new Set(openValues);
+  const hasToolbar = showExpandAll && multiple;
 
   const enabledValues = items
     .filter((item) => !item.disabled)
@@ -206,11 +207,11 @@ export function Accordion({
         commitValue([...next]);
       }}
       className={
-        !showExpandAll && className ? `m3e-accordion ${className}` : "m3e-accordion"
+        !hasToolbar && className ? `m3e-accordion ${className}` : "m3e-accordion"
       }
       style={{
         gap: `${ACCORDION_TOKENS.collapsedGap}px`,
-        ...(!showExpandAll ? style : undefined),
+        ...(!hasToolbar ? style : undefined),
       }}
     >
       {items.map((item, idx) => (
@@ -227,7 +228,7 @@ export function Accordion({
     </BaseAccordion.Root>
   );
 
-  if (!showExpandAll || !multiple) {
+  if (!hasToolbar) {
     return accordionNode;
   }
 

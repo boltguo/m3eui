@@ -194,7 +194,7 @@ export const SELECTION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec
     crossPlatformNotes: [
       {
         target: "Jetpack Compose",
-        guidance: "Maps 1:1 to Switch(checked, onCheckedChange, thumbContent) in Compose Material 3.",
+        guidance: "Corresponds to Switch(checked, onCheckedChange, thumbContent) in Compose Material 3.",
       },
       {
         target: "SwiftUI",
@@ -274,7 +274,7 @@ export const SELECTION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec
     crossPlatformNotes: [
       {
         target: "Jetpack Compose",
-        guidance: "Maps 1:1 to Compose Material 3 Slider and RangeSlider with SliderDefaults.Thumb and SliderDefaults.Track (trackInsideCornerSize, thumbTrackGapSize = 6.dp).",
+        guidance: "Corresponds to Compose Material 3 Slider and RangeSlider with SliderDefaults.Thumb and SliderDefaults.Track (trackInsideCornerSize, thumbTrackGapSize = 6.dp).",
       },
       {
         target: "SwiftUI",

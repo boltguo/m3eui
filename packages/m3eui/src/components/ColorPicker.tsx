@@ -2,6 +2,8 @@
 
 import * as React from "react";
 import { Popover as BasePopover } from "@base-ui/react/popover";
+import { Radio as BaseRadio } from "@base-ui/react/radio";
+import { RadioGroup as BaseRadioGroup } from "@base-ui/react/radio-group";
 import {
   COLOR_PICKER_TOKENS,
   Hct,
@@ -10,7 +12,7 @@ import {
   argbFromHex,
   hexFromArgb,
 } from "../tokens/index.js";
-import { useM3E } from "../context/M3EContext.js";
+import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3EPortalContainer } from "../context/M3EPortal.js";
 import {
   FieldErrorIconSvg,
@@ -22,6 +24,7 @@ import {
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
 import { formatLocalizedInteger } from "../i18n/index.js";
+import { FormHiddenValue } from "../internal/formField.js";
 
 const DEFAULT_SWATCHES: readonly string[] = [
   "#6750A4",
@@ -80,14 +83,12 @@ export interface M3EColorSwatchProps {
 function SwatchButton({
   hex,
   selected,
-  onSelect,
 }: {
   readonly hex: string;
   readonly selected: boolean;
-  readonly onSelect: () => void;
 }) {
   const { isPressed, pressHandlers } = usePressHoldState(false);
-  const btnRef = React.useRef<HTMLButtonElement | null>(null);
+  const btnRef = React.useRef<HTMLElement | null>(null);
   const targetRadius = isPressed
     ? 6
     : selected
@@ -100,13 +101,10 @@ function SwatchButton({
   });
 
   return (
-    <button
+    <BaseRadio.Root
       ref={btnRef}
-      type="button"
-      role="radio"
-      aria-checked={selected}
+      value={hex}
       aria-label={hex}
-      onClick={onSelect}
       className="m3e-color-swatch__item"
       data-selected={selected ? "" : undefined}
       style={{
@@ -128,12 +126,13 @@ export function ColorSwatch({
   className,
   style,
 }: M3EColorSwatchProps): React.JSX.Element {
-  const { t } = useM3E();
+  const { t } = useM3ERuntime();
   const normalizedCurrent = value ? normalizeHex(value, "") : "";
 
   return (
-    <div
-      role="radiogroup"
+    <BaseRadioGroup
+      value={normalizedCurrent}
+      onValueChange={(next) => onValueChange?.(String(next))}
       aria-label={ariaLabel ?? t("colorPicker.swatchesLabel")}
       className={
         className ? `m3e-color-swatch ${className}` : "m3e-color-swatch"
@@ -143,15 +142,10 @@ export function ColorSwatch({
       {colors.map((c) => {
         const norm = normalizeHex(c);
         return (
-          <SwatchButton
-            key={norm}
-            hex={norm}
-            selected={norm === normalizedCurrent}
-            onSelect={() => onValueChange?.(norm)}
-          />
+          <SwatchButton key={norm} hex={norm} selected={norm === normalizedCurrent} />
         );
       })}
-    </div>
+    </BaseRadioGroup>
   );
 }
 
@@ -159,6 +153,7 @@ export interface M3EColorPickerProps {
   readonly value?: string;
   readonly defaultValue?: string;
   readonly onValueChange?: (hex: string) => void;
+  readonly onValueCommitted?: (hex: string) => void;
   readonly swatches?: readonly string[];
   readonly showTonalRamp?: boolean;
   readonly disabled?: boolean;
@@ -171,6 +166,7 @@ export function ColorPicker({
   value: controlledHex,
   defaultValue = "#6750A4",
   onValueChange,
+  onValueCommitted,
   swatches = DEFAULT_SWATCHES,
   showTonalRamp = true,
   disabled = false,
@@ -178,7 +174,7 @@ export function ColorPicker({
   className,
   style,
 }: M3EColorPickerProps): React.JSX.Element {
-  const { locale, direction, t } = useM3E();
+  const { locale, direction, t } = useM3ERuntime();
   const isDisabled = useFieldsetDisabled(disabled);
   const hexInputId = React.useId();
   const hueId = React.useId();
@@ -213,7 +209,7 @@ export function ColorPicker({
     setHexDraft(currentHex);
   }, [currentHex]);
 
-  const commitHex = (nextRaw: string, syncLatent = true) => {
+  const commitHex = (nextRaw: string, syncLatent = true, final = true) => {
     const next = normalizeHex(nextRaw, currentHex);
     lastCommittedHexRef.current = next;
     if (syncLatent) {
@@ -228,13 +224,15 @@ export function ColorPicker({
       setUncontrolledHex(next);
     }
     onValueChange?.(next);
+    if (final) onValueCommitted?.(next);
   };
+  const commitRange = () => onValueCommitted?.(lastCommittedHexRef.current);
 
   const commitHct = (nextH: number, nextC: number, nextT: number) => {
     setLatentHct({ hue: nextH, chroma: nextC, tone: nextT });
     const solved = Hct.from(nextH, nextC, nextT);
     const hex = hexFromArgb(solved.toInt()).toUpperCase();
-    commitHex(hex, false);
+    commitHex(hex, false, false);
   };
 
   const tonalRamp = React.useMemo(() => {
@@ -300,7 +298,7 @@ export function ColorPicker({
               const raw = e.target.value;
               setHexDraft(raw);
               if (/^#?[0-9a-fA-F]{6}$/.test(raw.trim())) {
-                commitHex(raw);
+                commitHex(raw, true, false);
               }
             }}
             onKeyDown={(e) => {
@@ -342,6 +340,8 @@ export function ColorPicker({
             value={hct.hue}
             disabled={isDisabled}
             className="m3e-color-picker__range m3e-color-picker__range--hue"
+            onPointerUp={commitRange}
+            onKeyUp={commitRange}
             onChange={(e) =>
               commitHct(Number(e.target.value), hct.chroma, hct.tone)
             }
@@ -365,6 +365,8 @@ export function ColorPicker({
             value={Math.min(100, hct.chroma)}
             disabled={isDisabled}
             className="m3e-color-picker__range"
+            onPointerUp={commitRange}
+            onKeyUp={commitRange}
             style={{
               background: `linear-gradient(${gradDir}, ${chromaTrackStart}, ${chromaTrackEnd})`,
             }}
@@ -391,6 +393,8 @@ export function ColorPicker({
             value={hct.tone}
             disabled={isDisabled}
             className="m3e-color-picker__range m3e-color-picker__range--tone"
+            onPointerUp={commitRange}
+            onKeyUp={commitRange}
             onChange={(e) =>
               commitHct(hct.hue, hct.chroma, Number(e.target.value))
             }
@@ -447,6 +451,7 @@ export interface M3EColorPickerFieldProps {
   readonly value?: string;
   readonly defaultValue?: string;
   readonly onValueChange?: (hex: string) => void;
+  readonly onValueCommitted?: (hex: string) => void;
   readonly swatches?: readonly string[];
   readonly showTonalRamp?: boolean;
   readonly disabled?: boolean;
@@ -466,6 +471,7 @@ export function ColorPickerField({
   value: controlledValue,
   defaultValue = "#6750A4",
   onValueChange,
+  onValueCommitted,
   swatches,
   showTonalRamp = true,
   disabled = false,
@@ -526,14 +532,12 @@ export function ColorPickerField({
         </label>
       ) : null}
 
-      {name ? (
-        <input
-          type="hidden"
-          name={name}
-          value={currentHex}
-          disabled={isDisabled}
-        />
-      ) : null}
+      <FormHiddenValue
+        name={name}
+        value={currentHex}
+        disabled={isDisabled}
+        required={required}
+      />
 
       <BasePopover.Root open={open} onOpenChange={setOpen}>
         <div
@@ -626,6 +630,7 @@ export function ColorPickerField({
                   }
                   onValueChange?.(next);
                 }}
+                onValueCommitted={onValueCommitted}
               />
             </BasePopover.Popup>
           </BasePopover.Positioner>

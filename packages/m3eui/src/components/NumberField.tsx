@@ -1,8 +1,9 @@
 import * as React from "react";
+import { useFormReset } from "../internal/formField.js";
 import { Field as BaseField } from "@base-ui/react/field";
 import { NumberField as BaseNumberField } from "@base-ui/react/number-field";
 import { NUMBER_FIELD_TOKENS, flipCornersHorizontal } from "../tokens/index.js";
-import { useM3E } from "../context/M3EContext.js";
+import { useM3ERuntime } from "../context/M3EContext.js";
 import {
   useM3ECornerSpringRef,
   usePressHoldState,
@@ -104,7 +105,7 @@ export const NumberField = React.forwardRef<
   },
   forwardedRef,
 ): React.JSX.Element {
-  const { locale, direction, t } = useM3E();
+  const { locale, direction, t } = useM3ERuntime();
   const isDisabled = useFieldsetDisabled(disabled);
   const stepBlocked = isDisabled || readOnly;
   const generatedId = React.useId();
@@ -119,16 +120,11 @@ export const NumberField = React.forwardRef<
   const currentValue =
     controlledValue !== undefined ? controlledValue : uncontrolledValue;
 
-  React.useEffect(() => {
-    if (controlledValue !== undefined) return;
-    const form = inputRef.current?.form;
-    if (!form) return;
-    const onReset = () => {
-      setUncontrolledValue(defaultValRef.current);
-    };
-    form.addEventListener("reset", onReset);
-    return () => form.removeEventListener("reset", onReset);
-  }, [controlledValue]);
+  useFormReset(
+    inputRef,
+    () => setUncontrolledValue(defaultValRef.current),
+    controlledValue === undefined,
+  );
 
   const { isPressed: decPressed, pressHandlers: decHandlers } =
     usePressHoldState(stepBlocked);

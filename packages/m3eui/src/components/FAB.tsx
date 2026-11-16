@@ -10,18 +10,16 @@ import {
   type FabSize,
   resolveFabGeometry,
 } from "../tokens/index.js";
-import { useM3E } from "../context/M3EContext.js";
+import { useM3ERuntime } from "../context/M3EContext.js";
 import {
   useM3ECornerSpringRef,
   useM3EScalarSpring,
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
+import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
+import { FabElevationContext, type FabElevation } from "../internal/fabElevation.js";
 
-export type FabElevation = "default" | "lowered" | "none";
-
-export const FabElevationContext = React.createContext<
-  FabElevation | undefined
->(undefined);
+export type { FabElevation };
 
 const EXTENDED_FAB_TYPESCALE_MAP: Record<ExtendedFabSize, string> = {
   sm: "title-medium",
@@ -74,7 +72,7 @@ export const FAB = React.forwardRef<HTMLElement, M3EFABProps>(function FAB(
   },
   ref,
 ) {
-  const { debugGeometry } = useM3E();
+  const { debugGeometry } = useM3ERuntime();
   const contextElevation = React.useContext(FabElevationContext);
   const resolvedElevation = elevation ?? contextElevation ?? "default";
   const { isPressed, pressHandlers } = usePressHoldState(disabled || !visible);
@@ -210,7 +208,7 @@ export const ExtendedFAB = React.forwardRef<HTMLElement, M3EExtendedFABProps>(
     },
     ref,
   ) {
-    const { debugGeometry } = useM3E();
+    const { debugGeometry } = useM3ERuntime();
     const contextElevation = React.useContext(FabElevationContext);
     const resolvedElevation = elevation ?? contextElevation ?? "default";
     const { isPressed, pressHandlers } = usePressHoldState(
@@ -222,7 +220,7 @@ export const ExtendedFAB = React.forwardRef<HTMLElement, M3EExtendedFABProps>(
     const labelRef = React.useRef<HTMLSpanElement | null>(null);
     const [labelWidth, setLabelWidth] = React.useState<number>(72);
 
-    React.useLayoutEffect(() => {
+    useIsoLayoutEffect(() => {
       const el = labelRef.current;
       if (!el) return;
       let cancelled = false;

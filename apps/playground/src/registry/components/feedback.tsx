@@ -1081,7 +1081,7 @@ export const FEEDBACK_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   },
   {
     slug: "dialog",
-    title: "Dialog & AlertDialog",
+    title: "Dialog",
     category: "feedback",
     primitive: "@base-ui/react/dialog · @base-ui/react/alert-dialog",
     subtitle: {
@@ -1281,7 +1281,7 @@ export const FEEDBACK_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   },
   {
     slug: "sheet",
-    title: "SideSheet & BottomSheet",
+    title: "Sheet",
     category: "feedback",
     primitive: "@base-ui/react/drawer",
     subtitle: {
@@ -1510,8 +1510,8 @@ toast({
       {
         title: "ShowM3EToastOptions (toast(options))",
         description: {
-          zh: "useM3EToast() 返回 { toast, close, toasts }，其中 toast(options) 接收以下参数并返回通知 id：",
-          en: "useM3EToast() returns { toast, close, toasts }; pass these options to toast(options):",
+          zh: "useM3EToast() 返回 { toast, close }，其中 toast(options) 接收以下参数并返回通知 id：",
+          en: "useM3EToast() returns { toast, close }; pass these options to toast(options):",
         },
         rows: [
           {
@@ -1587,22 +1587,21 @@ toast({
     ],
   },
   {
-    slug: "progress-meter",
-    title: "Progress, Wavy & Meter",
+    slug: "loading-indicator",
+    title: "LoadingIndicator",
     category: "feedback",
-    primitive: "@base-ui/react/progress · @base-ui/react/meter",
     subtitle: {
-      zh: "涵盖多边形形变加载器、M3 Expressive 正弦波浪进度条、标准分段进度指示器与语义阈值仪表。",
-      en: "Morphing polygon LoadingIndicator, expressive sinusoidal wavy progress bars, split-track progress indicators, and threshold-aware Meters.",
+      zh: "在 7 个 Material 多边形之间弹簧形变的加载指示器，支持不确定与确定进度。",
+      en: "Loading indicator that spring-morphs across seven Material polygons, indeterminate or determinate.",
     },
     importStatement:
-      'import { LoadingIndicator, ContainedLoadingIndicator, WavyProgressIndicator, LinearWavyProgressIndicator, CircularWavyProgressIndicator, LinearProgressIndicator, CircularProgressIndicator, Meter } from "m3eui";',
+      'import { LoadingIndicator, ContainedLoadingIndicator } from "m3eui";',
     scenarios: [
       {
         id: "loading-indicator",
         title: {
-          zh: "多边形形变加载器 (LoadingIndicator)",
-          en: "Morphing polygon LoadingIndicator",
+          zh: "形变加载",
+          en: "Morphing loader",
         },
         description: {
           zh: "在预定义圆角多边形序列间按弹簧曲线连续形变旋转，支持独立与 Contained 容器模式以及确定性 progress。",
@@ -1613,86 +1612,10 @@ toast({
 <ContainedLoadingIndicator size={56} progress={0.64} />`,
         render: () => <LoadingIndicatorDemo />,
       },
-      {
-        id: "wavy-progress",
-        title: {
-          zh: "Expressive 确定性波浪进度条",
-          en: "Expressive determinate wavy progress",
-        },
-        description: {
-          zh: "LinearWavyProgressIndicator 与 CircularWavyProgressIndicator 在接近 0% 与 100% 时自动平滑收敛振幅。",
-          en: "Linear and circular wavy indicators animate phase continuously and smoothly taper wave amplitude near 0% and 100%.",
-        },
-        code: `<LinearWavyProgressIndicator value={progress} />
-<CircularWavyProgressIndicator value={progress} size={52} />`,
-        render: () => <WavyProgressDemo />,
-      },
-      {
-        id: "wavy-indeterminate",
-        title: {
-          zh: "不确定态波浪进度动画",
-          en: "Indeterminate wavy progress",
-        },
-        description: {
-          zh: "当 value={null} 时进入周期性伸缩波浪巡航模式，并自动响应系统减弱动态偏好。",
-          en: "Passing value={null} activates indeterminate wave cycling while respecting prefers-reduced-motion.",
-        },
-        code: `<LinearWavyProgressIndicator value={null} />
-<CircularWavyProgressIndicator value={null} size={52} />`,
-        render: () => <WavyIndeterminateDemo />,
-      },
-      {
-        id: "standard-progress",
-        title: {
-          zh: "标准线性与环形进度指示器",
-          en: "Standard linear & circular progress",
-        },
-        description: {
-          zh: "具备 M3 标志性轨道切口间隙与末端停止圆点，支持数值百分比展示与不确定态。",
-          en: "Features M3 split-track gap geometry, trailing stop dot, localized percentage readout, and indeterminate mode.",
-        },
-        code: `<LinearProgressIndicator label="Uploading assets" value={72} showValue />
-<LinearProgressIndicator indeterminate thickness="thick" />
-<CircularProgressIndicator value={68} size="lg" showValue />
-<CircularProgressIndicator indeterminate size="md" />`,
-        render: () => (
-          <div style={STACK_COL}>
-            <LinearProgressIndicator label="Uploading assets · 上传构建产物" value={72} showValue />
-            <LinearProgressIndicator indeterminate thickness="thick" aria-label="Syncing index" />
-            <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
-              <CircularProgressIndicator value={35} size="sm" />
-              <CircularProgressIndicator value={68} size="md" showValue />
-              <CircularProgressIndicator value={84} size="lg" showValue />
-              <CircularProgressIndicator indeterminate size="md" />
-            </div>
-          </div>
-        ),
-      },
-      {
-        id: "meter-thresholds",
-        title: {
-          zh: "多阈值语义仪表 (Meter)",
-          en: "Semantic threshold Meter gauges",
-        },
-        description: {
-          zh: "根据占用比例自动在 normal、warning 与 critical 三档色彩语义间平滑过渡。",
-          en: "Automatically transitions indicator tone across normal, warning, and critical usage thresholds.",
-        },
-        code: `<Meter label="Memory pool" value={42} valueText="3.4 / 8 GB" />
-<Meter label="API rate budget" value={78} />
-<Meter label="NVMe scratch disk" value={94} valueText="940 / 1000 GB" />`,
-        render: () => (
-          <div style={STACK_COL}>
-            <Meter label="Memory pool (Normal)" value={42} valueText="3.4 / 8 GB" />
-            <Meter label="API rate budget (Warning)" value={78} />
-            <Meter label="NVMe scratch disk (Critical)" value={94} valueText="940 / 1000 GB" />
-          </div>
-        ),
-      },
     ],
     apis: [
       {
-        title: "LoadingIndicator & ContainedLoadingIndicator Props",
+        title: "Props",
         rows: [
           {
             name: "size",
@@ -1726,6 +1649,115 @@ toast({
             description: {
               zh: "暂停帧循环动画。",
               en: "Pauses the requestAnimationFrame morph loop.",
+            },
+          },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "progress-indicator",
+    title: "ProgressIndicator",
+    category: "feedback",
+    primitive: "@base-ui/react/progress",
+    subtitle: {
+      zh: "线形与环形进度指示器，含 M3E 断开轨道、终点圆点与波形（Wavy）变体。",
+      en: "Linear and circular progress with M3E split track, stop dot, and wavy variants.",
+    },
+    importStatement:
+      'import { LinearProgressIndicator, CircularProgressIndicator, LinearWavyProgressIndicator, CircularWavyProgressIndicator } from "m3eui";',
+    scenarios: [
+      {
+        id: "standard-progress",
+        title: {
+          zh: "线形与环形",
+          en: "Linear & circular",
+        },
+        description: {
+          zh: "具备 M3 标志性轨道切口间隙与末端停止圆点，支持数值百分比展示与不确定态。",
+          en: "Features M3 split-track gap geometry, trailing stop dot, localized percentage readout, and indeterminate mode.",
+        },
+        code: `<LinearProgressIndicator label="Uploading assets" value={72} showValue />
+<LinearProgressIndicator indeterminate thickness="thick" />
+<CircularProgressIndicator value={68} size="lg" showValue />
+<CircularProgressIndicator indeterminate size="md" />`,
+        render: () => (
+          <div style={STACK_COL}>
+            <LinearProgressIndicator label="Uploading assets · 上传构建产物" value={72} showValue />
+            <LinearProgressIndicator indeterminate thickness="thick" aria-label="Syncing index" />
+            <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+              <CircularProgressIndicator value={35} size="sm" />
+              <CircularProgressIndicator value={68} size="md" showValue />
+              <CircularProgressIndicator value={84} size="lg" showValue />
+              <CircularProgressIndicator indeterminate size="md" />
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: "wavy-progress",
+        title: {
+          zh: "波形进度",
+          en: "Wavy",
+        },
+        description: {
+          zh: "LinearWavyProgressIndicator 与 CircularWavyProgressIndicator 在接近 0% 与 100% 时自动平滑收敛振幅。",
+          en: "Linear and circular wavy indicators animate phase continuously and smoothly taper wave amplitude near 0% and 100%.",
+        },
+        code: `<LinearWavyProgressIndicator value={progress} />
+<CircularWavyProgressIndicator value={progress} size={52} />`,
+        render: () => <WavyProgressDemo />,
+      },
+      {
+        id: "wavy-indeterminate",
+        title: {
+          zh: "波形不确定态",
+          en: "Wavy indeterminate",
+        },
+        description: {
+          zh: "当 value={null} 时进入周期性伸缩波浪巡航模式，并自动响应系统减弱动态偏好。",
+          en: "Passing value={null} activates indeterminate wave cycling while respecting prefers-reduced-motion.",
+        },
+        code: `<LinearWavyProgressIndicator value={null} />
+<CircularWavyProgressIndicator value={null} size={52} />`,
+        render: () => <WavyIndeterminateDemo />,
+      },
+    ],
+    apis: [
+      {
+        title: "LinearProgressIndicator & CircularProgressIndicator Props",
+        rows: [
+          {
+            name: "value",
+            type: "number | null",
+            description: {
+              zh: "Progress 支持 0–100 或 null；Meter 必填数值（配合 min / max）。",
+              en: "0–100 (or null) for Progress indicators; required numeric value within [min, max] for Meter.",
+            },
+          },
+          {
+            name: "indeterminate",
+            type: "boolean",
+            defaultValue: "false",
+            description: {
+              zh: "是否开启不确定态往返进度动画（Linear / CircularProgressIndicator）。",
+              en: "Switches Linear or CircularProgressIndicator into indeterminate mode.",
+            },
+          },
+          {
+            name: "thickness / size",
+            type: '"standard" | "thick" · "sm" | "md" | "lg"',
+            description: {
+              zh: "线性进度条厚度（4px / 8px）或环形进度条尺寸档位。",
+              en: "Track thickness on LinearProgressIndicator or diameter preset on CircularProgressIndicator.",
+            },
+          },
+          {
+            name: "label / showValue / valueText",
+            type: "React.ReactNode / boolean / string",
+            description: {
+              zh: "顶部标签、本地化百分比显示开关以及 Meter 自定义读数文本。",
+              en: "Header label, localized percentage toggle, and custom formatted valueText on Meter.",
             },
           },
         ],
@@ -1769,40 +1801,71 @@ toast({
           },
         ],
       },
+    ],
+  },
+  {
+    slug: "meter",
+    title: "Meter",
+    category: "feedback",
+    primitive: "@base-ui/react/meter",
+    subtitle: {
+      zh: "表示容量或用量的静态量表，按阈值切换正常、警告与危险色。",
+      en: "Static capacity gauge that shifts tone across normal, warning, and critical thresholds.",
+    },
+    importStatement:
+      'import { Meter } from "m3eui";',
+    scenarios: [
       {
-        title: "LinearProgressIndicator, CircularProgressIndicator & Meter Props",
+        id: "meter-thresholds",
+        title: {
+          zh: "阈值量表",
+          en: "Threshold gauges",
+        },
+        description: {
+          zh: "根据占用比例自动在 normal、warning 与 critical 三档色彩语义间平滑过渡。",
+          en: "Automatically transitions indicator tone across normal, warning, and critical usage thresholds.",
+        },
+        code: `<Meter label="Memory pool" value={42} valueText="3.4 / 8 GB" />
+<Meter label="API rate budget" value={78} />
+<Meter label="NVMe scratch disk" value={94} valueText="940 / 1000 GB" />`,
+        render: () => (
+          <div style={STACK_COL}>
+            <Meter label="Memory pool (Normal)" value={42} valueText="3.4 / 8 GB" />
+            <Meter label="API rate budget (Warning)" value={78} />
+            <Meter label="NVMe scratch disk (Critical)" value={94} valueText="940 / 1000 GB" />
+          </div>
+        ),
+      },
+    ],
+    apis: [
+      {
+        title: "Props",
         rows: [
           {
-            name: "value",
-            type: "number | null",
+            name: "value / min / max",
+            type: "number",
+            required: true,
+            defaultValue: "— / 0 / 100",
             description: {
-              zh: "Progress 支持 0–100 或 null；Meter 必填数值（配合 min / max）。",
-              en: "0–100 (or null) for Progress indicators; required numeric value within [min, max] for Meter.",
+              zh: "当前量值与量程。",
+              en: "Current reading and range.",
             },
           },
           {
-            name: "indeterminate",
-            type: "boolean",
-            defaultValue: "false",
+            name: "label",
+            type: "React.ReactNode",
+            required: true,
             description: {
-              zh: "是否开启不确定态往返进度动画（Linear / CircularProgressIndicator）。",
-              en: "Switches Linear or CircularProgressIndicator into indeterminate mode.",
+              zh: "量表名称，同时作为无障碍名称。",
+              en: "Gauge label, also used as the accessible name.",
             },
           },
           {
-            name: "thickness / size",
-            type: '"standard" | "thick" · "sm" | "md" | "lg"',
+            name: "valueText",
+            type: "string",
             description: {
-              zh: "线性进度条厚度（4px / 8px）或环形进度条尺寸档位。",
-              en: "Track thickness on LinearProgressIndicator or diameter preset on CircularProgressIndicator.",
-            },
-          },
-          {
-            name: "label / showValue / valueText",
-            type: "React.ReactNode / boolean / string",
-            description: {
-              zh: "顶部标签、本地化百分比显示开关以及 Meter 自定义读数文本。",
-              en: "Header label, localized percentage toggle, and custom formatted valueText on Meter.",
+              zh: "覆盖默认的本地化百分比读数。",
+              en: "Overrides the default localized percentage readout.",
             },
           },
         ],
@@ -1811,20 +1874,21 @@ toast({
   },
   {
     slug: "tooltip",
-    title: "Tooltip & PreviewCard",
+    title: "Tooltip",
     category: "feedback",
-    primitive: "@base-ui/react/tooltip · @base-ui/react/preview-card",
+    primitive: "@base-ui/react/tooltip",
     subtitle: {
-      zh: "涵盖轻量化单行文字提示 Tooltip、带副标题与动作按钮的 RichTooltip，以及链接悬停资料预览卡 PreviewCard。",
-      en: "Plain label Tooltips, multi-part RichTooltips with interactive actions, and hover PreviewCards for rich entity previews.",
+      zh: "纯文本 Tooltip 与带标题、操作按钮的 RichTooltip。",
+      en: "Plain label Tooltip and RichTooltip with subhead and action.",
     },
-    importStatement: 'import { Tooltip, RichTooltip, PreviewCard } from "m3eui";',
+    importStatement:
+      'import { Tooltip, RichTooltip } from "m3eui";',
     scenarios: [
       {
         id: "tooltip-plain",
         title: {
-          zh: "纯文本轻提示 (Plain Tooltip)",
-          en: "Plain Tooltip on controls",
+          zh: "纯文本提示",
+          en: "Plain",
         },
         description: {
           zh: "为图标按钮和工具栏控件补充简洁说明，支持上、下、左、右四个弹出方位。",
@@ -1856,8 +1920,8 @@ toast({
       {
         id: "rich-tooltip",
         title: {
-          zh: "富文本提示框 (RichTooltip)",
-          en: "RichTooltip with subhead & action",
+          zh: "富提示",
+          en: "Rich",
         },
         description: {
           zh: "包含 subhead 小标题、多行正文与可点击的 action 按钮，指针移入浮层时保持开启。",
@@ -1871,25 +1935,6 @@ toast({
   <Button variant="tonal">Hover for RichTooltip</Button>
 </RichTooltip>`,
         render: () => <RichTooltipActionDemo />,
-      },
-      {
-        id: "preview-card",
-        title: {
-          zh: "悬停资料预览卡 (PreviewCard)",
-          en: "Hover PreviewCard",
-        },
-        description: {
-          zh: "悬停或聚焦在触发链接上时展示作者、仓库或组件元信息卡片。",
-          en: "Reveals a rich surface card when hovering or focusing inline mentions and entity links.",
-        },
-        code: `<PreviewCard
-  trigger={<a href="#author">@m3e-design-core</a>}
-  side="bottom"
-  align="start"
->
-  <div>M3E Design Engineering · 45 Modules</div>
-</PreviewCard>`,
-        render: () => <PreviewCardDemo />,
       },
     ],
     apis: [
@@ -1968,8 +2013,43 @@ toast({
           },
         ],
       },
+    ],
+  },
+  {
+    slug: "preview-card",
+    title: "PreviewCard",
+    category: "feedback",
+    primitive: "@base-ui/react/preview-card",
+    subtitle: {
+      zh: "悬停或聚焦链接时展示的实体预览卡片。",
+      en: "Entity preview surface revealed on link hover or focus.",
+    },
+    importStatement:
+      'import { PreviewCard } from "m3eui";',
+    scenarios: [
       {
-        title: "PreviewCard Props",
+        id: "preview-card",
+        title: {
+          zh: "链接预览",
+          en: "Link preview",
+        },
+        description: {
+          zh: "悬停或聚焦在触发链接上时展示作者、仓库或组件元信息卡片。",
+          en: "Reveals a rich surface card when hovering or focusing inline mentions and entity links.",
+        },
+        code: `<PreviewCard
+  trigger={<a href="#author">@m3e-design-core</a>}
+  side="bottom"
+  align="start"
+>
+  <div>M3E Design Engineering · 45 Modules</div>
+</PreviewCard>`,
+        render: () => <PreviewCardDemo />,
+      },
+    ],
+    apis: [
+      {
+        title: "Props",
         rows: [
           {
             name: "trigger",

@@ -93,7 +93,7 @@ export const EXPANSION_DESIGN_SPECS: Readonly<
     ],
   },
 
-  "kbd-snippet": {
+  snippet: {
     provenance: "m3e-web-adaptation",
     provenanceSummary:
       "Developer ergonomics trio: semantic <kbd> keycaps, spring-morphing CopyButton, and CLI Snippet bar.",
@@ -221,7 +221,7 @@ export const EXPANSION_DESIGN_SPECS: Readonly<
   "drag-handle": {
     provenance: "official-m3e",
     provenanceSummary:
-      "1:1 port of AOSP Compose DragHandle.kt & DragHandleTokens.kt for resizable adaptive panes.",
+      "Based on AOSP Compose DragHandle.kt & DragHandleTokens.kt for resizable adaptive panes.",
     tokenSources: ["DRAG_HANDLE_TOKENS", "resolveDragHandleGeometry", "EXPRESSIVE_MOTION_SCHEME"],
     aospSources: ["androidx.compose.material3/DragHandle.kt", "tokens/DragHandleTokens.kt"],
     inspirationAndRationale: [
@@ -263,13 +263,13 @@ export const EXPANSION_DESIGN_SPECS: Readonly<
   "bottom-app-bar": {
     provenance: "official-m3e",
     provenanceSummary:
-      "1:1 port of AOSP Compose AppBar.kt BottomAppBar with overflow-aware AppBarRow and embedded flat FAB.",
+      "Based on AOSP Compose AppBar.kt BottomAppBar with overflow-aware AppBarRow and embedded flat FAB.",
     tokenSources: ["BOTTOM_APP_BAR_TOKENS", "EXPRESSIVE_MOTION_SCHEME"],
     aospSources: ["androidx.compose.material3/AppBar.kt"],
     inspirationAndRationale: [
       {
         title: "Embedded Zero-Elevation FAB",
-        body: "Trailing FABs inside BottomAppBar automatically receive elevation=\"none\" via FabElevationContext so shadows never stack inside the 80px container.",
+        body: "Trailing FABs inside BottomAppBar automatically receive elevation=\"none\" so shadows never stack inside the 80px container.",
       },
     ],
     geometryAndMotionTables: [
@@ -305,7 +305,7 @@ export const EXPANSION_DESIGN_SPECS: Readonly<
   "pull-to-refresh": {
     provenance: "official-m3e",
     provenanceSummary:
-      "1:1 port of AOSP Compose PullToRefresh.kt composing M3E ContainedLoadingIndicator polygon morphing.",
+      "Based on AOSP Compose PullToRefreshBox.kt composing M3E ContainedLoadingIndicator polygon morphing.",
     tokenSources: ["PULL_TO_REFRESH_TOKENS", "LOADING_INDICATOR_TOKENS"],
     aospSources: ["androidx.compose.material3.pulltorefresh/PullToRefresh.kt"],
     inspirationAndRationale: [

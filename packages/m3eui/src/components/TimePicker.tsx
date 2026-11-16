@@ -11,7 +11,6 @@ import {
 import { useM3EI18n } from "../context/M3EContext.js";
 import { useM3EPortalContainer } from "../context/M3EPortal.js";
 import {
-  useM3ECornerSpringRef,
   useM3EScalarSpring,
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
@@ -25,6 +24,7 @@ import {
   formatLocalizedWallTime,
   getLocaleUses24Hour,
 } from "../i18n/index.js";
+import { FormHiddenValue } from "../internal/formField.js";
 
 export type PlainTimeString = `${string}:${string}` | string;
 
@@ -103,36 +103,19 @@ function TimeSegmentChip({
 function PeriodSegmentButton({
   label,
   selected,
-  position,
   onClick,
 }: {
   readonly label: string;
   readonly selected: boolean;
-  readonly position: "top" | "bottom";
   readonly onClick: () => void;
 }) {
-  const { isPressed, pressHandlers } = usePressHoldState(false);
-  const outer = TIME_PICKER_TOKENS.periodOuterRadius;
-  const inner = isPressed ? 2 : TIME_PICKER_TOKENS.periodInnerRadius;
-  const targetCorners =
-    position === "top"
-      ? ([outer, outer, inner, inner] as const)
-      : ([inner, inner, outer, outer] as const);
-  const { ref: periodBtnRef, borderRadiusCss } =
-    useM3ECornerSpringRef<HTMLButtonElement>(targetCorners, "fastSpatial");
-
   return (
     <button
-      ref={periodBtnRef}
       type="button"
       aria-pressed={selected}
       onClick={onClick}
       className="m3e-time-picker__period-btn"
       data-selected={selected ? "" : undefined}
-      style={{
-        borderRadius: borderRadiusCss,
-      }}
-      {...pressHandlers}
     >
       {label}
     </button>
@@ -518,11 +501,11 @@ export function TimePicker({
               style={{
                 width: `${TIME_PICKER_TOKENS.periodWidth}px`,
                 height: `${TIME_PICKER_TOKENS.periodHeight}px`,
+                borderRadius: `${TIME_PICKER_TOKENS.periodRadius}px`,
               }}
             >
               <PeriodSegmentButton
                 label={t("timePicker.am")}
-                position="top"
                 selected={!isPm}
                 onClick={() => {
                   if (isPm) commitTime(hour24 - 12, minute);
@@ -530,7 +513,6 @@ export function TimePicker({
               />
               <PeriodSegmentButton
                 label={t("timePicker.pm")}
-                position="bottom"
                 selected={isPm}
                 onClick={() => {
                   if (!isPm) commitTime(hour24 + 12, minute);
@@ -568,11 +550,11 @@ export function TimePicker({
                 style={{
                   width: `${TIME_PICKER_TOKENS.periodWidth}px`,
                   height: `${TIME_PICKER_TOKENS.periodHeight}px`,
+                  borderRadius: `${TIME_PICKER_TOKENS.periodRadius}px`,
                 }}
               >
                 <PeriodSegmentButton
                   label={t("timePicker.am")}
-                  position="top"
                   selected={!isPm}
                   onClick={() => {
                     if (isPm) commitTime(hour24 - 12, minute);
@@ -580,7 +562,6 @@ export function TimePicker({
                 />
                 <PeriodSegmentButton
                   label={t("timePicker.pm")}
-                  position="bottom"
                   selected={isPm}
                   onClick={() => {
                     if (!isPm) commitTime(hour24 + 12, minute);
@@ -592,8 +573,22 @@ export function TimePicker({
 
           <div
             ref={dialRef}
-            role="listbox"
+            role="slider"
             tabIndex={0}
+            aria-valuemin={selectionMode === "hour" ? (use24Hour ? 0 : 1) : 0}
+            aria-valuemax={selectionMode === "hour" ? (use24Hour ? 23 : 12) : 59}
+            aria-valuenow={
+              selectionMode === "hour"
+                ? use24Hour
+                  ? hour24
+                  : hour24 % 12 || 12
+                : minute
+            }
+            aria-valuetext={formatLocalizedWallTime(
+              locale,
+              { hour: hour24, minute },
+              use24Hour,
+            )}
             aria-label={
               selectionMode === "hour"
                 ? t("timePicker.hourDial")
@@ -735,9 +730,8 @@ export function TimePicker({
                     <button
                       key={`outer-${h}`}
                       type="button"
-                      role="option"
                       tabIndex={-1}
-                      aria-selected={selected}
+                      aria-hidden="true"
                       className="m3e-time-picker__dial-num"
                       data-selected={selected ? "" : undefined}
                       style={{
@@ -771,9 +765,8 @@ export function TimePicker({
                         <button
                           key={`inner-${h}`}
                           type="button"
-                          role="option"
                           tabIndex={-1}
-                          aria-selected={selected}
+                          aria-hidden="true"
                           className="m3e-time-picker__dial-num m3e-time-picker__dial-num--inner"
                           data-selected={selected ? "" : undefined}
                           style={{
@@ -801,9 +794,8 @@ export function TimePicker({
                   <button
                     key={`min-${m}`}
                     type="button"
-                    role="option"
                     tabIndex={-1}
-                    aria-selected={selected}
+                    aria-hidden="true"
                     className="m3e-time-picker__dial-num"
                     data-selected={selected ? "" : undefined}
                     style={{
@@ -948,12 +940,12 @@ export function TimePickerField({
     if ((isDisabled || readOnly) && open) setOpen(false);
   }, [isDisabled, readOnly, open]);
   const current = controlledValue ?? uncontrolledTime;
+  const isEmpty = !/^\d{1,2}:\d{2}$/.test(current.trim());
   const { hour24, minute } = parsePlainTime(current);
-  const formattedLabel = formatLocalizedWallTime(
-    locale,
-    { hour: hour24, minute },
-    use24Hour,
-  );
+  const formattedLabel = isEmpty
+    ? ""
+    : formatLocalizedWallTime(locale, { hour: hour24, minute }, use24Hour);
+  const isLabelFloated = !isEmpty || open;
   const isFloatingLabel = labelPosition === "floating" && Boolean(label);
   const height = isFloatingLabel ? SELECT_TOKENS.outlinedHeight : 48;
   const radius = isFloatingLabel
@@ -988,14 +980,12 @@ export function TimePickerField({
           {labelNode}
         </label>
       ) : null}
-      {name ? (
-        <input
-          type="hidden"
-          name={name}
-          value={formatPlainTime(hour24, minute)}
-          disabled={isDisabled}
-        />
-      ) : null}
+      <FormHiddenValue
+        name={name}
+        value={isEmpty ? "" : formatPlainTime(hour24, minute)}
+        disabled={isDisabled}
+        required={required}
+      />
       <BasePopover.Root
         open={readOnly ? false : open}
         onOpenChange={(next) => {
@@ -1006,7 +996,7 @@ export function TimePickerField({
           className="m3e-select__shell"
           data-variant="outlined"
           data-label-position={labelPosition}
-          data-floating=""
+          data-floating={isLabelFloated ? "" : undefined}
           data-popup-open={!readOnly && open ? "" : undefined}
           data-disabled={isDisabled ? "" : undefined}
           data-readonly={readOnly ? "" : undefined}
@@ -1014,13 +1004,13 @@ export function TimePickerField({
           style={{ borderRadius: `${radius}px` }}
         >
           {isFloatingLabel ? (
-            <FieldNotchedOutline label={labelNode} floating />
+            <FieldNotchedOutline label={labelNode} floating={isLabelFloated} />
           ) : null}
           {isFloatingLabel ? (
             <label
               htmlFor={triggerId}
               className="m3e-field__floating-label m3e-select__floating-label"
-              data-floating=""
+              data-floating={isLabelFloated ? "" : undefined}
             >
               {labelNode}
             </label>
@@ -1035,7 +1025,7 @@ export function TimePickerField({
             className="m3e-select__trigger m3e-date-picker-field__trigger"
             data-variant="outlined"
             data-label-position={labelPosition}
-            data-floating=""
+            data-floating={isLabelFloated ? "" : undefined}
             data-readonly={readOnly ? "" : undefined}
             style={{
               minHeight: `${height}px`,
@@ -1106,8 +1096,6 @@ export interface M3ETimePickerDialogProps {
   readonly className?: string;
   readonly style?: React.CSSProperties;
 }
-
-export type M3EModalTimePickerProps = M3ETimePickerDialogProps;
 
 export function TimePickerDialog({
   open: controlledOpen,
@@ -1231,4 +1219,3 @@ export function TimePickerDialog({
   );
 }
 
-export const ModalTimePicker = TimePickerDialog;

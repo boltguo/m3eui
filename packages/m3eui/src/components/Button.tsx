@@ -9,7 +9,7 @@ import {
   type ButtonSize,
   type CornerTuple,
 } from "../tokens/index.js";
-import { useM3E } from "../context/M3EContext.js";
+import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3ECornerSpringRef, usePressHoldState } from "../hooks/useM3ESpring.js";
 import { ButtonGroupItemContext } from "../internal/buttonGroupContext.js";
 
@@ -115,7 +115,7 @@ export const Button = React.forwardRef<HTMLElement, M3EButtonProps>(function But
   },
   ref,
 ) {
-  const { debugGeometry } = useM3E();
+  const { debugGeometry } = useM3ERuntime();
   const groupItemCtx = React.useContext(ButtonGroupItemContext);
   const spec = BUTTON_SIZE_SPECS[size];
   const isDisabled = disabled || loading;
@@ -196,7 +196,7 @@ export const Button = React.forwardRef<HTMLElement, M3EButtonProps>(function But
           style={{
             width: spec.iconSize,
             height: spec.iconSize,
-            visibility: loading ? "hidden" : undefined,
+            opacity: loading ? 0 : undefined,
           }}
           aria-hidden="true"
         >
@@ -205,7 +205,7 @@ export const Button = React.forwardRef<HTMLElement, M3EButtonProps>(function But
       ) : null}
       <span
         className="m3e-button__label"
-        style={loading ? { visibility: "hidden" } : undefined}
+        style={loading ? { opacity: 0 } : undefined}
       >
         {children}
       </span>
@@ -215,7 +215,7 @@ export const Button = React.forwardRef<HTMLElement, M3EButtonProps>(function But
           style={{
             width: spec.iconSize,
             height: spec.iconSize,
-            visibility: loading ? "hidden" : undefined,
+            opacity: loading ? 0 : undefined,
           }}
           aria-hidden="true"
         >
@@ -307,7 +307,7 @@ export const ToggleButton = React.forwardRef<HTMLButtonElement, M3EToggleButtonP
     },
     ref,
   ) {
-    const { debugGeometry } = useM3E();
+    const { debugGeometry } = useM3ERuntime();
     const groupItemCtx = React.useContext(ButtonGroupItemContext);
     const [uncontrolledPressed, setUncontrolledPressed] =
       React.useState<boolean>(defaultPressed);

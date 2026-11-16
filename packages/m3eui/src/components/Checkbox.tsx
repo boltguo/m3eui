@@ -6,6 +6,7 @@ import { CheckboxGroup as BaseCheckboxGroup } from "@base-ui/react/checkbox-grou
 import { CHECKBOX_TOKENS } from "../tokens/index.js";
 import { useM3EScalarSpring, usePressHoldState } from "../hooks/useM3ESpring.js";
 import { FieldsetDisabledContext, useFieldsetDisabled } from "../internal/fieldOutline.js";
+import { FormFieldScope, useFormReset } from "../internal/formField.js";
 
 export interface M3ECheckboxProps {
   readonly checked?: boolean;
@@ -95,6 +96,9 @@ export const Checkbox = React.forwardRef<HTMLElement, M3ECheckboxProps>(
     ref,
   ) {
     const isDisabled = useFieldsetDisabled(disabled);
+    const [resetKey, setResetKey] = React.useState(0);
+    const inputRef = React.useRef<HTMLInputElement | null>(null);
+    useFormReset(inputRef, () => setResetKey((k) => k + 1), checked === undefined);
     const { isPressed, pressHandlers } = usePressHoldState(isDisabled || readOnly);
     const cornerRadius = useM3EScalarSpring(
       isPressed
@@ -104,12 +108,15 @@ export const Checkbox = React.forwardRef<HTMLElement, M3ECheckboxProps>(
     );
 
     const boxNode = (
+      <FormFieldScope name={parent ? undefined : name} disabled={isDisabled}>
       <BaseCheckbox.Root
         ref={ref}
         id={id}
         name={name}
         value={value}
+        key={resetKey}
         parent={parent}
+        inputRef={inputRef}
         checked={checked}
         defaultChecked={defaultChecked}
         indeterminate={indeterminate}
@@ -143,6 +150,7 @@ export const Checkbox = React.forwardRef<HTMLElement, M3ECheckboxProps>(
           )}
         />
       </BaseCheckbox.Root>
+      </FormFieldScope>
     );
 
     if (!label) {

@@ -366,7 +366,6 @@ function SplitButtonDangerItemsDemo() {
             label: "Save a copy",
             icon: <CopyIcon size={15} />,
             shortcut: "⇧⌘S",
-            selected: true,
             onSelect: () => setStatus("Saved duplicate copy"),
           },
           {
@@ -638,7 +637,7 @@ function FloatingToolbarCollapsibleDemo() {
 /* -------------------------------------------------------------------------- */
 
 const COMMON_SPLIT_MENU = [
-  { id: "send-now", label: "Send immediately", shortcut: "⌘↵", selected: true },
+  { id: "send-now", label: "Send immediately", shortcut: "⌘↵" },
   { id: "schedule", label: "Schedule for 9:00 AM", shortcut: "⇧⌘L" },
   { id: "draft", label: "Save as template" },
 ] as const;
@@ -2075,11 +2074,11 @@ const [subscribed, setSubscribed] = React.useState(false);
           },
           {
             name: "menuItems",
-            type: "readonly SplitButtonMenuItemSpec[]",
+            type: "readonly M3EMenuItemSpec[]",
             required: true,
             description: {
-              zh: "右侧下拉菜单项数组（含 id、label、icon、shortcut、disabled、selected、onSelect）。",
-              en: "Items rendered in the trailing segmented dropdown menu.",
+              zh: "右侧下拉菜单项，与 DropdownMenu 的 items 相同。",
+              en: "Trailing menu items; same shape as DropdownMenu items.",
             },
           },
           {
@@ -2152,7 +2151,7 @@ const [subscribed, setSubscribed] = React.useState(false);
   /* ---------------------------------------------------------------------- */
   {
     slug: "fab",
-    title: "FAB & ExtendedFAB",
+    title: "FAB",
     category: "actions",
     subtitle: {
       zh: "页面最高优先级的悬浮主操作按钮家族：涵盖四种容器色板的标准 FAB、宽度平滑伸缩的 ExtendedFAB 以及错峰弹簧展开的 FABMenu。",
@@ -2454,7 +2453,7 @@ const [subscribed, setSubscribed] = React.useState(false);
   /* ---------------------------------------------------------------------- */
   {
     slug: "floating-toolbar",
-    title: "FloatingToolbar & DockedToolbar",
+    title: "FloatingToolbar",
     category: "actions",
     subtitle: {
       zh: "胶囊悬浮工具栏 FloatingToolbar 与替代旧版 BottomAppBar 的贴底通栏 DockedToolbar，支持双主题、伴随 FAB 与滚动折叠。",

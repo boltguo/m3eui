@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useM3EI18n } from "../context/M3EContext.js";
-import { DropdownMenu } from "./MenuAndPopover.js";
+import { DropdownMenu } from "./Menu.js";
 
 export type BreadcrumbSeparator = "slash" | "chevron";
 
@@ -152,20 +152,11 @@ export function Breadcrumb({
                     ci.textLabel ??
                     (typeof ci.label === "string" ? ci.label : `#${idx + 2}`),
                   icon: ci.icon,
+                  href: ci.href,
+                  render: ci.render,
                   onSelect: (event) => {
                     setMenuOpen(false);
-                    if (ci.onClick && event) {
-                      ci.onClick(event);
-                      if (
-                        !event.defaultPrevented &&
-                        ci.href &&
-                        typeof window !== "undefined"
-                      ) {
-                        window.location.assign(ci.href);
-                      }
-                    } else if (ci.href && typeof window !== "undefined") {
-                      window.location.assign(ci.href);
-                    }
+                    if (event) ci.onClick?.(event);
                   },
                 }))}
                 trigger={

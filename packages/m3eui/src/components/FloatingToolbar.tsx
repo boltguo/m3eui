@@ -11,7 +11,7 @@ import {
   type ToggleFabSize,
   resolveToggleFabGeometry,
 } from "../tokens/index.js";
-import { useM3E, useM3EI18n } from "../context/M3EContext.js";
+import { useM3ERuntime, useM3EI18n } from "../context/M3EContext.js";
 import {
   useM3ECornerSpringRef,
   useM3EScalarSpring,
@@ -19,6 +19,7 @@ import {
 } from "../hooks/useM3ESpring.js";
 import { INERT_TRUE } from "../internal/inert.js";
 import { FAB, type M3EFABProps } from "./FAB.js";
+import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
 
 export interface FloatingToolbarItemSpec {
   readonly id: string;
@@ -63,7 +64,7 @@ function FloatingToolbarActionButton({
 }: {
   readonly item: FloatingToolbarItemSpec;
 }) {
-  const { debugGeometry } = useM3E();
+  const { debugGeometry } = useM3ERuntime();
   const { isPressed, pressHandlers } = usePressHoldState(Boolean(item.disabled));
   const pill = FLOATING_TOOLBAR_TOKENS.itemSize / 2;
   const targetRadius = isPressed ? 10 : item.selected ? 14 : pill;
@@ -122,7 +123,7 @@ export function FloatingToolbar({
   className,
   style,
 }: M3EFloatingToolbarProps): React.JSX.Element {
-  const { t } = useM3E();
+  const { t } = useM3ERuntime();
   const resolvedAriaLabel = ariaLabel ?? t("floatingToolbar.ariaLabel");
   const isVertical = orientation === "vertical";
   const toolbarRef = React.useRef<HTMLDivElement | null>(null);
@@ -168,7 +169,7 @@ export function FloatingToolbar({
     }
   }, []);
 
-  React.useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     if (collapsed) {
       evacuateFocusFromToolbar();
       if (toolbarRef.current) {
@@ -438,11 +439,11 @@ function StaggeredFabMenuItem({
   readonly onDismissAndSelect: () => void;
   readonly buttonRef: (el: HTMLButtonElement | null) => void;
 }) {
-  const { playbackRate } = useM3E();
+  const { motionRef } = useM3ERuntime();
   const [itemActive, setItemActive] = React.useState<boolean>(isOpen);
 
   React.useEffect(() => {
-    const rate = Math.max(0.1, playbackRate);
+    const rate = Math.max(0.1, motionRef.current.playbackRate);
     const rawDelayMs = isOpen
       ? (count - 1 - index) * FAB_MENU_TOKENS.staggerStepMs
       : index * 25;
@@ -456,7 +457,7 @@ function StaggeredFabMenuItem({
       setItemActive(isOpen);
     }, delayMs);
     return () => clearTimeout(timer);
-  }, [isOpen, index, count, playbackRate]);
+  }, [isOpen, index, count]);
 
   const spatialProgress = useM3EScalarSpring(
     itemActive ? 1 : 0,
@@ -533,7 +534,7 @@ export function FABMenu({
   className,
   style,
 }: M3EFABMenuProps): React.JSX.Element {
-  const { debugGeometry, t } = useM3E();
+  const { debugGeometry, t } = useM3ERuntime();
   const resolvedTriggerLabel = triggerLabel ?? t("fabMenu.triggerOpen");
   const [uncontrolledOpen, setUncontrolledOpen] =
     React.useState<boolean>(defaultOpen);

@@ -11,22 +11,30 @@ import { Tooltip as BaseTooltip } from "@base-ui/react/tooltip";
 import {
   type ColorPlatform,
   type ColorSchemeVariant,
+  type M3EThemeTokens,
   MOTION_SCHEMES,
   type MotionSchemeName,
-  generateM3EThemeTokens,
 } from "../tokens/index.js";
 import { M3EToastViewportHost } from "../components/Toast.js";
+import {
+  M3EToastManagerContext,
+  createM3EToastManager,
+} from "../internal/toastManager.js";
 import {
   type ColorMode,
   M3EContext,
   type M3EContextValue,
+  M3E_DEFAULT_THEME,
+  type M3EMotionRuntime,
+  M3ERuntimeContext,
+  type M3ERuntimeValue,
   useM3E,
   useM3EI18n,
 } from "./M3EContext.js";
 import { M3EPortalContext } from "./M3EPortal.js";
 import {
   M3E_COLOR_SCHEME_STORAGE_KEY,
-  type M3EConfig,
+  type M3EConfigInput,
   type M3EDirectionSetting,
   generateM3EMotionCssVars,
   resolveM3EConfig,
@@ -40,16 +48,21 @@ import {
   isRtlLocale,
   resolveM3EMessages,
 } from "../i18n/index.js";
+import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
 
 export type { ColorMode, M3EContextValue, TextDirection };
 export { CSPProvider, useM3E, useM3EI18n };
 
-const useIsoLayoutEffect =
-  typeof window !== "undefined" ? React.useLayoutEffect : React.useEffect;
 
 export interface M3EProviderProps {
   readonly children: React.ReactNode;
-  readonly config?: M3EConfig;
+  readonly config?: M3EConfigInput;
+  readonly themeEngine?: (options: {
+    readonly seedHex: string;
+    readonly variant: ColorSchemeVariant;
+    readonly contrastLevel: number;
+    readonly platform: ColorPlatform;
+  }) => M3EThemeTokens;
   readonly initialSeedHex?: string;
   readonly initialSchemeVariant?: ColorSchemeVariant;
   readonly initialPlatform?: ColorPlatform;
@@ -70,6 +83,7 @@ export interface M3EProviderProps {
 export function M3EProvider({
   children,
   config,
+  themeEngine,
   initialSeedHex,
   initialSchemeVariant,
   initialPlatform,
@@ -109,6 +123,7 @@ export function M3EProvider({
   const storageHydratedRef = React.useRef(false);
   const [portalContainer, setPortalContainer] =
     React.useState<HTMLElement | null>(null);
+  const [toastManager] = React.useState(createM3EToastManager);
 
   const [uncontrolledLocale, setUncontrolledLocale] = React.useState<M3ELocale>(
     initialLocale ?? resolvedCfg.locale,
@@ -206,23 +221,25 @@ export function M3EProvider({
 
   const themeTokens = React.useMemo(
     () =>
-      generateM3EThemeTokens({
-        seedHex,
-        variant: schemeVariant,
-        contrastLevel,
-        platform,
-      }),
-    [seedHex, schemeVariant, contrastLevel, platform],
+      themeEngine
+        ? themeEngine({
+            seedHex,
+            variant: schemeVariant,
+            contrastLevel,
+            platform,
+          })
+        : M3E_DEFAULT_THEME,
+    [themeEngine, seedHex, schemeVariant, contrastLevel, platform],
   );
 
   const motionScheme = MOTION_SCHEMES[motionSchemeName];
 
   const cssVars = React.useMemo(() => {
     return {
-      ...themeTokens.cssLightDarkVars,
+      ...(themeEngine ? themeTokens.cssLightDarkVars : undefined),
       ...generateM3EMotionCssVars(motionScheme, playbackRate),
     } as Record<string, string>;
-  }, [themeTokens, motionScheme, playbackRate]);
+  }, [themeEngine, themeTokens, motionScheme, playbackRate]);
 
   useIsoLayoutEffect(() => {
     if (!syncDocumentRoot || typeof document === "undefined") return;
@@ -435,6 +452,35 @@ export function M3EProvider({
     ],
   );
 
+  const motionRef = React.useRef<M3EMotionRuntime>({
+    motionScheme,
+    playbackRate,
+  });
+  motionRef.current = { motionScheme, playbackRate };
+
+  const runtimeValue = React.useMemo<M3ERuntimeValue>(
+    () => ({
+      locale: canonicalLocale,
+      setLocale: setUncontrolledLocale,
+      direction,
+      messages,
+      t,
+      paused,
+      debugGeometry,
+      prefersReducedMotion,
+      motionRef,
+    }),
+    [
+      canonicalLocale,
+      direction,
+      messages,
+      t,
+      paused,
+      debugGeometry,
+      prefersReducedMotion,
+    ],
+  );
+
   const effectiveNonce = cspNonce ?? resolvedCfg.cspNonce;
   const effectiveDisableStyles =
     cspDisableStyleElements ?? resolvedCfg.cspDisableStyleElements;
@@ -450,7 +496,11 @@ export function M3EProvider({
     <M3EPortalContext.Provider value={effectivePortalContainer}>
       <DirectionProvider direction={direction}>
         <BaseTooltip.Provider delay={280} timeout={400}>
-          <BaseToast.Provider limit={4} timeout={4000}>
+          <BaseToast.Provider
+            toastManager={toastManager}
+            limit={4}
+            timeout={4000}
+          >
             <div
               lang={canonicalLocale}
               dir={direction}
@@ -480,6 +530,8 @@ export function M3EProvider({
 
   return (
     <M3EContext.Provider value={value}>
+      <M3ERuntimeContext.Provider value={runtimeValue}>
+      <M3EToastManagerContext.Provider value={toastManager}>
       {effectiveNonce || effectiveDisableStyles ? (
         <CSPProvider
           nonce={effectiveNonce}
@@ -490,6 +542,8 @@ export function M3EProvider({
       ) : (
         content
       )}
+      </M3EToastManagerContext.Provider>
+      </M3ERuntimeContext.Provider>
     </M3EContext.Provider>
   );
 }

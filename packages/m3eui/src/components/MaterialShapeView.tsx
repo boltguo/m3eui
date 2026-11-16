@@ -6,12 +6,13 @@ import {
   type CubicTuple,
   type M3EShapeName,
   type MorphPair,
+  createMorphPair,
   cubicsToSvgPath,
   getMaterialShape,
   getShapeMorphPair,
   interpolateMorphCubics,
 } from "../tokens/shapes.js";
-import { useM3E } from "../context/M3EContext.js";
+import { useM3ERuntime } from "../context/M3EContext.js";
 import { subscribeSpringFrame } from "../hooks/useM3ESpring.js";
 
 export interface M3EMaterialShapeViewProps {
@@ -39,7 +40,7 @@ export function MaterialShapeView({
   className,
   style,
 }: M3EMaterialShapeViewProps): React.JSX.Element {
-  const { motionScheme, playbackRate, prefersReducedMotion, paused } = useM3E();
+  const { motionRef, prefersReducedMotion, paused } = useM3ERuntime();
   const pathRef = React.useRef<SVGPathElement | null>(null);
   const currentCubicsRef = React.useRef<readonly CubicTuple[]>(
     getMaterialShape(shape).cubics,
@@ -102,9 +103,17 @@ export function MaterialShapeView({
           velocity: -st.velocity,
         };
       } else {
-        const originShape =
-          !wasSettled && st.progress < 0.25 ? st.pair.from : st.target;
-        const pair = getShapeMorphPair(originShape, shape);
+        const current = currentCubicsRef.current;
+        const pair = wasSettled
+          ? getShapeMorphPair(st.target, shape)
+          : createMorphPair(
+              {
+                ...getMaterialShape(st.target),
+                cubics: current,
+                features: current.map((c) => ({ type: "edge", cubics: [c] })),
+              },
+              getMaterialShape(shape),
+            );
         animStateRef.current = {
           pair,
           target: shape,
@@ -142,8 +151,8 @@ export function MaterialShapeView({
 
     drawCubics(interpolateMorphCubics(active.pair, active.progress));
 
-    const baseSpec = motionScheme[motionToken];
-    const clampedRate = Math.max(0.05, Math.min(2, playbackRate));
+    const baseSpec = motionRef.current.motionScheme[motionToken];
+    const clampedRate = Math.max(0.05, Math.min(2, motionRef.current.playbackRate));
     const dampingRatio = prefersReducedMotion ? 1.0 : baseSpec.dampingRatio;
     const rawStiffness = prefersReducedMotion
       ? Math.max(baseSpec.stiffness, 900)
@@ -176,9 +185,7 @@ export function MaterialShapeView({
     manualProgress,
     size,
     scaleFactor,
-    motionScheme,
     motionToken,
-    playbackRate,
     prefersReducedMotion,
     paused,
   ]);

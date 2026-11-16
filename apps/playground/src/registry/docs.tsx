@@ -128,6 +128,7 @@ function LiveThemingGuideWidget() {
           })}
 
           <Popover
+            aria-label={ui.seedCustomAria}
             side="bottom"
             align="start"
             trigger={
@@ -1162,7 +1163,7 @@ function ExportsBoundariesDocContent() {
         entry: "m3eui/components/*",
         runtime: "SSR + CSR",
         contents: resolve({
-          zh: "单组件模块直连入口（如 m3eui/components/Button、m3eui/components/DataTableAndSkeleton）",
+          zh: "单组件模块直连入口（如 m3eui/components/Button、m3eui/components/DataTable）",
           en: "Direct single-module component entrypoints (e.g., m3eui/components/Button)",
         }),
       },

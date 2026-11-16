@@ -1133,7 +1133,7 @@ function SearchViewModesDemo() {
 export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "navigation",
-    title: "Navigation Suite",
+    title: "Navigation",
     category: "navigation",
     primitive: "@base-ui/react/drawer",
     subtitle: {
@@ -1939,15 +1939,15 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   },
   {
     slug: "accordion",
-    title: "Accordion & Collapsible",
+    title: "Accordion",
     category: "navigation",
-    primitive:
-      "@base-ui/react/accordion · @base-ui/react/collapsible · @base-ui/react/scroll-area",
+    primitive: "@base-ui/react/accordion",
     subtitle: {
-      zh: "分段拓扑圆角手风琴 Accordion、独立折叠面板 Collapsible 以及自定义滚动视口 ScrollArea 与分割线 Divider。",
-      en: "Segmented corner-morphing Accordion, standalone Collapsible disclosure cards, custom ScrollArea viewports, and labeled Dividers.",
+      zh: "分段圆角手风琴：相邻折叠项共享 4px 内缝，展开项脱离为 16px 圆角。",
+      en: "Segmented accordion: collapsed neighbors share 4px seams, expanded items detach with 16px corners.",
     },
-    importStatement: 'import { Accordion, Collapsible, ScrollArea, Divider } from "m3eui";',
+    importStatement:
+      'import { Accordion } from "m3eui";',
     scenarios: [
       {
         id: "accordion-multiple",
@@ -2058,11 +2058,68 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
           />
         ),
       },
+    ],
+    apis: [
+      {
+        title: "Accordion Props & AccordionItemSpec",
+        rows: [
+          {
+            name: "items",
+            type: "readonly AccordionItemSpec[]",
+            required: true,
+            description: {
+              zh: "包含 { value, title, subtitle?, leading?, content, disabled? } 的面板配置数组。",
+              en: "Array of { value, title, subtitle?, leading?, content, disabled? } item specs.",
+            },
+          },
+          {
+            name: "multiple",
+            type: "boolean",
+            defaultValue: "true",
+            description: {
+              zh: "是否允许同时展开多个面板。",
+              en: "Allows multiple accordion panels to remain open simultaneously.",
+            },
+          },
+          {
+            name: "showExpandAll",
+            type: "boolean",
+            defaultValue: "false",
+            description: {
+              zh: "当 multiple 为 true 时渲染“全部展开/全部收起”工具栏按钮。",
+              en: "Renders an Expand All / Collapse All toggle button when multiple is true.",
+            },
+          },
+          {
+            name: "hiddenUntilFound",
+            type: "boolean",
+            defaultValue: "true",
+            description: {
+              zh: "支持浏览器页内搜索（⌘F）自动命中并展开折叠面板内容。",
+              en: "Enables browser find-in-page (⌘F) matching inside collapsed panels.",
+            },
+          },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "collapsible",
+    title: "Collapsible",
+    category: "navigation",
+    primitive: "@base-ui/react/collapsible",
+    subtitle: {
+      zh: "独立的单项展开卡片，支持 tonal / outlined / plain 三种表面。",
+      en: "Standalone disclosure card in tonal, outlined, or plain surfaces.",
+    },
+    importStatement:
+      'import { Collapsible } from "m3eui";',
+    scenarios: [
       {
         id: "collapsible-scroll",
         title: {
-          zh: "独立折叠卡与自定义滚动视口 (Collapsible & ScrollArea)",
-          en: "Standalone Collapsible, ScrollArea & Divider",
+          zh: "展开卡片",
+          en: "Disclosure card",
         },
         description: {
           zh: "结合 Collapsible 展开状态圆角形变、带文字标签的 Divider 以及定制滚动条的 ScrollArea。",
@@ -2120,51 +2177,10 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
     ],
     apis: [
       {
-        title: "Accordion Props & AccordionItemSpec",
+        title: "Collapsible Props",
         rows: [
           {
-            name: "items",
-            type: "readonly AccordionItemSpec[]",
-            required: true,
-            description: {
-              zh: "包含 { value, title, subtitle?, leading?, content, disabled? } 的面板配置数组。",
-              en: "Array of { value, title, subtitle?, leading?, content, disabled? } item specs.",
-            },
-          },
-          {
-            name: "multiple",
-            type: "boolean",
-            defaultValue: "true",
-            description: {
-              zh: "是否允许同时展开多个面板。",
-              en: "Allows multiple accordion panels to remain open simultaneously.",
-            },
-          },
-          {
-            name: "showExpandAll",
-            type: "boolean",
-            defaultValue: "false",
-            description: {
-              zh: "当 multiple 为 true 时渲染“全部展开/全部收起”工具栏按钮。",
-              en: "Renders an Expand All / Collapse All toggle button when multiple is true.",
-            },
-          },
-          {
-            name: "hiddenUntilFound",
-            type: "boolean",
-            defaultValue: "true",
-            description: {
-              zh: "支持浏览器页内搜索（⌘F）自动命中并展开折叠面板内容。",
-              en: "Enables browser find-in-page (⌘F) matching inside collapsed panels.",
-            },
-          },
-        ],
-      },
-      {
-        title: "Collapsible, ScrollArea & Divider Props",
-        rows: [
-          {
-            name: "Collapsible.variant",
+            name: "variant",
             type: '"tonal" | "outlined" | "plain"',
             defaultValue: '"tonal"',
             description: {
@@ -2173,29 +2189,11 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
             },
           },
           {
-            name: "Collapsible.title / subtitle / leading / trailingBadge",
+            name: "title / subtitle / leading / trailingBadge",
             type: "React.ReactNode",
             description: {
               zh: "触发栏标题、副标题、前导图标与尾部徽标插槽。",
               en: "Header slots rendered inside the Collapsible trigger row.",
-            },
-          },
-          {
-            name: "ScrollArea.maxHeight / orientation",
-            type: 'number | string · "vertical" | "horizontal" | "both"',
-            defaultValue: '220 / "vertical"',
-            description: {
-              zh: "最大视口高度与自定义滚动条方向。",
-              en: "Viewport max-height and custom scrollbar axis configuration.",
-            },
-          },
-          {
-            name: "Divider.orientation / inset / label",
-            type: '"horizontal" | "vertical" · boolean · React.ReactNode',
-            defaultValue: '"horizontal" / false',
-            description: {
-              zh: "分割线方向、内缩进开关与居中行内标签文本。",
-              en: "Separator orientation, leading inset margin, and optional centered text label.",
             },
           },
         ],
@@ -2203,23 +2201,22 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
     ],
   },
   {
-    slug: "menu-popover",
-    title: "Menus & Popover",
+    slug: "menu",
+    title: "Menu",
     category: "navigation",
-    primitive:
-      "@base-ui/react/menu · @base-ui/react/context-menu · @base-ui/react/menubar · @base-ui/react/popover · @base-ui/react/navigation-menu",
+    primitive: "@base-ui/react/menu \u00b7 @base-ui/react/context-menu \u00b7 @base-ui/react/menubar",
     subtitle: {
-      zh: "分段动态圆角下拉菜单 DropdownMenu、右键菜单 ContextMenu、桌面菜单栏 Menubar、气泡卡片 Popover 与站点主导航菜单 NavigationMenu。",
-      en: "Segmented corner-morphing DropdownMenu, right-click ContextMenu, desktop Menubar, interactive Popover surfaces, and site-level NavigationMenu.",
+      zh: "M3E 分组菜单：下拉 DropdownMenu、右键 ContextMenu 与桌面菜单栏 Menubar 共用同一套菜单项。",
+      en: "M3E grouped menus: DropdownMenu, right-click ContextMenu, and desktop Menubar share one item model.",
     },
     importStatement:
-      'import { DropdownMenu, ContextMenu, Menubar, Popover, PopoverClose, NavigationMenu } from "m3eui";',
+      'import { DropdownMenu, ContextMenu, Menubar } from "m3eui";',
     scenarios: [
       {
         id: "dropdown-menu-rich",
         title: {
-          zh: "多特性分段下拉菜单 (DropdownMenu)",
-          en: "Rich DropdownMenu with submenus & check items",
+          zh: "下拉菜单",
+          en: "DropdownMenu",
         },
         description: {
           zh: "集成键盘快捷键提示、多选复选框、互斥密度组、多级嵌套 submenu 与危险操作高亮。",
@@ -2246,8 +2243,8 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
       {
         id: "context-menu",
         title: {
-          zh: "右键上下文菜单 (ContextMenu)",
-          en: "Right-click ContextMenu canvas",
+          zh: "右键菜单",
+          en: "ContextMenu",
         },
         description: {
           zh: "包裹任意工作区或列表项，在指针坐标处唤起分段圆角上下文菜单并支持子菜单。",
@@ -2267,8 +2264,8 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
       {
         id: "menubar",
         title: {
-          zh: "桌面级应用菜单栏 (Menubar)",
-          en: "Desktop application Menubar",
+          zh: "菜单栏",
+          en: "Menubar",
         },
         description: {
           zh: "支持 File / Edit / View 横向方向键漫游切换，顶栏触发器按压时同样具备圆角物理形变。",
@@ -2283,54 +2280,10 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
 />`,
         render: () => <MenubarAppDemo />,
       },
-      {
-        id: "popover",
-        title: {
-          zh: "交互式气泡浮层 (Popover)",
-          en: "Interactive filter Popover",
-        },
-        description: {
-          zh: "用于承载滑块、开关或轻量表单的非全屏锚定浮层，支持 PopoverClose 一键收起。",
-          en: "Anchored non-modal surface ideal for quick filter sliders, switches, and inspector controls.",
-        },
-        code: `<Popover
-  title="Pipeline filter settings"
-  description="Tune contrast boost and experimental flags."
-  trigger={<Button variant="outlined">Open filter Popover</Button>}
->
-  <Slider label="Chroma boost" defaultValue={50} />
-  <PopoverClose render={<Button size="xs" variant="tonal">Done</Button>} />
-</Popover>`,
-        render: () => <PopoverFilterDemo />,
-      },
-      {
-        id: "navigation-menu",
-        title: {
-          zh: "顶栏富面板导航菜单 (NavigationMenu)",
-          en: "Top-level site NavigationMenu",
-        },
-        description: {
-          zh: "适合营销页与文档站顶栏，支持精选导览卡片 featured 与双列图文链接网格 links。",
-          en: "Site header navigation featuring rich multi-column link grids and highlighted featured callout cards.",
-        },
-        code: `<NavigationMenu
-  brand={<strong>m3eui</strong>}
-  items={[
-    {
-      value: "foundations",
-      label: "Foundations",
-      featured: { eyebrow: "SPEC_2025", title: "Dynamic Color", description: "HCT engine", href: "#color" },
-      links: [{ id: "spring", title: "Analytical Springs", href: "#springs" }],
-    },
-    { value: "changelog", label: "Changelog", href: "#changelog" },
-  ]}
-/>`,
-        render: () => <NavigationMenuSiteDemo />,
-      },
     ],
     apis: [
       {
-        title: "M3EMenuItemSpec (DropdownMenu / ContextMenu / Menubar)",
+        title: "M3EMenuItemSpec",
         rows: [
           {
             name: "id / label",
@@ -2358,6 +2311,14 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
             },
           },
           {
+            name: "href / render",
+            type: "string / React.ReactElement",
+            description: {
+              zh: "渲染为链接项；render 可传入路由的 Link。",
+              en: "Renders a link item; pass a router Link via render.",
+            },
+          },
+          {
             name: "submenu",
             type: "readonly M3EMenuItemSpec[]",
             description: {
@@ -2376,7 +2337,7 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
         ],
       },
       {
-        title: "DropdownMenu, ContextMenu, Menubar, Popover & NavigationMenu Props",
+        title: "Props",
         rows: [
           {
             name: "DropdownMenu.trigger / side / align",
@@ -2405,8 +2366,49 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
               en: "Top-level menu definitions { id, label, disabled?, items }.",
             },
           },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "popover",
+    title: "Popover",
+    category: "navigation",
+    primitive: "@base-ui/react/popover",
+    subtitle: {
+      zh: "锚定在触发器旁的非模态浮层，承载滑块、开关与轻量表单。",
+      en: "Anchored non-modal surface for sliders, switches, and lightweight forms.",
+    },
+    importStatement:
+      'import { Popover, PopoverClose } from "m3eui";',
+    scenarios: [
+      {
+        id: "popover",
+        title: {
+          zh: "筛选浮层",
+          en: "Filter popover",
+        },
+        description: {
+          zh: "用于承载滑块、开关或轻量表单的非全屏锚定浮层，支持 PopoverClose 一键收起。",
+          en: "Anchored non-modal surface ideal for quick filter sliders, switches, and inspector controls.",
+        },
+        code: `<Popover
+  title="Pipeline filter settings"
+  description="Tune contrast boost and experimental flags."
+  trigger={<Button variant="outlined">Open filter Popover</Button>}
+>
+  <Slider label="Chroma boost" defaultValue={50} />
+  <PopoverClose render={<Button size="xs" variant="tonal">Done</Button>} />
+</Popover>`,
+        render: () => <PopoverFilterDemo />,
+      },
+    ],
+    apis: [
+      {
+        title: "Popover Props",
+        rows: [
           {
-            name: "Popover.trigger / title / description / sideOffset",
+            name: "trigger / title / description / sideOffset",
             type: "React.ReactElement / React.ReactNode / number",
             description: {
               zh: "Popover 触发器、可选标题说明与间距偏移（默认 8px）。",
@@ -2414,7 +2416,60 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
             },
           },
           {
-            name: "NavigationMenu.items / brand / trailing",
+            name: "aria-label",
+            type: "string",
+            description: {
+              zh: "没有 title 时的弹层名称。",
+              en: "Accessible name when there is no title.",
+            },
+          },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "navigation-menu",
+    title: "NavigationMenu",
+    category: "navigation",
+    primitive: "@base-ui/react/navigation-menu",
+    subtitle: {
+      zh: "站点顶栏导航，支持精选卡片与多列链接面板。",
+      en: "Site header navigation with featured cards and multi-column link panels.",
+    },
+    importStatement:
+      'import { NavigationMenu } from "m3eui";',
+    scenarios: [
+      {
+        id: "navigation-menu",
+        title: {
+          zh: "站点顶栏",
+          en: "Site header",
+        },
+        description: {
+          zh: "适合营销页与文档站顶栏，支持精选导览卡片 featured 与双列图文链接网格 links。",
+          en: "Site header navigation featuring rich multi-column link grids and highlighted featured callout cards.",
+        },
+        code: `<NavigationMenu
+  brand={<strong>m3eui</strong>}
+  items={[
+    {
+      value: "foundations",
+      label: "Foundations",
+      featured: { eyebrow: "SPEC_2025", title: "Dynamic Color", description: "HCT engine", href: "#color" },
+      links: [{ id: "spring", title: "Analytical Springs", href: "#springs" }],
+    },
+    { value: "changelog", label: "Changelog", href: "#changelog" },
+  ]}
+/>`,
+        render: () => <NavigationMenuSiteDemo />,
+      },
+    ],
+    apis: [
+      {
+        title: "NavigationMenu Props",
+        rows: [
+          {
+            name: "items / brand / trailing",
             type: "readonly NavigationMenuItemSpec[] / React.ReactNode",
             description: {
               zh: "站点导航项列表及左右品牌与操作插槽。",
@@ -2813,7 +2868,7 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   },
   {
     slug: "search-bar",
-    title: "SearchBar & SearchView",
+    title: "SearchBar",
     category: "navigation",
     primitive: "@base-ui/react/autocomplete · @base-ui/react/dialog",
     subtitle: {

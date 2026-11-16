@@ -4,12 +4,13 @@ import * as React from "react";
 import { Autocomplete as BaseAutocomplete } from "@base-ui/react/autocomplete";
 import { Dialog as BaseDialog } from "@base-ui/react/dialog";
 import { SEARCH_BAR_TOKENS, SEARCH_VIEW_TOKENS } from "../tokens/index.js";
-import { useM3E, useM3EI18n } from "../context/M3EContext.js";
+import { useM3ERuntime, useM3EI18n } from "../context/M3EContext.js";
 import { useM3EPortalContainer } from "../context/M3EPortal.js";
 import {
   useM3EScalarSpring,
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
+import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
 
 export interface SearchSuggestion {
   readonly value: string;
@@ -213,6 +214,7 @@ export const SearchBar = React.forwardRef<HTMLFormElement, M3ESearchBarProps>(
       >
       <BaseAutocomplete.Root
         items={suggestions}
+        disabled={disabled}
         value={controlledValue}
         defaultValue={defaultValue}
         openOnInputClick={suggestions.length > 0}
@@ -380,14 +382,14 @@ function SearchViewSurface({
   readonly className?: string;
   readonly style?: React.CSSProperties;
 }) {
-  const { direction, prefersReducedMotion: reducedMotion, t } = useM3E();
+  const { direction, prefersReducedMotion: reducedMotion, t } = useM3ERuntime();
   const surfaceRef = React.useRef<HTMLDivElement | null>(null);
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   const lastCompositionEndAtRef = React.useRef<number>(-Infinity);
   const [activeIndex, setActiveIndex] = React.useState<number>(-1);
   const optionPrefix = React.useId();
 
-  React.useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     const surfaceEl = surfaceRef.current;
     const anchorEl = anchorRef?.current;
     if (autoFocusOnMount) {
@@ -468,6 +470,7 @@ function SearchViewSurface({
 
   const clampedActiveIndex =
     activeIndex >= 0 && activeIndex < navTargets.length ? activeIndex : -1;
+  const recentListShown = !normalizedQuery && recentSearches.length > 0;
   const activeTarget =
     clampedActiveIndex >= 0 ? navTargets[clampedActiveIndex] : undefined;
 
@@ -527,6 +530,17 @@ function SearchViewSurface({
           onChange={(e) => setQuery(e.target.value)}
           placeholder={placeholder}
           aria-label={ariaLabel}
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={recentListShown || filteredSuggestions.length > 0}
+          aria-controls={
+            [
+              recentListShown ? `${optionPrefix}-recent` : "",
+              filteredSuggestions.length > 0 ? `${optionPrefix}-sugg` : "",
+            ]
+              .filter(Boolean)
+              .join(" ") || undefined
+          }
           aria-activedescendant={
             activeTarget ? `${optionPrefix}-${activeTarget.id}` : undefined
           }
@@ -588,7 +602,7 @@ function SearchViewSurface({
       </form>
 
       <div className="m3e-search-view__body">
-        {!normalizedQuery && recentSearches.length > 0 ? (
+        {recentListShown ? (
           <div className="m3e-search-view__section">
             <div className="m3e-search-view__section-header">
               <span className="m3e-search-view__section-title">
@@ -604,15 +618,23 @@ function SearchViewSurface({
                 </button>
               ) : null}
             </div>
-            <ul role="list" className="m3e-search-view__list">
+            <ul
+              role="listbox"
+              id={`${optionPrefix}-recent`}
+              aria-label={t("searchView.recentHeading")}
+              className="m3e-search-view__list"
+            >
               {recentSearches.map((item, idx) => {
                 const targetId = `recent-${idx}`;
                 const isHighlighted = activeTarget?.id === targetId;
                 return (
-                  <li key={item}>
+                  <li role="presentation" key={item}>
                     <button
                       type="button"
                       id={`${optionPrefix}-${targetId}`}
+                      role="option"
+                      tabIndex={-1}
+                      aria-selected={isHighlighted}
                       className="m3e-search-view__item"
                       data-highlighted={isHighlighted ? "" : undefined}
                       style={{ borderRadius: `${SEARCH_VIEW_TOKENS.itemRadius}px` }}
@@ -640,15 +662,23 @@ function SearchViewSurface({
                 {t("searchView.suggestionsHeading")}
               </span>
             </div>
-            <ul role="list" className="m3e-search-view__list">
+            <ul
+              role="listbox"
+              id={`${optionPrefix}-sugg`}
+              aria-label={t("searchView.suggestionsHeading")}
+              className="m3e-search-view__list"
+            >
               {filteredSuggestions.map((item, idx) => {
                 const targetId = `sugg-${idx}-${item.value}`;
                 const isHighlighted = activeTarget?.id === targetId;
                 return (
-                  <li key={item.value}>
+                  <li role="presentation" key={item.value}>
                     <button
                       type="button"
                       id={`${optionPrefix}-${targetId}`}
+                      role="option"
+                      tabIndex={-1}
+                      aria-selected={isHighlighted}
                       className="m3e-search-view__item"
                       data-highlighted={isHighlighted ? "" : undefined}
                       style={{ borderRadius: `${SEARCH_VIEW_TOKENS.itemRadius}px` }}

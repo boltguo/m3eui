@@ -6,7 +6,7 @@ import { BOTTOM_APP_BAR_TOKENS } from "../tokens/index.js";
 import { useM3EI18n } from "../context/M3EContext.js";
 import { useM3EScalarSpring } from "../hooks/useM3ESpring.js";
 import { inertProp } from "../internal/inert.js";
-import { FabElevationContext } from "./FAB.js";
+import { FabElevationContext } from "../internal/fabElevation.js";
 import { AppBarRow, type AppBarActionItem } from "./TopAppBar.js";
 
 export type BottomAppBarScrollBehavior = "pinned" | "exit-always";
@@ -63,12 +63,14 @@ export const BottomAppBar = React.forwardRef<
     const onScroll = () => {
       const y = Math.max(0, readY());
       const dy = y - lastY;
-      lastY = y;
       if (y <= 8) {
+        lastY = y;
         setScrollHidden(false);
       } else if (dy > 6) {
+        lastY = y;
         setScrollHidden(true);
       } else if (dy < -6) {
+        lastY = y;
         setScrollHidden(false);
       }
     };
@@ -113,9 +115,10 @@ export const BottomAppBar = React.forwardRef<
         className ? `m3e-bottom-app-bar ${className}` : "m3e-bottom-app-bar"
       }
       style={{
-        minHeight: `${BOTTOM_APP_BAR_TOKENS.height}px`,
+        minHeight: `calc(${BOTTOM_APP_BAR_TOKENS.height}px + env(safe-area-inset-bottom, 0px))`,
         paddingInline: `${BOTTOM_APP_BAR_TOKENS.paddingInline}px`,
-        paddingBlock: `${BOTTOM_APP_BAR_TOKENS.paddingBlock}px`,
+        paddingBlockStart: `${BOTTOM_APP_BAR_TOKENS.paddingBlock}px`,
+        paddingBlockEnd: `calc(${BOTTOM_APP_BAR_TOKENS.paddingBlock}px + env(safe-area-inset-bottom, 0px))`,
         ...(hideProgress > 0.002
           ? {
               translate: `0px ${(hideProgress * 100).toFixed(2)}%`,

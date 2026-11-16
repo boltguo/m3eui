@@ -22,11 +22,11 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
     inspirationAndRationale: [
       {
         title: "Container-Driven Adaptive Topology (NavigationSuite)",
-        body: "Viewport media queries fail inside resizable split panes, IDE docks, and preview frames. NavigationSuite measures its own host inline size via ResizeObserver and switches seamlessly across < 640px bottom NavigationBar, 640–1023px compact NavigationRail (84px), and >= 1024px collapsible WideNavigationRail.",
+        body: "Viewport media queries fail inside resizable split panes, IDE docks, and preview frames. NavigationSuite measures its own host inline size via ResizeObserver and switches seamlessly across < 600px bottom NavigationBar, 600–839px NavigationRail (80px), and >= 840px WideNavigationRail, matching the M3 compact / medium / expanded window size classes.",
       },
       {
-        title: "Spring-Collapsible WideNavigationRail (84px ↔ 228px)",
-        body: "Material 3 Expressive introduces WideNavigationRail to bridge narrow icon rails and full permanent drawers. Toggling expansion drives container width between 84px and 228px under defaultSpatial (ζ = 0.8, k = 380), transitioning items between 56×32px vertical indicator pills and 48px-tall full-row 24px capsules (tightening to 12px on press).",
+        title: "Spring-Collapsible WideNavigationRail (96px ↔ 220px)",
+        body: "Material 3 Expressive introduces WideNavigationRail to bridge narrow icon rails and full permanent drawers. Toggling expansion drives container width between 96px and 220px under defaultSpatial (ζ = 0.8, k = 380), transitioning items between 56×32px vertical indicator pills and 48px-tall full-row 24px capsules (tightening to 12px on press).",
       },
       {
         title: "Permanent & Gesture Modal NavigationDrawer + Progressive ScrollSpy",
@@ -36,7 +36,7 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
     geometryAndMotionTables: [
       {
         id: "navigation-family-geometry",
-        title: "Navigation Component Family Geometry Matrix (1:1 px / dp / pt)",
+        title: "Navigation Component Family Geometry Matrix (px = dp / pt)",
         caption: "Exact tokens from NAVIGATION_TOKENS, WIDE_NAVIGATION_RAIL_TOKENS, and NAVIGATION_DRAWER_TOKENS",
         columns: [
           "Component",
@@ -62,7 +62,7 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
           ],
           [
             "WideNavigationRail",
-            "84 collapsed ↔ 228 expanded (pad 12)",
+            "96 collapsed ↔ 220 expanded",
             "Item r = 24 rest / 12 pressed",
             "48 min-height horizontal pill when expanded",
             "Width via defaultSpatial (ζ = 0.8, k = 380); press via fastSpatial",
@@ -81,9 +81,9 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
         title: "NavigationSuite Container Width Breakpoints (NAVIGATION_SUITE_TOKENS)",
         columns: ["Container Width (W)", "Resolved Mode", "Rendered Surface"],
         rows: [
-          ["W < 640px", "\"bar\"", "Bottom NavigationBar (72px height)"],
-          ["640px <= W < 1024px", "\"rail\"", "Leading NavigationRail (84px width)"],
-          ["W >= 1024px", "\"wide-rail\"", "Leading collapsible WideNavigationRail (84px ↔ 228px)"],
+          ["W < 600px", "\"bar\"", "Bottom NavigationBar (64px height)"],
+          ["600px <= W < 840px", "\"rail\"", "Leading NavigationRail (80px width)"],
+          ["W >= 840px", "\"wide-rail\"", "Leading collapsible WideNavigationRail (96px ↔ 220px)"],
         ],
       },
     ],
@@ -97,17 +97,17 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
       {
         target: "Jetpack Compose",
         guidance:
-          "Maps 1:1 to NavigationSuiteScaffold, NavigationBar, NavigationRail, WideNavigationRail, and ModalNavigationDrawer / PermanentNavigationDrawer.",
+          "Corresponds to NavigationSuiteScaffold, NavigationBar, NavigationRail, WideNavigationRail, and ModalNavigationDrawer / PermanentNavigationDrawer.",
       },
       {
         target: "SwiftUI",
         guidance:
-          "Map < 640pt to TabView, 640–1023pt to a custom 84pt rail column, and >= 1024pt to NavigationSplitView(columnVisibility:) with a 228pt–280pt sidebar.",
+          "Map < 600pt to TabView, 600–839pt to a custom 80pt rail column, and >= 840pt to NavigationSplitView(columnVisibility:) with a 220pt–280pt sidebar.",
       },
       {
         target: "Flutter",
         guidance:
-          "Switch via LayoutBuilder constraints.maxWidth (< 640, < 1024, >= 1024) between NavigationBar, NavigationRail(extended: false), and NavigationRail(extended: true, minExtendedWidth: 228).",
+          "Switch via LayoutBuilder constraints.maxWidth (< 600, < 840, >= 840) between NavigationBar, NavigationRail(extended: false), and NavigationRail(extended: true, minExtendedWidth: 220).",
       },
       {
         target: "Vue / Svelte / Web",
@@ -350,7 +350,7 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
       {
         id: "tabs-variant-tokens",
         title: "Primary vs Secondary Tabs Specification (TABS_TOKENS)",
-        caption: "All measurements in 1:1 logical pixels (px / dp / pt)",
+        caption: "Units: px (= dp / pt)",
         columns: [
           "Variant",
           "Min Height",
@@ -561,42 +561,37 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
     ],
   },
 
-  "menu-popover": {
+  menu: {
     provenance: "official-m3e",
     provenanceSummary:
-      "Official M3E concentric segmented menus (DropdownMenu, ContextMenu) paired with desktop single-tab-stop Menubar, anchored Popover, and hover PreviewCard.",
+      "Official M3E vertical menu with gaps (DropdownMenu, ContextMenu) ported from AOSP Menu.kt, paired with a desktop single-tab-stop Menubar.",
     tokenSources: [
       "SEGMENTED_MENU_TOKENS",
       "resolveSegmentedMenuItemCorners",
       "MENUBAR_TOKENS",
-      "POPOVER_TOKENS",
-      "PREVIEW_CARD_TOKENS",
       "EXPRESSIVE_MOTION_SCHEME",
     ],
     aospSources: [
       "Menu.kt",
       "MenuDefaults.kt",
-      "MenuTokens.kt",
-      "RichTooltipTokens.kt",
+      "SegmentedMenuTokens.kt",
+      "StandardMenuTokens.kt",
+      "VibrantMenuTokens.kt",
     ],
     inspirationAndRationale: [
       {
-        title: "Concentric Segmented Menu Geometry (16px - 4px = 12px)",
-        body: "Material 3 Expressive upgrades menus with concentric geometry: a 16px popup container with 4px padding houses 44px-tall items separated by a 2px gap. Group-boundary items take concentric 12px outer corners (16 - 4 = 12) and 4px inner seam corners; highlighting or checking an item rounds all four corners to [12, 12, 12, 12], while pressing tightens to [8, 8, 8, 8] via fastSpatial.",
+        title: "Grouped Menu Geometry (16px - 4px = 12px)",
+        body: "Each group is its own surface-container-low surface at elevation level 2 with no outline. Groups stack with a 2px gap: the first group keeps 16px top corners and 8px bottom corners, middle groups use 8px, and the last group mirrors the first. Inside a group, 44px items sit 4px from the edge, so boundary items take concentric 12px outer corners (16 - 4) and 4px inner corners. Items carry no resting fill; hover, focus, and press add a state layer only, and a checked item becomes a 12px tertiary-container shape.",
       },
       {
         title: "Desktop Productivity Menubar vs Site NavigationMenu",
         body: "Menubar models desktop command bars (File / Edit / View) inside a 40px full-pill bar (20px radius, 4px padding, concentric 32px-tall / 16px-radius triggers → 8px pressed): the entire bar is a single Tab stop with instant hover/arrow menu switching and infinite recursive submenus.",
       },
-      {
-        title: "Anchored Popover (20px) vs Non-Modal Link PreviewCard (24px)",
-        body: "Popover (20px radius, 16px padding, max 340px) hosts interactive controls anchored to a button, whereas PreviewCard (24px radius, 280ms open / 200ms close delay, max 320px) surfaces rich link previews on hover/focus without hijacking keyboard focus flow.",
-      },
     ],
     geometryAndMotionTables: [
       {
-        id: "menu-and-popover-surface-matrix",
-        title: "Segmented Menu, Menubar, Popover & PreviewCard Tokens (Logical Pixels)",
+        id: "menu-surface-matrix",
+        title: "Menu & Menubar Tokens (Logical Pixels)",
         columns: [
           "Surface / Component",
           "Container Geometry",
@@ -606,27 +601,15 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
         rows: [
           [
             "DropdownMenu & ContextMenu",
-            "r = 16, pad = 4, gap = 2 (surface-container)",
-            "min-height: 44, pad-inline: 14",
-            "Outer 12 / Inner 4 → Highlighted/Checked [12,12,12,12] → Pressed [8,8,8,8]",
+            "Group r = 16 outer / 8 inner, pad = 4, group gap = 2 (surface-container-low, level 2)",
+            "min-height: 44, pad-inline: 12, icon 20, icon gap 12 (8 on coarse pointers)",
+            "Outer 12 / Inner 4 → Checked [12,12,12,12] (tertiary-container)",
           ],
           [
             "Menubar",
             "height: 40, r = 20, pad = 4",
             "Trigger height: 32, pad-inline: 14",
             "Concentric trigger r = 16 rest → 8 pressed (fastSpatial)",
-          ],
-          [
-            "Popover",
-            "r = 20, pad = 16, maxWidth = 340",
-            "sideOffset = 8, collision-aware flip",
-            "surface-container-high interactive anchored dialog",
-          ],
-          [
-            "PreviewCard",
-            "r = 24, pad = 16, maxWidth = 320",
-            "delay = 280ms, closeDelay = 200ms",
-            "surface-container-high passive hover/focus link card",
           ],
         ],
       },
@@ -641,12 +624,12 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
       {
         target: "Jetpack Compose",
         guidance:
-          "Use DropdownMenuPopup / MenuDefaults with RoundedCornerShape(16.dp), 4.dp content padding, and resolveSegmentedMenuItemCorners per item.",
+          "Use DropdownMenuPopup with DropdownMenuGroup and MenuDefaults.groupShape(index, count) / itemShape(index, count).",
       },
       {
         target: "SwiftUI",
         guidance:
-          "Map DropdownMenu / ContextMenu to native Menu and .contextMenu on iOS/macOS, and Popover to .popover(isPresented:) with .presentationCornerRadius(20).",
+          "Map DropdownMenu / ContextMenu to native Menu and .contextMenu on iOS/macOS.",
       },
       {
         target: "Flutter",
@@ -676,7 +659,7 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
         kind: "aria-apg",
       },
       {
-        label: "Base UI — Menu, Menubar, Popover & Preview Card",
+        label: "Base UI — Menu",
         url: "https://base-ui.com/react/components/menu",
         kind: "base-ui",
       },
@@ -865,7 +848,7 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
       {
         target: "Jetpack Compose",
         guidance:
-          "Maps 1:1 to TopAppBar, CenterAlignedTopAppBar, MediumFlexibleTopAppBar, and LargeFlexibleTopAppBar with TopAppBarDefaults.exitUntilCollapsedScrollBehavior().",
+          "Corresponds to TopAppBar, CenterAlignedTopAppBar, MediumFlexibleTopAppBar, and LargeFlexibleTopAppBar with TopAppBarDefaults.exitUntilCollapsedScrollBehavior().",
       },
       {
         target: "SwiftUI",
@@ -922,7 +905,7 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
       {
         id: "search-bar-tokens-table",
         title: "SearchBar & Concentric Suggestion Popup Geometry (SEARCH_BAR_TOKENS)",
-        caption: "All dimensions in 1:1 logical pixels (px / dp / pt)",
+        caption: "Units: px (= dp / pt)",
         columns: [
           "Element / Size",
           "Dimensions",
