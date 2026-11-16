@@ -26,11 +26,8 @@ export interface ComboboxOption {
   readonly disabled?: boolean;
 }
 
-export interface M3EComboboxProps {
+interface ComboboxBaseProps {
   readonly options: readonly ComboboxOption[];
-  readonly value?: ComboboxOption | string | null;
-  readonly defaultValue?: ComboboxOption | string | null;
-  readonly onValueChange?: (option: ComboboxOption | null) => void;
   readonly variant?: "outlined" | "filled";
   readonly labelPosition?: "floating" | "outside";
   readonly label?: React.ReactNode;
@@ -50,6 +47,22 @@ export interface M3EComboboxProps {
   readonly className?: string;
   readonly style?: React.CSSProperties;
 }
+
+export interface M3EComboboxSingleProps extends ComboboxBaseProps {
+  readonly multiple?: false;
+  readonly value?: ComboboxOption | string | null;
+  readonly defaultValue?: ComboboxOption | string | null;
+  readonly onValueChange?: (option: ComboboxOption | null) => void;
+}
+
+export interface M3EComboboxMultipleProps extends ComboboxBaseProps {
+  readonly multiple: true;
+  readonly value?: readonly ComboboxOption[];
+  readonly defaultValue?: readonly ComboboxOption[];
+  readonly onValueChange?: (options: ComboboxOption[]) => void;
+}
+
+export type M3EComboboxProps = M3EComboboxSingleProps | M3EComboboxMultipleProps;
 
 function assignRef<T>(ref: React.ForwardedRef<T>, value: T | null): void {
   if (typeof ref === "function") {
@@ -158,8 +171,8 @@ function ComboboxOptionRow({
   );
 }
 
-export const Combobox = React.forwardRef<HTMLInputElement, M3EComboboxProps>(
-  function Combobox(
+const SingleCombobox = React.forwardRef<HTMLInputElement, M3EComboboxSingleProps>(
+  function SingleCombobox(
     {
       options,
       value: controlledValue,
@@ -476,34 +489,9 @@ export const Combobox = React.forwardRef<HTMLInputElement, M3EComboboxProps>(
   },
 );
 
-export interface M3EMultiComboboxProps {
-  readonly options: readonly ComboboxOption[];
-  readonly value?: readonly ComboboxOption[];
-  readonly defaultValue?: readonly ComboboxOption[];
-  readonly onValueChange?: (options: ComboboxOption[]) => void;
-  readonly variant?: "outlined" | "filled";
-  readonly labelPosition?: "floating" | "outside";
-  readonly label?: React.ReactNode;
-  readonly placeholder?: string;
-  readonly emptyMessage?: React.ReactNode;
-  readonly description?: React.ReactNode;
-  readonly errorMessage?: React.ReactNode;
-  readonly invalid?: boolean;
-  readonly clearable?: boolean;
-  readonly disabled?: boolean;
-  readonly readOnly?: boolean;
-  readonly required?: boolean;
-  readonly leadingIcon?: React.ReactNode;
-  readonly name?: string;
-  readonly id?: string;
-  readonly "aria-label"?: string;
-  readonly className?: string;
-  readonly style?: React.CSSProperties;
-}
-
-export const MultiCombobox = React.forwardRef<
+const MultiCombobox = React.forwardRef<
   HTMLInputElement,
-  M3EMultiComboboxProps
+  M3EComboboxMultipleProps
 >(function MultiCombobox(
   {
     options,
@@ -887,3 +875,13 @@ export const MultiCombobox = React.forwardRef<
     </BaseField.Root>
   );
 });
+
+export const Combobox = React.forwardRef<HTMLInputElement, M3EComboboxProps>(
+  function Combobox(props, ref) {
+    return props.multiple ? (
+      <MultiCombobox {...props} ref={ref} />
+    ) : (
+      <SingleCombobox {...props} ref={ref} />
+    );
+  },
+);

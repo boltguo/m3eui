@@ -7,8 +7,6 @@ import {
   Checkbox,
   ColorPickerField,
   DatePickerField,
-  DateRangePickerField,
-  DateTimePickerField,
   Form,
   M3EProvider,
   Radio,
@@ -51,15 +49,11 @@ describe("Form field integration", () => {
             </RadioGroup>
             <Slider name="volume" defaultValue={40} aria-label="Volume" />
             <DatePickerField label="Date" name="date" defaultValue="2026-11-16" />
-            <DateRangePickerField
+            <DatePickerField
+              mode="range"
               label="Range"
               name="range"
               defaultValue={{ start: "2026-11-16", end: "2026-11-20" }}
-            />
-            <DateTimePickerField
-              label="When"
-              name="when"
-              defaultValue={{ date: "2026-11-16", time: "09:30" }}
             />
             <TimePickerField label="Time" name="time" defaultValue="14:30" />
             <ColorPickerField label="Color" name="color" defaultValue="#6750A4" />
@@ -82,7 +76,6 @@ describe("Form field integration", () => {
       volume: 40,
       date: "2026-11-16",
       range: "2026-11-16/2026-11-20",
-      when: "2026-11-16T09:30",
       time: "14:30",
       color: "#6750A4",
     });

@@ -213,17 +213,3 @@ export function Sheet({
     </BaseDrawer.Root>
   );
 }
-
-export function BottomSheet(
-  props: Omit<M3ESheetProps, "side">,
-): React.JSX.Element {
-  return <Sheet {...props} side="bottom" />;
-}
-
-export function SideSheet(
-  props: Omit<M3ESheetProps, "side"> & {
-    readonly side?: "start" | "end" | "right" | "left";
-  },
-): React.JSX.Element {
-  return <Sheet {...props} side={props.side ?? "end"} />;
-}

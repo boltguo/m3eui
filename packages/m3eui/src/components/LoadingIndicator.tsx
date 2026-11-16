@@ -175,9 +175,3 @@ export function LoadingIndicator({
     </div>
   );
 }
-
-export function ContainedLoadingIndicator(
-  props: Omit<LoadingIndicatorProps, "contained">,
-): React.JSX.Element {
-  return <LoadingIndicator {...props} contained />;
-}

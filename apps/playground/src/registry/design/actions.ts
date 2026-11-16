@@ -574,4 +574,58 @@ export const ACTIONS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
       },
     ],
   },
+
+  "fab-menu": {
+    provenance: "official-m3e",
+    provenanceSummary:
+      "Material 3 Expressive FAB menu: a toggle FAB that morphs into a 56px close button and reveals a stack of pill actions.",
+    tokenSources: ["FAB_MENU_TOKENS", "TOGGLE_FAB_SPECS", "resolveToggleFabGeometry", "EXPRESSIVE_MOTION_SCHEME"],
+    aospSources: ["FloatingActionButtonMenu.kt", "FabMenuBaselineTokens.kt"],
+    inspirationAndRationale: [
+      {
+        title: "Toggle FAB morph",
+        body: "The trigger interpolates from its resting FAB size and corner to a 56 × 56 circle (r = 28) while the + glyph rotates 45° and the container shifts primary-container → primary.",
+      },
+      {
+        title: "Staggered stack",
+        body: "Items enter bottom-up at (N − 1 − i) × 35ms and leave top-down, so the stack reads as growing out of the FAB.",
+      },
+    ],
+    geometryAndMotionTables: [
+      {
+        id: "fab-menu-geometry",
+        title: "FABMenu metrics",
+        caption: "FAB_MENU_TOKENS",
+        columns: ["Metric", "Value"],
+        rows: [
+          ["Item height / radius", "56 / 28"],
+          ["Item padding-inline", "24"],
+          ["Item icon / gap", "24 / 8"],
+          ["Item gap", "4"],
+          ["Close button gap", "8"],
+          ["Toggle open target", "56 × 56, r = 28, icon 20"],
+          ["Stagger step", "35ms"],
+          ["Item entrance", "translateY 18 → 0, scale 0.88 → 1 (defaultSpatial) + opacity (fastEffects)"],
+        ],
+      },
+    ],
+    invariants: [
+      "The toggle FAB exposes aria-expanded and a localized aria-label for both states.",
+      "Escape closes the menu and returns focus to the toggle FAB.",
+      "Items are a menu with roving focus; selecting an item closes the menu.",
+    ],
+    crossPlatformNotes: [
+      { target: "Jetpack Compose", guidance: "FloatingActionButtonMenu + ToggleFloatingActionButton + FloatingActionButtonMenuItem." },
+      { target: "Flutter", guidance: "Stack anchored bottomEnd; drive each item with an Interval-staggered spring." },
+    ],
+    references: [
+      { label: "Material 3 Expressive — FAB menu", url: "https://m3.material.io/components/fab-menu/overview", kind: "m3-spec" },
+      {
+        label: "AOSP Compose Material 3 — FloatingActionButtonMenu.kt",
+        url: "https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/FloatingActionButtonMenu.kt",
+        kind: "aosp-source",
+      },
+      { label: "Base UI — Menu", url: "https://base-ui.com/react/components/menu", kind: "base-ui" },
+    ],
+  },
 };

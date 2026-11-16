@@ -24,8 +24,8 @@ export interface M3EMessages {
   readonly "chip.remove": string;
   readonly "chip.removeItem": string;
 
-  readonly "collapsible.expandAll": string;
-  readonly "collapsible.collapseAll": string;
+  readonly "accordion.expandAll": string;
+  readonly "accordion.collapseAll": string;
 
   readonly "combobox.placeholder": string;
   readonly "combobox.empty": string;
@@ -62,7 +62,6 @@ export interface M3EMessages {
   readonly "toast.viewportLabel": string;
 
   readonly "empty.title": string;
-  readonly "empty.description": string;
 
   readonly "fabMenu.triggerOpen": string;
   readonly "fabMenu.triggerClose": string;
@@ -81,11 +80,10 @@ export interface M3EMessages {
   readonly "menubar.ariaLabel": string;
   readonly "navigation.barLabel": string;
   readonly "navigation.railLabel": string;
-  readonly "navigation.wideRailLabel": string;
   readonly "navigation.collapseRail": string;
   readonly "navigation.expandRail": string;
-  readonly "navigation.drawerLabel": string;
   readonly "navigation.suiteLabel": string;
+  readonly "navigation.sidebarLabel": string;
   readonly "navigation.siteMenuLabel": string;
 
   readonly "numberField.decrement": string;
@@ -134,7 +132,6 @@ export interface M3EMessages {
 
   readonly "topAppBar.actionsLabel": string;
   readonly "topAppBar.moreActions": string;
-  readonly "bottomAppBar.ariaLabel": string;
   readonly "dragHandle.ariaLabel": string;
   readonly "pullToRefresh.pulling": string;
   readonly "pullToRefresh.release": string;
@@ -146,7 +143,6 @@ export interface M3EMessages {
   readonly "searchView.clearRecent": string;
   readonly "searchView.suggestionsHeading": string;
 
-  readonly "select.selectedCount": string;
 
   readonly "datePicker.switchToInput": string;
   readonly "datePicker.switchToCalendar": string;

@@ -23,8 +23,8 @@ export const enUSMessages: M3EMessages = {
   "chip.remove": "Remove chip",
   "chip.removeItem": "Remove {label}",
 
-  "collapsible.expandAll": "Expand all",
-  "collapsible.collapseAll": "Collapse all",
+  "accordion.expandAll": "Expand all",
+  "accordion.collapseAll": "Collapse all",
 
   "combobox.placeholder": "Type to filter…",
   "combobox.empty": "No matching options",
@@ -61,7 +61,6 @@ export const enUSMessages: M3EMessages = {
   "toast.viewportLabel": "Notifications",
 
   "empty.title": "No data available",
-  "empty.description": "There are no items to display right now. Try adjusting your filters or creating a new item.",
 
   "fabMenu.triggerOpen": "Quick actions",
   "fabMenu.triggerClose": "Close quick actions",
@@ -79,12 +78,11 @@ export const enUSMessages: M3EMessages = {
 
   "menubar.ariaLabel": "Application commands",
   "navigation.barLabel": "Primary",
-  "navigation.railLabel": "Sidebar",
-  "navigation.wideRailLabel": "Expanded sidebar",
-  "navigation.collapseRail": "Collapse sidebar",
-  "navigation.expandRail": "Expand sidebar",
-  "navigation.drawerLabel": "Main menu",
+  "navigation.railLabel": "Primary",
+  "navigation.collapseRail": "Collapse navigation",
+  "navigation.expandRail": "Expand navigation",
   "navigation.suiteLabel": "Adaptive primary",
+  "navigation.sidebarLabel": "Section",
   "navigation.siteMenuLabel": "Site",
 
   "numberField.decrement": "Decrease value",
@@ -133,7 +131,6 @@ export const enUSMessages: M3EMessages = {
 
   "topAppBar.actionsLabel": "App bar actions",
   "topAppBar.moreActions": "More actions",
-  "bottomAppBar.ariaLabel": "Bottom app bar",
   "dragHandle.ariaLabel": "Resize panes",
   "pullToRefresh.pulling": "Pull to refresh",
   "pullToRefresh.release": "Release to refresh",
@@ -145,7 +142,6 @@ export const enUSMessages: M3EMessages = {
   "searchView.clearRecent": "Clear recent",
   "searchView.suggestionsHeading": "Suggestions",
 
-  "select.selectedCount": "{count} selected",
 
   "datePicker.switchToInput": "Switch to text date input",
   "datePicker.switchToCalendar": "Switch to calendar grid",

@@ -23,8 +23,8 @@ export const arSAMessages: M3EMessages = {
   "chip.remove": "إزالة الشريحة",
   "chip.removeItem": "إزالة {label}",
 
-  "collapsible.expandAll": "توسيع الكل",
-  "collapsible.collapseAll": "طي الكل",
+  "accordion.expandAll": "توسيع الكل",
+  "accordion.collapseAll": "طي الكل",
 
   "combobox.placeholder": "اكتب للتصفية…",
   "combobox.empty": "لا توجد خيارات مطابقة",
@@ -61,7 +61,6 @@ export const arSAMessages: M3EMessages = {
   "toast.viewportLabel": "الإشعارات",
 
   "empty.title": "لا توجد بيانات",
-  "empty.description": "لا توجد عناصر لعرضها حالياً. جرّب تعديل عوامل التصفية أو إنشاء عنصر جديد.",
 
   "fabMenu.triggerOpen": "إجراءات سريعة",
   "fabMenu.triggerClose": "إغلاق القائمة السريعة",
@@ -80,11 +79,10 @@ export const arSAMessages: M3EMessages = {
   "menubar.ariaLabel": "أوامر التطبيق",
   "navigation.barLabel": "الرئيسي",
   "navigation.railLabel": "المسار الجانبي",
-  "navigation.wideRailLabel": "المسار الجانبي العريض",
   "navigation.collapseRail": "طي المسار الجانبي",
   "navigation.expandRail": "توسيع المسار الجانبي",
-  "navigation.drawerLabel": "القائمة الرئيسية",
   "navigation.suiteLabel": "الرئيسي التكيفي",
+  "navigation.sidebarLabel": "القسم",
   "navigation.siteMenuLabel": "الموقع",
 
   "numberField.decrement": "إنقاص القيمة",
@@ -133,7 +131,6 @@ export const arSAMessages: M3EMessages = {
 
   "topAppBar.actionsLabel": "إجراءات الشريط العلوي",
   "topAppBar.moreActions": "المزيد من الإجراءات",
-  "bottomAppBar.ariaLabel": "الشريط السفلي للتطبيق",
   "dragHandle.ariaLabel": "تغيير حجم الألواح",
   "pullToRefresh.pulling": "اسحب للتحديث",
   "pullToRefresh.release": "أفلت للتحديث",
@@ -145,7 +142,6 @@ export const arSAMessages: M3EMessages = {
   "searchView.clearRecent": "مسح السجل",
   "searchView.suggestionsHeading": "الاقتراحات",
 
-  "select.selectedCount": "تم تحديد {count}",
 
   "datePicker.switchToInput": "التبديل إلى إدخال التاريخ نصياً",
   "datePicker.switchToCalendar": "التبديل إلى شبكة التقويم",

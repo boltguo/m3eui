@@ -21,7 +21,7 @@ export type ChipTone =
 export type ChipVariant = "tonal" | "outlined" | "solid";
 export type ChipSize = "sm" | "md";
 
-export interface M3EChipProps {
+export interface M3EChipLabelProps {
   readonly children: React.ReactNode;
   readonly tone?: ChipTone;
   readonly variant?: ChipVariant;
@@ -37,17 +37,17 @@ export interface M3EChipProps {
   readonly style?: React.CSSProperties;
 }
 
-export interface M3EAssistChipProps {
+export interface M3EChipAssistProps {
   readonly children: React.ReactNode;
+  readonly onClick: React.MouseEventHandler<HTMLElement>;
   readonly icon?: React.ReactNode;
   readonly elevated?: boolean;
   readonly disabled?: boolean;
-  readonly onClick?: React.MouseEventHandler<HTMLElement>;
   readonly className?: string;
   readonly style?: React.CSSProperties;
 }
 
-export interface M3EFilterChipProps {
+export interface M3EChipFilterProps {
   readonly children: React.ReactNode;
   readonly selected?: boolean;
   readonly defaultSelected?: boolean;
@@ -59,28 +59,23 @@ export interface M3EFilterChipProps {
   readonly style?: React.CSSProperties;
 }
 
-export interface M3EInputChipProps {
+export interface M3EChipInputProps {
   readonly children: React.ReactNode;
+  readonly onRemove: () => void;
   readonly avatar?: React.ReactNode;
   readonly selected?: boolean;
   readonly onClick?: React.MouseEventHandler<HTMLElement>;
-  readonly onRemove?: () => void;
   readonly removeLabel?: string;
   readonly disabled?: boolean;
   readonly className?: string;
   readonly style?: React.CSSProperties;
 }
 
-export interface M3ESuggestionChipProps {
-  readonly children: React.ReactNode;
-  readonly icon?: React.ReactNode;
-  readonly elevated?: boolean;
-  readonly selected?: boolean;
-  readonly disabled?: boolean;
-  readonly onClick?: React.MouseEventHandler<HTMLElement>;
-  readonly className?: string;
-  readonly style?: React.CSSProperties;
-}
+export type M3EChipProps =
+  | M3EChipLabelProps
+  | M3EChipAssistProps
+  | M3EChipFilterProps
+  | M3EChipInputProps;
 
 function ChipCheckSvg() {
   return (
@@ -136,7 +131,7 @@ function ChipStatusRemoveSvg() {
   );
 }
 
-export function Chip({
+function LabelChip({
   children,
   tone = "neutral",
   variant = "tonal",
@@ -150,7 +145,7 @@ export function Chip({
   disabled = false,
   className,
   style,
-}: M3EChipProps): React.JSX.Element {
+}: M3EChipLabelProps): React.JSX.Element {
   const { t } = useM3EI18n();
   const hasAction = Boolean(onClick);
   const { isPressed, pressHandlers } = usePressHoldState(
@@ -268,7 +263,7 @@ export function Chip({
   );
 }
 
-export function AssistChip({
+function AssistChip({
   children,
   icon,
   elevated = false,
@@ -276,7 +271,7 @@ export function AssistChip({
   onClick,
   className,
   style,
-}: M3EAssistChipProps): React.JSX.Element {
+}: M3EChipAssistProps): React.JSX.Element {
   const { isPressed, pressHandlers } = usePressHoldState(disabled);
   const r = useM3EScalarSpring(
     isPressed ? CHIP_TOKENS.pressedRadius : CHIP_TOKENS.restRadius,
@@ -316,7 +311,7 @@ export function AssistChip({
   );
 }
 
-export function FilterChip({
+function FilterChip({
   children,
   selected: controlledSelected,
   defaultSelected = false,
@@ -326,7 +321,7 @@ export function FilterChip({
   disabled = false,
   className,
   style,
-}: M3EFilterChipProps): React.JSX.Element {
+}: M3EChipFilterProps): React.JSX.Element {
   const [uncontrolledSelected, setUncontrolledSelected] =
     React.useState<boolean>(defaultSelected);
   const isSelected = controlledSelected ?? uncontrolledSelected;
@@ -384,7 +379,7 @@ export function FilterChip({
   );
 }
 
-export function InputChip({
+function InputChip({
   children,
   avatar,
   selected = false,
@@ -394,7 +389,7 @@ export function InputChip({
   disabled = false,
   className,
   style,
-}: M3EInputChipProps): React.JSX.Element {
+}: M3EChipInputProps): React.JSX.Element {
   const { t } = useM3EI18n();
   const resolvedRemoveLabel = removeLabel ?? t("chip.remove");
   const hasAction = Boolean(onClick);
@@ -487,55 +482,28 @@ export function InputChip({
   );
 }
 
-export function SuggestionChip({
-  children,
-  icon,
-  elevated = false,
-  selected = false,
-  disabled = false,
-  onClick,
-  className,
-  style,
-}: M3ESuggestionChipProps): React.JSX.Element {
-  const { isPressed, pressHandlers } = usePressHoldState(disabled);
-  const targetRadius = isPressed
-    ? CHIP_TOKENS.pressedRadius
-    : selected
-      ? CHIP_TOKENS.selectedRadius
-      : CHIP_TOKENS.restRadius;
-  const r = useM3EScalarSpring(targetRadius, "fastSpatial");
-  const hasLeading = Boolean(icon);
-
-  return (
-    <BaseButton
-      type="button"
-      disabled={disabled}
-      aria-pressed={selected ? true : undefined}
-      onClick={onClick}
-      className={
-        className
-          ? `m3e-chip m3e-chip--suggestion ${className}`
-          : "m3e-chip m3e-chip--suggestion"
-      }
-      data-elevated={elevated ? "" : undefined}
-      data-selected={selected ? "" : undefined}
-      data-pressed={isPressed ? "" : undefined}
-      style={{
-        height: `${CHIP_TOKENS.height}px`,
-        paddingInlineStart: `${hasLeading ? CHIP_TOKENS.iconPaddingInline : CHIP_TOKENS.paddingInline}px`,
-        paddingInlineEnd: `${CHIP_TOKENS.paddingInline}px`,
-        gap: `${CHIP_TOKENS.gap}px`,
-        borderRadius: `${Math.max(2, r).toFixed(1)}px`,
-        ...style,
-      }}
-      {...pressHandlers}
-    >
-      {icon ? (
-        <span className="m3e-chip__icon" aria-hidden="true">
-          {icon}
-        </span>
-      ) : null}
-      <span className="m3e-chip__label">{children}</span>
-    </BaseButton>
-  );
+export function Chip(props: M3EChipProps): React.JSX.Element {
+  const p = props as Partial<M3EChipLabelProps & M3EChipFilterProps & M3EChipInputProps>;
+  if (
+    p.tone !== undefined ||
+    p.variant !== undefined ||
+    p.size !== undefined ||
+    p.dot !== undefined
+  ) {
+    return <LabelChip {...(props as M3EChipLabelProps)} />;
+  }
+  if (
+    (p.selected !== undefined && p.onRemove === undefined) ||
+    p.defaultSelected !== undefined ||
+    p.onSelectedChange !== undefined
+  ) {
+    return <FilterChip {...(props as M3EChipFilterProps)} />;
+  }
+  if (p.onRemove !== undefined) {
+    return <InputChip {...(props as M3EChipInputProps)} />;
+  }
+  if (p.onClick !== undefined) {
+    return <AssistChip {...(props as M3EChipAssistProps)} />;
+  }
+  return <LabelChip {...(props as M3EChipLabelProps)} />;
 }

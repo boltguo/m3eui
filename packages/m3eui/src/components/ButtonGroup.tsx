@@ -23,7 +23,7 @@ import {
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
 import { ButtonGroupItemContext } from "../internal/buttonGroupContext.js";
-import { Button, type ButtonVariant, ToggleButton } from "./Button.js";
+import { Button, type ButtonVariant } from "./Button.js";
 import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
 
 export interface ButtonGroupOption {
@@ -675,7 +675,7 @@ export function ButtonGroup({
           onPressChange: (p) => handlePressFlag(idx, p),
         }}
       >
-        <ToggleButton
+        <Button
           ref={(el) => {
             itemRefs.current[idx] = el;
           }}
@@ -690,7 +690,7 @@ export function ButtonGroup({
           style={lockedWidthStyle}
         >
           {item.label}
-        </ToggleButton>
+        </Button>
       </ButtonGroupItemContext.Provider>
     );
   };

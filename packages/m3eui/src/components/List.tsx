@@ -21,10 +21,10 @@ interface ListItemContextValue {
 const ListItemContext = React.createContext<ListItemContextValue>({
   index: 0,
   count: 1,
-  variant: "segmented",
+  variant: "standard",
 });
 
-export interface SegmentedListProps {
+export interface ListProps {
   readonly children: React.ReactNode;
   readonly variant?: ListVariant;
   readonly dividers?: ListDividerMode;
@@ -33,14 +33,14 @@ export interface SegmentedListProps {
   readonly style?: React.CSSProperties;
 }
 
-export function SegmentedList({
+export function List({
   children,
-  variant = "segmented",
+  variant = "standard",
   dividers = variant === "standard" ? "full" : "none",
   "aria-label": ariaLabel,
   className,
   style,
-}: SegmentedListProps): React.JSX.Element {
+}: ListProps): React.JSX.Element {
   const validChildren = React.Children.toArray(children).filter(React.isValidElement);
   const count = validChildren.length;
 
@@ -63,10 +63,6 @@ export function SegmentedList({
       ))}
     </ul>
   );
-}
-
-export function List(props: SegmentedListProps): React.JSX.Element {
-  return <SegmentedList variant="standard" {...props} />;
 }
 
 export interface ListItemProps {

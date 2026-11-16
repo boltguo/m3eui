@@ -9,6 +9,7 @@ import {
   type ButtonSize,
   type CornerTuple,
 } from "../tokens/index.js";
+import { isToggleProps } from "../internal/toggleProps.js";
 import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3ECornerSpringRef, usePressHoldState } from "../hooks/useM3ESpring.js";
 import { ButtonGroupItemContext } from "../internal/buttonGroupContext.js";
@@ -25,12 +26,15 @@ const BUTTON_TYPESCALE_MAP: Record<ButtonSize, string> = {
   xl: "headline-large",
 };
 
-export interface M3EButtonProps
+export interface M3EButtonActionProps
   extends Omit<
     React.HTMLAttributes<HTMLElement>,
     "children" | "className" | "style" | "onClick"
   > {
   readonly children: React.ReactNode;
+  readonly pressed?: never;
+  readonly defaultPressed?: never;
+  readonly onPressedChange?: never;
   readonly variant?: ButtonVariant;
   readonly intent?: ButtonIntent;
   readonly size?: ButtonSize;
@@ -90,7 +94,7 @@ function ButtonSpinnerSvg({ size }: { readonly size: number }) {
   );
 }
 
-export const Button = React.forwardRef<HTMLElement, M3EButtonProps>(function Button(
+const ActionButton = React.forwardRef<HTMLElement, M3EButtonActionProps>(function ActionButton(
   {
     children,
     variant = "filled",
@@ -247,7 +251,7 @@ export const Button = React.forwardRef<HTMLElement, M3EButtonProps>(function But
   );
 });
 
-export interface M3EToggleButtonProps
+export interface M3EButtonToggleProps
   extends Omit<
     React.ButtonHTMLAttributes<HTMLButtonElement>,
     "children" | "className" | "style" | "value"
@@ -286,7 +290,7 @@ function CheckmarkSvg({ size }: { readonly size: number }) {
   );
 }
 
-export const ToggleButton = React.forwardRef<HTMLButtonElement, M3EToggleButtonProps>(
+const ToggleButton = React.forwardRef<HTMLButtonElement, M3EButtonToggleProps>(
   function ToggleButton(
     {
       children,
@@ -415,6 +419,21 @@ export const ToggleButton = React.forwardRef<HTMLButtonElement, M3EToggleButtonP
           </span>
         ) : null}
       </BaseToggle>
+    );
+  },
+);
+
+export type M3EButtonProps = M3EButtonActionProps | M3EButtonToggleProps;
+
+export const Button = React.forwardRef<HTMLElement, M3EButtonProps>(
+  function Button(props, ref) {
+    return isToggleProps(props) ? (
+      <ToggleButton
+        {...(props as M3EButtonToggleProps)}
+        ref={ref as React.Ref<HTMLButtonElement>}
+      />
+    ) : (
+      <ActionButton {...(props as M3EButtonActionProps)} ref={ref} />
     );
   },
 );

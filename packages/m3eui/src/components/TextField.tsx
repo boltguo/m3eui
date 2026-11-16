@@ -13,14 +13,13 @@ import {
 export type TextFieldVariant = "outlined" | "filled";
 export type FieldLabelPosition = "floating" | "outside";
 
-export interface M3ETextFieldProps {
+interface TextFieldBaseProps {
   readonly label: React.ReactNode;
   readonly value?: string;
   readonly defaultValue?: string;
   readonly onValueChange?: (value: string) => void;
   readonly variant?: TextFieldVariant;
   readonly labelPosition?: FieldLabelPosition;
-  readonly type?: "text" | "email" | "password" | "search" | "tel" | "url";
   readonly name?: string;
   readonly id?: string;
   readonly placeholder?: string;
@@ -31,45 +30,35 @@ export interface M3ETextFieldProps {
   readonly required?: boolean;
   readonly disabled?: boolean;
   readonly readOnly?: boolean;
+  readonly maxLength?: number;
+  readonly showCharacterCount?: boolean;
+  readonly className?: string;
+  readonly style?: React.CSSProperties;
+}
+
+export interface M3ETextFieldSingleLineProps extends TextFieldBaseProps {
+  readonly multiline?: false;
+  readonly type?: "text" | "email" | "password" | "search" | "tel" | "url";
   readonly autoComplete?: string;
   readonly inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
   readonly enterKeyHint?: React.HTMLAttributes<HTMLInputElement>["enterKeyHint"];
   readonly pattern?: string;
   readonly minLength?: number;
-  readonly maxLength?: number;
-  readonly showCharacterCount?: boolean;
   readonly clearable?: boolean;
   readonly prefixText?: React.ReactNode;
   readonly suffixText?: React.ReactNode;
   readonly leadingIcon?: React.ReactNode;
   readonly trailingIcon?: React.ReactNode;
-  readonly className?: string;
-  readonly style?: React.CSSProperties;
 }
 
-export interface M3ETextareaFieldProps {
-  readonly label: React.ReactNode;
-  readonly value?: string;
-  readonly defaultValue?: string;
-  readonly onValueChange?: (value: string) => void;
-  readonly variant?: TextFieldVariant;
-  readonly labelPosition?: FieldLabelPosition;
+export interface M3ETextFieldMultilineProps extends TextFieldBaseProps {
+  readonly multiline: true;
   readonly rows?: number;
-  readonly name?: string;
-  readonly id?: string;
-  readonly placeholder?: string;
-  readonly description?: React.ReactNode;
-  readonly errorMessage?: React.ReactNode;
-  readonly invalid?: boolean;
-  readonly validate?: (value: unknown) => string | string[] | null | void;
-  readonly required?: boolean;
-  readonly disabled?: boolean;
-  readonly readOnly?: boolean;
-  readonly maxLength?: number;
-  readonly showCharacterCount?: boolean;
-  readonly className?: string;
-  readonly style?: React.CSSProperties;
 }
+
+export type M3ETextFieldProps =
+  | M3ETextFieldSingleLineProps
+  | M3ETextFieldMultilineProps;
 
 function ClearGlyph() {
   return (
@@ -132,8 +121,8 @@ function assignRef<T>(ref: React.ForwardedRef<T>, value: T | null): void {
   }
 }
 
-export const TextField = React.forwardRef<HTMLInputElement, M3ETextFieldProps>(
-  function TextField(
+const SingleLineField = React.forwardRef<HTMLInputElement, M3ETextFieldSingleLineProps>(
+  function SingleLineField(
     {
       label,
       value: controlledValue,
@@ -428,10 +417,10 @@ export const TextField = React.forwardRef<HTMLInputElement, M3ETextFieldProps>(
   },
 );
 
-export const TextareaField = React.forwardRef<
+const MultilineField = React.forwardRef<
   HTMLTextAreaElement,
-  M3ETextareaFieldProps
->(function TextareaField(
+  M3ETextFieldMultilineProps
+>(function MultilineField(
   {
     label,
     value: controlledValue,
@@ -646,3 +635,21 @@ export const TextareaField = React.forwardRef<
     </BaseField.Root>
   );
 });
+
+export const TextField = React.forwardRef<
+  HTMLInputElement | HTMLTextAreaElement,
+  M3ETextFieldProps
+>(function TextField(props, ref) {
+  return props.multiline ? (
+    <MultilineField {...props} ref={ref as React.Ref<HTMLTextAreaElement>} />
+  ) : (
+    <SingleLineField {...props} ref={ref as React.Ref<HTMLInputElement>} />
+  );
+}) as {
+  (
+    props: M3ETextFieldSingleLineProps & React.RefAttributes<HTMLInputElement>,
+  ): React.JSX.Element;
+  (
+    props: M3ETextFieldMultilineProps & React.RefAttributes<HTMLTextAreaElement>,
+  ): React.JSX.Element;
+};

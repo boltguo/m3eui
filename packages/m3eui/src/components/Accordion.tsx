@@ -18,9 +18,12 @@ export interface AccordionItemSpec {
   readonly title: React.ReactNode;
   readonly subtitle?: React.ReactNode;
   readonly leading?: React.ReactNode;
+  readonly trailingBadge?: React.ReactNode;
   readonly content: React.ReactNode;
   readonly disabled?: boolean;
 }
+
+export type AccordionVariant = "tonal" | "outlined" | "plain";
 
 export interface M3EAccordionProps {
   readonly items: readonly AccordionItemSpec[];
@@ -28,6 +31,7 @@ export interface M3EAccordionProps {
   readonly defaultValue?: string[];
   readonly onValueChange?: (value: string[]) => void;
   readonly multiple?: boolean;
+  readonly variant?: AccordionVariant;
   readonly showExpandAll?: boolean;
   readonly hiddenUntilFound?: boolean;
   readonly disabled?: boolean;
@@ -127,6 +131,19 @@ function SegmentedAccordionCard({
               <span className="m3e-accordion__subtitle">{item.subtitle}</span>
             ) : null}
           </span>
+          {item.trailingBadge ? (
+            <span
+              className="m3e-accordion__badge"
+              data-text={
+                typeof item.trailingBadge === "string" ||
+                typeof item.trailingBadge === "number"
+                  ? ""
+                  : undefined
+              }
+            >
+              {item.trailingBadge}
+            </span>
+          ) : null}
           <span
             className="m3e-accordion__chevron"
             data-open={isOpen ? "" : undefined}
@@ -155,6 +172,7 @@ export function Accordion({
   defaultValue = [],
   onValueChange,
   multiple = true,
+  variant = "tonal",
   showExpandAll = false,
   hiddenUntilFound = true,
   disabled = false,
@@ -203,6 +221,7 @@ export function Accordion({
       hiddenUntilFound={hiddenUntilFound}
       disabled={disabled}
       aria-label={ariaLabel}
+      data-variant={variant}
       onValueChange={(next) => {
         commitValue([...next]);
       }}
@@ -248,8 +267,8 @@ export function Accordion({
           onClick={handleToggleAll}
         >
           {allOpen
-            ? t("collapsible.collapseAll")
-            : t("collapsible.expandAll")}
+            ? t("accordion.collapseAll")
+            : t("accordion.expandAll")}
         </button>
       </div>
       {accordionNode}

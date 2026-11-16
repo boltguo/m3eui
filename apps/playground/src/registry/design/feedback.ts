@@ -940,4 +940,200 @@ export const FEEDBACK_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>
       },
     ],
   },
+
+  "alert-dialog": {
+    provenance: "official-m3e",
+    provenanceSummary:
+      "Material 3 dialog geometry on the WAI-ARIA alertdialog contract, for confirmations that must be answered explicitly.",
+    tokenSources: ["DIALOG_TOKENS", "EXPRESSIVE_MOTION_SCHEME"],
+    aospSources: ["AlertDialog.kt", "DialogTokens.kt"],
+    inspirationAndRationale: [
+      {
+        title: "No light dismiss",
+        body: "Unlike Dialog, a scrim click never closes AlertDialog. The user leaves through an action or Escape, so an irreversible choice is never made by accident.",
+      },
+      {
+        title: "Icon-centered headline",
+        body: "When icon is set, the 24px icon and the headline center; supporting text stays start-aligned.",
+      },
+    ],
+    geometryAndMotionTables: [
+      {
+        id: "alert-dialog-geometry",
+        title: "AlertDialog metrics",
+        caption: "DIALOG_TOKENS",
+        columns: ["Metric", "Value"],
+        rows: [
+          ["Container radius", "28 (extraLarge)"],
+          ["Width", "280–560"],
+          ["Padding", "24"],
+          ["Icon", "24"],
+          ["Action gap", "8"],
+          ["Surface", "surface-container-high, scrim backdrop"],
+          ["Enter", "scale 0.92 → 1 (defaultSpatial) + opacity (defaultEffects)"],
+        ],
+      },
+    ],
+    invariants: [
+      "Renders role=\"alertdialog\" with aria-labelledby (title) and aria-describedby (description).",
+      "Focus is trapped while open and returns to the trigger on close.",
+      "Scrim clicks are ignored; Escape and AlertDialogClose actions close the dialog.",
+    ],
+    crossPlatformNotes: [
+      { target: "Jetpack Compose", guidance: "AlertDialog with DialogProperties(dismissOnClickOutside = false)." },
+      { target: "SwiftUI", guidance: ".alert or .confirmationDialog." },
+      { target: "Flutter", guidance: "showDialog(barrierDismissible: false) with AlertDialog." },
+    ],
+    references: [
+      { label: "Material 3 — Dialogs", url: "https://m3.material.io/components/dialogs/specs", kind: "m3-spec" },
+      { label: "WAI-ARIA APG — Alert and Message Dialogs", url: "https://www.w3.org/WAI/ARIA/apg/patterns/alertdialog/", kind: "aria-apg" },
+      { label: "Base UI — Alert Dialog", url: "https://base-ui.com/react/components/alert-dialog", kind: "base-ui" },
+    ],
+  },
+
+  "loading-indicator": {
+    provenance: "official-m3e",
+    provenanceSummary:
+      "Material 3 Expressive loading indicator: a polygon that morphs through the MaterialShapes sequence while rotating, for waits under about 5 seconds.",
+    tokenSources: ["LOADING_INDICATOR_TOKENS", "LOADING_INDICATOR_SHAPE_SEQUENCE", "MaterialShapes"],
+    aospSources: ["LoadingIndicator.kt", "LoadingIndicatorTokens.kt"],
+    inspirationAndRationale: [
+      {
+        title: "Morph, not spin",
+        body: "Every 650ms the active shape springs to the next MaterialShape (ζ = 0.6, k = 200) while the whole indicator turns a quarter. A full rotation takes 4666ms.",
+      },
+      {
+        title: "Determinate mode",
+        body: "With progress set, the shape morphs along a short determinate sequence driven by progress instead of time.",
+      },
+    ],
+    geometryAndMotionTables: [
+      {
+        id: "loading-indicator-geometry",
+        title: "LoadingIndicator metrics",
+        caption: "LOADING_INDICATOR_TOKENS",
+        columns: ["Metric", "Value"],
+        rows: [
+          ["Container", "48 × 48"],
+          ["Active indicator", "38 × 38"],
+          ["Morph interval", "650ms"],
+          ["Morph spring", "ζ = 0.6, k = 200"],
+          ["Rotation", "90° per morph, 4666ms per turn"],
+          ["contained", "Full-round primary-container, on-primary-container shape"],
+          ["Uncontained", "primary shape, transparent container"],
+        ],
+      },
+    ],
+    invariants: [
+      "Renders role=\"progressbar\" with a localized aria-label; aria-valuenow is set only when progress is given.",
+      "Under prefers-reduced-motion the morph spring is critically damped and the continuous rotation is dropped.",
+      "paused, or scrolling off screen, freezes the current frame without unmounting.",
+    ],
+    crossPlatformNotes: [
+      { target: "Jetpack Compose", guidance: "LoadingIndicator and ContainedLoadingIndicator." },
+      { target: "Web", guidance: "Use one requestAnimationFrame loop per instance and render the morphed path into a single SVG." },
+    ],
+    references: [
+      { label: "Material 3 Expressive — Loading indicator", url: "https://m3.material.io/components/loading-indicator/overview", kind: "m3-spec" },
+      {
+        label: "AOSP Compose Material 3 — LoadingIndicator.kt",
+        url: "https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/LoadingIndicator.kt",
+        kind: "aosp-source",
+      },
+    ],
+  },
+
+  meter: {
+    provenance: "m3e-web-adaptation",
+    provenanceSummary:
+      "A static gauge (storage, quota, battery) on the HTML meter semantics, drawn with the M3E linear progress track and gap.",
+    tokenSources: ["METER_TOKENS", "LINEAR_PROGRESS_TOKENS"],
+    inspirationAndRationale: [
+      {
+        title: "Measurement, not progress",
+        body: "ProgressIndicator says a task is running. Meter reports a value inside a known range, so it has no indeterminate state and its color follows the level.",
+      },
+      {
+        title: "Threshold tones",
+        body: "The indicator is primary below 70%, warning from 70%, and error from 90%. A 4px gap separates the indicator from the secondary-container remainder.",
+      },
+    ],
+    geometryAndMotionTables: [
+      {
+        id: "meter-geometry",
+        title: "Meter metrics",
+        caption: "METER_TOKENS",
+        columns: ["Metric", "Value"],
+        rows: [
+          ["Track height", "8 (full radius)"],
+          ["Indicator / remainder gap", "4"],
+          ["Warning threshold", "0.7 → warning"],
+          ["Critical threshold", "0.9 → error"],
+          ["Value change", "defaultSpatial spring"],
+        ],
+      },
+    ],
+    invariants: [
+      "Renders role=\"meter\" with aria-valuemin, aria-valuemax, aria-valuenow, and the label wired through aria-labelledby.",
+      "valueText overrides aria-valuetext; otherwise the value is formatted with the active locale.",
+      "Color is never the only cue: the value is always shown as text in the header.",
+    ],
+    crossPlatformNotes: [
+      { target: "SwiftUI", guidance: "Gauge(value:in:) with .linearCapacity." },
+      { target: "Web", guidance: "Native <meter> has the same semantics but cannot be styled consistently across engines." },
+    ],
+    references: [
+      { label: "WAI-ARIA APG — Meter", url: "https://www.w3.org/WAI/ARIA/apg/patterns/meter/", kind: "aria-apg" },
+      { label: "HTML — the meter element", url: "https://html.spec.whatwg.org/multipage/form-elements.html#the-meter-element", kind: "web-standard" },
+      { label: "Base UI — Meter", url: "https://base-ui.com/react/components/meter", kind: "base-ui" },
+    ],
+  },
+
+  popover: {
+    provenance: "m3e-web-adaptation",
+    provenanceSummary:
+      "An anchored non-modal surface for rich content and light interaction. It also covers hover cards through openOnHover.",
+    tokenSources: ["POPOVER_TOKENS", "EXPRESSIVE_MOTION_SCHEME"],
+    inspirationAndRationale: [
+      {
+        title: "Between tooltip and dialog",
+        body: "Tooltip holds a short label and cannot take focus. Dialog blocks the page. Popover holds focusable content anchored to its trigger, and the rest of the page stays usable.",
+      },
+      {
+        title: "Hover cards",
+        body: "openOnHover opens after 280ms and closes 200ms after the pointer leaves, so pointer users can preview content. Keyboard and touch still open it with activation.",
+      },
+    ],
+    geometryAndMotionTables: [
+      {
+        id: "popover-geometry",
+        title: "Popover metrics",
+        caption: "POPOVER_TOKENS",
+        columns: ["Metric", "Value"],
+        rows: [
+          ["Container radius", "20 (largeIncreased)"],
+          ["Padding", "16"],
+          ["Max width", "340"],
+          ["Side offset", "8 (default side bottom, align center)"],
+          ["Surface", "surface-container-high, outline-variant border"],
+          ["Open delay / close delay", "280ms / 200ms (openOnHover)"],
+          ["Enter", "scale 0.93 → 1 from --transform-origin + opacity"],
+        ],
+      },
+    ],
+    invariants: [
+      "The trigger exposes aria-expanded and aria-controls; the popup has role=\"dialog\" labelled by title or aria-label.",
+      "Escape and outside press close the popover and return focus to the trigger.",
+      "side and align flip with collision detection and mirror in RTL.",
+    ],
+    crossPlatformNotes: [
+      { target: "SwiftUI", guidance: ".popover(isPresented:attachmentAnchor:)." },
+      { target: "Web", guidance: "The HTML popover attribute with CSS anchor positioning gives the same light-dismiss behavior." },
+    ],
+    references: [
+      { label: "Base UI — Popover", url: "https://base-ui.com/react/components/popover", kind: "base-ui" },
+      { label: "HTML — the popover attribute", url: "https://html.spec.whatwg.org/multipage/popover.html", kind: "web-standard" },
+      { label: "WAI-ARIA APG — Dialog (Modal) Pattern", url: "https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/", kind: "aria-apg", note: "Non-modal variant." },
+    ],
+  },
 };

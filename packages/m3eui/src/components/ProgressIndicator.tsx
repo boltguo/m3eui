@@ -12,6 +12,10 @@ import { useOffscreen } from "../internal/useOffscreen.js";
 import { subscribeSpringFrame, useM3EScalarSpring } from "../hooks/useM3ESpring.js";
 import { formatLocalizedPercent } from "../i18n/index.js";
 import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
+import {
+  CircularWavyProgressIndicator,
+  LinearWavyProgressIndicator,
+} from "../internal/wavyProgress.js";
 
 const CIRCULAR_INDETERMINATE_DURATION_MS = 6000;
 const CIRCULAR_STEP_DURATION_MS = 1500;
@@ -87,20 +91,49 @@ function resolveCircularSizeSpec(
   };
 }
 
-export interface M3ELinearProgressIndicatorProps {
-  readonly id?: string;
+interface ProgressBaseProps {
   readonly value?: number | null;
   readonly indeterminate?: boolean;
   readonly paused?: boolean;
-  readonly thickness?: "standard" | "thick";
-  readonly label?: React.ReactNode;
-  readonly showValue?: boolean;
   readonly "aria-label"?: string;
   readonly className?: string;
   readonly style?: React.CSSProperties;
 }
 
-export function LinearProgressIndicator({
+export interface M3ELinearProgressIndicatorFlatProps extends ProgressBaseProps {
+  readonly wavy?: false;
+  readonly id?: string;
+  readonly thickness?: "standard" | "thick";
+  readonly label?: React.ReactNode;
+  readonly showValue?: boolean;
+}
+
+export interface M3ELinearProgressIndicatorWavyProps extends ProgressBaseProps {
+  readonly wavy: true;
+  readonly amplitude?: number;
+  readonly wavelength?: number;
+  readonly strokeWidth?: number;
+  readonly trackGap?: number;
+}
+
+export type M3ELinearProgressIndicatorProps =
+  | M3ELinearProgressIndicatorFlatProps
+  | M3ELinearProgressIndicatorWavyProps;
+
+export function LinearProgressIndicator(
+  props: M3ELinearProgressIndicatorProps,
+): React.JSX.Element {
+  if (!props.wavy) return <FlatLinearProgressIndicator {...props} />;
+  const { wavy: _wavy, indeterminate, value, ...rest } = props;
+  return (
+    <LinearWavyProgressIndicator
+      {...rest}
+      value={indeterminate ? null : value}
+    />
+  );
+}
+
+function FlatLinearProgressIndicator({
   id,
   value,
   indeterminate = false,
@@ -111,7 +144,7 @@ export function LinearProgressIndicator({
   "aria-label": ariaLabel,
   className,
   style,
-}: M3ELinearProgressIndicatorProps): React.JSX.Element {
+}: M3ELinearProgressIndicatorFlatProps): React.JSX.Element {
   const {
     direction,
     locale,
@@ -369,21 +402,43 @@ export function LinearProgressIndicator({
   );
 }
 
-export interface M3ECircularProgressIndicatorProps {
+export interface M3ECircularProgressIndicatorFlatProps extends ProgressBaseProps {
+  readonly wavy?: false;
   readonly id?: string;
-  readonly value?: number | null;
-  readonly indeterminate?: boolean;
-  readonly paused?: boolean;
   readonly size?: "sm" | "md" | "lg" | number;
   readonly strokeWidth?: number;
   readonly showValue?: boolean;
   readonly showValueLabel?: boolean;
-  readonly "aria-label"?: string;
-  readonly className?: string;
-  readonly style?: React.CSSProperties;
 }
 
-export function CircularProgressIndicator({
+export interface M3ECircularProgressIndicatorWavyProps extends ProgressBaseProps {
+  readonly wavy: true;
+  readonly size?: number;
+  readonly strokeWidth?: number;
+  readonly maxAmplitudePx?: number;
+  readonly targetWavelength?: number;
+  readonly trackGap?: number;
+  readonly amplitude?: number;
+}
+
+export type M3ECircularProgressIndicatorProps =
+  | M3ECircularProgressIndicatorFlatProps
+  | M3ECircularProgressIndicatorWavyProps;
+
+export function CircularProgressIndicator(
+  props: M3ECircularProgressIndicatorProps,
+): React.JSX.Element {
+  if (!props.wavy) return <FlatCircularProgressIndicator {...props} />;
+  const { wavy: _wavy, indeterminate, value, ...rest } = props;
+  return (
+    <CircularWavyProgressIndicator
+      {...rest}
+      value={indeterminate ? null : value}
+    />
+  );
+}
+
+function FlatCircularProgressIndicator({
   id,
   value,
   indeterminate = false,
@@ -395,7 +450,7 @@ export function CircularProgressIndicator({
   "aria-label": ariaLabel,
   className,
   style,
-}: M3ECircularProgressIndicatorProps): React.JSX.Element {
+}: M3ECircularProgressIndicatorFlatProps): React.JSX.Element {
   const {
     locale,
     paused: contextPaused,

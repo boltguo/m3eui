@@ -9,9 +9,8 @@ import {
   Popover,
   Select,
   SheetClose,
-  SideSheet,
+  Sheet,
   Switch,
-  ToggleButton,
   useM3E,
   useM3EToast,
 } from "m3eui";
@@ -123,7 +122,7 @@ export function ThemeStudioSheet({
   const rulerId = React.useId();
 
   return (
-    <SideSheet
+    <Sheet
       open={open}
       onOpenChange={onOpenChange}
       side="end"
@@ -177,7 +176,7 @@ export function ThemeStudioSheet({
                 const selected =
                   seedHex.toLowerCase() === preset.hex.toLowerCase();
                 return (
-                  <ToggleButton
+                  <Button
                     key={preset.hex}
                     size="xs"
                     variant="outlined"
@@ -188,7 +187,7 @@ export function ThemeStudioSheet({
                     leadingIcon={<SeedSwatchDot hex={preset.hex} />}
                   >
                     {preset.name}
-                  </ToggleButton>
+                  </Button>
                 );
               })}
 
@@ -367,6 +366,6 @@ export function ThemeStudioSheet({
           </div>
         </section>
       </div>
-    </SideSheet>
+    </Sheet>
   );
 }

@@ -8,7 +8,6 @@ import {
   Alert,
   Avatar,
   AvatarGroup,
-  BottomAppBar,
   Breadcrumb,
   Button,
   ButtonGroup,
@@ -19,14 +18,13 @@ import {
   Combobox,
   CopyButton,
   DataTable,
-  DatePickerDialog,
   DatePickerField,
   Dialog,
-  DockedDatePicker,
+  DockedToolbar,
+  DatePicker,
   DragHandle,
   DropdownMenu,
   Empty,
-  ExtendedFAB,
   FAB,
   FABMenu,
   Fieldset,
@@ -39,10 +37,10 @@ import {
   NumberField,
   OTPField,
   PullToRefreshBox,
-  RichTooltip,
+  Tooltip,
   SearchBar,
   SearchView,
-  SegmentedList,
+  List,
   ListItem,
   Select,
   Sheet,
@@ -55,12 +53,9 @@ import {
   TabsPanel,
   TextField,
   TimePicker,
-  TimePickerDialog,
   TimePickerField,
-  Tooltip,
   TopAppBar,
-  VerticalDragHandle,
-  WideNavigationRail,
+  NavigationRail,
   resolveM3EConfig,
   useM3EToast,
 } from "./index.js";
@@ -111,7 +106,7 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
       "components/Tabs.js",
       "components/TopAppBar.js",
       "components/DragHandle.js",
-      "components/BottomAppBar.js",
+      "components/Sidebar.js",
       "components/PullToRefresh.js",
     ]) {
       const code = readFileSync(resolve(distRoot, rel), "utf8").trimStart();
@@ -462,7 +457,7 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
 
           <ControlledNullDemo />
 
-          <DockedDatePicker
+          <DatePicker
             defaultValue="2026-05-15"
             minDate="2026-05-10"
             maxDate="2026-05-20"
@@ -565,7 +560,7 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
     expect(uploadText).not.toContain("a.txt");
   });
 
-  it("validates Navigation, Card/SegmentedList valid DOM, RichTooltip action, indeterminate Progress, CopyButton error, DataTable cross-page selection, and Carousel interactive slides", async () => {
+  it("validates Navigation, Card/segmented List valid DOM, rich Tooltip action, indeterminate Progress, CopyButton error, DataTable cross-page selection, and Carousel interactive slides", async () => {
     const originalClipboard = navigator.clipboard;
     Object.defineProperty(navigator, "clipboard", {
       value: {
@@ -592,8 +587,10 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
               { value: "files", label: "Files", href: "#files" },
             ]}
           />
-          <WideNavigationRail
+          <NavigationRail
+            collapsible
             expanded={railExpanded}
+            onValueChange={() => {}}
             value="inbox"
             items={[{ value: "inbox", label: "Inbox", icon: <span>I</span> }]}
           />
@@ -617,29 +614,29 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
             }
           />
 
-          <SegmentedList>
+          <List variant="segmented">
             <ListItem headline="Static row" />
             <ListItem
               headline="Interactive row"
               onClick={() => {}}
               trailing={<button type="button">More</button>}
             />
-          </SegmentedList>
+          </List>
 
-          <RichTooltip
+          <Tooltip
             title="Rich info"
             action={<button type="button" id="rt-action">Learn more</button>}
           >
             <button type="button" id="rt-trigger">Inspect</button>
-          </RichTooltip>
+          </Tooltip>
 
-          <RichTooltip
+          <Tooltip
             disabled
             title="Suppressed"
             action={<button type="button">Action</button>}
           >
             <button type="button" id="rt-disabled-trigger">Still clickable</button>
-          </RichTooltip>
+          </Tooltip>
 
           <LinearProgressIndicator id="indet-linear" />
           <CircularProgressIndicator id="indet-circular" />
@@ -702,21 +699,25 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
       )!;
       expect(activeNavAnchor.getAttribute("aria-current")).toBe("page");
 
-      // WideNavigationRail preserves exact button DOM element & focus across expanded toggle
-      const railBtnBefore = container.querySelector<HTMLButtonElement>(
-        ".m3e-wide-rail button[aria-current='page']",
+      // NavigationRail keeps its toggle (and focus) across expansion; active item stays marked
+      const railToggle = container.querySelector<HTMLButtonElement>(
+        ".m3e-nav-rail__toggle",
       )!;
-      railBtnBefore.focus();
-      expect(document.activeElement).toBe(railBtnBefore);
+      expect(railToggle.getAttribute("aria-expanded")).toBe("false");
+      expect(
+        container.querySelector(".m3e-nav-rail button[aria-current='page']"),
+      ).not.toBeNull();
+      railToggle.focus();
 
       act(() => {
         root.render(<NavAndSurfaceHarness railExpanded={true} />);
       });
-      const railBtnAfter = container.querySelector<HTMLButtonElement>(
-        ".m3e-wide-rail button[aria-current='page']",
-      )!;
-      expect(railBtnAfter).toBe(railBtnBefore);
-      expect(document.activeElement).toBe(railBtnBefore);
+      expect(container.querySelector(".m3e-nav-rail__toggle")).toBe(railToggle);
+      expect(document.activeElement).toBe(railToggle);
+      expect(railToggle.getAttribute("aria-expanded")).toBe("true");
+      expect(
+        container.querySelector(".m3e-nav-list__item[aria-current='page']"),
+      ).not.toBeNull();
 
       // Compound Card has zero nested <button> inside <button>
       expect(container.querySelectorAll("button button").length).toBe(0);
@@ -726,7 +727,7 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
       expect(onCardAction).toHaveBeenCalledTimes(1);
       expect(onCardMain).not.toHaveBeenCalled();
 
-      // SegmentedList static vs compound interactive row
+      // segmented List static vs compound interactive row
       const segItems = container.querySelectorAll(".m3e-segmented-list__item");
       expect(segItems[0]?.tagName).toBe("DIV");
       expect(segItems[0]?.hasAttribute("data-static")).toBe(true);
@@ -734,7 +735,7 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
         segItems[1]?.querySelector(".m3e-segmented-list__primary")?.tagName,
       ).toBe("BUTTON");
 
-      // RichTooltip disabled=true does NOT disable its trigger button
+      // rich Tooltip disabled=true does NOT disable its trigger button
       const rtDisabledTrigger = container.querySelector<HTMLButtonElement>(
         "#rt-disabled-trigger",
       )!;
@@ -842,7 +843,7 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
             icon={<span>+</span>}
             aria-label="Large FAB"
           />
-          <ExtendedFAB
+          <FAB
             id="efab-morph"
             size="lg"
             morphOnPress
@@ -850,7 +851,7 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
             icon={<span>+</span>}
           >
             Compose
-          </ExtendedFAB>
+          </FAB>
           <Slider
             id="slider-vert"
             orientation="vertical"
@@ -1021,7 +1022,7 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
     expect(document.body.querySelector(".m3e-sheet__backdrop")).toBeNull();
   });
 
-  it("supports TopAppBar/AppBarRow overflow actions, SearchBar->SearchView anchorRef focus return, DatePickerDialog range mode, and TimePickerDialog draft isolation", async () => {
+  it("supports TopAppBar/AppBarRow overflow actions, SearchBar->SearchView anchorRef focus return, modal DatePickerField range mode, and modal TimePickerField draft isolation", async () => {
     const onOverflowClick = vi.fn();
     const onRangeCommit = vi.fn();
     const onTimeCommit = vi.fn();
@@ -1029,8 +1030,6 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
     function AppBarsSearchAndDialogsHarness() {
       const searchBarRef = React.useRef<HTMLFormElement | null>(null);
       const [searchOpen, setSearchOpen] = React.useState(false);
-      const [dateOpen, setDateOpen] = React.useState(false);
-      const [timeOpen, setTimeOpen] = React.useState(false);
 
       return (
         <M3EProvider>
@@ -1055,24 +1054,20 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
           <SearchView
             open={searchOpen}
             onOpenChange={setSearchOpen}
-            mode="fullscreen"
             anchorRef={searchBarRef}
           >
             <div>Suggestions</div>
           </SearchView>
-          <DatePickerDialog
-            open={dateOpen}
-            onOpenChange={setDateOpen}
-            trigger={<button type="button" id="open-date-dlg">Open Date</button>}
+          <DatePickerField
+            id="open-date-dlg"
+            modal
             mode="range"
-            defaultRangeValue={{ start: "2026-11-10", end: "2026-11-16" }}
-            onRangeValueChange={onRangeCommit}
+            defaultValue={{ start: "2026-11-10", end: "2026-11-16" }}
+            onValueChange={onRangeCommit}
           />
-          <TimePickerDialog
-            open={timeOpen}
-            onOpenChange={setTimeOpen}
-            trigger={<button type="button" id="open-time-dlg">Open Time</button>}
-            variant="vibrant"
+          <TimePickerField
+            id="open-time-dlg"
+            modal
             defaultValue="09:30"
             onValueChange={onTimeCommit}
           />
@@ -1113,7 +1108,7 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
     });
     expect(document.activeElement).toBe(searchInput);
 
-    // 3. DatePickerDialog mode="range" switches to text input, edits range, and commits on OK
+    // 3. Modal range DatePickerField switches to text input, edits range, and commits on OK
     act(() => {
       container.querySelector<HTMLButtonElement>("#open-date-dlg")!.click();
     });
@@ -1140,12 +1135,12 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
       end: "2026-11-16",
     });
 
-    // 4. TimePickerDialog variant="vibrant" toggles keyboard mode and cancels without firing onValueChange
+    // 4. Modal TimePickerField toggles keyboard mode and cancels without firing onValueChange
     act(() => {
       container.querySelector<HTMLButtonElement>("#open-time-dlg")!.click();
     });
     const timeModal = document.body.querySelector<HTMLElement>(
-      '.m3e-time-picker-dialog[data-variant="vibrant"]',
+      ".m3e-time-picker-dialog",
     )!;
     expect(timeModal).not.toBeNull();
     const modeToggleBtn = timeModal.querySelector<HTMLButtonElement>(
@@ -1169,14 +1164,14 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
     expect(onTimeCommit).not.toHaveBeenCalled();
   });
 
-  it("delivers standalone AOSP DragHandle (RTL keyboard + pointercancel), BottomAppBar (flat FAB context), and PullToRefreshBox (threshold + cancel guard)", () => {
+  it("delivers standalone AOSP DragHandle (RTL keyboard + pointercancel), DockedToolbar (flat FAB context), and PullToRefreshBox (threshold + cancel guard)", () => {
     const onSplitChange = vi.fn();
     const onRefresh = vi.fn();
 
     act(() => {
       root.render(
         <M3EProvider initialDirection="rtl">
-          <VerticalDragHandle
+          <DragHandle
             defaultValue={50}
             min={20}
             max={80}
@@ -1184,15 +1179,15 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
             onValueChange={onSplitChange}
           />
           <DragHandle orientation="horizontal" defaultValue={40} />
-          <BottomAppBar
+          <DockedToolbar
             maxVisibleActions={3}
-            actionItems={[
+            items={[
               { id: "b1", label: "Check", icon: <span>1</span> },
               { id: "b2", label: "Edit", icon: <span>2</span> },
               { id: "b3", label: "Mic", icon: <span>3</span> },
               { id: "b4", label: "Share", icon: <span>4</span> },
             ]}
-            fab={<FAB id="bab-fab" icon={<span>+</span>} aria-label="Add" />}
+            primaryAction={<FAB id="bab-fab" icon={<span>+</span>} aria-label="Add" />}
           />
           <PullToRefreshBox
             id="ptr-box"
@@ -1206,7 +1201,7 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
       );
     });
 
-    // 1. VerticalDragHandle separator semantics + RTL keyboard inversion (ArrowLeft increases split in RTL)
+    // 1. vertical DragHandle separator semantics + RTL keyboard inversion (ArrowLeft increases split in RTL)
     const separators = container.querySelectorAll<HTMLElement>(
       '[role="separator"]',
     );
@@ -1256,11 +1251,11 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
     expect(vHandle.hasAttribute("data-active")).toBe(false);
     expect(vHandle.hasAttribute("data-dragging")).toBe(false);
 
-    // 2. BottomAppBar forces trailing FAB elevation to "none" per AOSP BottomAppBar.kt
+    // 2. DockedToolbar forces primaryAction FAB elevation to "none" per AOSP AppBar.kt
     const babFab = container.querySelector<HTMLButtonElement>("#bab-fab")!;
     expect(babFab.getAttribute("data-elevation")).toBe("none");
     expect(
-      container.querySelectorAll(".m3e-bottom-app-bar button.m3e-icon-button")
+      container.querySelectorAll(".m3e-docked-toolbar__items .m3e-docked-toolbar__button")
         .length,
     ).toBe(3);
 
@@ -1313,6 +1308,33 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
       );
     });
     expect(onRefresh).toHaveBeenCalledTimes(1);
+
+    // Touch path: non-passive touchmove blocks native scroll only while pulling down from the top
+    const touchEvent = (type: string, y: number) => {
+      const ev = new Event(type, { bubbles: true, cancelable: true });
+      const list = [{ identifier: 7, clientX: 100, clientY: y }];
+      Object.defineProperty(ev, "touches", { value: type === "touchend" ? [] : list });
+      Object.defineProperty(ev, "changedTouches", { value: list });
+      return ev;
+    };
+    const up = touchEvent("touchmove", 0);
+    act(() => {
+      ptr.dispatchEvent(touchEvent("touchstart", 40));
+      ptr.dispatchEvent(up);
+    });
+    expect(up.defaultPrevented).toBe(false);
+
+    const down = touchEvent("touchmove", 200);
+    act(() => {
+      ptr.dispatchEvent(touchEvent("touchstart", 20));
+      ptr.dispatchEvent(touchEvent("touchmove", 30));
+      ptr.dispatchEvent(down);
+    });
+    expect(down.defaultPrevented).toBe(true);
+    act(() => {
+      ptr.dispatchEvent(touchEvent("touchend", 200));
+    });
+    expect(onRefresh).toHaveBeenCalledTimes(2);
   });
 
   it("covers 0.1.0 release regressions across Web-derived & form controls", () => {

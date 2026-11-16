@@ -247,7 +247,7 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
     ],
   },
 
-  "segmented-list": {
+  list: {
     provenance: "official-m3e",
     provenanceSummary:
       "Canonical Material 3 Expressive segmented list replacing 1px hairline dividers with 2px physical seams and dynamic per-corner detachment.",
@@ -628,65 +628,61 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
   carousel: {
     provenance: "official-m3e",
     provenanceSummary:
-      "Canonical Material 3 Expressive multi-browse and hero carousel enforcing strict zero-sum width conservation and continuous prominence-coupled corner radii.",
+      "Material 3 Expressive carousel driven by AOSP keylines: items scroll natively and are masked to the size of the keyline they pass.",
     tokenSources: [
       "CAROUSEL_TOKENS",
-      "resolveCarouselLayout",
-      "EXPRESSIVE_MOTION_SCHEME",
+      "resolveCarouselKeylineStrategy",
+      "resolveCarouselItemFrame",
+      "resolveCarouselSnapOffset",
     ],
-    aospSources: ["Carousel.kt", "Keyline.kt", "CarouselTokens.kt"],
+    aospSources: ["Keylines.kt", "Arrangement.kt", "KeylineList.kt", "KeylineSnapPosition.kt", "Strategy.kt", "CarouselState.kt"],
     inspirationAndRationale: [
       {
-        title: "Zero-Sum Container Width Conservation",
-        body: "Unlike traditional CSS scroll-snap carousels that clip rigid fixed-width cards at the viewport edge, M3E Carousel dynamically compresses non-focal items inside the container so every visible card remains a complete rounded silhouette and ∑ w_i + (n - 1) × 8px ≡ W_container holds on every frame.",
+        title: "Keylines, ported",
+        body: "multi-browse and hero choose large / medium / small counts with AOSP Arrangement.findLowestCostArrangement: small targets large / 3 clamped to 40–56, medium is (large + small) / 2, and the arrangement whose large size is closest to preferredItemWidth wins. When the item count is lower than the keylines, small and then medium keylines are dropped.",
       },
       {
-        title: "Continuous Gaussian Prominence Field & Coupled Corner Radii",
-        body: "As the spring-animated focal position f moves across indices (defaultSpatial, ζ = 0.8, k = 380), each slide's prominence p_i = exp(-|i - f|² × falloff) simultaneously drives its normalized width share, its corner radius r_i = 16 + p_i × (28 - 16) (peek 16px → medium ~20px → focal 28px), and its caption opacity.",
+        title: "Masks, not resizing",
+        body: "Every item keeps its full slot width; a mask clips it to the interpolated keyline size and its corner follows the mask (16 at the smallest keyline → 28 at the largest). Start and end steps shift keylines so the first and last items can reach the focal position.",
       },
       {
-        title: "Pointer Flick Physics & Bidirectional RTL Mirroring",
-        body: "Pointer dragging engages after a 6px deadzone (preserving click selection), tracks velocity for >= 0.35 px/ms flick gestures, applies 0.25× rubber-band resistance at non-looping bounds, and inverts horizontal drag deltas, arrow keys, and chevron icons automatically in RTL.",
+        title: "Controls only when they move something",
+        body: "If every item fits, arrows and markers are not rendered. Arrows jump to the next index whose snap offset differs, so positions that resolve to the same scroll offset are skipped.",
       },
     ],
     geometryAndMotionTables: [
       {
-        id: "carousel-layout-tokens",
-        title: "Carousel Layout & Prominence Parameters (CAROUSEL_TOKENS)",
-        caption: "Exact constants used by resolveCarouselLayout",
-        columns: [
-          "Variant / Parameter",
-          "Gap (px)",
-          "Gaussian Falloff",
-          "Base Weight",
-          "Focal / Medium / Peek Radius",
-          "Min Peek / Min Slide Floor",
-        ],
+        id: "carousel-keylines",
+        title: "Keyline arrangement",
+        caption: "CAROUSEL_TOKENS",
+        columns: ["Variant", "Keylines (start → end)", "Alignment"],
         rows: [
-          [
-            "multi-browse",
-            "8",
-            "1.05",
-            "0.20",
-            "28 / 20 / 16",
-            "48 spec peek / 36 hard floor",
-          ],
-          [
-            "hero",
-            "8",
-            "1.85",
-            "0.14",
-            "28 / 20 / 16",
-            "48 spec peek / 36 hard floor",
-          ],
+          ["multi-browse", "anchor 10 · large × n · medium × 0–1 · small × 0–1 · anchor 10", "Start"],
+          ["hero", "anchor 10 · large × n · small × 1 · anchor 10", "Start"],
+          ["centered-hero", "anchor 10 · small · large × n · small · anchor 10 (≥ 3 items)", "Center"],
+          ["uncontained", "anchor ≥ 10 · (preferredItemWidth + gap) × n · medium × 0–1 · anchor 10", "Start"],
+        ],
+      },
+      {
+        id: "carousel-metrics",
+        title: "Carousel metrics",
+        columns: ["Metric", "Value"],
+        rows: [
+          ["Item gap", "8"],
+          ["Small item", "40–56 (target large / 3)"],
+          ["Anchor", "10"],
+          ["Corner", "16 → 28, linear in mask size"],
+          ["Preferred large width", "220 (multi-browse, uncontained); container width (hero)"],
+          ["Flick threshold", "0.35 px/ms"],
         ],
       },
     ],
     invariants: [
-      "Strict zero-sum conservation: for count >= 1 and containerWidth >= count × 36 + (count - 1) × 8, the sum of resolved slide widths plus (count - 1) × 8px MUST equal containerWidth exactly.",
-      "Focal index transitions MUST animate through defaultSpatial (ζ = 0.8, k = 380); wrap-around looping (loop = true) is permitted only when count >= 3.",
+      "Keyline sizes match AOSP multiBrowseKeylineList / heroKeylineList / uncontainedKeylineList for the same width, preferred size, spacing, and item count.",
+      "With no scrollable distance, prev / next and markers are not rendered; looping (loop = true) needs count ≥ 3.",
       "In RTL (direction === 'rtl'), ArrowLeft / ArrowRight keys, pointer drag sign, and prev/next chevron SVGs MUST invert direction symmetrically.",
       "Accessibility landmarks MUST expose aria-roledescription=\"carousel\" on the section, aria-roledescription=\"slide\" on each item, aria-current=\"true\" on pagination markers, and polite role=\"status\" announcements on index change.",
+      "Captions sit on a solid scrim (--m3e-color-scrim at 55%) sized to the text, never a full-card gradient.",
     ],
     crossPlatformNotes: [
       {
@@ -697,7 +693,7 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
       {
         target: "SwiftUI",
         guidance:
-          "Measure container width via GeometryReader, evaluate resolveCarouselLayout(focalPosition:) inside an interactive Spring animation, and apply HStack(spacing: 8) with per-item ClipShape.",
+          "Measure width with GeometryReader, compute keylines once per width, and clip each item in a ScrollView(.horizontal) with scrollTargetBehavior(.viewAligned).",
       },
       {
         target: "Flutter",
@@ -779,7 +775,7 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
     ],
     invariants: [
       "The decorative polygon emblem and icon wrapper MUST carry aria-hidden=\"true\" so assistive technologies read straight through to the localized title, description, and recovery CTA buttons.",
-      "Default title and description copy MUST resolve through useM3EI18n() (t('empty.title'), t('empty.description')) with zero hardcoded strings; passing description={null} cleanly suppresses secondary copy.",
+      "Default title copy MUST resolve through useM3EI18n() (t('empty.title')) with zero hardcoded strings; description renders only when provided.",
       "Emblem fill MUST default to secondary-container paired with on-secondary-container glyph stroke so contrast holds across all 9 HCT scheme variants.",
     ],
     crossPlatformNotes: [
@@ -1041,6 +1037,48 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
         url: "https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:graphics/graphics-shapes/src/commonMain/kotlin/androidx/graphics/shapes/Morph.kt",
         kind: "aosp-source",
       },
+    ],
+  },
+
+  kbd: {
+    provenance: "m3e-web-adaptation",
+    provenanceSummary:
+      "Inline keyboard keys and shortcuts rendered with the semantic kbd element.",
+    tokenSources: ["KBD_SNIPPET_TOKENS", "parseShortcutKeys"],
+    inspirationAndRationale: [
+      {
+        title: "One key per box",
+        body: "A shortcut string such as ⌘⇧K is split into separate keys, so modifiers and keys stay legible without + separators.",
+      },
+      {
+        title: "Keycap depth",
+        body: "A 2px bottom border on a surface-container-low fill gives a key edge without shadows.",
+      },
+    ],
+    geometryAndMotionTables: [
+      {
+        id: "kbd-geometry",
+        title: "Kbd metrics",
+        caption: "KBD_SNIPPET_TOKENS",
+        columns: ["Metric", "md", "sm"],
+        rows: [
+          ["Height", "22", "19"],
+          ["Radius", "6", "6"],
+          ["Padding-inline", "6", "5"],
+          ["Font", "11.5 / 600 monospace", "10.5 / 600 monospace"],
+          ["Border", "1 outline-variant, bottom 2", "1 outline-variant, bottom 2"],
+        ],
+      },
+    ],
+    invariants: [
+      "A shortcut renders as one kbd element with a span per key, so it is read as a single keyboard input.",
+      "Platform modifier symbols are not translated; the shortcut string comes from the caller.",
+    ],
+    crossPlatformNotes: [
+      { target: "SwiftUI", guidance: ".keyboardShortcut displays shortcuts natively in menus." },
+    ],
+    references: [
+      { label: "HTML — the kbd element", url: "https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-kbd-element", kind: "web-standard" },
     ],
   },
 };

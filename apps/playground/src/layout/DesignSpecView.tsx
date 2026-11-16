@@ -244,18 +244,20 @@ export function DesignSpecView({
           </p>
 
           <div className="m3e-design-meta-grid">
-            <div className="m3e-design-meta-group">
-              <span className="m3e-design-meta-label">
-                Token Contract (<code>m3eui/tokens</code>)
-              </span>
-              <div className="m3e-design-code-chips">
-                {spec.tokenSources.map((src) => (
-                  <code key={src} className="m3e-design-code-chip">
-                    {src}
-                  </code>
-                ))}
+            {spec.tokenSources.length > 0 && (
+              <div className="m3e-design-meta-group">
+                <span className="m3e-design-meta-label">
+                  Token Contract (<code>m3eui/tokens</code>)
+                </span>
+                <div className="m3e-design-code-chips">
+                  {spec.tokenSources.map((src) => (
+                    <code key={src} className="m3e-design-code-chip">
+                      {src}
+                    </code>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {spec.aospSources && spec.aospSources.length > 0 && (
               <div className="m3e-design-meta-group">

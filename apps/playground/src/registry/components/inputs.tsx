@@ -5,26 +5,18 @@ import {
   Combobox,
   type ComboboxOption,
   DatePickerField,
-  DatePickerDialog,
-  DateRangePicker,
-  DateRangePickerField,
-  DateTimePickerField,
-  DockedDatePicker,
+  DatePicker,
   Fieldset,
   Form,
-  MultiCombobox,
-  MultiSelect,
+  Select,
   NumberField,
   OTPField,
   type PlainDateRange,
-  Select,
   type SelectOption,
   type SelectOptionGroup,
   Switch,
-  TextareaField,
   TextField,
   TimePicker,
-  TimePickerDialog,
   TimePickerField,
 } from "m3eui";
 import { useCopyResolver } from "../../i18n";
@@ -356,8 +348,9 @@ function TextFieldOutsideTextareaDemo() {
           en: "labelPosition=\"outside\" renders a static label row above a 48px shell.",
         })}
       />
-      <TextareaField
-        label={c({ zh: "变更说明 (TextareaField)", en: "Changelog notes (TextareaField)" })}
+      <TextField
+        multiline
+        label={c({ zh: "变更说明", en: "Changelog notes" })}
         rows={4}
         maxLength={200}
         showCharacterCount
@@ -912,13 +905,13 @@ function DatePickerFieldDemo() {
   );
 }
 
-function DockedDatePickerDemo() {
+function DatePickerInlineDemo() {
   const c = useCopyResolver();
   const [selectedDate, setSelectedDate] = React.useState("2026-05-20");
 
   return (
     <div className="demo-row" style={{ alignItems: "flex-start", gap: 24 }}>
-      <DockedDatePicker
+      <DatePicker
         title={c({ zh: "里程碑日历", en: "Milestone calendar" })}
         value={selectedDate}
         onValueChange={setSelectedDate}
@@ -935,7 +928,7 @@ function DockedDatePickerDemo() {
   );
 }
 
-function DateRangePickerDemo() {
+function DatePickerRangeDemo() {
   const c = useCopyResolver();
   const [range, setRange] = React.useState<PlainDateRange>({
     start: "2026-05-10",
@@ -944,7 +937,8 @@ function DateRangePickerDemo() {
 
   return (
     <div className="demo-row" style={{ alignItems: "flex-start", gap: 24 }}>
-      <DateRangePicker
+      <DatePicker
+        mode="range"
         title={c({ zh: "冲刺迭代周期", en: "Sprint interval" })}
         value={range}
         onValueChange={setRange}
@@ -1068,16 +1062,12 @@ function TimePicker24hKeyboardDemo() {
           <Chip tone="primary" dot>
             UTC {deployTime}
           </Chip>
-          <TimePickerDialog
-            variant="vibrant"
+          <TimePickerField
+            modal
             use24Hour
+            label={c({ zh: "模态时间", en: "Modal time" })}
             value={deployTime}
             onValueChange={setDeployTime}
-            trigger={<Button size="xs" variant="tonal">Open Vibrant TimePickerDialog</Button>}
-          />
-          <DatePickerDialog
-            mode="range"
-            trigger={<Button size="xs" variant="outlined">Open Range DatePickerDialog</Button>}
           />
         </div>
       </div>
@@ -1332,12 +1322,11 @@ export const INPUTS_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "text-field",
     title: "TextField",
-    category: "inputs",
     subtitle: {
       zh: "Material 3 Expressive 单行与多行文本输入框，支持 Outlined 缺口浮动标签与 Filled 填充容器、前后缀文本与图标、密码显隐、一键清空及实时字数校验。",
       en: "Material 3 Expressive single-line and multiline text fields supporting notched Outlined and tonal Filled containers, text/icon affixes, password reveal, clear button, and character counters.",
     },
-    importStatement: 'import { TextField, TextareaField } from "m3eui";',
+    importStatement: 'import { TextField } from "m3eui";',
     primitive: "@base-ui/react/field · @base-ui/react/input",
     scenarios: [
       {
@@ -1484,14 +1473,14 @@ export const INPUTS_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
       {
         id: "textfield-outside-textarea",
         title: {
-          zh: "外部固定标签与多行 TextareaField",
-          en: "Outside Label Placement & Multiline TextareaField",
+          zh: "外部标签与多行",
+          en: "Outside label & multiline",
         },
         description: {
-          zh: "`labelPosition=\"outside\"` 将标题与计数置于输入框上方；`TextareaField` 提供多行自动增高布局与字数上限统计。",
-          en: "`labelPosition=\"outside\"` places a static label row above a 48px container, while `TextareaField` handles multiline prose with character counting.",
+          zh: "`labelPosition=\"outside\"` 将标题与计数置于输入框上方；`multiline` 提供多行自动增高与字数统计。",
+          en: "`labelPosition=\"outside\"` places a static label row above a 48px container, while `multiline` grows with content and counts characters.",
         },
-        code: `import { TextField, TextareaField } from "m3eui";
+        code: `import { TextField } from "m3eui";
 
 <TextField
   labelPosition="outside"
@@ -1501,7 +1490,8 @@ export const INPUTS_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   description="Static outside label row above a 48px shell."
 />
 
-<TextareaField
+<TextField
+  multiline
   label="Changelog notes"
   rows={4}
   maxLength={200}
@@ -1640,7 +1630,7 @@ export const INPUTS_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
         ],
       },
       {
-        title: "TextareaField Props",
+        title: "TextField Props (multiline)",
         rows: [
           {
             name: "label",
@@ -1721,7 +1711,6 @@ export const INPUTS_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "number-field",
     title: "NumberField",
-    category: "inputs",
     subtitle: {
       zh: "胶囊分体式数值步进输入框，具备按压圆角物理弹簧形变、标签横向拖拽调值（Scrub Area）以及 CLDR Intl 本地化数字/货币格式化能力。",
       en: "Expressive split-pill numeric stepper featuring spring-animated inner seam corners, pointer-scrubbable labels, and CLDR Intl number/currency formatting.",
@@ -1894,12 +1883,11 @@ export const INPUTS_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "select",
     title: "Select",
-    category: "inputs",
     subtitle: {
-      zh: "支持 Outlined 缺口浮动标签与 Filled 填充容器的单选 Select 与标签胶囊多选 MultiSelect，内置分组、一键清空及 +N 折叠。",
-      en: "Single Select and chip-tagged MultiSelect supporting notched Outlined and Filled triggers, option groups, and +N overflow.",
+      zh: "Outlined 缺口浮动标签与 Filled 容器的下拉选择；multiple 为标签胶囊多选，支持分组、一键清空与 +N 折叠。",
+      en: "Dropdown select with notched Outlined and Filled triggers; multiple adds chip tags, option groups, clear, and +N overflow.",
     },
-    importStatement: 'import { Select, MultiSelect } from "m3eui";',
+    importStatement: 'import { Select } from "m3eui";',
     primitive: "@base-ui/react/select",
     scenarios: [
       {
@@ -2038,14 +2026,15 @@ const [role, setRole] = useState<string | null>("maintainer");
       {
         id: "select-multiple",
         title: {
-          zh: "多选下拉与 +N 胶囊折叠 (MultiSelect)",
-          en: "MultiSelect with +N Chip Overflow",
+          zh: "多选与 +N 折叠",
+          en: "Multiple with +N overflow",
         },
         description: {
           zh: "触发器内将已选项渲染为紧凑标签，超出 maxVisibleTags 时自动聚合为本地化 +N 徽标。",
           en: "Renders selected options as compact chips inside the trigger and collapses excess items into a +N badge.",
         },
-        code: `<MultiSelect
+        code: `<Select
+  multiple
   label="Target edge regions"
   groups={CLOUD_REGION_GROUPS}
   defaultValue={["ap-northeast-1", "ap-southeast-1", "eu-central-1"]}
@@ -2053,7 +2042,8 @@ const [role, setRole] = useState<string | null>("maintainer");
 />`,
         render: () => (
           <div className="demo-panel" style={{ maxWidth: 440 }}>
-            <MultiSelect
+            <Select
+              multiple
               label="Target edge regions"
               groups={CLOUD_REGION_GROUPS}
               defaultValue={["ap-northeast-1", "ap-southeast-1", "eu-central-1"]}
@@ -2214,7 +2204,7 @@ const [role, setRole] = useState<string | null>("maintainer");
         ],
       },
       {
-        title: "MultiSelect Props",
+        title: "Select Props (multiple)",
         rows: [
           {
             name: "value / defaultValue / onValueChange",
@@ -2243,12 +2233,11 @@ const [role, setRole] = useState<string | null>("maintainer");
   {
     slug: "combobox",
     title: "Combobox",
-    category: "inputs",
     subtitle: {
-      zh: "可输入过滤的单选 Combobox 与多选胶囊 MultiCombobox，支持首项高亮、Backspace 移除末尾标签与空结果提示。",
-      en: "Searchable single Combobox and chip-based MultiCombobox with top-match highlighting and Backspace chip removal.",
+      zh: "可输入过滤的组合框；multiple 为多选胶囊，支持首项高亮、Backspace 移除末尾标签与空结果提示。",
+      en: "Filterable combobox; multiple adds chips, top-match highlighting, and Backspace removal.",
     },
-    importStatement: 'import { Combobox, MultiCombobox } from "m3eui";',
+    importStatement: 'import { Combobox } from "m3eui";',
     primitive: "@base-ui/react/combobox",
     scenarios: [
       {
@@ -2344,21 +2333,23 @@ const [selected, setSelected] = useState<ComboboxOption | null>(OPTIONS[1]);
       {
         id: "combobox-multiple",
         title: {
-          zh: "边搜边选多标签组合框 (MultiCombobox)",
-          en: "Searchable MultiCombobox",
+          zh: "多选",
+          en: "Multiple",
         },
         description: {
           zh: "支持输入过滤的同时勾选多项并内嵌紧凑移除胶囊。",
           en: "Filter options while accumulating multiple removable selection chips.",
         },
-        code: `<MultiCombobox
+        code: `<Combobox
+  multiple
   label="Enabled subsystems"
   options={PACKAGE_COMBOBOX_OPTIONS}
   defaultValue={[PACKAGE_COMBOBOX_OPTIONS[0], PACKAGE_COMBOBOX_OPTIONS[1]]}
 />`,
         render: () => (
           <div className="demo-panel" style={{ maxWidth: 520 }}>
-            <MultiCombobox
+            <Combobox
+              multiple
               label="Enabled subsystems"
               options={PACKAGE_COMBOBOX_OPTIONS}
               defaultValue={[
@@ -2486,7 +2477,7 @@ const [selected, setSelected] = useState<ComboboxOption | null>(OPTIONS[1]);
         ],
       },
       {
-        title: "MultiCombobox Props",
+        title: "Combobox Props (multiple)",
         rows: [
           {
             name: "value / defaultValue / onValueChange",
@@ -2506,7 +2497,6 @@ const [selected, setSelected] = useState<ComboboxOption | null>(OPTIONS[1]);
   {
     slug: "otp-field",
     title: "OTPField",
-    category: "inputs",
     subtitle: {
       zh: "一次性验证码与 PIN 码分段输入框，具备分组外圆角/内直角弹簧过渡、剪贴板整串粘贴、RTL 自动翻转及可选 WebOTP 短信自动填充。",
       en: "Segmented one-time passcode and PIN input featuring group-aware spring corner morphing, full-code paste, BiDi RTL corner flipping, and optional WebOTP autofill.",
@@ -2698,13 +2688,12 @@ const [selected, setSelected] = useState<ComboboxOption | null>(OPTIONS[1]);
   {
     slug: "date-picker",
     title: "DatePicker",
-    category: "inputs",
     subtitle: {
-      zh: "基于 ISO PlainDate（`YYYY-MM-DD`）无时区偏移设计的日期选择器套件，包含弹出式 `DatePickerField`、内嵌日历 `DockedDatePicker` 与起止区间 `DateRangePicker`。",
-      en: "Timezone-safe ISO PlainDate (`YYYY-MM-DD`) calendar suite comprising popover `DatePickerField`, inline `DockedDatePicker`, and dual-endpoint `DateRangePicker`.",
+      zh: "基于 ISO PlainDate（`YYYY-MM-DD`）无时区偏移设计的日期选择器套件，包含内嵌 `DatePicker` 与 `DatePickerField`（`modal` 切换为模态对话框），均支持 `mode=\"range\"`。",
+      en: "Timezone-safe ISO PlainDate (`YYYY-MM-DD`) calendar suite comprising inline `DatePicker` and `DatePickerField` (`modal` for a dialog), each with `mode=\"range\"`.",
     },
     importStatement:
-      'import { DatePickerField, DateRangePickerField, DateTimePickerField, DatePickerDialog, DockedDatePicker, DateRangePicker } from "m3eui";',
+      'import { DatePicker, DatePickerField } from "m3eui";',
     primitive: "@base-ui/react/popover",
     scenarios: [
       {
@@ -2714,8 +2703,8 @@ const [selected, setSelected] = useState<ComboboxOption | null>(OPTIONS[1]);
           en: "Popover DatePickerField",
         },
         description: {
-          zh: "点击触发器弹出 `DockedDatePicker` 浮层，选中日期后自动收起并按当前语言本地化格式化完整日期，支持 `floating` 与 `outside` 两种标签布局。",
-          en: "Opens a `DockedDatePicker` popover on click, formatting the chosen ISO date with CLDR locale rules and supporting `floating` or `outside` labels.",
+          zh: "点击触发器弹出日历浮层，选中日期后自动收起并按当前语言本地化格式化完整日期，支持 `floating` 与 `outside` 两种标签布局。",
+          en: "Opens a calendar popover on click, formatting the chosen ISO date with CLDR locale rules and supporting `floating` or `outside` labels.",
         },
         code: `import { DatePickerField } from "m3eui";
 
@@ -2737,45 +2726,46 @@ const [selected, setSelected] = useState<ComboboxOption | null>(OPTIONS[1]);
       {
         id: "date-picker-docked",
         title: {
-          zh: "内嵌式日历面板 (DockedDatePicker)",
-          en: "Inline DockedDatePicker Surface",
+          zh: "内嵌日历",
+          en: "Inline calendar",
         },
         description: {
           zh: "直接在页面流中渲染完整月历网格，内置年份快速跳转面板、CLDR 周首日自动推导及完整方向键（Arrow / PageUp / Home / End）无障碍导航。",
           en: "Inline calendar card with quick year-picker toggle, locale-derived first day of week, and full WAI-ARIA grid keyboard navigation.",
         },
-        code: `import { DockedDatePicker } from "m3eui";
+        code: `import { DatePicker } from "m3eui";
 
-<DockedDatePicker
+<DatePicker
   title="Milestone calendar"
   value={selectedDate}
   onValueChange={setSelectedDate}
 />`,
-        render: () => <DockedDatePickerDemo />,
+        render: () => <DatePickerInlineDemo />,
       },
       {
         id: "date-range-picker",
         title: {
-          zh: "起止日期区间选择 (DateRangePicker)",
-          en: "Start & End DateRangePicker",
+          zh: "区间选择",
+          en: "Range",
         },
         description: {
           zh: "两次点击依次锚定起点与终点日期，悬停期间实时预览高亮连续区间带，并自动按时间先后归一化 `{ start, end }`。",
           en: "Two-click anchor selection with live hover range highlighting and automatic chronological `{ start, end }` normalization.",
         },
-        code: `import { DateRangePicker, type PlainDateRange } from "m3eui";
+        code: `import { DatePicker, type PlainDateRange } from "m3eui";
 
 const [range, setRange] = useState<PlainDateRange>({
   start: "2026-05-10",
   end: "2026-05-19",
 });
 
-<DateRangePicker
+<DatePicker
+  mode="range"
   title="Sprint interval"
   value={range}
   onValueChange={setRange}
 />`,
-        render: () => <DateRangePickerDemo />,
+        render: () => <DatePickerRangeDemo />,
       },
       {
         id: "date-picker-disabled-bounds",
@@ -2805,40 +2795,31 @@ const [range, setRange] = useState<PlainDateRange>({
       {
         id: "date-picker-advanced-triggers",
         title: {
-          zh: "区间选择框、日期时间一体与模态选择器",
-          en: "DateRangePickerField, DateTimePickerField & DatePickerDialog",
+          zh: "区间字段与模态选择器",
+          en: "Range field & modal field",
         },
         description: {
-          zh: "补齐弹出式区间选择框、日期+时间组合面板以及支持“日历网格 ⇄ 键盘输入”切换的 M3 模态日期对话框，全部原生支持 minDate / maxDate / isDateDisabled。",
-          en: "Popover range field, combined date-time field, and M3 modal dialog with calendar/input mode switching and minDate/maxDate bounds.",
+          zh: "mode=\"range\" 的字段；模态对话框可在日历与键盘输入间切换。",
+          en: "A mode=\"range\" field; the modal dialog toggles between calendar and text input.",
         },
-        code: `<DateRangePickerField label="Release window" minDate="2026-01-01" maxDate="2026-12-31" />
-<DateTimePickerField label="Maintenance slot" />
-<DatePickerDialog trigger={<Button variant="tonal" size="sm">Open DatePickerDialog</Button>} />`,
+        code: `<DatePickerField mode="range" label="Release window" minDate="2026-01-01" maxDate="2026-12-31" />
+<DatePickerField modal label="Launch date" />`,
         render: () => (
           <div className="demo-panel" style={{ maxWidth: 440, gap: 14 }}>
-            <DateRangePickerField
+            <DatePickerField
+              mode="range"
               label="Release window"
               defaultValue={{ start: "2026-05-10", end: "2026-05-18" }}
               minDate="2026-05-01"
               maxDate="2026-06-30"
             />
-            <DateTimePickerField
-              label="Maintenance slot"
-              defaultValue={{ date: "2026-05-15", time: "14:30" }}
+            <DatePickerField
+              modal
+              label="Launch date"
+              defaultValue="2026-05-20"
+              minDate="2026-05-01"
+              maxDate="2026-06-30"
             />
-            <div>
-              <DatePickerDialog
-                defaultValue="2026-05-20"
-                minDate="2026-05-01"
-                maxDate="2026-06-30"
-                trigger={
-                  <Button variant="tonal" size="sm">
-                    Open DatePickerDialog
-                  </Button>
-                }
-              />
-            </div>
           </div>
         ),
       },
@@ -2893,7 +2874,7 @@ const [range, setRange] = useState<PlainDateRange>({
         ],
       },
       {
-        title: "DockedDatePicker Props",
+        title: "DatePicker Props",
         rows: [
           {
             name: "value / defaultValue",
@@ -2932,7 +2913,7 @@ const [range, setRange] = useState<PlainDateRange>({
         ],
       },
       {
-        title: "DateRangePicker Props",
+        title: "DatePicker Props (mode=\"range\")",
         rows: [
           {
             name: "value / defaultValue",
@@ -2972,27 +2953,20 @@ const [range, setRange] = useState<PlainDateRange>({
             },
           },
           {
-            name: "DateRangePickerField",
-            type: "M3EDateRangePickerFieldProps",
+            name: "DatePickerField mode=\"range\"",
+            type: "M3EDatePickerFieldRangeProps",
             description: {
               zh: "带浮动或缺口外部标签的弹出式双日期范围输入框。",
-              en: "Popover field trigger wrapping DateRangePicker.",
+              en: "Popover field for a date range.",
             },
           },
           {
-            name: "DatePickerDialog",
-            type: "M3EDatePickerDialogProps",
+            name: "modal",
+            type: "boolean",
+            defaultValue: "false",
             description: {
-              zh: "M3 模态对话框日期选择器，支持日历网格与文本直输模式切换。",
-              en: "M3 modal date dialog with calendar-to-text-input mode toggle.",
-            },
-          },
-          {
-            name: "DateTimePickerField",
-            type: "M3EDateTimePickerFieldProps",
-            description: {
-              zh: "单浮层集成日历与时间选择的复合输入框（{ date, time }）。",
-              en: "Combined popover picker emitting { date, time }.",
+              zh: "以模态对话框代替弹出层，支持日历与文本输入切换，确认后提交。",
+              en: "Opens a modal dialog instead of a popover, with calendar/text input toggle and confirm-to-commit.",
             },
           },
         ],
@@ -3004,13 +2978,12 @@ const [range, setRange] = useState<PlainDateRange>({
   {
     slug: "time-picker",
     title: "TimePicker",
-    category: "inputs",
     subtitle: {
       zh: "Material 3 Expressive 时间选择器，支持 12 小时 AM/PM 与 24 小时内外双环模拟表盘、连续最短弧物理弹簧指针拖拽，以及键盘数字直输模式。",
       en: "Material 3 Expressive time picker featuring 12-hour AM/PM and 24-hour dual-ring analog clock dials with shortest-arc spring hand physics and keyboard input mode.",
     },
     importStatement:
-      'import { TimePicker, TimePickerField, TimePickerDialog } from "m3eui";',
+      'import { TimePicker, TimePickerField } from "m3eui";',
     primitive: "@base-ui/react/popover",
     scenarios: [
       {
@@ -3049,7 +3022,7 @@ const [range, setRange] = useState<PlainDateRange>({
           zh: "开启 `use24Hour` 支持 00–23 双环表盘，配合 `TimePicker` 的 `defaultInputMode=\"keyboard\"` 可直接键入精确时分数值。",
           en: "Enable `use24Hour` for 00–23 formatting and dual-ring dial selection, and set `defaultInputMode=\"keyboard\"` on `TimePicker` for direct numeric entry.",
         },
-        code: `import { Button, TimePicker, TimePickerDialog, TimePickerField } from "m3eui";
+        code: `import { TimePicker, TimePickerField } from "m3eui";
 
 <TimePicker
   use24Hour
@@ -3066,12 +3039,12 @@ const [range, setRange] = useState<PlainDateRange>({
   onValueChange={setDeployTime}
 />
 
-<TimePickerDialog
-  variant="vibrant"
+<TimePickerField
+  modal
   use24Hour
+  label="Modal time"
   value={deployTime}
   onValueChange={setDeployTime}
-  trigger={<Button size="xs" variant="tonal">Open Vibrant TimePickerDialog</Button>}
 />`,
         render: () => <TimePicker24hKeyboardDemo />,
       },
@@ -3108,6 +3081,15 @@ const [range, setRange] = useState<PlainDateRange>({
       {
         title: "TimePickerField Props",
         rows: [
+          {
+            name: "modal",
+            type: "boolean",
+            defaultValue: "false",
+            description: {
+              zh: "以模态对话框代替弹出层，确认后提交。",
+              en: "Opens a modal dialog instead of a popover; commits on confirm.",
+            },
+          },
           {
             name: "label",
             type: "React.ReactNode",
@@ -3202,36 +3184,6 @@ const [range, setRange] = useState<PlainDateRange>({
           },
         ],
       },
-      {
-        title: "TimePickerDialog Props",
-        rows: [
-          {
-            name: "open / defaultOpen / onOpenChange",
-            type: "boolean / (open: boolean) => void",
-            description: {
-              zh: "受控或非受控模态时间对话框开关状态。",
-              en: "Controlled or uncontrolled modal dialog open state.",
-            },
-          },
-          {
-            name: "trigger",
-            type: "React.ReactElement",
-            description: {
-              zh: "打开模态时间选择对话框的触发元素。",
-              en: "Trigger element that opens the modal TimePickerDialog.",
-            },
-          },
-          {
-            name: "variant",
-            type: '"standard" | "vibrant"',
-            defaultValue: '"standard"',
-            description: {
-              zh: "时间对话框表面色彩风格。",
-              en: "Surface color treatment of the modal time picker.",
-            },
-          },
-        ],
-      },
     ],
   },
 
@@ -3239,7 +3191,6 @@ const [range, setRange] = useState<PlainDateRange>({
   {
     slug: "form",
     title: "Form",
-    category: "inputs",
     subtitle: {
       zh: "结构化表单容器与语义化字段分组组件，提供统一的顶置无障碍错误汇总横幅（`showErrorSummary`）、字段级 `errors` 映射与整组级联禁用能力。",
       en: "Structured form container and semantic fieldset grouping offering an accessible `role=\"alert\"` error summary banner, field-level `errors` mapping, and cascading group disablement.",

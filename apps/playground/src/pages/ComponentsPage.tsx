@@ -3,6 +3,7 @@ import {
   Link,
   Navigate,
   useNavigate,
+  useOutletContext,
   useParams,
   useSearchParams,
 } from "react-router";
@@ -11,8 +12,8 @@ import {
   Card,
   Chip,
   CopyButton,
-  NavigationDrawer,
   type NavigationDestination,
+  Sidebar,
   SearchBar,
   Tab,
   Tabs,
@@ -27,11 +28,9 @@ import { CodeBlock } from "../layout/CodeBlock";
 import { DemoBox } from "../layout/DemoBox";
 import { DesignSpecView } from "../layout/DesignSpecView";
 import { OnThisPage, type TocAnchorItem } from "../layout/OnThisPage";
-import {
-  ALL_COMPONENT_DOCS,
-  COMPONENT_CATEGORY_ORDER,
-  COMPONENTS_BY_CATEGORY,
-} from "../registry/components";
+import type { SiteOutletContext } from "../layout/SiteLayout";
+import { SiteSectionLinks } from "../layout/SiteSections";
+import { ALL_COMPONENT_DOCS } from "../registry/components";
 import { getComponentDesignSpec } from "../registry/design";
 
 type ComponentDocTab = "usage" | "design";
@@ -40,6 +39,7 @@ export function ComponentsPage() {
   const { slug } = useParams<{ slug?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { navOpen, setNavOpen } = useOutletContext<SiteOutletContext>();
   const ui = usePlaygroundStrings();
   const resolve = useCopyResolver();
   const { direction } = useM3EI18n();
@@ -72,24 +72,18 @@ export function ComponentsPage() {
 
   const sidebarItems = React.useMemo<readonly NavigationDestination<string>[]>(
     () =>
-      COMPONENT_CATEGORY_ORDER.flatMap((cat) => {
-        const filtered = COMPONENTS_BY_CATEGORY[cat].filter((item) => {
-          if (!normalizedFilter) return true;
-          return (
-            item.title.toLowerCase().includes(normalizedFilter) ||
-            item.slug.toLowerCase().includes(normalizedFilter) ||
-            resolve(item.subtitle).toLowerCase().includes(normalizedFilter)
-          );
-        });
-        const sectionTitle = `${ui.componentCategories[cat]} (${filtered.length})`;
-        return filtered.map((item) => ({
-          value: item.slug,
-          label: item.title,
-          badgeLabel: item.isNew ? "NEW" : undefined,
-          section: sectionTitle,
-        }));
-      }),
-    [normalizedFilter, resolve, ui.componentCategories],
+      ALL_COMPONENT_DOCS.filter(
+        (item) =>
+          !normalizedFilter ||
+          item.title.toLowerCase().includes(normalizedFilter) ||
+          item.slug.toLowerCase().includes(normalizedFilter) ||
+          resolve(item.subtitle).toLowerCase().includes(normalizedFilter),
+      ).map((item) => ({
+        value: item.slug,
+        label: item.title,
+        badgeLabel: item.isNew ? "NEW" : undefined,
+      })),
+    [normalizedFilter, resolve],
   );
 
   if (!slug) {
@@ -162,12 +156,13 @@ export function ComponentsPage() {
 
   return (
     <div className="m3e-doc-layout">
-      {/* Left Component Catalog Sidebar (m3eui NavigationDrawer + SearchBar) */}
-      <NavigationDrawer
-        variant="permanent"
+      <Sidebar
         className="m3e-playground-sidebar"
+        open={navOpen}
+        onOpenChange={setNavOpen}
+        footer={<SiteSectionLinks />}
         aria-label={ui.navComponents}
-        headline={
+        header={
           <SearchBar
             size="sm"
             value={filterQuery}
@@ -196,10 +191,6 @@ export function ComponentsPage() {
               key: "components",
               label: ui.navComponents,
               render: <Link to="/components/button" />,
-            },
-            {
-              key: "category",
-              label: ui.componentCategories[doc.category],
             },
             {
               key: doc.slug,

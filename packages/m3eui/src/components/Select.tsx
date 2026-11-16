@@ -36,12 +36,9 @@ export interface SelectOptionGroup<Value extends string = string> {
   readonly options: readonly SelectOption<Value>[];
 }
 
-export interface M3ESelectProps<Value extends string = string> {
+interface SelectBaseProps<Value extends string> {
   readonly options?: readonly SelectOption<Value>[];
   readonly groups?: readonly SelectOptionGroup<Value>[];
-  readonly value?: Value | null;
-  readonly defaultValue?: Value | null;
-  readonly onValueChange?: (value: Value | null) => void;
   readonly variant?: SelectVariant;
   readonly labelPosition?: SelectLabelPosition;
   readonly label?: string;
@@ -59,6 +56,27 @@ export interface M3ESelectProps<Value extends string = string> {
   readonly className?: string;
   readonly style?: React.CSSProperties;
 }
+
+export interface M3ESelectSingleProps<Value extends string = string>
+  extends SelectBaseProps<Value> {
+  readonly multiple?: false;
+  readonly value?: Value | null;
+  readonly defaultValue?: Value | null;
+  readonly onValueChange?: (value: Value | null) => void;
+}
+
+export interface M3ESelectMultipleProps<Value extends string = string>
+  extends SelectBaseProps<Value> {
+  readonly multiple: true;
+  readonly value?: readonly Value[];
+  readonly defaultValue?: readonly Value[];
+  readonly onValueChange?: (value: Value[]) => void;
+  readonly maxVisibleTags?: number;
+}
+
+export type M3ESelectProps<Value extends string = string> =
+  | M3ESelectSingleProps<Value>
+  | M3ESelectMultipleProps<Value>;
 
 function assignRef<T>(ref: React.ForwardedRef<T>, value: T | null): void {
   if (typeof ref === "function") {
@@ -204,7 +222,7 @@ function SelectInner<Value extends string = string>(
     "aria-label": ariaLabel,
     className,
     style,
-  }: M3ESelectProps<Value>,
+  }: M3ESelectSingleProps<Value>,
   forwardedRef: React.ForwardedRef<HTMLButtonElement>,
 ): React.JSX.Element {
   const { t } = useM3EI18n();
@@ -506,37 +524,6 @@ function SelectInner<Value extends string = string>(
   );
 }
 
-export const Select = React.forwardRef(SelectInner) as <
-  Value extends string = string,
->(
-  props: M3ESelectProps<Value> & React.RefAttributes<HTMLButtonElement>,
-) => React.JSX.Element;
-
-export interface M3EMultiSelectProps<Value extends string = string> {
-  readonly options?: readonly SelectOption<Value>[];
-  readonly groups?: readonly SelectOptionGroup<Value>[];
-  readonly value?: readonly Value[];
-  readonly defaultValue?: readonly Value[];
-  readonly onValueChange?: (value: Value[]) => void;
-  readonly maxVisibleTags?: number;
-  readonly variant?: SelectVariant;
-  readonly labelPosition?: SelectLabelPosition;
-  readonly label?: string;
-  readonly placeholder?: string;
-  readonly description?: React.ReactNode;
-  readonly errorMessage?: React.ReactNode;
-  readonly invalid?: boolean;
-  readonly clearable?: boolean;
-  readonly disabled?: boolean;
-  readonly readOnly?: boolean;
-  readonly required?: boolean;
-  readonly name?: string;
-  readonly id?: string;
-  readonly "aria-label"?: string;
-  readonly className?: string;
-  readonly style?: React.CSSProperties;
-}
-
 function MultiSelectInner<Value extends string = string>(
   {
     options = [],
@@ -561,7 +548,7 @@ function MultiSelectInner<Value extends string = string>(
     "aria-label": ariaLabel,
     className,
     style,
-  }: M3EMultiSelectProps<Value>,
+  }: M3ESelectMultipleProps<Value>,
   forwardedRef: React.ForwardedRef<HTMLButtonElement>,
 ): React.JSX.Element {
   const { locale, t } = useM3EI18n();
@@ -892,8 +879,23 @@ function MultiSelectInner<Value extends string = string>(
   );
 }
 
-export const MultiSelect = React.forwardRef(MultiSelectInner) as <
-  Value extends string = string,
->(
-  props: M3EMultiSelectProps<Value> & React.RefAttributes<HTMLButtonElement>,
+const SingleSelect = React.forwardRef(SelectInner) as <Value extends string>(
+  props: M3ESelectSingleProps<Value> & React.RefAttributes<HTMLButtonElement>,
+) => React.JSX.Element;
+
+const MultiSelect = React.forwardRef(MultiSelectInner) as <Value extends string>(
+  props: M3ESelectMultipleProps<Value> & React.RefAttributes<HTMLButtonElement>,
+) => React.JSX.Element;
+
+export const Select = React.forwardRef(function Select(
+  props: M3ESelectProps,
+  ref: React.ForwardedRef<HTMLButtonElement>,
+) {
+  return props.multiple ? (
+    <MultiSelect {...props} ref={ref} />
+  ) : (
+    <SingleSelect {...props} ref={ref} />
+  );
+}) as <Value extends string = string>(
+  props: M3ESelectProps<Value> & React.RefAttributes<HTMLButtonElement>,
 ) => React.JSX.Element;

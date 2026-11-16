@@ -23,8 +23,8 @@ export const zhCNMessages: M3EMessages = {
   "chip.remove": "移除标签",
   "chip.removeItem": "移除 {label}",
 
-  "collapsible.expandAll": "展开全部",
-  "collapsible.collapseAll": "收起全部",
+  "accordion.expandAll": "展开全部",
+  "accordion.collapseAll": "收起全部",
 
   "combobox.placeholder": "输入关键词搜索…",
   "combobox.empty": "未找到匹配选项",
@@ -61,7 +61,6 @@ export const zhCNMessages: M3EMessages = {
   "toast.viewportLabel": "通知",
 
   "empty.title": "暂无内容",
-  "empty.description": "当前条件下没有可显示的记录，你可以调整筛选或创建新内容。",
 
   "fabMenu.triggerOpen": "新建快捷操作",
   "fabMenu.triggerClose": "关闭快捷菜单",
@@ -80,11 +79,10 @@ export const zhCNMessages: M3EMessages = {
   "menubar.ariaLabel": "应用命令",
   "navigation.barLabel": "主栏",
   "navigation.railLabel": "侧边轨",
-  "navigation.wideRailLabel": "宽版侧边轨",
   "navigation.collapseRail": "收起侧边轨",
   "navigation.expandRail": "展开侧边轨",
-  "navigation.drawerLabel": "主菜单抽屉",
   "navigation.suiteLabel": "自适应主栏",
+  "navigation.sidebarLabel": "栏目",
   "navigation.siteMenuLabel": "站点",
 
   "numberField.decrement": "减小数值",
@@ -133,7 +131,6 @@ export const zhCNMessages: M3EMessages = {
 
   "topAppBar.actionsLabel": "应用栏快捷操作",
   "topAppBar.moreActions": "更多操作",
-  "bottomAppBar.ariaLabel": "底部应用栏",
   "dragHandle.ariaLabel": "调整分栏大小",
   "pullToRefresh.pulling": "下拉刷新",
   "pullToRefresh.release": "释放立即刷新",
@@ -145,7 +142,6 @@ export const zhCNMessages: M3EMessages = {
   "searchView.clearRecent": "清空历史",
   "searchView.suggestionsHeading": "搜索建议",
 
-  "select.selectedCount": "已选 {count} 项",
 
   "datePicker.switchToInput": "切换为文本日期输入",
   "datePicker.switchToCalendar": "切换为日历网格选择",

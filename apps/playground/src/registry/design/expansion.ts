@@ -139,7 +139,7 @@ export const EXPANSION_DESIGN_SPECS: Readonly<
     provenance: "official-m3e",
     provenanceSummary:
       "Canonical Material 3 1dp outline-variant hairline separator in full-bleed, logical-inset, vertical, and labeled forms.",
-    tokenSources: ["DIVIDER_TOKENS"],
+    tokenSources: [],
     aospSources: ["Divider.kt"],
     inspirationAndRationale: [
       {
@@ -260,43 +260,45 @@ export const EXPANSION_DESIGN_SPECS: Readonly<
     ],
   },
 
-  "bottom-app-bar": {
+  "docked-toolbar": {
     provenance: "official-m3e",
     provenanceSummary:
-      "Based on AOSP Compose AppBar.kt BottomAppBar with overflow-aware AppBarRow and embedded flat FAB.",
-    tokenSources: ["BOTTOM_APP_BAR_TOKENS", "EXPRESSIVE_MOTION_SCHEME"],
+      "Material 3 Expressive docked toolbar. Covers AOSP BottomAppBar and FlexibleBottomAppBar (AppBar.kt), which share BottomAppBarScrollBehavior.",
+    tokenSources: ["DOCKED_TOOLBAR_TOKENS", "EXPRESSIVE_MOTION_SCHEME"],
     aospSources: ["androidx.compose.material3/AppBar.kt"],
     inspirationAndRationale: [
       {
-        title: "Embedded Zero-Elevation FAB",
-        body: "Trailing FABs inside BottomAppBar automatically receive elevation=\"none\" so shadows never stack inside the 80px container.",
+        title: "Flat primary action",
+        body: "A FAB in primaryAction receives elevation=\"none\" so shadows never stack inside the docked container.",
       },
     ],
     geometryAndMotionTables: [
       {
-        id: "bottom-app-bar-geometry",
-        title: "BottomAppBar Metrics",
+        id: "docked-toolbar-geometry",
+        title: "DockedToolbar metrics",
         columns: ["Metric", "Value"],
         rows: [
-          ["Container Height", "80"],
-          ["Inline Padding", "16"],
-          ["Action Gap", "4"],
+          ["Container height", "64 (+ safe-area inset)"],
+          ["Inline padding", "16"],
+          ["Item size", "48"],
+          ["Item radius (rest / selected / pressed)", "24 / 14 / 10"],
         ],
       },
     ],
     invariants: [
-      "Excess actionItems collapse into a DropdownMenu trigger when exceeding maxVisibleActions or available width.",
+      "Items beyond maxVisibleActions move into an overflow DropdownMenu.",
+      "When hidden by scroll, the bar is aria-hidden and inert.",
     ],
     crossPlatformNotes: [
       {
-        target: "Android / Jetpack Compose",
-        guidance: "Matches BottomAppBar + BottomAppBarDefaults.exitAlwaysScrollBehavior.",
+        target: "Jetpack Compose",
+        guidance: "FlexibleBottomAppBar / BottomAppBar with BottomAppBarDefaults.exitAlwaysScrollBehavior.",
       },
     ],
     references: [
       {
-        label: "Material 3 — Bottom App Bar",
-        url: "https://m3.material.io/components/bottom-app-bar/overview",
+        label: "Material 3 — Toolbars",
+        url: "https://m3.material.io/components/toolbars/overview",
         kind: "m3-spec",
       },
     ],

@@ -1,26 +1,24 @@
 import * as React from "react";
 import {
   Accordion,
-  AssistChip,
+  Chip,
   Avatar,
   Breadcrumb,
   Button,
   ButtonGroup,
   Card,
-  Chip,
   DataTable,
   Divider,
   DropdownMenu,
   Empty,
   IconButton,
-  InputChip,
-  LinearWavyProgressIndicator,
+  LinearProgressIndicator,
   type M3EDataTableColumn,
   type M3EDataTableSortState,
   type M3EShapeName,
   MaterialShapeView,
   Meter,
-  NavigationDrawer,
+  NavigationRail,
   OTPField,
   Pagination,
   Select,
@@ -28,7 +26,6 @@ import {
   Tabs,
   TabsList,
   TabsPanel,
-  TextareaField,
   TextField,
   useM3EI18n,
   useM3EToast,
@@ -458,8 +455,8 @@ function Dashboard01Block() {
             {L("快速新建", "Quick Create")}
           </Button>
 
-          <NavigationDrawer
-            variant="permanent"
+          <NavigationRail
+            expanded
             aria-label={L("工作台主导航", "Workspace navigation")}
             style={{
               width: "100%",
@@ -481,7 +478,7 @@ function Dashboard01Block() {
               })),
             ]}
             value={activeNav}
-            onValueChange={(nextId) => {
+            onValueChange={(nextId: string) => {
               setActiveNav(nextId);
               if (isCompact) setMobileSidebarOpen(false);
             }}
@@ -1009,7 +1006,7 @@ function Login01Block() {
           padding: 28,
           borderRadius: 24,
           background:
-            "linear-gradient(145deg, var(--m3e-color-primary-container), var(--m3e-color-secondary-container))",
+            "var(--m3e-color-primary-container)",
           color: "var(--m3e-color-on-primary-container)",
         }}
       >
@@ -1196,12 +1193,12 @@ function Login01Block() {
             />
 
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <AssistChip
+              <Chip
                 icon={<SparkleIcon size={14} />}
                 onClick={() => setOtp("482910")}
               >
                 {L("一键填入演示验证码 482-910", "Autofill demo code 482-910")}
-              </AssistChip>
+              </Chip>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -1384,16 +1381,16 @@ function AiWorkspace01Block() {
         </div>
       </header>
 
-      {/* Prompt template AssistChips */}
+      {/* Prompt template chips */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
         {templates.map((tpl) => (
-          <AssistChip
+          <Chip
             key={tpl.label}
             icon={<SparkleIcon size={14} />}
             onClick={() => setPrompt(tpl.text)}
           >
             {tpl.label}
-          </AssistChip>
+          </Chip>
         ))}
       </div>
 
@@ -1490,7 +1487,8 @@ function AiWorkspace01Block() {
                 <span style={{ fontSize: 11.5, color: "var(--m3e-color-primary)", fontWeight: 600 }}>
                   {L("正在流式生成弹簧几何校验摘要…", "Streaming spring geometry verification…")}
                 </span>
-                <LinearWavyProgressIndicator
+                <LinearProgressIndicator
+                  wavy
                   aria-label={L("AI 流式生成进度", "AI token streaming progress")}
                 />
               </div>
@@ -1539,17 +1537,17 @@ function AiWorkspace01Block() {
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
             {contextFiles.map((file) => (
-              <InputChip
+              <Chip
                 key={file}
                 onRemove={() =>
                   setContextFiles((prev) => prev.filter((f) => f !== file))
                 }
               >
                 {file}
-              </InputChip>
+              </Chip>
             ))}
             {contextFiles.length < 3 ? (
-              <AssistChip
+              <Chip
                 icon={<PlusIcon size={14} />}
                 onClick={() =>
                   setContextFiles([
@@ -1560,13 +1558,14 @@ function AiWorkspace01Block() {
                 }
               >
                 {L("恢复上下文文件", "Restore Context")}
-              </AssistChip>
+              </Chip>
             ) : null}
           </div>
 
           <div style={{ display: "flex", alignItems: "flex-end", gap: 10 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <TextareaField
+              <TextField
+                multiline
                 rows={2}
                 label={L("向 M3E 智能体提问", "Ask M3E Agent")}
                 placeholder={L(
@@ -1612,9 +1611,20 @@ export const BLOCKS_REGISTRY: readonly BlockSpec[] = [
     render: () => <Dashboard01Block />,
     code: `import * as React from "react";
 import {
-  Avatar, Breadcrumb, Button, ButtonGroup, Card, DataTable,
-  DropdownMenu, IconButton, MaterialShapeView, NavigationDrawer,
-  Pagination, Tab, Tabs, TabsList, TabsPanel,
+  Avatar,
+  Breadcrumb,
+  Button,
+  ButtonGroup,
+  Card,
+  DataTable,
+  DropdownMenu,
+  IconButton,
+  MaterialShapeView,
+  Pagination,
+  Tab,
+  Tabs,
+  TabsList,
+  TabsPanel,
 } from "m3eui";
 
 export function AnalyticsDashboardBlock() {
@@ -1702,7 +1712,13 @@ export function AnalyticsDashboardBlock() {
     render: () => <Login01Block />,
     code: `import * as React from "react";
 import {
-  AssistChip, Button, Card, Divider, MaterialShapeView, OTPField, TextField,
+  Chip,
+  Button,
+  Card,
+  Divider,
+  MaterialShapeView,
+  OTPField,
+  TextField,
 } from "m3eui";
 
 export function SplitBrandLogin() {
@@ -1713,7 +1729,7 @@ export function SplitBrandLogin() {
     <div className="m3e-block-split-auth">
       <section className="brand-poster">
         <MaterialShapeView shape="cookie9Sided" size={84} fill="var(--m3e-color-primary)" />
-        <AssistChip>FIDO2 Passkey</AssistChip>
+        <Chip>FIDO2 Passkey</Chip>
       </section>
 
       <Card variant="outlined">
@@ -1747,15 +1763,21 @@ export function SplitBrandLogin() {
       en: "M3E AI Agent & Reasoning Studio",
     },
     description: {
-      zh: "模型切换器、提示词模板芯片、可折叠 Accordion 思维链轨迹、LinearWavyProgressIndicator 流式波浪进度与富上下文输入栏。",
-      en: "Model Select, prompt AssistChips, collapsible Accordion reasoning trace, live LinearWavyProgressIndicator streaming, and context InputChips composer.",
+      zh: "模型切换器、提示词模板芯片、可折叠 Accordion 思维链轨迹、wavy 进度条流式进度与富上下文输入栏。",
+      en: "Model Select, prompt chips, collapsible Accordion reasoning trace, live wavy progress streaming, and a context chip composer.",
     },
     minHeight: 580,
     render: () => <AiWorkspace01Block />,
     code: `import * as React from "react";
 import {
-  Accordion, AssistChip, Button, Card, IconButton, InputChip,
-  LinearWavyProgressIndicator, Select, TextareaField,
+  Accordion,
+  Chip,
+  Button,
+  Card,
+  IconButton,
+  LinearProgressIndicator,
+  Select,
+  TextField,
 } from "m3eui";
 
 export function AiReasoningStudio() {
@@ -1778,11 +1800,11 @@ export function AiReasoningStudio() {
           defaultValue={["trace"]}
           items={[{ value: "trace", title: "Reasoning Trace (3 steps)", content: "..." }]}
         />
-        {streaming && <LinearWavyProgressIndicator aria-label="Streaming tokens" />}
+        {streaming && <LinearProgressIndicator wavy aria-label="Streaming tokens" />}
       </Card>
       <Card variant="filled">
-        <InputChip onRemove={() => {}}>tokens/topology.ts</InputChip>
-        <TextareaField label="Ask M3E Agent" value={prompt} onValueChange={setPrompt} />
+        <Chip onRemove={() => {}}>tokens/topology.ts</Chip>
+        <TextField multiline label="Ask M3E Agent" value={prompt} onValueChange={setPrompt} />
       </Card>
     </section>
   );

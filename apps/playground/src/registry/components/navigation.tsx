@@ -6,12 +6,10 @@ import {
   Button,
   ButtonGroup,
   Chip,
-  Collapsible,
   CommandPalette,
   type CommandPaletteGroup,
   type CommandPaletteItem,
   ContextMenu,
-  Divider,
   DropdownMenu,
   FAB,
   IconButton,
@@ -19,7 +17,6 @@ import {
   Menubar,
   NavigationBar,
   type NavigationDestination,
-  NavigationDrawer,
   NavigationMenu,
   type NavigationMenuItemSpec,
   NavigationRail,
@@ -28,10 +25,10 @@ import {
   Pagination,
   Popover,
   PopoverClose,
-  ScrollArea,
   SearchBar,
   type SearchSuggestion,
   SearchView,
+  Sidebar,
   Slider,
   Switch,
   Tab,
@@ -39,7 +36,6 @@ import {
   TabsList,
   TabsPanel,
   TopAppBar,
-  WideNavigationRail,
   useM3EToast,
 } from "m3eui";
 import { useCopyResolver } from "../../i18n";
@@ -165,13 +161,9 @@ function NavigationBarDemo() {
   );
 }
 
-function NavigationRailWideDemo() {
+function useRailItems(): readonly NavigationDestination[] {
   const copy = useCopyResolver();
-  const [railVal, setRailVal] = React.useState("projects");
-  const [wideVal, setWideVal] = React.useState("projects");
-  const [expanded, setExpanded] = React.useState(true);
-
-  const items: readonly NavigationDestination[] = [
+  return [
     {
       value: "projects",
       label: copy({ zh: "工作区", en: "Projects" }),
@@ -189,103 +181,106 @@ function NavigationRailWideDemo() {
       icon: <ShieldCheckIcon size={18} />,
       badgeDot: true,
     },
+    {
+      value: "settings",
+      label: copy({ zh: "设置", en: "Settings" }),
+      icon: <SettingsGearIcon size={18} />,
+    },
   ];
+}
+
+function NavigationRailDemo() {
+  const items = useRailItems();
+  const [railVal, setRailVal] = React.useState("projects");
+  const [wideVal, setWideVal] = React.useState("projects");
 
   return (
-    <div style={STACK_COL}>
-      <div style={ROW_WRAP}>
-        <Button
-          size="xs"
-          variant="tonal"
-          onClick={() => setExpanded((prev) => !prev)}
-        >
-          {expanded
-            ? copy({ zh: "折叠 WideNavigationRail", en: "Collapse WideNavigationRail" })
-            : copy({ zh: "展开 WideNavigationRail", en: "Expand WideNavigationRail" })}
-        </Button>
-      </div>
-
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 20, alignItems: "stretch" }}>
-        <NavigationRail
-          items={items}
-          value={railVal}
-          onValueChange={setRailVal}
-          header={<FAB size="sm" icon={<PlusIcon size={18} />} aria-label="Create" />}
-        />
-
-        <WideNavigationRail
-          items={items}
-          value={wideVal}
-          onValueChange={setWideVal}
-          expanded={expanded}
-          onExpandedChange={setExpanded}
-        />
-      </div>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 20, alignItems: "stretch" }}>
+      <NavigationRail
+        items={items}
+        value={railVal}
+        onValueChange={setRailVal}
+        header={<FAB size="sm" icon={<PlusIcon size={18} />} aria-label="Create" />}
+      />
+      <NavigationRail
+        collapsible
+        defaultExpanded
+        items={items}
+        value={wideVal}
+        onValueChange={setWideVal}
+      />
     </div>
   );
 }
 
-function NavigationDrawerDemo() {
+function NavigationRailModalDemo() {
   const copy = useCopyResolver();
-  const [active, setActive] = React.useState("tokens");
-  const [modalOpen, setModalOpen] = React.useState(false);
-
-  const drawerItems: readonly NavigationDestination[] = [
-    {
-      value: "tokens",
-      label: copy({ zh: "HCT 色彩令牌", en: "HCT Color Tokens" }),
-      icon: <SparkleIcon size={17} />,
-      section: copy({ zh: "基础架构", en: "Foundations" }),
-      badgeLabel: "SPEC_2025",
-    },
-    {
-      value: "motion",
-      label: copy({ zh: "物理弹簧曲线", en: "Spring Physics" }),
-      icon: <RefreshIcon size={17} />,
-      section: copy({ zh: "基础架构", en: "Foundations" }),
-    },
-    {
-      value: "cli",
-      label: copy({ zh: "CLI 代码分发", en: "CLI Registry" }),
-      icon: <TerminalIcon size={17} />,
-      section: copy({ zh: "工程工具", en: "Tooling" }),
-      badgeCount: 3,
-    },
-    {
-      value: "audit",
-      label: copy({ zh: "无障碍合规", en: "Accessibility Audit" }),
-      icon: <ShieldCheckIcon size={17} />,
-      section: copy({ zh: "工程工具", en: "Tooling" }),
-    },
-  ];
+  const items = useRailItems();
+  const [active, setActive] = React.useState("projects");
 
   return (
-    <div style={STACK_COL}>
-      <div style={ROW_WRAP}>
-        <NavigationDrawer
-          variant="modal"
-          open={modalOpen}
-          onOpenChange={setModalOpen}
-          headline="m3eui Workspace"
-          items={drawerItems}
-          value={active}
-          onValueChange={setActive}
-          trigger={
-            <Button variant="tonal" leadingIcon={<MenuHamburgerGlyph />}>
-              {copy({ zh: "打开模态 NavigationDrawer", en: "Open modal NavigationDrawer" })}
-            </Button>
-          }
-        />
-      </div>
+    <NavigationRail
+      modal
+      items={items}
+      value={active}
+      onValueChange={setActive}
+      trigger={
+        <Button variant="tonal" leadingIcon={<MenuHamburgerGlyph />}>
+          {copy({ zh: "打开导航", en: "Open navigation" })}
+        </Button>
+      }
+    />
+  );
+}
 
-      <div style={{ overflowX: "auto" }}>
-        <NavigationDrawer
-          variant="permanent"
-          headline="m3eui Design System"
-          items={drawerItems}
-          value={active}
-          onValueChange={setActive}
+function SidebarDemo() {
+  const copy = useCopyResolver();
+  const [active, setActive] = React.useState("button");
+  const [query, setQuery] = React.useState("");
+  const [open, setOpen] = React.useState(false);
+
+  const groups: readonly [string, readonly string[]][] = [
+    [copy({ zh: "操作", en: "Actions" }), ["Button", "IconButton", "ButtonGroup", "SplitButton", "FAB"]],
+    [copy({ zh: "输入", en: "Inputs" }), ["TextField", "NumberField", "Select", "Combobox", "DatePicker", "TimePicker"]],
+    [copy({ zh: "选择", en: "Selection" }), ["Checkbox", "RadioGroup", "Switch", "Slider"]],
+    [copy({ zh: "展示", en: "Display" }), ["Card", "List", "Chip", "Avatar", "Badge", "Carousel"]],
+  ];
+  const q = query.trim().toLowerCase();
+  const items: readonly NavigationDestination[] = groups.flatMap(([section, names]) =>
+    names
+      .filter((name) => !q || name.toLowerCase().includes(q))
+      .map((name) => ({ value: name.toLowerCase(), label: name, section })),
+  );
+
+  return (
+    <div className="demo-sidebar-frame">
+      <Sidebar
+        items={items}
+        value={active}
+        onValueChange={setActive}
+        open={open}
+        onOpenChange={setOpen}
+        header={
+          <SearchBar
+            size="sm"
+            value={query}
+            onValueChange={setQuery}
+            placeholder={copy({ zh: "筛选", en: "Filter" })}
+            aria-label={copy({ zh: "筛选", en: "Filter" })}
+          />
+        }
+        style={{ maxBlockSize: 380 }}
+      />
+      <div className="demo-sidebar-frame__content">
+        <IconButton
+          className="demo-narrow-only"
+          variant="standard"
+          size="sm"
+          aria-label={copy({ zh: "打开侧栏", en: "Open sidebar" })}
+          icon={<MenuHamburgerGlyph />}
+          onClick={() => setOpen(true)}
         />
+        <strong style={{ fontSize: 18 }}>{items.find((i) => i.value === active)?.label ?? active}</strong>
       </div>
     </div>
   );
@@ -330,7 +325,7 @@ function NavigationSuiteAdaptiveDemo() {
           { value: "auto", label: "auto" },
           { value: "bar", label: "bar" },
           { value: "rail", label: "rail" },
-          { value: "wide-rail", label: "wide-rail" },
+          { value: "expanded-rail", label: "expanded-rail" },
         ]}
       />
 
@@ -341,19 +336,8 @@ function NavigationSuiteAdaptiveDemo() {
         onValueChange={setActive}
         style={{ minHeight: 220 }}
       >
-        <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 8 }}>
-          <strong style={{ fontSize: 15 }}>
-            {copy({
-              zh: `NavigationSuite (${layout}) · 当前分区：${active}`,
-              en: `NavigationSuite (${layout}) · Active view: ${active}`,
-            })}
-          </strong>
-          <span style={{ fontSize: 13, color: "var(--m3e-color-on-surface-variant)" }}>
-            {copy({
-              zh: "在 auto 模式下基于 ResizeObserver 容器宽度自动切换底部栏、窄侧栏或宽侧栏。",
-              en: "In auto mode, ResizeObserver measures host container width to switch seamlessly between bar, rail, and wide-rail.",
-            })}
-          </span>
+        <div style={{ padding: 20 }}>
+          <strong style={{ fontSize: 15 }}>{active}</strong>
         </div>
       </NavigationSuite>
     </div>
@@ -1062,7 +1046,7 @@ function SearchBarSuggestionsDemo() {
     },
     {
       value: "wavy",
-      label: "LinearWavyProgressIndicator",
+      label: "LinearProgressIndicator",
       category: copy({ zh: "反馈", en: "Feedback" }),
       description: copy({ zh: "正弦波浪进度指示器", en: "Expressive sinusoidal progress bar" }),
       icon: <BarChartIcon size={16} />,
@@ -1097,7 +1081,8 @@ function SearchViewModesDemo() {
     "fastSpatial spring",
     "TonalPalette",
   ]);
-  const [fullscreenOpen, setFullscreenOpen] = React.useState(false);
+  const [open, setOpen] = React.useState(false);
+  const copy = useCopyResolver();
 
   const suggestions: readonly SearchSuggestion[] = [
     { value: "color-picker", label: "ColorPicker", category: "Inputs", description: "Native HCT picker" },
@@ -1106,53 +1091,89 @@ function SearchViewModesDemo() {
   ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14, width: "100%", maxWidth: 520 }}>
+    <>
+      <Button variant="tonal" onClick={() => setOpen(true)}>
+        {copy({ zh: "打开搜索", en: "Open search" })}
+      </Button>
       <SearchView
-        mode="docked"
+        open={open}
+        onOpenChange={setOpen}
         recentSearches={recent}
         onClearRecent={() => setRecent([])}
         suggestions={suggestions}
       />
-      <div>
-        <Button variant="tonal" size="xs" onClick={() => setFullscreenOpen(true)}>
-          Open Fullscreen SearchView
-        </Button>
-      </div>
-      <SearchView
-        mode="fullscreen"
-        open={fullscreenOpen}
-        onOpenChange={setFullscreenOpen}
-        recentSearches={recent}
-        onClearRecent={() => setRecent([])}
-        suggestions={suggestions}
-      />
+    </>
+  );
+}
+
+function PopoverHoverDemo() {
+  const copy = useCopyResolver();
+
+  return (
+    <div style={{ fontSize: 14, color: "var(--m3e-color-on-surface)" }}>
+      {copy({ zh: "将指针悬停在组件库维护者 ", en: "Hover over maintainer handle " })}
+      <Popover
+        openOnHover
+        trigger={
+          <a
+            href="#popover-hover"
+            onClick={(e) => e.preventDefault()}
+            style={{
+              color: "var(--m3e-color-primary)",
+              fontWeight: 650,
+              textDecoration: "underline",
+              textUnderlineOffset: 3,
+            }}
+          >
+            @m3e-design-core
+          </a>
+        }
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <Avatar fallback="M3" shape="clover4Leaf" size="md" />
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 14 }}>M3E Design Engineering</div>
+              <div style={{ fontSize: 12, color: "var(--m3e-color-on-surface-variant)" }}>
+                @m3e-design-core · SPEC_2025
+              </div>
+            </div>
+          </div>
+          <p style={{ margin: 0, fontSize: 12.5, color: "var(--m3e-color-on-surface-variant)" }}>
+            {copy({
+              zh: "负责维护 HCT 色彩空间算法、35 种圆角多边形路径与 Base UI 无障碍原语封装。",
+              en: "Maintains HCT color science, 35 morphing rounded polygons, and accessible Base UI primitives.",
+            })}
+          </p>
+          <div style={{ display: "flex", gap: 8 }}>
+            <Chip size="sm" tone="primary">
+              45 Modules
+            </Chip>
+            <Chip size="sm" tone="success">
+              WCAG AAA Ready
+            </Chip>
+          </div>
+        </div>
+      </Popover>
+      {copy({ zh: " 即可预览悬浮资料卡片。", en: " to inspect the rich hover card." })}
     </div>
   );
 }
 
 export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   {
-    slug: "navigation",
-    title: "Navigation",
-    category: "navigation",
-    primitive: "@base-ui/react/drawer",
+    slug: "navigation-bar",
+    title: "NavigationBar",
     subtitle: {
-      zh: "完整的 Material 3 Expressive 响应式导航套件：涵盖底部栏 NavigationBar、侧边轨 NavigationRail、可折叠宽侧栏 WideNavigationRail、抽屉 NavigationDrawer 与自适应容器 NavigationSuite。",
-      en: "Complete M3 Expressive navigation architecture: NavigationBar, NavigationRail, collapsible WideNavigationRail, NavigationDrawer, and container-responsive NavigationSuite.",
+      zh: "紧凑屏底部一级导航，3–5 个目标。",
+      en: "Bottom primary navigation for compact windows, 3–5 destinations.",
     },
-    importStatement:
-      'import { NavigationBar, NavigationRail, WideNavigationRail, NavigationDrawer, NavigationSuite } from "m3eui";',
+    importStatement: 'import { NavigationBar } from "m3eui";',
     scenarios: [
       {
         id: "navigation-bar",
-        title: {
-          zh: "底部导航栏与角标 (NavigationBar)",
-          en: "Bottom NavigationBar with badges",
-        },
-        description: {
-          zh: "适用于紧凑移动端视口，内置弹簧缩放胶囊指示器以及计数/圆点角标。",
-          en: "Compact bottom destination bar featuring spring-scaled active indicator pills plus count and dot badges.",
-        },
+        title: { zh: "角标", en: "Badges" },
+        description: { zh: "计数与圆点角标。", en: "Count and dot badges." },
         code: `<NavigationBar
   value={active}
   onValueChange={setActive}
@@ -1164,16 +1185,42 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
 />`,
         render: () => <NavigationBarDemo />,
       },
+    ],
+    apis: [
       {
-        id: "navigation-rail-wide",
-        title: {
-          zh: "侧边导航轨与可折叠宽侧栏",
-          en: "NavigationRail & collapsible WideNavigationRail",
-        },
-        description: {
-          zh: "NavigationRail 支持顶部 FAB 插槽；WideNavigationRail 通过物理弹簧在折叠轨与展开标签列表之间平滑过渡。",
-          en: "NavigationRail hosts an optional header FAB, while WideNavigationRail spring-animates width between collapsed and expanded states.",
-        },
+        title: "NavigationDestination<Value>",
+        rows: [
+          { name: "value", type: "Value extends string", required: true, description: { zh: "唯一标识。", en: "Unique identifier." } },
+          { name: "label", type: "React.ReactNode", required: true, description: { zh: "名称。", en: "Label." } },
+          { name: "icon / activeIcon", type: "React.ReactNode", description: { zh: "图标与激活态图标。", en: "Icon and active-state icon." } },
+          { name: "badgeCount / badgeDot / badgeLabel", type: "number / boolean / React.ReactNode", description: { zh: "数字、圆点或文本角标。", en: "Count, dot, or text badge." } },
+          { name: "href / disabled", type: "string / boolean", description: { zh: "渲染为链接；禁用。", en: "Render as a link; disable." } },
+          { name: "section", type: "string", description: { zh: "分组名，相邻项变化时渲染标题与分割线（展开态 rail、Sidebar）。", en: "Group name; renders a heading and divider when it changes (expanded rail, Sidebar)." } },
+        ],
+      },
+      {
+        title: "NavigationBar Props",
+        rows: [
+          { name: "items", type: "readonly NavigationDestination<Value>[]", required: true, description: { zh: "导航目标。", en: "Destinations." } },
+          { name: "value / onValueChange", type: "Value / (value: Value) => void", required: true, description: { zh: "当前项与切换回调。", en: "Active destination and change handler." } },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "navigation-rail",
+    title: "NavigationRail",
+    primitive: "@base-ui/react/drawer",
+    subtitle: {
+      zh: "中宽屏一级导航。收起为 96px 图标栏，展开为 220–360px 带分组的列表；modal 在窄屏滑出。",
+      en: "Primary navigation for medium and wide windows. Collapses to a 96px icon rail, expands to a 220–360px grouped list; modal slides in on narrow windows.",
+    },
+    importStatement: 'import { NavigationRail } from "m3eui";',
+    scenarios: [
+      {
+        id: "navigation-rail-expand",
+        title: { zh: "收起与展开", en: "Collapsed & expanded" },
+        description: { zh: "collapsible 显示切换按钮，宽度弹簧过渡。", en: "collapsible adds the toggle; width animates on a spring." },
         code: `<NavigationRail
   items={items}
   value={value}
@@ -1181,160 +1228,137 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   header={<FAB size="sm" icon={<PlusIcon />} aria-label="Create" />}
 />
 
-<WideNavigationRail
+<NavigationRail
+  collapsible
+  defaultExpanded
   items={items}
   value={value}
   onValueChange={setValue}
-  expanded={expanded}
-  onExpandedChange={setExpanded}
 />`,
-        render: () => <NavigationRailWideDemo />,
+        render: () => <NavigationRailDemo />,
       },
       {
-        id: "navigation-drawer",
-        title: {
-          zh: "常驻与模态导航抽屉 (NavigationDrawer)",
-          en: "Permanent & modal NavigationDrawer",
-        },
-        description: {
-          zh: "通过目标项的 section 字段自动生成分组标题与分割线，支持 permanent 常驻侧栏与 modal 抽屉两种形态。",
-          en: "Automatically groups destinations by section with dividers, supporting both permanent sidebars and swipeable modal drawers.",
-        },
-        code: `<NavigationDrawer
-  variant="permanent"
-  headline="m3eui Design System"
-  items={drawerItems}
-  value={active}
-  onValueChange={setActive}
-/>
-
-<NavigationDrawer
-  variant="modal"
-  headline="m3eui Workspace"
-  trigger={<Button variant="tonal">Open modal NavigationDrawer</Button>}
-  items={drawerItems}
-  value={active}
-  onValueChange={setActive}
-/>`,
-        render: () => <NavigationDrawerDemo />,
-      },
-      {
-        id: "navigation-suite-adaptive",
-        title: {
-          zh: "容器自适应导航套件 (NavigationSuite)",
-          en: "Adaptive NavigationSuite",
-        },
-        description: {
-          zh: "自动监听宿主容器宽度或在 bar、rail 与 wide-rail 三种布局模式间显式切换。",
-          en: "Automatically adapts chrome to container width or switches explicitly across bar, rail, and wide-rail modes.",
-        },
-        code: `<NavigationSuite
-  layout="auto"
+        id: "navigation-rail-modal",
+        title: { zh: "模态", en: "Modal" },
+        description: { zh: "窄屏由汉堡按钮打开，选中后关闭。", en: "Opened from a menu button on narrow windows; closes on selection." },
+        code: `<NavigationRail
+  modal
   items={items}
-  value={active}
-  onValueChange={setActive}
->
-  <main>{/* Application viewport */}</main>
-</NavigationSuite>`,
-        render: () => <NavigationSuiteAdaptiveDemo />,
+  value={value}
+  onValueChange={setValue}
+  trigger={<Button variant="tonal">Open navigation</Button>}
+/>`,
+        render: () => <NavigationRailModalDemo />,
       },
     ],
     apis: [
       {
         title: "NavigationDestination<Value>",
         rows: [
-          {
-            name: "value",
-            type: "Value extends string",
-            required: true,
-            description: {
-              zh: "导航目标唯一标识值。",
-              en: "Unique identifier of the destination.",
-            },
-          },
-          {
-            name: "label",
-            type: "React.ReactNode",
-            required: true,
-            description: {
-              zh: "显示名称。",
-              en: "Destination label.",
-            },
-          },
-          {
-            name: "icon / activeIcon",
-            type: "React.ReactNode",
-            description: {
-              zh: "默认图标与激活态替换图标。",
-              en: "Default icon and optional active-state icon override.",
-            },
-          },
-          {
-            name: "badgeCount / badgeDot / badgeLabel",
-            type: "number / boolean / React.ReactNode",
-            description: {
-              zh: "数字角标、小红点或宽侧栏文本标签角标。",
-              en: "Numeric count badge, dot indicator, or text tag in wide rail/drawer.",
-            },
-          },
-          {
-            name: "section",
-            type: "string",
-            description: {
-              zh: "在 NavigationDrawer 中自动渲染分组小标题与分割线。",
-              en: "Renders a section header and divider when adjacent section names change in NavigationDrawer.",
-            },
-          },
+          { name: "value", type: "Value extends string", required: true, description: { zh: "唯一标识。", en: "Unique identifier." } },
+          { name: "label", type: "React.ReactNode", required: true, description: { zh: "名称。", en: "Label." } },
+          { name: "icon / activeIcon", type: "React.ReactNode", description: { zh: "图标与激活态图标。", en: "Icon and active-state icon." } },
+          { name: "badgeCount / badgeDot / badgeLabel", type: "number / boolean / React.ReactNode", description: { zh: "数字、圆点或文本角标。", en: "Count, dot, or text badge." } },
+          { name: "href / disabled", type: "string / boolean", description: { zh: "渲染为链接；禁用。", en: "Render as a link; disable." } },
+          { name: "section", type: "string", description: { zh: "分组名，相邻项变化时渲染标题与分割线（展开态 rail、Sidebar）。", en: "Group name; renders a heading and divider when it changes (expanded rail, Sidebar)." } },
         ],
       },
       {
-        title: "NavigationBar, WideNavigationRail, NavigationDrawer & NavigationSuite Props",
+        title: "NavigationRail Props",
         rows: [
-          {
-            name: "items",
-            type: "readonly NavigationDestination<Value>[]",
-            required: true,
-            description: {
-              zh: "共享的导航目标数组。",
-              en: "Shared array of navigation destinations.",
-            },
-          },
-          {
-            name: "value / onValueChange",
-            type: "Value / (value: Value) => void",
-            required: true,
-            description: {
-              zh: "当前激活项及其切换回调。",
-              en: "Controlled active destination value and change handler.",
-            },
-          },
-          {
-            name: "expanded / defaultExpanded / collapsible",
-            type: "boolean",
-            defaultValue: "true",
-            description: {
-              zh: "WideNavigationRail 的展开折叠状态与顶部折叠按钮开关。",
-              en: "Controls expansion state and toggle button visibility on WideNavigationRail.",
-            },
-          },
-          {
-            name: "variant / scrollSpy",
-            type: '"permanent" | "modal" · boolean',
-            defaultValue: '"permanent" / false',
-            description: {
-              zh: "NavigationDrawer 展示模式，常驻模式下可开启锚点滚动监听 scrollSpy。",
-              en: "NavigationDrawer presentation mode and optional anchor scroll-spy tracking.",
-            },
-          },
-          {
-            name: "layout",
-            type: '"auto" | "bar" | "rail" | "wide-rail"',
-            defaultValue: '"auto"',
-            description: {
-              zh: "NavigationSuite 响应式布局策略。",
-              en: "Layout mode for NavigationSuite (\"auto\" observes container width).",
-            },
-          },
+          { name: "items", type: "readonly NavigationDestination<Value>[]", required: true, description: { zh: "导航目标。", en: "Destinations." } },
+          { name: "value / onValueChange", type: "Value / (value: Value) => void", required: true, description: { zh: "当前项与切换回调。", en: "Active destination and change handler." } },
+          { name: "expanded / defaultExpanded / onExpandedChange", type: "boolean / boolean / (expanded: boolean) => void", defaultValue: "— / false", description: { zh: "展开状态。", en: "Expanded state." } },
+          { name: "collapsible", type: "boolean", defaultValue: "false", description: { zh: "显示展开 / 收起按钮。", en: "Shows the expand/collapse toggle." } },
+          { name: "modal / open / defaultOpen / onOpenChange / trigger", type: "boolean / boolean / boolean / (open: boolean) => void / React.ReactElement", defaultValue: "false", description: { zh: "以模态抽屉呈现。", en: "Renders as a modal drawer." } },
+          { name: "header / footer", type: "React.ReactNode", description: { zh: "顶部（如 FAB）与底部插槽。", en: "Top (e.g. FAB) and bottom slots." } },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "navigation-suite",
+    title: "NavigationSuite",
+    subtitle: {
+      zh: "按容器宽度在 NavigationBar 与 NavigationRail 间切换的应用外壳。",
+      en: "App shell that switches between NavigationBar and NavigationRail by container width.",
+    },
+    importStatement: 'import { NavigationSuite } from "m3eui";',
+    scenarios: [
+      {
+        id: "navigation-suite-adaptive",
+        title: { zh: "自适应布局", en: "Adaptive layout" },
+        description: { zh: "auto 按容器宽度选择；也可固定为某一布局。", en: "auto picks by container width; any layout can be forced." },
+        code: `<NavigationSuite
+  layout="auto"
+  items={items}
+  value={active}
+  onValueChange={setActive}
+>
+  <main />
+</NavigationSuite>`,
+        render: () => <NavigationSuiteAdaptiveDemo />,
+      },
+    ],
+    apis: [
+      {
+        title: "NavigationSuite Props",
+        rows: [
+          { name: "items", type: "readonly NavigationDestination<Value>[]", required: true, description: { zh: "导航目标。", en: "Destinations." } },
+          { name: "value / onValueChange", type: "Value / (value: Value) => void", required: true, description: { zh: "当前项与切换回调。", en: "Active destination and change handler." } },
+          { name: "layout", type: '"auto" | "bar" | "rail" | "expanded-rail"', defaultValue: '"auto"', description: { zh: "布局策略。", en: "Layout strategy." } },
+          { name: "header", type: "React.ReactNode", description: { zh: "rail 顶部插槽。", en: "Rail header slot." } },
+          { name: "children", type: "React.ReactNode", required: true, description: { zh: "内容区。", en: "Content area." } },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "sidebar",
+    title: "Sidebar",
+    isNew: true,
+    primitive: "@base-ui/react/drawer",
+    subtitle: {
+      zh: "栏目内的长列表导航（文档目录、设置分类、后台菜单）。≥840px 常驻并 sticky，窄屏变为模态抽屉。",
+      en: "Long in-section navigation (docs, settings, admin menus). Sticky at ≥840px; a modal drawer on narrow windows.",
+    },
+    importStatement: 'import { Sidebar } from "m3eui";',
+    scenarios: [
+      {
+        id: "sidebar-filter",
+        title: { zh: "分组与筛选", en: "Groups & filter" },
+        description: { zh: "缩小窗口到 840px 以下，侧栏收进汉堡按钮。", en: "Below 840px the sidebar moves behind the menu button." },
+        code: `<Sidebar
+  items={items}
+  value={active}
+  onValueChange={setActive}
+  open={open}
+  onOpenChange={setOpen}
+  header={<SearchBar size="sm" value={query} onValueChange={setQuery} />}
+/>`,
+        render: () => <SidebarDemo />,
+      },
+    ],
+    apis: [
+      {
+        title: "NavigationDestination<Value>",
+        rows: [
+          { name: "value", type: "Value extends string", required: true, description: { zh: "唯一标识。", en: "Unique identifier." } },
+          { name: "label", type: "React.ReactNode", required: true, description: { zh: "名称。", en: "Label." } },
+          { name: "icon / activeIcon", type: "React.ReactNode", description: { zh: "图标与激活态图标。", en: "Icon and active-state icon." } },
+          { name: "badgeCount / badgeDot / badgeLabel", type: "number / boolean / React.ReactNode", description: { zh: "数字、圆点或文本角标。", en: "Count, dot, or text badge." } },
+          { name: "href / disabled", type: "string / boolean", description: { zh: "渲染为链接；禁用。", en: "Render as a link; disable." } },
+          { name: "section", type: "string", description: { zh: "分组名，相邻项变化时渲染标题与分割线（展开态 rail、Sidebar）。", en: "Group name; renders a heading and divider when it changes (expanded rail, Sidebar)." } },
+        ],
+      },
+      {
+        title: "Sidebar Props",
+        rows: [
+          { name: "items", type: "readonly NavigationDestination<Value>[]", required: true, description: { zh: "导航目标，section 分组。", en: "Destinations, grouped by section." } },
+          { name: "value / onValueChange", type: "Value | null / (value: Value) => void", required: true, description: { zh: "当前项与切换回调。", en: "Active destination and change handler." } },
+          { name: "open / onOpenChange", type: "boolean / (open: boolean) => void", defaultValue: "false", description: { zh: "窄屏抽屉的开关，选中后自动关闭。", en: "Narrow-window drawer state; closes on selection." } },
+          { name: "header / footer", type: "React.ReactNode", description: { zh: "列表上下插槽。", en: "Slots above and below the list." } },
+          { name: "--m3e-sidebar-top", type: "CSS length", defaultValue: "0px", description: { zh: "sticky 偏移（如顶栏高度）。", en: "Sticky offset, e.g. the app bar height." } },
         ],
       },
     ],
@@ -1342,7 +1366,6 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "breadcrumb",
     title: "Breadcrumb",
-    category: "navigation",
     isNew: true,
     subtitle: {
       zh: "层级路径面包屑导航，自动为末级节点标注 aria-current=\"page\"，并在超长层级下将中间祖先折叠进无障碍下拉菜单。",
@@ -1574,7 +1597,6 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "pagination",
     title: "Pagination",
-    category: "navigation",
     isNew: true,
     subtitle: {
       zh: "具备物理弹簧圆角形变的分页导航器，支持受控/非受控页码、智能省略号窗口、CLDR 本地化数字与条目范围摘要。",
@@ -1737,7 +1759,6 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "tabs",
     title: "Tabs",
-    category: "navigation",
     primitive: "@base-ui/react/tabs",
     subtitle: {
       zh: "支持主级（Primary）与次级（Secondary）双视觉层级的选项卡组件，具备平滑滑动激活指示条与完整键盘焦点环路。",
@@ -1940,7 +1961,6 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "accordion",
     title: "Accordion",
-    category: "navigation",
     primitive: "@base-ui/react/accordion",
     subtitle: {
       zh: "分段圆角手风琴：相邻折叠项共享 4px 内缝，展开项脱离为 16px 圆角。",
@@ -2058,6 +2078,61 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
           />
         ),
       },
+      {
+        id: "accordion-single-item",
+        title: { zh: "单项与表面", en: "Single item & surface" },
+        description: { zh: "单项即展开卡片；variant 切换 tonal / outlined / plain。", en: "One item is a disclosure card; variant switches tonal / outlined / plain." },
+        code: `<Accordion
+  variant="outlined"
+  defaultValue={["log"]}
+  items={[
+    {
+      value: "log",
+      title: "Build diagnostics",
+      subtitle: "12 modules verified",
+      trailingBadge: <Chip size="sm" tone="success">Passed</Chip>,
+      content: <pre>{log}</pre>,
+    },
+  ]}
+/>`,
+        render: () => (
+          <Accordion
+            variant="outlined"
+            defaultValue={["log"]}
+            style={{ width: "100%" }}
+            items={[
+              {
+                value: "log",
+                leading: <TerminalIcon size={16} />,
+                title: "Build diagnostics",
+                subtitle: "12 modules verified in 420ms",
+                trailingBadge: (
+                  <Chip size="sm" tone="success">
+                    Passed
+                  </Chip>
+                ),
+                content: (
+                  <div
+                    style={{
+                      fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                      fontSize: 12,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 6,
+                      color: "var(--m3e-color-on-surface-variant)",
+                    }}
+                  >
+                    <div>[01/04] Generating SPEC_2025 schemes… OK</div>
+                    <div>[02/04] Precomputing MaterialShapes… OK</div>
+                    <div>[03/04] Auditing ARIA &amp; RTL… OK</div>
+                    <div>[04/04] Bundle emitted… DONE</div>
+                  </div>
+                ),
+              },
+            ]}
+          />
+        ),
+      },
     ],
     apis: [
       {
@@ -2068,9 +2143,15 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
             type: "readonly AccordionItemSpec[]",
             required: true,
             description: {
-              zh: "包含 { value, title, subtitle?, leading?, content, disabled? } 的面板配置数组。",
-              en: "Array of { value, title, subtitle?, leading?, content, disabled? } item specs.",
+              zh: "包含 { value, title, subtitle?, leading?, trailingBadge?, content, disabled? } 的面板配置数组。",
+              en: "Array of { value, title, subtitle?, leading?, trailingBadge?, content, disabled? } item specs.",
             },
+          },
+          {
+            name: "variant",
+            type: '"tonal" | "outlined" | "plain"',
+            defaultValue: '"tonal"',
+            description: { zh: "容器表面。", en: "Container surface." },
           },
           {
             name: "multiple",
@@ -2104,113 +2185,15 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
     ],
   },
   {
-    slug: "collapsible",
-    title: "Collapsible",
-    category: "navigation",
-    primitive: "@base-ui/react/collapsible",
-    subtitle: {
-      zh: "独立的单项展开卡片，支持 tonal / outlined / plain 三种表面。",
-      en: "Standalone disclosure card in tonal, outlined, or plain surfaces.",
-    },
-    importStatement:
-      'import { Collapsible } from "m3eui";',
-    scenarios: [
-      {
-        id: "collapsible-scroll",
-        title: {
-          zh: "展开卡片",
-          en: "Disclosure card",
-        },
-        description: {
-          zh: "结合 Collapsible 展开状态圆角形变、带文字标签的 Divider 以及定制滚动条的 ScrollArea。",
-          en: "Pairs a standalone Collapsible disclosure with a labeled Divider and custom-scrollbar ScrollArea.",
-        },
-        code: `<Collapsible
-  defaultOpen
-  variant="outlined"
-  title="Build diagnostics log"
-  subtitle="12 modules verified"
-  trailingBadge={<Chip size="sm" tone="success">Passed</Chip>}
->
-  <Divider label="STDOUT" />
-  <ScrollArea maxHeight={130}>{/* Log lines */}</ScrollArea>
-</Collapsible>`,
-        render: () => (
-          <Collapsible
-            defaultOpen
-            variant="outlined"
-            leading={<TerminalIcon size={16} />}
-            title="Build diagnostics log · 构建诊断日志"
-            subtitle="12 modules verified in 420ms"
-            trailingBadge={
-              <Chip size="sm" tone="success">
-                Passed
-              </Chip>
-            }
-            style={{ width: "100%" }}
-          >
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <Divider label="STDOUT" />
-              <ScrollArea maxHeight={130}>
-                <div
-                  style={{
-                    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-                    fontSize: 12,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 6,
-                    color: "var(--m3e-color-on-surface-variant)",
-                  }}
-                >
-                  <div>[01/06] Compiling HCT Cam16 ViewingConditions... OK</div>
-                  <div>[02/06] Generating 9 AOSP Monet SPEC_2025 schemes... OK</div>
-                  <div>[03/06] Precomputing 35 rounded polygon cubic loops... OK</div>
-                  <div>[04/06] Verifying SpringSimulation analytical roots... OK</div>
-                  <div>[05/06] Auditing WAI-ARIA landmarks & RTL mirroring... OK</div>
-                  <div>[06/06] Bundle emitted (0 runtime CSS-in-JS overhead)... DONE</div>
-                </div>
-              </ScrollArea>
-            </div>
-          </Collapsible>
-        ),
-      },
-    ],
-    apis: [
-      {
-        title: "Collapsible Props",
-        rows: [
-          {
-            name: "variant",
-            type: '"tonal" | "outlined" | "plain"',
-            defaultValue: '"tonal"',
-            description: {
-              zh: "独立折叠面板的容器表面样式。",
-              en: "Surface style of the standalone Collapsible container.",
-            },
-          },
-          {
-            name: "title / subtitle / leading / trailingBadge",
-            type: "React.ReactNode",
-            description: {
-              zh: "触发栏标题、副标题、前导图标与尾部徽标插槽。",
-              en: "Header slots rendered inside the Collapsible trigger row.",
-            },
-          },
-        ],
-      },
-    ],
-  },
-  {
     slug: "menu",
     title: "Menu",
-    category: "navigation",
-    primitive: "@base-ui/react/menu \u00b7 @base-ui/react/context-menu \u00b7 @base-ui/react/menubar",
+    primitive: "@base-ui/react/menu",
     subtitle: {
-      zh: "M3E 分组菜单：下拉 DropdownMenu、右键 ContextMenu 与桌面菜单栏 Menubar 共用同一套菜单项。",
-      en: "M3E grouped menus: DropdownMenu, right-click ContextMenu, and desktop Menubar share one item model.",
+      zh: "M3E 分段圆角下拉菜单，支持分组、子菜单、勾选项与快捷键。",
+      en: "M3E segmented dropdown menu with groups, submenus, checkable items, and shortcuts.",
     },
     importStatement:
-      'import { DropdownMenu, ContextMenu, Menubar } from "m3eui";',
+      'import { DropdownMenu } from "m3eui";',
     scenarios: [
       {
         id: "dropdown-menu-rich",
@@ -2240,6 +2223,88 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
 />`,
         render: () => <DropdownMenuRichDemo />,
       },
+    ],
+    apis: [
+      {
+        title: "M3EMenuItemSpec",
+        rows: [
+          {
+            name: "id / label",
+            type: "string / React.ReactNode",
+            required: true,
+            description: {
+              zh: "菜单项唯一键与显示内容。",
+              en: "Unique item identifier and visible label.",
+            },
+          },
+          {
+            name: "icon / shortcut",
+            type: "React.ReactNode / string",
+            description: {
+              zh: "前导图标与右侧快捷键提示文本。",
+              en: "Optional leading icon and trailing keyboard shortcut hint.",
+            },
+          },
+          {
+            name: "checked / onCheckedChange",
+            type: "boolean / (checked: boolean) => void",
+            description: {
+              zh: "提供 boolean 时渲染为可勾选的 CheckboxItem。",
+              en: "When defined, renders the item as a checkable menu item.",
+            },
+          },
+          {
+            name: "href / render",
+            type: "string / React.ReactElement",
+            description: {
+              zh: "渲染为链接项；render 可传入路由的 Link。",
+              en: "Renders a link item; pass a router Link via render.",
+            },
+          },
+          {
+            name: "submenu",
+            type: "readonly M3EMenuItemSpec[]",
+            description: {
+              zh: "嵌套次级菜单项列表。",
+              en: "Nested submenu items array.",
+            },
+          },
+          {
+            name: "separatorBefore / danger / disabled",
+            type: "boolean",
+            description: {
+              zh: "上方分割线、危险红色高亮或禁用态开关。",
+              en: "Renders a leading separator, destructive error styling, or disabled state.",
+            },
+          },
+        ],
+      },
+      {
+        title: "DropdownMenu Props",
+        rows: [
+          {
+            name: "trigger / side / align",
+            type: 'React.ReactElement · "top" | "bottom" | "left" | "right" · "start" | "center" | "end"',
+            defaultValue: '"bottom" / "start"',
+            description: {
+              zh: "触发按钮元素及浮层弹出定位。",
+              en: "Trigger element and menu placement options.",
+            },
+          },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "context-menu",
+    title: "ContextMenu",
+    primitive: "@base-ui/react/context-menu",
+    subtitle: {
+      zh: "在指针位置打开的右键菜单，与 DropdownMenu 共用菜单项。",
+      en: "Right-click menu opened at the pointer; shares DropdownMenu's item model.",
+    },
+    importStatement: 'import { ContextMenu } from "m3eui";',
+    scenarios: [
       {
         id: "context-menu",
         title: {
@@ -2261,6 +2326,88 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
 </ContextMenu>`,
         render: () => <ContextMenuCanvasDemo />,
       },
+    ],
+    apis: [
+      {
+        title: "M3EMenuItemSpec",
+        rows: [
+          {
+            name: "id / label",
+            type: "string / React.ReactNode",
+            required: true,
+            description: {
+              zh: "菜单项唯一键与显示内容。",
+              en: "Unique item identifier and visible label.",
+            },
+          },
+          {
+            name: "icon / shortcut",
+            type: "React.ReactNode / string",
+            description: {
+              zh: "前导图标与右侧快捷键提示文本。",
+              en: "Optional leading icon and trailing keyboard shortcut hint.",
+            },
+          },
+          {
+            name: "checked / onCheckedChange",
+            type: "boolean / (checked: boolean) => void",
+            description: {
+              zh: "提供 boolean 时渲染为可勾选的 CheckboxItem。",
+              en: "When defined, renders the item as a checkable menu item.",
+            },
+          },
+          {
+            name: "href / render",
+            type: "string / React.ReactElement",
+            description: {
+              zh: "渲染为链接项；render 可传入路由的 Link。",
+              en: "Renders a link item; pass a router Link via render.",
+            },
+          },
+          {
+            name: "submenu",
+            type: "readonly M3EMenuItemSpec[]",
+            description: {
+              zh: "嵌套次级菜单项列表。",
+              en: "Nested submenu items array.",
+            },
+          },
+          {
+            name: "separatorBefore / danger / disabled",
+            type: "boolean",
+            description: {
+              zh: "上方分割线、危险红色高亮或禁用态开关。",
+              en: "Renders a leading separator, destructive error styling, or disabled state.",
+            },
+          },
+        ],
+      },
+      {
+        title: "ContextMenu Props",
+        rows: [
+          {
+            name: "children / items",
+            type: "React.ReactNode / readonly M3EMenuItemSpec[]",
+            required: true,
+            description: {
+              zh: "响应右键事件的包裹区域与菜单列表。",
+              en: "Target surface children and right-click menu items.",
+            },
+          },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "menubar",
+    title: "Menubar",
+    primitive: "@base-ui/react/menubar",
+    subtitle: {
+      zh: "桌面应用菜单栏，方向键在菜单间横向漫游。",
+      en: "Desktop application menu bar with arrow-key roving across menus.",
+    },
+    importStatement: 'import { Menubar } from "m3eui";',
+    scenarios: [
       {
         id: "menubar",
         title: {
@@ -2337,28 +2484,10 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
         ],
       },
       {
-        title: "Props",
+        title: "Menubar Props",
         rows: [
           {
-            name: "DropdownMenu.trigger / side / align",
-            type: 'React.ReactElement · "top" | "bottom" | "left" | "right" · "start" | "center" | "end"',
-            defaultValue: '"bottom" / "start"',
-            description: {
-              zh: "触发按钮元素及浮层弹出定位。",
-              en: "Trigger element and menu placement options.",
-            },
-          },
-          {
-            name: "ContextMenu.children / items",
-            type: "React.ReactNode / readonly M3EMenuItemSpec[]",
-            required: true,
-            description: {
-              zh: "响应右键事件的包裹区域与菜单列表。",
-              en: "Target surface children and right-click menu items.",
-            },
-          },
-          {
-            name: "Menubar.menus",
+            name: "menus",
             type: "readonly M3EMenubarMenuSpec[]",
             required: true,
             description: {
@@ -2373,7 +2502,6 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "popover",
     title: "Popover",
-    category: "navigation",
     primitive: "@base-ui/react/popover",
     subtitle: {
       zh: "锚定在触发器旁的非模态浮层，承载滑块、开关与轻量表单。",
@@ -2402,6 +2530,18 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
 </Popover>`,
         render: () => <PopoverFilterDemo />,
       },
+      {
+        id: "popover-hover",
+        title: { zh: "悬停预览", en: "Hover preview" },
+        description: { zh: "openOnHover 在悬停或聚焦时打开，用于链接预览。", en: "openOnHover opens on hover or focus, for link previews." },
+        code: `<Popover
+  openOnHover
+  trigger={<a href="/team/core">@m3e-design-core</a>}
+>
+  <ProfileCard />
+</Popover>`,
+        render: () => <PopoverHoverDemo />,
+      },
     ],
     apis: [
       {
@@ -2423,6 +2563,15 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
               en: "Accessible name when there is no title.",
             },
           },
+          {
+            name: "openOnHover / delay / closeDelay",
+            type: "boolean / number / number",
+            defaultValue: "false / 280 / 200",
+            description: {
+              zh: "悬停或聚焦打开，及其延迟毫秒数。",
+              en: "Open on hover or focus, with delays in milliseconds.",
+            },
+          },
         ],
       },
     ],
@@ -2430,7 +2579,6 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "navigation-menu",
     title: "NavigationMenu",
-    category: "navigation",
     primitive: "@base-ui/react/navigation-menu",
     subtitle: {
       zh: "站点顶栏导航，支持精选卡片与多列链接面板。",
@@ -2483,7 +2631,6 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "command-palette",
     title: "CommandPalette",
-    category: "navigation",
     isNew: true,
     primitive: "@base-ui/react/dialog",
     subtitle: {
@@ -2658,7 +2805,6 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "top-app-bar",
     title: "TopAppBar",
-    category: "navigation",
     primitive: "@base-ui/react/toolbar",
     subtitle: {
       zh: "Material 3 顶部应用栏，涵盖 small、center-aligned、medium-flexible 与 large-flexible 四种形态，内置弹簧平滑折叠与无障碍工具栏。",
@@ -2869,11 +3015,10 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "search-bar",
     title: "SearchBar",
-    category: "navigation",
     primitive: "@base-ui/react/autocomplete · @base-ui/react/dialog",
     subtitle: {
-      zh: "胶囊搜索栏 SearchBar 与展开态搜索视图 SearchView（支持 Docked 内联面板与 FullScreen 全屏模态层、最近搜索历史与 IME 安全提交）。",
-      en: "Pill SearchBar and expanded SearchView supporting docked surfaces, fullscreen modal overlays, recent history, and IME-safe submission.",
+      zh: "胶囊搜索栏 SearchBar 与全屏搜索视图 SearchView（最近搜索历史与 IME 安全提交）。",
+      en: "Pill SearchBar and fullscreen SearchView with recent history and IME-safe submission.",
     },
     importStatement: 'import { SearchBar, SearchView } from "m3eui";',
     scenarios: [
@@ -2943,20 +3088,20 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
       {
         id: "search-view-modes",
         title: {
-          zh: "展开态搜索视图 (SearchView: Docked & Fullscreen)",
-          en: "Expanded SearchView (Docked & Fullscreen)",
+          zh: "全屏搜索视图 (SearchView)",
+          en: "Fullscreen SearchView",
         },
         description: {
-          zh: "内置最近搜索历史（支持一键清空）、实时过滤建议与全屏模态切换。",
-          en: "Displays recent searches, live-filtered suggestions, and optional fullscreen modal presentation.",
+          zh: "内置最近搜索历史（支持一键清空）与实时过滤建议。",
+          en: "Displays recent searches and live-filtered suggestions.",
         },
         code: `<SearchView
-  mode="docked"
+  open={open}
+  onOpenChange={setOpen}
   recentSearches={recent}
   onClearRecent={() => setRecent([])}
   suggestions={suggestions}
-/>
-<SearchView mode="fullscreen" open={open} onOpenChange={setOpen} suggestions={suggestions} />`,
+/>`,
         render: () => <SearchViewModesDemo />,
       },
     ],
@@ -3030,18 +3175,9 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
         title: "SearchView Props",
         rows: [
           {
-            name: "mode",
-            type: '"docked" | "fullscreen"',
-            defaultValue: '"docked"',
-            description: {
-              zh: "大屏内联卡片面板或模态全屏层。",
-              en: "Docked card surface or modal fullscreen dialog.",
-            },
-          },
-          {
             name: "open / onOpenChange",
             type: "boolean / (open: boolean) => void",
-            defaultValue: "true (docked) / false (fullscreen)",
+            defaultValue: "false",
             description: {
               zh: "控制 SearchView 展开与收起。",
               en: "Controlled open visibility state.",

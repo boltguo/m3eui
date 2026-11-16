@@ -30,8 +30,11 @@ const cases = {
   Avatar: () => h(m3e.Avatar, { name: "Ada Lovelace" }),
   Alert: () => h(m3e.Alert, null, "Alert"),
   Divider: () => h(m3e.Divider),
-  SegmentedList: () =>
-    h(m3e.SegmentedList, null, h(m3e.ListItem, { headline: "Row" })),
+  List: () => h(m3e.List, null, h(m3e.ListItem, { headline: "Row" })),
+  NavigationRail: () =>
+    h(m3e.NavigationRail, { items: options, value: "a", onValueChange() {}, defaultExpanded: true }),
+  Sidebar: () =>
+    h(m3e.Sidebar, { items: options, value: "a", onValueChange() {} }),
 };
 
 const errors = [];

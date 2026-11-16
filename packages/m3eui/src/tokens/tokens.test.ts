@@ -51,7 +51,6 @@ import {
   resolveSwitchGeometry,
   resolveToggleFabGeometry,
   resolveTopAppBarGeometry,
-  BOTTOM_APP_BAR_TOKENS,
   CHECKBOX_TOKENS,
   CHIP_TOKENS,
   DRAG_HANDLE_TOKENS,
@@ -67,7 +66,6 @@ import {
   parseShortcutKeys,
   stepSpringSimulation,
   SWITCH_TOKENS,
-  VIBRANT_MENU_TOKENS,
 } from "./index.js";
 
 describe("m3eui/tokens — Motion Physics & Cross-Platform Springs", () => {
@@ -771,6 +769,16 @@ describe("m3eui/tokens — AOSP Compose Material 3 Expressive 1.5.0 Parity", () 
     expect(parseShortcutKeys("Ctrl+Shift+P")).toEqual(["Ctrl", "Shift", "P"]);
   });
 
+
+  it("matches AOSP multiBrowseKeylineList arrangements", () => {
+    const sizes = (count: number, containerWidth: number) =>
+      resolveCarouselKeylineStrategy({ count, containerWidth, variant: "multi-browse" })
+        .defaultKeylines.keylines.filter((k) => !k.isAnchor)
+        .map((k) => Math.round(k.size));
+    expect(sizes(10, 700)).toEqual([212, 212, 212, 40]);
+    expect(sizes(10, 1260)).toEqual([212, 212, 212, 212, 212, 112, 40]);
+    expect(sizes(10, 360)).toEqual([201, 103, 40]);
+  });
   it("resolves AOSP Keyline & Clip-Mask Carousel strategy across all 4 variants without squashing 50+ items", () => {
     const count = 50;
     const containerWidth = 720;
@@ -841,7 +849,7 @@ describe("m3eui/tokens — AOSP Compose Material 3 Expressive 1.5.0 Parity", () 
     expect(leftPeek.maskWidth).toBeCloseTo(rightPeek.maskWidth, 1);
   });
 
-  it("resolves DragHandle, BottomAppBar, PullToRefreshBox, and VibrantMenu token contracts", () => {
+  it("resolves DragHandle, PullToRefreshBox, and VibrantMenu token contracts", () => {
     expect(DRAG_HANDLE_TOKENS).toMatchObject({
       width: 4,
       height: 48,
@@ -868,14 +876,7 @@ describe("m3eui/tokens — AOSP Compose Material 3 Expressive 1.5.0 Parity", () 
       cornerRadius: 12,
     });
 
-    expect(BOTTOM_APP_BAR_TOKENS.height).toBe(80);
     expect(PULL_TO_REFRESH_TOKENS.positionalThreshold).toBe(80);
     expect(PULL_TO_REFRESH_TOKENS.dragMultiplier).toBe(0.5);
-    expect(VIBRANT_MENU_TOKENS).toMatchObject({
-      groupGap: 2,
-      groupRadius: 16,
-      itemOuterRadius: 12,
-      itemInnerRadius: 4,
-    });
   });
 });

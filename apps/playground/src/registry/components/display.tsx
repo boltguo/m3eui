@@ -1,6 +1,6 @@
 import * as React from "react";
 import {
-  AssistChip,
+  Chip,
   Avatar,
   AvatarGroup,
   Badge,
@@ -8,13 +8,10 @@ import {
   Card,
   Carousel,
   type CarouselItemSpec,
-  Chip,
   type ChipTone,
   DataTable,
   Empty,
-  FilterChip,
   IconButton,
-  InputChip,
   List,
   ListItem,
   M3E_ALL_SHAPE_NAMES,
@@ -23,10 +20,8 @@ import {
   MaterialShapeView,
   Pagination,
   SearchBar,
-  SegmentedList,
   Skeleton,
   Slider,
-  SuggestionChip,
   Switch,
 } from "m3eui";
 import { useCopyResolver } from "../../i18n";
@@ -165,7 +160,7 @@ function CardRichLayoutDemo(): React.JSX.Element {
             style={{
               height: 148,
               background:
-                "linear-gradient(135deg, var(--m3e-color-primary-container), var(--m3e-color-tertiary-container))",
+                "var(--m3e-color-primary-container)",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
@@ -609,7 +604,7 @@ const COMPACT_LOG_ROWS = Array.from({ length: 10 }, (_, idx) => ({
   component: [
     "Button",
     "SplitButton",
-    "SegmentedList",
+    "List",
     "Carousel",
     "MaterialShapeView",
   ][idx % 5]!,
@@ -820,7 +815,7 @@ function SegmentedListSelectableDemo(): React.JSX.Element {
 
   return (
     <div style={{ maxWidth: 520 }}>
-      <SegmentedList aria-label={copy({ zh: "设计系统特性开关", en: "Design system capabilities" })}>
+      <List variant="segmented" aria-label={copy({ zh: "设计系统特性开关", en: "Design system capabilities" })}>
         {options.map((opt) => (
           <ListItem
             key={opt.id}
@@ -831,7 +826,7 @@ function SegmentedListSelectableDemo(): React.JSX.Element {
             trailing={<Chip size="sm" tone="secondary">{opt.tag}</Chip>}
           />
         ))}
-      </SegmentedList>
+      </List>
     </div>
   );
 }
@@ -843,7 +838,7 @@ function SegmentedListControlsDemo(): React.JSX.Element {
 
   return (
     <div style={{ maxWidth: 540 }}>
-      <SegmentedList aria-label={copy({ zh: "工作区成员与通知控制", en: "Workspace notifications and controls" })}>
+      <List variant="segmented" aria-label={copy({ zh: "工作区成员与通知控制", en: "Workspace notifications and controls" })}>
         <ListItem
           leading={<Avatar fallback="AL" size="sm" shape="cookie9Sided" />}
           headline={copy({ zh: "实时构建推送", en: "Live Build Push Alerts" })}
@@ -903,12 +898,12 @@ function SegmentedListControlsDemo(): React.JSX.Element {
           })}
           trailing={<Chip size="sm" tone="neutral">v1</Chip>}
         />
-      </SegmentedList>
+      </List>
     </div>
   );
 }
 
-function FilterChipGroupDemo(): React.JSX.Element {
+function ChipFilterGroupDemo(): React.JSX.Element {
   const copy = useCopyResolver();
   const [activeFilters, setActiveFilters] = React.useState<string[]>(["spring", "a11y"]);
 
@@ -928,14 +923,14 @@ function FilterChipGroupDemo(): React.JSX.Element {
   return (
     <div className="demo-row">
       {items.map((item) => (
-        <FilterChip
+        <Chip
           key={item.id}
           icon={item.icon}
           selected={activeFilters.includes(item.id)}
           onSelectedChange={(next) => toggle(item.id, next)}
         >
           {item.label}
-        </FilterChip>
+        </Chip>
       ))}
     </div>
   );
@@ -947,14 +942,14 @@ const INITIAL_REVIEWERS = [
   { id: "yuki", name: "Yuki Takahashi", initials: "YT", shape: "sunny" as M3EShapeName },
 ];
 
-function InputChipListDemo(): React.JSX.Element {
+function ChipInputListDemo(): React.JSX.Element {
   const copy = useCopyResolver();
   const [reviewers, setReviewers] = React.useState(INITIAL_REVIEWERS);
 
   return (
     <div className="demo-row">
       {reviewers.map((person) => (
-        <InputChip
+        <Chip
           key={person.id}
           avatar={<Avatar fallback={person.initials} size="xs" shape={person.shape} />}
           onRemove={() =>
@@ -966,7 +961,7 @@ function InputChipListDemo(): React.JSX.Element {
           })}
         >
           {person.name}
-        </InputChip>
+        </Chip>
       ))}
       {reviewers.length < INITIAL_REVIEWERS.length ? (
         <Button
@@ -1113,120 +1108,65 @@ function BadgeCountsDemo(): React.JSX.Element {
   );
 }
 
+const CAROUSEL_FILLS = [
+  "var(--m3e-color-primary-container)",
+  "var(--m3e-color-secondary-container)",
+  "var(--m3e-color-tertiary-container)",
+  "var(--m3e-color-surface-container-highest)",
+] as const;
+
+const CAROUSEL_TOPICS = [
+  { zh: "海岸", en: "Coast" },
+  { zh: "森林", en: "Forest" },
+  { zh: "沙漠", en: "Desert" },
+  { zh: "冰川", en: "Glacier" },
+  { zh: "峡谷", en: "Canyon" },
+  { zh: "湖泊", en: "Lake" },
+  { zh: "草原", en: "Prairie" },
+  { zh: "火山", en: "Volcano" },
+  { zh: "雨林", en: "Rainforest" },
+  { zh: "群岛", en: "Archipelago" },
+  { zh: "苔原", en: "Tundra" },
+  { zh: "瀑布", en: "Waterfall" },
+] as const;
+
+function useCarouselSlides(count: number): readonly CarouselItemSpec[] {
+  const copy = useCopyResolver();
+  return Array.from({ length: count }, (_, idx) => ({
+    id: `slide-${idx}`,
+    title: copy(CAROUSEL_TOPICS[idx % CAROUSEL_TOPICS.length]!),
+    background: CAROUSEL_FILLS[idx % CAROUSEL_FILLS.length],
+  }));
+}
+
 function CarouselMultiBrowseDemo(): React.JSX.Element {
   const copy = useCopyResolver();
-
-  const slides: readonly CarouselItemSpec[] = [
-    {
-      id: "monet",
-      badge: "HCT 2025",
-      title: copy({ zh: "动态色度引擎", en: "Dynamic Chroma Engine" }),
-      subtitle: copy({
-        zh: "从单一十六进制种子色衍生 9 套无障碍调色板",
-        en: "Derives 9 accessible tonal palettes from any seed hex",
-      }),
-      background: "linear-gradient(135deg, #4f378b 0%, #7d5260 100%)",
-    },
-    {
-      id: "spring",
-      badge: "ODE Physics",
-      title: copy({ zh: "二阶阻尼弹簧", en: "Analytical Spring ODE" }),
-      subtitle: copy({
-        zh: "支持中途重定向并完美保留瞬时速度向量",
-        en: "Mid-flight retargeting with exact velocity continuity",
-      }),
-      background: "linear-gradient(135deg, #006a60 0%, #2b638b 100%)",
-    },
-    {
-      id: "polygons",
-      badge: "35 Shapes",
-      title: copy({ zh: "圆角多边形拓扑", en: "Rounded Polygon Morphs" }),
-      subtitle: copy({
-        zh: "三次贝塞尔轮廓归一化与顶点平滑插值",
-        en: "Normalized cubic Bézier outlines for seamless shape morphs",
-      }),
-      background: "linear-gradient(135deg, #8b4a00 0%, #6750a4 100%)",
-    },
-    {
-      id: "cldr",
-      badge: "CLDR & RTL",
-      title: copy({ zh: "全量多语言与双向流", en: "Global CLDR & BiDi" }),
-      subtitle: copy({
-        zh: "阿拉伯语、希伯来语及中日韩本地化开箱即用",
-        en: "Native RTL geometry mirroring and localized numerals",
-      }),
-      background: "linear-gradient(135deg, #005cbb 0%, #6b38d4 100%)",
-    },
-  ];
-
   return (
     <Carousel
       variant="multi-browse"
-      height={228}
-      items={slides}
-      aria-label={copy({ zh: "M3E 设计支柱轮播", en: "M3E architecture pillars" })}
+      height={220}
+      items={useCarouselSlides(10)}
+      aria-label={copy({ zh: "地貌", en: "Landscapes" })}
     />
   );
 }
 
 function CarouselHeroDemo(): React.JSX.Element {
   const copy = useCopyResolver();
-
-  const slides: readonly CarouselItemSpec[] = [
-    {
-      id: "studio-1",
-      badge: "Spotlight 01",
-      title: copy({ zh: "Expressive 主题工作台", en: "Expressive Theme Studio" }),
-      subtitle: copy({
-        zh: "焦点卡片占据主视觉舞台，两侧保留紧凑预览切片",
-        en: "Spotlight card commands primary width while adjacent slides peek cleanly",
-      }),
-      background: "linear-gradient(140deg, #381e72 0%, #984061 100%)",
-    },
-    {
-      id: "studio-2",
-      badge: "Spotlight 02",
-      title: copy({ zh: "0.25x 慢动作几何标尺", en: "0.25x Slow-Motion HUD" }),
-      subtitle: copy({
-        zh: "逐帧检视按压与释放过程中的非对称圆角插值轨迹",
-        en: "Inspect frame-accurate corner radius springs in slow motion",
-      }),
-      background: "linear-gradient(140deg, #004f58 0%, #3a5ba0 100%)",
-    },
-    {
-      id: "studio-3",
-      badge: "Spotlight 03",
-      title: copy({ zh: "零运行时样式拷贝模式", en: "Copy-and-Own Source CLI" }),
-      subtitle: copy({
-        zh: "支持包直接引入或通过 CLI 按需复制源码至业务仓库",
-        en: "Import directly from m3eui or vendor source components via CLI",
-      }),
-      background: "linear-gradient(140deg, #5c4300 0%, #8c3f5d 100%)",
-    },
-  ];
-
   return (
     <Carousel
       variant="hero"
       height={252}
-      items={slides}
-      aria-label={copy({ zh: "焦点横幅轮播", en: "Hero spotlight carousel" })}
+      items={useCarouselSlides(6)}
+      aria-label={copy({ zh: "精选", en: "Featured" })}
     />
   );
 }
 
 function CarouselCenteredAndUncontainedDemo(): React.JSX.Element {
+  const copy = useCopyResolver();
   const [mode, setMode] = React.useState<"centered-hero" | "uncontained">("centered-hero");
-  const slides: readonly CarouselItemSpec[] = React.useMemo(
-    () =>
-      Array.from({ length: 12 }, (_, idx) => ({
-        id: `album-${idx}`,
-        badge: `#${String(idx + 1).padStart(2, "0")}`,
-        title: `Gallery Frame ${idx + 1}`,
-        background: `linear-gradient(135deg, hsl(${(idx * 34 + 250) % 360} 48% 32%) 0%, hsl(${(idx * 34 + 290) % 360} 52% 24%) 100%)`,
-      })),
-    [],
-  );
+  const slides = useCarouselSlides(12);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -1248,10 +1188,10 @@ function CarouselCenteredAndUncontainedDemo(): React.JSX.Element {
       </div>
       <Carousel
         variant={mode}
-        preferredItemWidth={196}
+        preferredItemWidth={mode === "uncontained" ? 196 : undefined}
         height={210}
         items={slides}
-        aria-label="Gallery carousel"
+        aria-label={copy({ zh: "图库", en: "Gallery" })}
       />
     </div>
   );
@@ -1265,13 +1205,13 @@ function EmptyActionsShapesDemo(): React.JSX.Element {
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <div className="demo-row">
         {(["sunny", "clover8Leaf", "cookie9Sided", "softBurst"] as const).map((s) => (
-          <FilterChip
+          <Chip
             key={s}
             selected={shape === s}
             onSelectedChange={() => setShape(s)}
           >
             shape=&quot;{s}&quot;
-          </FilterChip>
+          </Chip>
         ))}
       </div>
 
@@ -1349,7 +1289,7 @@ function SkeletonCardCompositionDemo(): React.JSX.Element {
                 height: 92,
                 borderRadius: 12,
                 background:
-                  "linear-gradient(135deg, var(--m3e-color-secondary-container), var(--m3e-color-tertiary-container))",
+                  "var(--m3e-color-secondary-container)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -1395,7 +1335,7 @@ function ShapeMorphPlaygroundDemo(): React.JSX.Element {
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <div className="demo-row">
         {MORPH_PRESETS.map((preset) => (
-          <FilterChip
+          <Chip
             key={preset.label}
             selected={pair.label === preset.label}
             onSelectedChange={() => {
@@ -1404,7 +1344,7 @@ function ShapeMorphPlaygroundDemo(): React.JSX.Element {
             }}
           >
             {preset.label}
-          </FilterChip>
+          </Chip>
         ))}
       </div>
 
@@ -1569,7 +1509,6 @@ export const DISPLAY_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "card",
     title: "Card",
-    category: "display",
     subtitle: {
       zh: "具备填充、抬升与描边三种表面层级的内容卡片容器，支持交互态弹性圆角形变。",
       en: "Surface container in filled, elevated, and outlined variants with spring-driven interactive corner morphing.",
@@ -1822,7 +1761,6 @@ const [selected, setSelected] = React.useState("spatial");
   {
     slug: "data-table",
     title: "DataTable",
-    category: "display",
     subtitle: {
       zh: "支持多语言感知排序、多选批量操作栏、紧凑粘性表头与加载骨架屏的数据表格。",
       en: "Accessible data grid with locale-aware sorting, multi-row selection, sticky headers, skeleton loading, and custom empty states.",
@@ -2303,17 +2241,16 @@ const [loading, setLoading] = React.useState(true);
     ],
   },
 
-  /* ---------------------------- 3. SegmentedList -------------------------- */
+  /* --------------------------------- 3. List ------------------------------ */
   {
-    slug: "segmented-list",
+    slug: "list",
     title: "List",
-    category: "display",
     subtitle: {
-      zh: "同时涵盖 M3E 分段圆角列表 SegmentedList 与经典 M3 连续分割线列表 List（支持 full / inset 分割线）。",
-      en: "Expressive grouped SegmentedList with spring seam corners alongside standard M3 continuous List and ListItem.",
+      zh: "variant=\"segmented\" 为 M3E 分段圆角列表；默认为连续列表，支持 full / inset 分割线。",
+      en: "variant=\"segmented\" gives the M3E grouped list with spring seam corners; the default is a continuous list with full / inset dividers.",
     },
     importStatement:
-      'import { SegmentedList, List, ListItem } from "m3eui";',
+      'import { List, ListItem } from "m3eui";',
     primitive: "@base-ui/react/button",
     scenarios: [
       {
@@ -2326,9 +2263,9 @@ const [loading, setLoading] = React.useState(true);
           zh: "列表自动感知子项索引：首项顶部 16px、中间接缝 4px、末项底部 16px，悬停与按压时独立进行四元圆角物理回弹。",
           en: "Automatically assigns 16px outer caps and 4px inner seam corners across items, animating each corner via fastSpatial springs.",
         },
-        code: `import { SegmentedList, ListItem } from "m3eui";
+        code: `import { List, ListItem } from "m3eui";
 
-<SegmentedList aria-label="Project quick links">
+<List variant="segmented" aria-label="Project quick links">
   <ListItem
     headline="Color & Contrast Tokens"
     supportingText="HCT palettes, tone contrast curves, and CSS custom properties"
@@ -2341,10 +2278,10 @@ const [loading, setLoading] = React.useState(true);
     headline="Polygon Morphing Shapes"
     supportingText="35 normalized AOSP rounded polygons and SVG clip-path helpers"
   />
-</SegmentedList>`,
+</List>`,
         render: () => (
           <div style={{ maxWidth: 520 }}>
-            <SegmentedList aria-label="Project quick links">
+            <List variant="segmented" aria-label="Project quick links">
               <ListItem
                 leading={<SparkleIcon size={17} />}
                 headline="Color & Contrast Tokens"
@@ -2360,7 +2297,7 @@ const [loading, setLoading] = React.useState(true);
                 headline="Polygon Morphing Shapes"
                 supportingText="35 normalized AOSP rounded polygons and SVG clip-path helpers"
               />
-            </SegmentedList>
+            </List>
           </div>
         ),
       },
@@ -2374,11 +2311,11 @@ const [loading, setLoading] = React.useState(true);
           zh: "当 selected 为 true 时，列表项四角圆角自动膨胀为 16px 并切换前置勾选徽标，从紧邻分组中视觉凸显。",
           en: "Selected items expand all four corners to 16px and replace the leading slot with a checkmark badge.",
         },
-        code: `import { Chip, SegmentedList, ListItem } from "m3eui";
+        code: `import { Chip, List, ListItem } from "m3eui";
 
 const [selected, setSelected] = React.useState(["expressive"]);
 
-<SegmentedList aria-label="Capabilities">
+<List variant="segmented" aria-label="Capabilities">
   <ListItem
     headline="Expressive Spring Physics"
     supportingText="Selected items detach into full 16px rounded corners"
@@ -2386,7 +2323,7 @@ const [selected, setSelected] = React.useState(["expressive"]);
     onClick={() => toggle("expressive")}
     trailing={<Chip size="sm" tone="secondary">ζ=0.6</Chip>}
   />
-</SegmentedList>`,
+</List>`,
         render: () => <SegmentedListSelectableDemo />,
       },
       {
@@ -2399,9 +2336,9 @@ const [selected, setSelected] = React.useState(["expressive"]);
           zh: "支持组合前置多边形 Avatar、双行描述、尾部 Switch 开关、状态 Chip 以及 disabled 禁用项。",
           en: "Combine leading polygon Avatars, supporting descriptions, trailing Switches or Chips, and disabled rows.",
         },
-        code: `import { Avatar, Chip, SegmentedList, ListItem, Switch } from "m3eui";
+        code: `import { Avatar, Chip, List, ListItem, Switch } from "m3eui";
 
-<SegmentedList aria-label="Workspace notifications">
+<List variant="segmented" aria-label="Workspace notifications">
   <ListItem
     leading={<Avatar fallback="AL" size="sm" shape="cookie9Sided" />}
     headline="Live Build Push Alerts"
@@ -2415,7 +2352,7 @@ const [selected, setSelected] = React.useState(["expressive"]);
     supportingText="Read-only after migrating to Event Bus v2"
     trailing={<Chip size="sm" tone="neutral">v1</Chip>}
   />
-</SegmentedList>`,
+</List>`,
         render: () => <SegmentedListControlsDemo />,
       },
       {
@@ -2454,7 +2391,7 @@ const [selected, setSelected] = React.useState(["expressive"]);
     ],
     apis: [
       {
-        title: "SegmentedList & List Props",
+        title: "List Props",
         rows: [
           {
             name: "variant / dividers",
@@ -2572,13 +2509,12 @@ const [selected, setSelected] = React.useState(["expressive"]);
   {
     slug: "chip",
     title: "Chip",
-    category: "display",
     subtitle: {
-      zh: "涵盖紧凑语义状态/动作胶囊 Chip（支持只读、onRemove 移除、onClick 点击）以及 M3 四大交互纸片 AssistChip、FilterChip、InputChip、SuggestionChip。",
-      en: "Unified compact semantic/action Chip plus the M3 AssistChip, FilterChip, InputChip, and SuggestionChip family.",
+      zh: "一个 Chip 覆盖 M3 四种纸片：onClick → assist，selected / onSelectedChange → filter，onRemove → input；tone / variant 为只读标签。",
+      en: "One Chip covers the M3 chip types: onClick → assist, selected / onSelectedChange → filter, onRemove → input; tone / variant give a static label.",
     },
     importStatement:
-      'import { Chip, AssistChip, FilterChip, InputChip, SuggestionChip } from "m3eui";',
+      'import { Chip } from "m3eui";',
     primitive: "@base-ui/react/button · @base-ui/react/toggle",
     scenarios: [
       {
@@ -2677,98 +2613,75 @@ const [selected, setSelected] = React.useState(["expressive"]);
       {
         id: "chip-assist",
         title: {
-          zh: "辅助动作纸片 (AssistChip)",
-          en: "AssistChip & Elevated Variant",
+          zh: "辅助动作（assist）",
+          en: "Assist & elevated",
         },
         description: {
-          zh: "AssistChip 用于上下文快捷指令，支持前置图标与 elevated 阴影抬升表面。",
-          en: "Use AssistChip for smart contextual actions; set elevated when floating above media or maps.",
+          zh: "传 onClick 即为辅助动作，也用于建议与快捷回复；浮在媒体上时设 elevated。",
+          en: "onClick makes an assist chip, also used for suggestions and quick replies; set elevated over media.",
         },
-        code: `import { AssistChip } from "m3eui";
+        code: `import { Chip } from "m3eui";
 
 <div className="demo-row">
-  <AssistChip icon={<SparkleIcon size={15} />}>Summarize Thread</AssistChip>
-  <AssistChip icon={<EditIcon size={15} />}>Draft Release Notes</AssistChip>
-  <AssistChip elevated icon={<ShareIcon size={15} />}>Elevated Share</AssistChip>
-  <AssistChip elevated icon={<DownloadIcon size={15} />}>Export JSON</AssistChip>
+  <Chip icon={<SparkleIcon size={15} />}>Summarize Thread</Chip>
+  <Chip icon={<EditIcon size={15} />}>Draft Release Notes</Chip>
+  <Chip elevated icon={<ShareIcon size={15} />}>Elevated Share</Chip>
+  <Chip elevated icon={<DownloadIcon size={15} />}>Export JSON</Chip>
 </div>`,
         render: () => (
           <div className="demo-row">
-            <AssistChip icon={<SparkleIcon size={15} />}>Summarize Thread</AssistChip>
-            <AssistChip icon={<EditIcon size={15} />}>Draft Release Notes</AssistChip>
-            <AssistChip elevated icon={<ShareIcon size={15} />}>
+            <Chip icon={<SparkleIcon size={15} />}>Summarize Thread</Chip>
+            <Chip icon={<EditIcon size={15} />}>Draft Release Notes</Chip>
+            <Chip elevated icon={<ShareIcon size={15} />}>
               Elevated Share
-            </AssistChip>
-            <AssistChip elevated icon={<DownloadIcon size={15} />}>
+            </Chip>
+            <Chip elevated icon={<DownloadIcon size={15} />}>
               Export JSON
-            </AssistChip>
+            </Chip>
           </div>
         ),
       },
       {
         id: "chip-filter",
         title: {
-          zh: "多选筛选纸片组 (FilterChip)",
-          en: "Multi-Select FilterChip Group",
+          zh: "多选筛选（filter）",
+          en: "Multi-select filter",
         },
         description: {
-          zh: "FilterChip 在未选中时为 8px 圆角描边态，选中后通过弹簧形变为 16px 胶囊态并填充次级容器色调。",
-          en: "FilterChip morphs from 8px outlined rest corners to a 16px tonal pill with a checkmark when selected.",
+          zh: "未选中为 8px 描边，选中后弹簧形变为 16px 胶囊并显示对勾。",
+          en: "Morphs from 8px outlined corners to a 16px tonal pill with a checkmark when selected.",
         },
-        code: `import { FilterChip } from "m3eui";
+        code: `import { Chip } from "m3eui";
 
 const [filters, setFilters] = React.useState(["spring", "a11y"]);
 
-<FilterChip
+<Chip
   selected={filters.includes("spring")}
   onSelectedChange={(next) => toggle("spring", next)}
 >
   Spring Physics
-</FilterChip>`,
-        render: () => <FilterChipGroupDemo />,
+</Chip>`,
+        render: () => <ChipFilterGroupDemo />,
       },
       {
         id: "chip-input",
         title: {
-          zh: "带头像的可移除输入纸片 (InputChip)",
-          en: "Removable InputChip List",
+          zh: "可移除输入（input）",
+          en: "Removable input",
         },
         description: {
-          zh: "InputChip 用于展示收件人、评审者或已录入实体，支持前置 Avatar 与独立无障碍移除按钮。",
-          en: "InputChip represents user-entered people or entities with optional leading Avatars and accessible remove buttons.",
+          zh: "传 onRemove 即为输入纸片，用于收件人、评审者等已录入实体，可带 Avatar。",
+          en: "onRemove makes an input chip for entered people or entities, optionally with an Avatar.",
         },
-        code: `import { Avatar, InputChip } from "m3eui";
+        code: `import { Avatar, Chip } from "m3eui";
 
-<InputChip
+<Chip
   avatar={<Avatar fallback="LC" size="xs" shape="cookie9Sided" />}
   onRemove={() => removeReviewer("lin")}
 >
   Linnea Chen
-</InputChip>`,
-        render: () => <InputChipListDemo />,
-      },
-      {
-        id: "chip-suggestion",
-        title: {
-          zh: "动态上下文建议纸片 (SuggestionChip)",
-          en: "Contextual SuggestionChip",
-        },
-        description: {
-          zh: "用于搜索热词、快捷回复与上下文推荐，支持扁平描边、elevated 抬升与 selected 激活态。",
-          en: "Surfaces dynamic query completions or quick replies in flat, elevated, or selected states.",
-        },
-        code: `<SuggestionChip icon={<SparkleIcon size={15} />}>Generate dark palette</SuggestionChip>
-<SuggestionChip selected>Export tokens.json</SuggestionChip>
-<SuggestionChip elevated>Audit RTL layout</SuggestionChip>`,
-        render: () => (
-          <div className="demo-row">
-            <SuggestionChip icon={<SparkleIcon size={15} />}>
-              Generate dark palette
-            </SuggestionChip>
-            <SuggestionChip selected>Export tokens.json</SuggestionChip>
-            <SuggestionChip elevated>Audit RTL layout</SuggestionChip>
-          </div>
-        ),
+</Chip>`,
+        render: () => <ChipInputListDemo />,
       },
       {
         id: "chip-disabled",
@@ -2777,33 +2690,33 @@ const [filters, setFilters] = React.useState(["spring", "a11y"]);
           en: "Disabled Chip States",
         },
         description: {
-          zh: "展示禁用态下的 Chip、AssistChip、FilterChip（选中与未选中）及 InputChip。",
-          en: "Disabled states across Chip, AssistChip, selected and unselected FilterChip, and InputChip.",
+          zh: "标签、assist、filter（选中与未选中）与 input 的禁用态。",
+          en: "Disabled label, assist, filter (selected and unselected), and input chips.",
         },
-        code: `import { AssistChip, Chip, FilterChip, InputChip } from "m3eui";
+        code: `import { Chip } from "m3eui";
 
 <div className="demo-row">
   <Chip disabled tone="primary" onClick={() => {}}>Chip Disabled</Chip>
-  <AssistChip disabled icon={<SparkleIcon size={15} />}>Assist Disabled</AssistChip>
-  <FilterChip disabled>Filter Unselected</FilterChip>
-  <FilterChip disabled defaultSelected>Filter Selected</FilterChip>
-  <InputChip disabled onRemove={() => {}}>Locked Entity</InputChip>
+  <Chip disabled icon={<SparkleIcon size={15} />}>Assist Disabled</Chip>
+  <Chip defaultSelected={false} disabled>Filter Unselected</Chip>
+  <Chip disabled defaultSelected>Filter Selected</Chip>
+  <Chip disabled onRemove={() => {}}>Locked Entity</Chip>
 </div>`,
         render: () => (
           <div className="demo-row">
             <Chip disabled tone="primary" onClick={() => {}}>
               Chip Disabled
             </Chip>
-            <AssistChip disabled icon={<SparkleIcon size={15} />}>
+            <Chip disabled icon={<SparkleIcon size={15} />}>
               Assist Disabled
-            </AssistChip>
-            <FilterChip disabled>Filter Unselected</FilterChip>
-            <FilterChip disabled defaultSelected>
+            </Chip>
+            <Chip defaultSelected={false} disabled>Filter Unselected</Chip>
+            <Chip disabled defaultSelected>
               Filter Selected
-            </FilterChip>
-            <InputChip disabled onRemove={() => {}}>
+            </Chip>
+            <Chip disabled onRemove={() => {}}>
               Locked Entity
-            </InputChip>
+            </Chip>
           </div>
         ),
       },
@@ -2885,7 +2798,7 @@ const [filters, setFilters] = React.useState(["spring", "a11y"]);
         ],
       },
       {
-        title: "AssistChip Props",
+        title: "Chip Props (assist)",
         rows: [
           {
             name: "children",
@@ -2933,7 +2846,7 @@ const [filters, setFilters] = React.useState(["spring", "a11y"]);
         ],
       },
       {
-        title: "FilterChip Props",
+        title: "Chip Props (filter)",
         rows: [
           {
             name: "children",
@@ -2989,7 +2902,7 @@ const [filters, setFilters] = React.useState(["spring", "a11y"]);
         ],
       },
       {
-        title: "InputChip Props",
+        title: "Chip Props (input)",
         rows: [
           {
             name: "children",
@@ -3035,20 +2948,6 @@ const [filters, setFilters] = React.useState(["spring", "a11y"]);
           },
         ],
       },
-      {
-        title: "SuggestionChip Props",
-        rows: [
-          {
-            name: "icon / elevated / selected",
-            type: "React.ReactNode / boolean / boolean",
-            defaultValue: "undefined / false / false",
-            description: {
-              zh: "前置图标、阴影抬升表面与激活选中态。",
-              en: "Leading icon, elevated surface shadow, and selected state.",
-            },
-          },
-        ],
-      },
     ],
   },
 
@@ -3056,7 +2955,6 @@ const [filters, setFilters] = React.useState(["spring", "a11y"]);
   {
     slug: "avatar",
     title: "Avatar",
-    category: "display",
     subtitle: {
       zh: "支持 35 种 AOSP 多边形裁切的单体头像 Avatar 与叠放溢出计数头像组 AvatarGroup。",
       en: "Polygon-clipped Avatar and overlapping AvatarGroup with +N overflow.",
@@ -3301,7 +3199,6 @@ const [filters, setFilters] = React.useState(["spring", "a11y"]);
   {
     slug: "badge",
     title: "Badge",
-    category: "display",
     subtitle: {
       zh: "Material 3 红点与数值通知徽标，支持本地化数字格式化、99+ 封顶溢出、清零隐藏、右上角逻辑锚定与独立行内渲染。",
       en: "Material 3 notification dot and numeric count badge with CLDR numerals, max overflow, RTL logical anchoring, and standalone inline display.",
@@ -3477,10 +3374,9 @@ const [filters, setFilters] = React.useState(["spring", "a11y"]);
   {
     slug: "carousel",
     title: "Carousel",
-    category: "display",
     subtitle: {
-      zh: "AOSP M3E 视口基准线与遮罩裁切（Keyline + Clip-Mask）水平轮播容器，支持 50+ 项无挤压滚动、四种官方布局变体与 RTL 原生镜像。",
-      en: "AOSP M3E Keyline & Clip-Mask horizontal scroll carousel across multi-browse, hero, centered-hero, and uncontained layouts.",
+      zh: "按 AOSP keyline 裁切的横向轮播：multi-browse、hero、centered-hero、uncontained。",
+      en: "Horizontal carousel masked by AOSP keylines: multi-browse, hero, centered-hero, uncontained.",
     },
     importStatement: 'import { Carousel } from "m3eui";',
     scenarios: [
@@ -3491,14 +3387,14 @@ const [filters, setFilters] = React.useState(["spring", "a11y"]);
           en: "Multi-Browse Keyline Layout",
         },
         description: {
-          zh: "variant=\"multi-browse\" 基于 AOSP 最低成本槽位算法计算大/中/小基准线与圆角遮罩（28px → 16px）。",
-          en: "Computes large, medium, and small keyline masks with dynamic corner radii (28px → 16px) along native horizontal scroll.",
+          zh: "按 AOSP multiBrowseKeylineList 选出大 / 中 / 小项；全部放得下时不显示箭头与指示点。",
+          en: "Large, medium, and small items come from AOSP multiBrowseKeylineList. Arrows and markers hide when everything fits.",
         },
         code: `import { Carousel } from "m3eui";
 
 <Carousel
   variant="multi-browse"
-  height={228}
+  height={220}
   items={slides}
 />`,
         render: () => <CarouselMultiBrowseDemo />,
@@ -3510,8 +3406,8 @@ const [filters, setFilters] = React.useState(["spring", "a11y"]);
           en: "Hero Spotlight Carousel",
         },
         description: {
-          zh: "variant=\"hero\" 为主焦点保留大画幅视窗并在尾端保留紧凑切片预览。",
-          en: "Allocates primary viewport width to the leading focal item with a compact trailing peek.",
+          zh: "起始对齐：一个大项加尾端小项，前一项收进起始锚点。需要两侧预览时用 centered-hero。",
+          en: "Start-aligned: one large item and a trailing peek; the previous item collapses into the start anchor. Use centered-hero for peeks on both sides.",
         },
         code: `import { Carousel } from "m3eui";
 
@@ -3529,8 +3425,8 @@ const [filters, setFilters] = React.useState(["spring", "a11y"]);
           en: "Centered-Hero & Uncontained Variants",
         },
         description: {
-          zh: "centered-hero 在中段保持对称双侧预览切片并在首末项平滑移位贴边；uncontained 按 preferredItemWidth 等宽排列并裁切尾端溢出。",
-          en: "centered-hero centers the focal card between symmetric peeks (shifting flush at start/end); uncontained flows fixed-width items.",
+          zh: "centered-hero 两侧各露一个小项；uncontained 按 preferredItemWidth 等宽排列。",
+          en: "centered-hero shows a small item on each side; uncontained lays out items at preferredItemWidth.",
         },
         code: `<Carousel variant="centered-hero" items={slides} />
 <Carousel variant="uncontained" preferredItemWidth={196} items={slides} />`,
@@ -3564,8 +3460,8 @@ const [filters, setFilters] = React.useState(["spring", "a11y"]);
             type: "number",
             defaultValue: "220",
             description: {
-              zh: "multi-browse 与 uncontained 模式下的目标卡片主轴宽度（px）。",
-              en: "Target item main-axis width in pixels for multi-browse and uncontained.",
+              zh: "大项目标宽度（px）。hero / centered-hero 未设置时取容器宽度。",
+              en: "Target large-item width in px. hero / centered-hero default to the container width.",
             },
           },
           {
@@ -3629,7 +3525,6 @@ const [filters, setFilters] = React.useState(["spring", "a11y"]);
     slug: "empty",
     title: "Empty",
     isNew: true,
-    category: "display",
     subtitle: {
       zh: "内置 Material 3 Expressive 多边形徽章底座的空状态占位组件，支持自定义恢复操作与紧凑内联布局。",
       en: "Expressive empty state placeholder featuring an AOSP polygon emblem backdrop, custom icons, recovery actions, and compact inline sizing.",
@@ -3773,7 +3668,6 @@ const [filters, setFilters] = React.useState(["spring", "a11y"]);
   {
     slug: "skeleton",
     title: "Skeleton",
-    category: "display",
     subtitle: {
       zh: "支持文本、圆形、圆角矩形与全部 35 种多边形轮廓的加载占位骨架屏，自动响应系统减弱动态效果偏好。",
       en: "Layout-preserving loading placeholders supporting text lines, circles, rounded rectangles, and all 35 M3E polygon silhouettes.",
@@ -3945,7 +3839,6 @@ const [loading, setLoading] = React.useState(true);
   {
     slug: "material-shape",
     title: "MaterialShape",
-    category: "display",
     subtitle: {
       zh: "AOSP Material Shapes 多边形渲染与形变引擎，支持全部 35 种规范圆角多边形之间的手动插值或二阶物理弹簧平滑过渡。",
       en: "Vector polygon renderer and morph engine supporting manual cubic Bézier scrubbing and spring-driven transitions across all 35 AOSP Material shapes.",

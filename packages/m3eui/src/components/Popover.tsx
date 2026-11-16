@@ -10,6 +10,9 @@ export interface M3EPopoverProps {
   readonly defaultOpen?: boolean;
   readonly onOpenChange?: (open: boolean) => void;
   readonly trigger: React.ReactElement;
+  readonly openOnHover?: boolean;
+  readonly delay?: number;
+  readonly closeDelay?: number;
   readonly title?: React.ReactNode;
   readonly description?: React.ReactNode;
   readonly "aria-label"?: string;
@@ -42,6 +45,9 @@ export function Popover({
   defaultOpen,
   onOpenChange,
   trigger,
+  openOnHover = false,
+  delay = 280,
+  closeDelay = 200,
   title,
   description,
   "aria-label": ariaLabel,
@@ -59,7 +65,12 @@ export function Popover({
       defaultOpen={defaultOpen}
       onOpenChange={(next) => onOpenChange?.(next)}
     >
-      <BasePopover.Trigger render={trigger} />
+      <BasePopover.Trigger
+        openOnHover={openOnHover}
+        delay={delay}
+        closeDelay={closeDelay}
+        render={trigger}
+      />
       <BasePopover.Portal container={portalContainer}>
         <BasePopover.Positioner
           side={side}

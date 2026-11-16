@@ -4,7 +4,7 @@ import * as React from "react";
 import { PULL_TO_REFRESH_TOKENS } from "../tokens/index.js";
 import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3EScalarSpring } from "../hooks/useM3ESpring.js";
-import { ContainedLoadingIndicator } from "./LoadingIndicator.js";
+import { LoadingIndicator } from "./LoadingIndicator.js";
 
 export type PullToRefreshIndicatorVariant = "contained" | "circular";
 
@@ -83,14 +83,7 @@ export function PullToRefreshBox({
   const [pullDistance, setPullDistance] = React.useState<number>(0);
   const [isPulling, setIsPulling] = React.useState<boolean>(false);
 
-  const gestureRef = React.useRef<{
-    tracking: boolean;
-    engaged: boolean;
-    pointerId: number;
-    startX: number;
-    startY: number;
-    currentPull: number;
-  }>({
+  const gestureRef = React.useRef({
     tracking: false,
     engaged: false,
     pointerId: -1,
@@ -111,36 +104,116 @@ export function PullToRefreshBox({
     return true;
   };
 
-  const computeDampedPull = React.useCallback(
-    (rawDeltaY: number): number => {
-      if (rawDeltaY <= 0) return 0;
-      const scaled = rawDeltaY * PULL_TO_REFRESH_TOKENS.dragMultiplier;
-      if (scaled <= threshold) return scaled;
-      const excess = scaled - threshold;
-      const maxExcess = Math.max(16, maxDragDistance - threshold);
-      const dampedExcess = maxExcess * (1 - Math.exp(-excess / maxExcess));
-      return Math.min(maxDragDistance, threshold + dampedExcess);
-    },
-    [threshold, maxDragDistance],
-  );
+  const computeDampedPull = (rawDeltaY: number): number => {
+    if (rawDeltaY <= 0) return 0;
+    const scaled = rawDeltaY * PULL_TO_REFRESH_TOKENS.dragMultiplier;
+    if (scaled <= threshold) return scaled;
+    const excess = scaled - threshold;
+    const maxExcess = Math.max(16, maxDragDistance - threshold);
+    const dampedExcess = maxExcess * (1 - Math.exp(-excess / maxExcess));
+    return Math.min(maxDragDistance, threshold + dampedExcess);
+  };
 
-  const finishGesture = React.useCallback(
-    (cancelled: boolean) => {
+  const beginGesture = (
+    id: number,
+    x: number,
+    y: number,
+    target: EventTarget | null,
+  ): boolean => {
+    if (!enabled || refreshing || !isScrollAtTop(target)) return false;
+    gestureRef.current = {
+      tracking: true,
+      engaged: false,
+      pointerId: id,
+      startX: x,
+      startY: y,
+      currentPull: 0,
+    };
+    return true;
+  };
+
+  /** Returns true while the gesture owns the drag (caller should block native scroll). */
+  const moveGesture = (x: number, y: number, target: EventTarget | null): boolean => {
+    const g = gestureRef.current;
+    if (!g.tracking) return false;
+    const dx = x - g.startX;
+    const dy = y - g.startY;
+    if (!g.engaged) {
+      if (dy < -4 || (Math.abs(dx) > Math.abs(dy) * 1.1 && Math.abs(dx) > 8)) {
+        g.tracking = false;
+        return false;
+      }
+      if (dy <= 6) return false;
+      if (!isScrollAtTop(target)) {
+        g.tracking = false;
+        return false;
+      }
+      g.engaged = true;
+      setIsPulling(true);
+    }
+    const nextPull = computeDampedPull(Math.max(0, dy - 6));
+    g.currentPull = nextPull;
+    setPullDistance(nextPull);
+    return true;
+  };
+
+  const finishGesture = (cancelled: boolean) => {
+    const g = gestureRef.current;
+    if (!g.tracking) return;
+    const reachedThreshold = !cancelled && g.engaged && g.currentPull >= threshold;
+    g.tracking = false;
+    g.engaged = false;
+    g.pointerId = -1;
+    g.currentPull = 0;
+    setIsPulling(false);
+    setPullDistance(0);
+    if (reachedThreshold && enabled && !refreshing) onRefresh();
+  };
+
+  // Touch runs through native listeners: React attaches touchmove as passive,
+  // so it cannot stop the browser from scrolling (and cancelling pointers).
+  const touchHandlersRef = React.useRef({ beginGesture, moveGesture, finishGesture });
+  touchHandlersRef.current = { beginGesture, moveGesture, finishGesture };
+
+  React.useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onStart = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      if (e.touches.length !== 1 || !touch) return;
+      touchHandlersRef.current.beginGesture(
+        touch.identifier,
+        touch.clientX,
+        touch.clientY,
+        e.target,
+      );
+    };
+    const onMove = (e: TouchEvent) => {
+      const g = gestureRef.current;
+      const touch = Array.from(e.touches).find((t) => t.identifier === g.pointerId);
+      if (!touch) return;
+      if (touchHandlersRef.current.moveGesture(touch.clientX, touch.clientY, e.target)) {
+        e.preventDefault();
+      }
+    };
+    const onEnd = (e: TouchEvent) => {
       const g = gestureRef.current;
       if (!g.tracking) return;
-      const reachedThreshold = !cancelled && g.engaged && g.currentPull >= threshold;
-      g.tracking = false;
-      g.engaged = false;
-      g.pointerId = -1;
-      g.currentPull = 0;
-      setIsPulling(false);
-      setPullDistance(0);
-      if (reachedThreshold && enabled && !refreshing) {
-        onRefresh();
+      if (Array.from(e.changedTouches).some((t) => t.identifier === g.pointerId)) {
+        touchHandlersRef.current.finishGesture(e.type === "touchcancel");
       }
-    },
-    [threshold, enabled, refreshing, onRefresh],
-  );
+    };
+    el.addEventListener("touchstart", onStart, { passive: true });
+    el.addEventListener("touchmove", onMove, { passive: false });
+    el.addEventListener("touchend", onEnd);
+    el.addEventListener("touchcancel", onEnd);
+    return () => {
+      el.removeEventListener("touchstart", onStart);
+      el.removeEventListener("touchmove", onMove);
+      el.removeEventListener("touchend", onEnd);
+      el.removeEventListener("touchcancel", onEnd);
+    };
+  }, []);
 
   const restingRefreshY = threshold * 0.72;
   const targetOffset = refreshing ? restingRefreshY : pullDistance;
@@ -181,60 +254,24 @@ export function PullToRefreshBox({
       data-ready={!refreshing && rawProgress >= 1 ? "" : undefined}
       style={style}
       onPointerDown={(e) => {
-        if (!enabled || refreshing || e.button !== 0) return;
-        if (!isScrollAtTop(e.target)) return;
-        gestureRef.current = {
-          tracking: true,
-          engaged: false,
-          pointerId: e.pointerId,
-          startX: e.clientX,
-          startY: e.clientY,
-          currentPull: 0,
-        };
+        if (e.pointerType === "touch" || e.button !== 0) return;
+        beginGesture(e.pointerId, e.clientX, e.clientY, e.target);
       }}
       onPointerMove={(e) => {
         const g = gestureRef.current;
-        if (!g.tracking || g.pointerId !== e.pointerId) return;
-        const dx = e.clientX - g.startX;
-        const dy = e.clientY - g.startY;
-
-        if (!g.engaged) {
-          if (dy < -4 || Math.abs(dx) > Math.abs(dy) * 1.1 && Math.abs(dx) > 8) {
-            g.tracking = false;
-            return;
-          }
-          if (dy <= 6) return;
-          if (!isScrollAtTop(e.target)) {
-            g.tracking = false;
-            return;
-          }
-          g.engaged = true;
-          setIsPulling(true);
-          try {
-            e.currentTarget.setPointerCapture?.(e.pointerId);
-          } catch {
-            // Ignore synthetic pointer capture errors
-          }
+        if (e.pointerType === "touch" || g.pointerId !== e.pointerId) return;
+        const wasEngaged = g.engaged;
+        if (moveGesture(e.clientX, e.clientY, e.target) && !wasEngaged) {
+          e.currentTarget.setPointerCapture?.(e.pointerId);
         }
-
-        const nextPull = computeDampedPull(Math.max(0, dy - 6));
-        g.currentPull = nextPull;
-        setPullDistance(nextPull);
       }}
       onPointerUp={(e) => {
-        if (gestureRef.current.pointerId === e.pointerId) {
-          try {
-            if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
-              e.currentTarget.releasePointerCapture(e.pointerId);
-            }
-          } catch {
-            // Ignore synthetic pointer capture errors
-          }
+        if (e.pointerType !== "touch" && gestureRef.current.pointerId === e.pointerId) {
           finishGesture(false);
         }
       }}
       onPointerCancel={(e) => {
-        if (gestureRef.current.pointerId === e.pointerId) {
+        if (e.pointerType !== "touch" && gestureRef.current.pointerId === e.pointerId) {
           finishGesture(true);
         }
       }}
@@ -249,7 +286,8 @@ export function PullToRefreshBox({
       >
         {showIndicator ? (
           indicatorVariant === "contained" ? (
-            <ContainedLoadingIndicator
+            <LoadingIndicator
+              contained
               size={PULL_TO_REFRESH_TOKENS.indicatorSize}
               progress={refreshing ? undefined : Math.max(0.02, Math.min(1, rawProgress))}
               aria-label={statusText}

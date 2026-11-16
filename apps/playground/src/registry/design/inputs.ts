@@ -736,7 +736,7 @@ export const INPUTS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>> 
       {
         target: "Jetpack Compose",
         guidance:
-          "Map to `DatePicker`, `DateRangePicker`, and `DatePickerDialog` in `androidx.compose.material3`; convert between `PlainDateString` and UTC epoch millis at `00:00Z` (`Instant.parse(\"${iso}T00:00:00Z\").toEpochMilli()`).",
+          "Map to `DatePicker`, `DateRangePicker`, and `DatePickerDialog` (`modal`) in `androidx.compose.material3`; convert between `PlainDateString` and UTC epoch millis at `00:00Z` (`Instant.parse(\"${iso}T00:00:00Z\").toEpochMilli()`).",
       },
       {
         target: "SwiftUI",

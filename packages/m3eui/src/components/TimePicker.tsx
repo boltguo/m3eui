@@ -20,10 +20,8 @@ import {
   FieldNotchedOutline,
   useFieldsetDisabled,
 } from "../internal/fieldOutline.js";
-import {
-  formatLocalizedWallTime,
-  getLocaleUses24Hour,
-} from "../i18n/index.js";
+import { formatLocalizedWallTime, getLocaleUses24Hour } from "../i18n/index.js";
+import { FieldRoot, FieldTrigger } from "../internal/pickerField.js";
 import { FormHiddenValue } from "../internal/formField.js";
 
 export type PlainTimeString = `${string}:${string}` | string;
@@ -223,7 +221,8 @@ export function TimePicker({
   const minuteDisplayStr = String(minute).padStart(2, "0");
 
   const [hourDraft, setHourDraft] = React.useState<string>(hourDisplayStr);
-  const [minuteDraft, setMinuteDraft] = React.useState<string>(minuteDisplayStr);
+  const [minuteDraft, setMinuteDraft] =
+    React.useState<string>(minuteDisplayStr);
   const hourFocusedRef = React.useRef<boolean>(false);
   const minuteFocusedRef = React.useRef<boolean>(false);
 
@@ -317,9 +316,7 @@ export function TimePicker({
 
   return (
     <div
-      className={
-        className ? `m3e-time-picker ${className}` : "m3e-time-picker"
-      }
+      className={className ? `m3e-time-picker ${className}` : "m3e-time-picker"}
       data-variant={variant !== "standard" ? variant : undefined}
       style={{
         borderRadius: `${TIME_PICKER_TOKENS.containerRadius}px`,
@@ -576,7 +573,9 @@ export function TimePicker({
             role="slider"
             tabIndex={0}
             aria-valuemin={selectionMode === "hour" ? (use24Hour ? 0 : 1) : 0}
-            aria-valuemax={selectionMode === "hour" ? (use24Hour ? 23 : 12) : 59}
+            aria-valuemax={
+              selectionMode === "hour" ? (use24Hour ? 23 : 12) : 59
+            }
             aria-valuenow={
               selectionMode === "hour"
                 ? use24Hour
@@ -721,8 +720,10 @@ export function TimePicker({
               <>
                 {outerHours.map((h, idx) => {
                   const angle = ((idx * 30 - 90) * Math.PI) / 180;
-                  const x = Math.cos(angle) * TIME_PICKER_TOKENS.outerRingRadius;
-                  const y = Math.sin(angle) * TIME_PICKER_TOKENS.outerRingRadius;
+                  const x =
+                    Math.cos(angle) * TIME_PICKER_TOKENS.outerRingRadius;
+                  const y =
+                    Math.sin(angle) * TIME_PICKER_TOKENS.outerRingRadius;
                   const selected = use24Hour
                     ? hour24 === h
                     : displayHour12 === h;
@@ -903,6 +904,7 @@ export interface M3ETimePickerFieldProps {
   readonly use24Hour?: boolean;
   readonly disabled?: boolean;
   readonly readOnly?: boolean;
+  readonly modal?: boolean;
   readonly className?: string;
   readonly style?: React.CSSProperties;
 }
@@ -922,6 +924,7 @@ export function TimePickerField({
   use24Hour: use24HourProp,
   disabled = false,
   readOnly = false,
+  modal = false,
   className,
   style,
 }: M3ETimePickerFieldProps): React.JSX.Element {
@@ -940,6 +943,10 @@ export function TimePickerField({
     if ((isDisabled || readOnly) && open) setOpen(false);
   }, [isDisabled, readOnly, open]);
   const current = controlledValue ?? uncontrolledTime;
+  const commit = (next: string) => {
+    if (controlledValue === undefined) setUncontrolledTime(next);
+    onValueChange?.(next);
+  };
   const isEmpty = !/^\d{1,2}:\d{2}$/.test(current.trim());
   const { hour24, minute } = parsePlainTime(current);
   const formattedLabel = isEmpty
@@ -986,7 +993,8 @@ export function TimePickerField({
         disabled={isDisabled}
         required={required}
       />
-      <BasePopover.Root
+      <FieldRoot
+        modal={modal}
         open={readOnly ? false : open}
         onOpenChange={(next) => {
           if (!readOnly && !isDisabled) setOpen(next);
@@ -1015,7 +1023,8 @@ export function TimePickerField({
               {labelNode}
             </label>
           ) : null}
-          <BasePopover.Trigger
+          <FieldTrigger
+            modal={modal}
             id={triggerId}
             disabled={isDisabled}
             aria-invalid={invalid ? true : undefined}
@@ -1037,34 +1046,39 @@ export function TimePickerField({
             <span className="m3e-select__chevron" aria-hidden="true">
               <ClockIconSvg />
             </span>
-          </BasePopover.Trigger>
+          </FieldTrigger>
         </div>
 
-        <BasePopover.Portal container={portalContainer}>
-          <BasePopover.Positioner
-            side="bottom"
-            align="start"
-            sideOffset={6}
-            className="m3e-popover__positioner"
-          >
-            <BasePopover.Popup
-              initialFocus={(openType) => openType === "keyboard"}
-              className="m3e-date-picker-field__popup"
+        {modal ? (
+          <ModalTimePickerPopup
+            open={open}
+            onClose={() => setOpen(false)}
+            value={current}
+            onValueCommit={commit}
+            use24Hour={use24Hour}
+          />
+        ) : (
+          <BasePopover.Portal container={portalContainer}>
+            <BasePopover.Positioner
+              side="bottom"
+              align="start"
+              sideOffset={6}
+              className="m3e-popover__positioner"
             >
-              <TimePicker
-                value={current}
-                use24Hour={use24Hour}
-                onValueChange={(next) => {
-                  if (controlledValue === undefined) {
-                    setUncontrolledTime(next);
-                  }
-                  onValueChange?.(next);
-                }}
-              />
-            </BasePopover.Popup>
-          </BasePopover.Positioner>
-        </BasePopover.Portal>
-      </BasePopover.Root>
+              <BasePopover.Popup
+                initialFocus={(openType) => openType === "keyboard"}
+                className="m3e-date-picker-field__popup"
+              >
+                <TimePicker
+                  value={current}
+                  use24Hour={use24Hour}
+                  onValueChange={commit}
+                />
+              </BasePopover.Popup>
+            </BasePopover.Positioner>
+          </BasePopover.Portal>
+        )}
+      </FieldRoot>
 
       {description && !(invalid && errorMessage) ? (
         <p id={descId} className="m3e-field__description">
@@ -1081,85 +1095,42 @@ export function TimePickerField({
   );
 }
 
-export interface M3ETimePickerDialogProps {
-  readonly open?: boolean;
-  readonly defaultOpen?: boolean;
-  readonly onOpenChange?: (open: boolean) => void;
-  readonly trigger?: React.ReactElement;
-  readonly value?: PlainTimeString;
-  readonly defaultValue?: PlainTimeString;
-  readonly onValueChange?: (value: string) => void;
-  readonly use24Hour?: boolean;
-  readonly defaultInputMode?: "dial" | "keyboard";
-  readonly variant?: "standard" | "vibrant";
-  readonly title?: React.ReactNode;
-  readonly className?: string;
-  readonly style?: React.CSSProperties;
-}
-
-export function TimePickerDialog({
-  open: controlledOpen,
-  defaultOpen = false,
-  onOpenChange,
-  trigger,
-  value: controlledValue,
-  defaultValue = "09:30",
-  onValueChange,
+function ModalTimePickerPopup({
+  open,
+  onClose,
+  value,
+  onValueCommit,
   use24Hour,
-  defaultInputMode = "dial",
-  variant = "standard",
-  title,
-  className,
-  style,
-}: M3ETimePickerDialogProps): React.JSX.Element {
+}: {
+  readonly open: boolean;
+  readonly onClose: () => void;
+  readonly value: PlainTimeString;
+  readonly onValueCommit: (value: string) => void;
+  readonly use24Hour: boolean;
+}): React.JSX.Element {
   const { t } = useM3EI18n();
   const portalContainer = useM3EPortalContainer();
-  const [uncontrolledOpen, setUncontrolledOpen] =
-    React.useState<boolean>(defaultOpen);
-  const [uncontrolledTime, setUncontrolledTime] =
-    React.useState<string>(defaultValue);
-  const isOpen = controlledOpen ?? uncontrolledOpen;
-  const committedTime = controlledValue ?? uncontrolledTime;
-
-  const [draftTime, setDraftTime] = React.useState<string>(committedTime);
-  const [inputMode, setInputMode] = React.useState<"dial" | "keyboard">(
-    defaultInputMode,
-  );
+  const [draftTime, setDraftTime] = React.useState<string>(value);
+  const [inputMode, setInputMode] = React.useState<"dial" | "keyboard">("dial");
 
   React.useEffect(() => {
-    if (isOpen) {
-      setDraftTime(committedTime);
-    }
-  }, [isOpen, committedTime]);
-
-  const setOpen = (next: boolean) => {
-    if (controlledOpen === undefined) {
-      setUncontrolledOpen(next);
-    }
-    onOpenChange?.(next);
-  };
+    if (open) setDraftTime(value);
+  }, [open, value]);
 
   return (
-    <BaseDialog.Root open={isOpen} onOpenChange={setOpen}>
-      {trigger ? <BaseDialog.Trigger render={trigger} /> : null}
-      <BaseDialog.Portal container={portalContainer}>
-        <BaseDialog.Backdrop className="m3e-dialog__backdrop" />
+    <BaseDialog.Portal container={portalContainer}>
+      <BaseDialog.Backdrop className="m3e-dialog__backdrop" />
+      <BaseDialog.Viewport className="m3e-dialog__viewport">
         <BaseDialog.Popup
-          className={
-            className
-              ? `m3e-dialog m3e-time-picker-dialog ${className}`
-              : "m3e-dialog m3e-time-picker-dialog"
-          }
-          data-variant={variant !== "standard" ? variant : undefined}
+          className="m3e-dialog__popup m3e-time-picker-dialog"
           style={{
             borderRadius: `${TIME_PICKER_TOKENS.containerRadius}px`,
             padding: 0,
             width: "auto",
-            ...style,
           }}
         >
           <BaseDialog.Title className="m3e-visually-hidden">
-            {title ?? t("timePicker.title")}
+            {t("timePicker.title")}
           </BaseDialog.Title>
 
           <TimePicker
@@ -1169,8 +1140,6 @@ export function TimePickerDialog({
             inputMode={inputMode}
             onInputModeChange={setInputMode}
             hideModeToggle
-            variant={variant}
-            title={title}
             className="m3e-time-picker-dialog__picker"
           />
 
@@ -1191,22 +1160,15 @@ export function TimePickerDialog({
             </button>
 
             <div className="m3e-time-picker-dialog__actions">
-              <Button
-                variant="text"
-                size="sm"
-                onClick={() => setOpen(false)}
-              >
+              <Button variant="text" size="sm" onClick={onClose}>
                 {t("timePicker.cancel")}
               </Button>
               <Button
                 variant="filled"
                 size="sm"
                 onClick={() => {
-                  if (controlledValue === undefined) {
-                    setUncontrolledTime(draftTime);
-                  }
-                  onValueChange?.(draftTime);
-                  setOpen(false);
+                  onValueCommit(draftTime);
+                  onClose();
                 }}
               >
                 {t("timePicker.confirm")}
@@ -1214,8 +1176,7 @@ export function TimePickerDialog({
             </div>
           </div>
         </BaseDialog.Popup>
-      </BaseDialog.Portal>
-    </BaseDialog.Root>
+      </BaseDialog.Viewport>
+    </BaseDialog.Portal>
   );
 }
-

@@ -1,19 +1,22 @@
 import * as React from "react";
-import { Link, Navigate, useNavigate, useParams } from "react-router";
+import { Link, Navigate, useNavigate, useOutletContext, useParams } from "react-router";
 import {
   Breadcrumb,
   Card,
-  NavigationDrawer,
   type NavigationDestination,
+  Sidebar,
   useM3EI18n,
 } from "m3eui";
 import { useCopyResolver, usePlaygroundStrings } from "../i18n";
 import { OnThisPage } from "../layout/OnThisPage";
+import type { SiteOutletContext } from "../layout/SiteLayout";
+import { SiteSectionLinks } from "../layout/SiteSections";
 import { DOC_GUIDES } from "../registry/docs";
 
 export function DocsPage() {
   const { slug } = useParams<{ slug?: string }>();
   const navigate = useNavigate();
+  const { navOpen, setNavOpen } = useOutletContext<SiteOutletContext>();
   const ui = usePlaygroundStrings();
   const resolve = useCopyResolver();
   const { direction } = useM3EI18n();
@@ -52,9 +55,11 @@ export function DocsPage() {
 
   return (
     <div className="m3e-doc-layout">
-      <NavigationDrawer
-        variant="permanent"
+      <Sidebar
         className="m3e-playground-sidebar"
+        open={navOpen}
+        onOpenChange={setNavOpen}
+        footer={<SiteSectionLinks />}
         aria-label={ui.navDocs}
         items={sidebarItems}
         value={guide.slug}

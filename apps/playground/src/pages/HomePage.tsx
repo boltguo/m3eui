@@ -3,23 +3,19 @@ import { Link, useNavigate, useOutletContext } from "react-router";
 import type { M3EShapeName } from "m3eui/tokens";
 import {
   Avatar,
-  BottomSheet,
+  Sheet,
   Button,
   ButtonGroup,
-  Card,
   Checkbox,
   Chip,
-  CircularWavyProgressIndicator,
+  CircularProgressIndicator,
   Dialog,
   DialogClose,
   DropdownMenu,
   FABMenu,
-  FilterChip,
   FloatingToolbar,
   IconButton,
-  IconToggleButton,
   LinearProgressIndicator,
-  LinearWavyProgressIndicator,
   ListItem,
   LoadingIndicator,
   MaterialShapeView,
@@ -27,7 +23,7 @@ import {
   Radio,
   RadioGroup,
   SearchBar,
-  SegmentedList,
+  List,
   Select,
   Skeleton,
   Slider,
@@ -37,7 +33,6 @@ import {
   TextField,
   Tooltip,
   useM3E,
-  useM3EI18n,
   useM3EToast,
 } from "m3eui";
 import { type LocalizedCopy, useCopyResolver, usePlaygroundStrings } from "../i18n";
@@ -58,12 +53,6 @@ import {
   UsersIcon,
 } from "../layout/Icons";
 import type { SiteOutletContext } from "../layout/SiteLayout";
-import {
-  BLOCK_CATALOG,
-  COMPONENT_CATALOG,
-  COMPONENT_CATALOG_BY_CATEGORY,
-  COMPONENT_CATEGORY_ORDER,
-} from "../registry/catalog";
 
 const HERO_SHAPES: readonly M3EShapeName[] = [
   "cookie9Sided",
@@ -225,7 +214,7 @@ const PhoneScene = React.memo(function PhoneScene() {
   return (
     <Scene
       title={resolve({ zh: "导航", en: "Navigation" })}
-      to="/components/navigation"
+      to="/components/navigation-bar"
       className="home-scene--phone"
     >
       <div className="home-phone">
@@ -236,14 +225,14 @@ const PhoneScene = React.memo(function PhoneScene() {
             aria-label={resolve({ zh: "搜索邮件", en: "Search mail" })}
           />
           <div className="home-row">
-            <FilterChip selected={!unreadOnly} onSelectedChange={() => setUnreadOnly(false)}>
+            <Chip selected={!unreadOnly} onSelectedChange={() => setUnreadOnly(false)}>
               {resolve({ zh: "全部", en: "All" })}
-            </FilterChip>
-            <FilterChip selected={unreadOnly} onSelectedChange={() => setUnreadOnly(true)}>
+            </Chip>
+            <Chip selected={unreadOnly} onSelectedChange={() => setUnreadOnly(true)}>
               {resolve({ zh: "未读", en: "Unread" })}
-            </FilterChip>
+            </Chip>
           </div>
-          <SegmentedList aria-label={resolve({ zh: "收件箱", en: "Inbox" })}>
+          <List variant="segmented" aria-label={resolve({ zh: "收件箱", en: "Inbox" })}>
             {mails.map((mail) => (
               <ListItem
                 key={mail.id}
@@ -256,7 +245,7 @@ const PhoneScene = React.memo(function PhoneScene() {
                 trailing={<span className="home-phone__time">{resolve(mail.time)}</span>}
               />
             ))}
-          </SegmentedList>
+          </List>
           <FABMenu
             className="home-phone__fab"
             size="sm"
@@ -327,13 +316,15 @@ const PlayerScene = React.memo(function PlayerScene() {
           <strong>{track.title}</strong>
           <span>{track.artist}</span>
         </div>
-        <IconToggleButton
+        <IconButton
+          defaultPressed={false}
           icon={<HeartIcon size={20} />}
           aria-label={resolve({ zh: "收藏", en: "Favorite" })}
           variant="standard"
         />
       </div>
-      <LinearWavyProgressIndicator
+      <LinearProgressIndicator
+        wavy
         value={progress}
         paused={!playing}
         aria-label={resolve({ zh: "播放进度", en: "Playback progress" })}
@@ -345,7 +336,7 @@ const PlayerScene = React.memo(function PlayerScene() {
           aria-label={resolve({ zh: "上一首", en: "Previous" })}
           onClick={() => skip(-1)}
         />
-        <IconToggleButton
+        <IconButton
           size="lg"
           widthVariant="wide"
           variant="filled"
@@ -399,7 +390,7 @@ const ThemeScene = React.memo(function ThemeScene({
       <div className="home-row">
         {seeds.map((seed) => (
           <Tooltip key={seed.hex} content={seed.name}>
-            <IconToggleButton
+            <IconButton
               variant="outlined"
               pressed={seedHex.toLowerCase() === seed.hex.toLowerCase()}
               onPressedChange={() =>
@@ -498,7 +489,7 @@ const ActionsScene = React.memo(function ActionsScene() {
         >
           {resolve({ zh: "发送", en: "Send" })}
         </SplitButton>
-        <IconToggleButton
+        <IconButton
           variant="tonal"
           icon={<BellIcon size={20} />}
           aria-label={resolve({ zh: "通知", en: "Notifications" })}
@@ -637,16 +628,16 @@ const OverlaysScene = React.memo(function OverlaysScene() {
             </>
           }
         />
-        <BottomSheet
+        <Sheet
           trigger={<Button variant="outlined">{resolve({ zh: "底部面板", en: "Sheet" })}</Button>}
           title={resolve({ zh: "分享到", en: "Share to" })}
         >
-          <SegmentedList>
+          <List variant="segmented">
             <ListItem interactive leading={<UsersIcon size={22} />} headline={resolve({ zh: "团队", en: "Team" })} />
             <ListItem interactive leading={<SendIcon size={22} />} headline={resolve({ zh: "邮件", en: "Email" })} />
             <ListItem interactive leading={<FolderIcon size={22} />} headline={resolve({ zh: "保存到文件", en: "Save to files" })} />
-          </SegmentedList>
-        </BottomSheet>
+          </List>
+        </Sheet>
         <Button
           variant="outlined"
           onClick={() =>
@@ -670,7 +661,8 @@ const LoadingScene = React.memo(function LoadingScene() {
       <div className="home-loading">
         <LoadingIndicator size={56} />
         <LoadingIndicator contained size={56} />
-        <CircularWavyProgressIndicator
+        <CircularProgressIndicator
+          wavy
           value={72}
           size={56}
           aria-label={resolve({ zh: "同步进度", en: "Sync progress" })}
@@ -685,66 +677,6 @@ const LoadingScene = React.memo(function LoadingScene() {
         </div>
       </div>
     </Scene>
-  );
-});
-
-const Directory = React.memo(function Directory() {
-  const ui = usePlaygroundStrings();
-  return (
-    <section className="home-directory">
-      <h2 className="home-heading">
-        {ui.navComponents}
-        <span>{COMPONENT_CATALOG.length}</span>
-      </h2>
-      <div className="home-directory__grid">
-        {COMPONENT_CATEGORY_ORDER.map((cat) => (
-          <div key={cat} className="home-directory__group">
-            <h3>{ui.componentCategories[cat]}</h3>
-            <ul>
-              {COMPONENT_CATALOG_BY_CATEGORY[cat].map((doc) => (
-                <li key={doc.slug}>
-                  <Link to={`/components/${doc.slug}`}>{doc.title}</Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-});
-
-const Blocks = React.memo(function Blocks() {
-  const ui = usePlaygroundStrings();
-  const resolve = useCopyResolver();
-  const navigate = useNavigate();
-  const { direction } = useM3EI18n();
-
-  return (
-    <section className="home-directory">
-      <h2 className="home-heading">
-        Blocks
-        <span>{BLOCK_CATALOG.length}</span>
-        <Button variant="text" size="sm" onClick={() => navigate("/blocks")}>
-          {ui.browseBlocksBtn} {direction === "rtl" ? "←" : "→"}
-        </Button>
-      </h2>
-      <div className="home-blocks">
-        {BLOCK_CATALOG.map((blk) => (
-          <Card
-            key={blk.slug}
-            variant="filled"
-            interactive
-            onClick={() => navigate(`/blocks#${blk.slug}`)}
-          >
-            <Chip tone="primary" size="sm">
-              {ui.blockCategories[blk.category]}
-            </Chip>
-            <strong className="home-blocks__title">{resolve(blk.title)}</strong>
-          </Card>
-        ))}
-      </div>
-    </section>
   );
 });
 
@@ -764,8 +696,6 @@ export function HomePage() {
         <OverlaysScene />
         <LoadingScene />
       </div>
-      <Directory />
-      <Blocks />
     </div>
   );
 }

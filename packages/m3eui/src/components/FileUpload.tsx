@@ -9,7 +9,7 @@ import {
 } from "../hooks/useM3ESpring.js";
 import { formatLocalizedInteger, formatLocalizedNumber } from "../i18n/index.js";
 import { IconButton } from "./IconButton.js";
-import { LinearWavyProgressIndicator } from "./WavyProgressIndicator.js";
+import { LinearProgressIndicator } from "./ProgressIndicator.js";
 import { useFieldsetDisabled } from "../internal/fieldOutline.js";
 
 export type FileUploadStatus = "idle" | "uploading" | "completed" | "error";
@@ -477,7 +477,8 @@ export function FileUpload({
 
                 {isUploading ? (
                   <div className="m3e-file-upload__progress">
-                    <LinearWavyProgressIndicator
+                    <LinearProgressIndicator
+                      wavy
                       value={item.progress ?? null}
                     />
                   </div>

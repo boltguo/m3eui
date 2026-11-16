@@ -1,7 +1,6 @@
 import * as React from "react";
 import { parseShortcutKeys } from "m3eui/tokens";
 import {
-  BottomAppBar,
   Button,
   ColorPicker,
   ColorPickerField,
@@ -9,7 +8,6 @@ import {
   CopyButton,
   Divider,
   DragHandle,
-  FAB,
   FileUpload,
   FileUploadDropzone,
   Kbd,
@@ -17,17 +15,12 @@ import {
   PullToRefreshBox,
   ScrollArea,
   Snippet,
-  VerticalDragHandle,
 } from "m3eui";
 import {
-  EditIcon,
-  FolderIcon,
   RefreshIcon,
-  SearchIcon,
-  ShareIcon,
-  SparkleIcon,
 } from "../../layout/Icons";
 import type { ComponentDocSpec } from "../types";
+import { useCopyResolver } from "../../i18n";
 
 /* -------------------------------------------------------------------------- */
 /* Inputs Demos                                                               */
@@ -217,149 +210,43 @@ function ScrollAreaDemo() {
 }
 
 function DragHandleSplitPaneDemo() {
-  const hostRef = React.useRef<HTMLDivElement | null>(null);
-  const [split, setSplit] = React.useState(44);
-  const [rowSplit, setRowSplit] = React.useState(52);
+  const copy = useCopyResolver();
+  const rowRef = React.useRef<HTMLDivElement | null>(null);
+  const colRef = React.useRef<HTMLDivElement | null>(null);
+  const [split, setSplit] = React.useState(40);
+  const [rowSplit, setRowSplit] = React.useState(55);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16, width: "100%", maxWidth: 560 }}>
-      <div
-        ref={hostRef}
-        style={{
-          display: "flex",
-          alignItems: "stretch",
-          height: 176,
-          borderRadius: 20,
-          overflow: "hidden",
-          border: "1px solid var(--m3e-color-outline-variant)",
-          background: "var(--m3e-color-surface-container-low)",
-        }}
-      >
-        <div
-          style={{
-            flex: `0 0 calc(${split}% - 12px)`,
-            padding: 16,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            background: "var(--m3e-color-surface-container)",
-          }}
-        >
-          <strong style={{ fontSize: 13 }}>List Pane</strong>
-          <code style={{ fontSize: 12 }}>{Math.round(split)}%</code>
+    <div className="demo-panes-stack">
+      <div ref={rowRef} className="demo-panes">
+        <div className="demo-pane" style={{ flex: `0 0 calc(${split}% - 12px)` }}>
+          <strong>{copy({ zh: "列表", en: "List" })}</strong>
+          <code>{Math.round(split)}%</code>
         </div>
-        <VerticalDragHandle
-          containerRef={hostRef}
-          value={split}
-          onValueChange={setSplit}
-          min={22}
-          max={78}
-        />
-        <div
-          style={{
-            flex: 1,
-            minWidth: 0,
-            padding: 16,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            background: "var(--m3e-color-surface)",
-          }}
-        >
-          <strong style={{ fontSize: 13 }}>Detail Pane</strong>
-          <code style={{ fontSize: 12 }}>{Math.round(100 - split)}%</code>
+        <DragHandle containerRef={rowRef} value={split} onValueChange={setSplit} min={25} max={75} />
+        <div className="demo-pane" style={{ flex: 1 }}>
+          <strong>{copy({ zh: "详情", en: "Detail" })}</strong>
+          <code>{Math.round(100 - split)}%</code>
         </div>
       </div>
 
-      <div
-        style={{
-          borderRadius: 16,
-          border: "1px solid var(--m3e-color-outline-variant)",
-          background: "var(--m3e-color-surface-container-low)",
-          padding: "8px 14px",
-        }}
-      >
+      <div ref={colRef} className="demo-panes demo-panes--column">
+        <div className="demo-pane" style={{ flex: `0 0 calc(${rowSplit}% - 12px)` }}>
+          <strong>{copy({ zh: "编辑器", en: "Editor" })}</strong>
+          <code>{Math.round(rowSplit)}%</code>
+        </div>
         <DragHandle
           orientation="horizontal"
+          containerRef={colRef}
           value={rowSplit}
           onValueChange={setRowSplit}
+          min={25}
+          max={75}
         />
-      </div>
-    </div>
-  );
-}
-
-function BottomAppBarDemo() {
-  const feedRef = React.useRef<HTMLDivElement | null>(null);
-  const [behavior, setBehavior] = React.useState<"pinned" | "exit-always">("exit-always");
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", maxWidth: 480 }}>
-      <div className="demo-row" style={{ gap: 8 }}>
-        <Button
-          size="xs"
-          variant={behavior === "exit-always" ? "filled" : "outlined"}
-          onClick={() => setBehavior("exit-always")}
-        >
-          exit-always
-        </Button>
-        <Button
-          size="xs"
-          variant={behavior === "pinned" ? "filled" : "outlined"}
-          onClick={() => setBehavior("pinned")}
-        >
-          pinned
-        </Button>
-      </div>
-      <div
-        style={{
-          position: "relative",
-          height: 248,
-          borderRadius: 24,
-          overflow: "hidden",
-          border: "1px solid var(--m3e-color-outline-variant)",
-          background: "var(--m3e-color-surface)",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <div
-          ref={feedRef}
-          style={{
-            flex: 1,
-            overflowY: "auto",
-            padding: 14,
-            display: "flex",
-            flexDirection: "column",
-            gap: 8,
-          }}
-        >
-          {Array.from({ length: 10 }, (_, idx) => (
-            <div
-              key={idx}
-              style={{
-                padding: "10px 14px",
-                borderRadius: 12,
-                background: "var(--m3e-color-surface-container-low)",
-                fontSize: 13,
-              }}
-            >
-              Message thread #{idx + 1}
-            </div>
-          ))}
+        <div className="demo-pane" style={{ flex: 1 }}>
+          <strong>{copy({ zh: "终端", en: "Terminal" })}</strong>
+          <code>{Math.round(100 - rowSplit)}%</code>
         </div>
-        <BottomAppBar
-          scrollBehavior={behavior}
-          scrollTargetRef={feedRef}
-          maxVisibleActions={3}
-          actionItems={[
-            { id: "search", label: "Search", icon: <SearchIcon size={18} /> },
-            { id: "folder", label: "Move", icon: <FolderIcon size={18} /> },
-            { id: "share", label: "Share", icon: <ShareIcon size={18} /> },
-            { id: "sparkle", label: "Summarize", icon: <SparkleIcon size={18} /> },
-          ]}
-          fab={<FAB icon={<EditIcon size={20} />} aria-label="Compose" />}
-        />
       </div>
     </div>
   );
@@ -447,10 +334,9 @@ export const EXPANSION_INPUTS_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "file-upload",
     title: "FileUpload",
-    category: "inputs",
     isNew: true,
     subtitle: {
-      zh: "支持弹簧圆角拖拽热区与波浪进度条（LinearWavyProgressIndicator）的文件上传器。",
+      zh: "支持弹簧圆角拖拽热区与波浪进度条的文件上传器。",
       en: "Drag-and-drop file uploader with spring-morphing dropzone corners and wavy upload progress indicators.",
     },
     importStatement: 'import { FileUpload, FileUploadDropzone } from "m3eui";',
@@ -512,7 +398,6 @@ export const EXPANSION_INPUTS_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "color-picker",
     title: "ColorPicker",
-    category: "inputs",
     isNew: true,
     subtitle: {
       zh: "基于内置 Google Monet HCT 感知均匀色彩空间引擎的取色面板、表单选择框与预设色板。",
@@ -580,7 +465,6 @@ export const EXPANSION_DISPLAY_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "kbd",
     title: "Kbd",
-    category: "display",
     isNew: true,
     subtitle: {
       zh: "语义化键帽，按平台把 mod / shift / alt / enter 映射为对应符号。",
@@ -627,7 +511,6 @@ import { parseShortcutKeys } from "m3eui/tokens";
   {
     slug: "snippet",
     title: "Snippet",
-    category: "display",
     isNew: true,
     subtitle: {
       zh: "可复制的命令行片段与独立的 CopyButton，复制状态通过 aria-live 播报。",
@@ -672,7 +555,6 @@ import { parseShortcutKeys } from "m3eui/tokens";
   {
     slug: "divider",
     title: "Divider",
-    category: "display",
     subtitle: {
       zh: "支持水平通栏、前导内缩（inset）、垂直行内分隔以及居中文字标签的 M3 分割线。",
       en: "Horizontal, logical-inset, vertical, and text-labeled Material 3 separator lines.",
@@ -717,7 +599,6 @@ import { parseShortcutKeys } from "m3eui/tokens";
   {
     slug: "scroll-area",
     title: "ScrollArea",
-    category: "display",
     subtitle: {
       zh: "跨平台一致的悬浮胶囊滚动条视口容器，保留原生惯性滚动与无障碍可访问性。",
       en: "Custom pill-thumb scroll container preserving native momentum scrolling and keyboard accessibility.",
@@ -759,35 +640,31 @@ import { parseShortcutKeys } from "m3eui/tokens";
   {
     slug: "drag-handle",
     title: "DragHandle",
-    category: "display",
     isNew: true,
     subtitle: {
-      zh: "AOSP M3E 分栏调节手柄（VerticalDragHandle / DragHandle），按压或拖拽时由 4×48px 胶囊通过 fastSpatial 弹簧形变为 12×52px 圆角矩形。",
-      en: "AOSP M3E split-pane resizer morphing from a 4×48px pill to a 12×52px rounded bar via fastSpatial spring.",
+      zh: "调整相邻窗格尺寸的把手（AOSP VerticalDragHandle）。弹层抓手用 Sheet。",
+      en: "Resizes adjacent panes (AOSP VerticalDragHandle). For a sheet grabber, use Sheet.",
     },
-    importStatement: 'import { VerticalDragHandle, DragHandle } from "m3eui";',
+    importStatement: 'import { DragHandle } from "m3eui";',
     scenarios: [
       {
         id: "drag-handle-split-pane",
-        title: { zh: "可调双栏与水平手柄", en: "Resizable Split Pane & Horizontal Handle" },
+        title: { zh: "左右与上下窗格", en: "Side-by-side & stacked panes" },
         description: {
-          zh: "保留 48px 指针热区与 role=\"separator\" 键盘方向键（RTL 自动镜像）、Home/End 调节能力。",
-          en: "Provides a 48px touch target inside a 24px seam with RTL-aware arrow and Home/End keyboard resizing.",
+          zh: "把手放在两块窗格之间 24px 的空隙里；方向键、Home / End 调整，RTL 自动镜像。",
+          en: "The handle sits in the 24px gap between two panes. Arrow keys and Home / End resize; RTL mirrors.",
         },
-        code: `<VerticalDragHandle
-  containerRef={hostRef}
-  value={split}
-  onValueChange={setSplit}
-  min={22}
-  max={78}
-/>
-<DragHandle orientation="horizontal" value={rowSplit} onValueChange={setRowSplit} />`,
+        code: `<div ref={hostRef} style={{ display: "flex" }}>
+  <div style={{ flex: \`0 0 calc(\${split}% - 12px)\` }}>List</div>
+  <DragHandle containerRef={hostRef} value={split} onValueChange={setSplit} min={25} max={75} />
+  <div style={{ flex: 1 }}>Detail</div>
+</div>`,
         render: () => <DragHandleSplitPaneDemo />,
       },
     ],
     apis: [
       {
-        title: "DragHandle & VerticalDragHandle Props",
+        title: "DragHandle Props",
         rows: [
           {
             name: "value / defaultValue / onValueChange",
@@ -805,7 +682,7 @@ import { parseShortcutKeys } from "m3eui/tokens";
             name: "orientation",
             type: '"vertical" | "horizontal"',
             defaultValue: '"vertical"',
-            description: { zh: "手柄方向（VerticalDragHandle 固定为 vertical）。", en: "Handle orientation (VerticalDragHandle fixes vertical)." },
+            description: { zh: "手柄方向。", en: "Handle orientation." },
           },
         ],
       },
@@ -813,72 +690,16 @@ import { parseShortcutKeys } from "m3eui/tokens";
   },
 ];
 
-export const EXPANSION_NAVIGATION_DOCS: readonly ComponentDocSpec[] = [
-  {
-    slug: "bottom-app-bar",
-    title: "BottomAppBar",
-    category: "navigation",
-    isNew: true,
-    subtitle: {
-      zh: "AOSP M3E 80px 底部应用栏，左侧承载自适应收纳的 AppBarRow 动作组，右侧内嵌无阴影（elevation=\"none\"）FAB，支持向下滚动隐藏。",
-      en: "AOSP M3E 80px bottom bar pairing overflow-aware AppBarRow actions with an embedded zero-elevation FAB.",
-    },
-    importStatement: 'import { BottomAppBar, FAB } from "m3eui";',
-    primitive: "@base-ui/react/toolbar",
-    scenarios: [
-      {
-        id: "bottom-app-bar-live",
-        title: { zh: "动作溢出收纳与滚动自动隐藏", en: "Overflow Actions & Scroll Exit-Always" },
-        description: {
-          zh: "超出 maxVisibleActions 的动作自动折叠入溢出菜单；内嵌 FAB 通过上下文自动设为零高度阴影。",
-          en: "Collapses excess actions into an overflow menu and flattens the trailing FAB automatically.",
-        },
-        code: `<BottomAppBar
-  scrollBehavior="exit-always"
-  scrollTargetRef={feedRef}
-  maxVisibleActions={3}
-  actionItems={actions}
-  fab={<FAB icon={<EditIcon />} aria-label="Compose" />}
-/>`,
-        render: () => <BottomAppBarDemo />,
-      },
-    ],
-    apis: [
-      {
-        title: "BottomAppBar Props",
-        rows: [
-          {
-            name: "actionItems / maxVisibleActions",
-            type: "readonly AppBarActionItem[] / number",
-            defaultValue: "undefined / 4",
-            description: { zh: "前导动作列表与最大内联显示数（其余自动折叠进菜单）。", en: "Leading actions and inline cap before overflow menu." },
-          },
-          {
-            name: "fab",
-            type: "React.ReactNode",
-            description: { zh: "尾部内嵌 FAB 插槽（自动注入零阴影上下文）。", en: "Trailing FAB slot with automatic flat elevation." },
-          },
-          {
-            name: "scrollBehavior / hidden",
-            type: '"pinned" | "exit-always" / boolean',
-            defaultValue: '"pinned" / undefined',
-            description: { zh: "滚动隐藏策略或受控隐藏状态。", en: "Scroll hide behavior or controlled hidden flag." },
-          },
-        ],
-      },
-    ],
-  },
-];
+export const EXPANSION_NAVIGATION_DOCS: readonly ComponentDocSpec[] = [];
 
 export const EXPANSION_FEEDBACK_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "pull-to-refresh",
     title: "PullToRefreshBox",
-    category: "feedback",
     isNew: true,
     subtitle: {
-      zh: "AOSP M3E 下拉刷新容器（PullToRefreshBox），内置 0.5 阻尼下拉系数与 ContainedLoadingIndicator 多边形旋转形变指示器。",
-      en: "AOSP M3E pull-to-refresh surface composing ContainedLoadingIndicator polygon morphing with 0.5 drag resistance.",
+      zh: "AOSP M3E 下拉刷新容器（PullToRefreshBox），内置 0.5 阻尼下拉系数与 contained LoadingIndicator 多边形形变指示器。",
+      en: "AOSP M3E pull-to-refresh surface composing a contained LoadingIndicator polygon morph with 0.5 drag resistance.",
     },
     importStatement: 'import { PullToRefreshBox } from "m3eui";',
     scenarios: [

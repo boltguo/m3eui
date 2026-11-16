@@ -193,8 +193,9 @@ export const SearchBar = React.forwardRef<HTMLFormElement, M3ESearchBarProps>(
         ) {
           return;
         }
-        const activeOption =
-          e.currentTarget.getAttribute("aria-activedescendant");
+        const activeOption = e.currentTarget.getAttribute(
+          "aria-activedescendant",
+        );
         if (!activeOption) {
           e.preventDefault();
           formRef.current?.requestSubmit();
@@ -212,105 +213,105 @@ export const SearchBar = React.forwardRef<HTMLFormElement, M3ESearchBarProps>(
         }
         style={style}
       >
-      <BaseAutocomplete.Root
-        items={suggestions}
-        disabled={disabled}
-        value={controlledValue}
-        defaultValue={defaultValue}
-        openOnInputClick={suggestions.length > 0}
-        itemToStringValue={(item) => item.label}
-        onValueChange={(next) => {
-          if (controlledValue === undefined) {
-            setUncontrolledVal(next);
-          }
-          onValueChange?.(next);
-        }}
-      >
-        <div
-          className="m3e-search-bar"
-          data-size={size}
-          data-disabled={disabled ? "" : undefined}
-          style={{
-            minHeight: `${size === "sm" ? 40 : SEARCH_BAR_TOKENS.height}px`,
-            borderRadius: `${SEARCH_BAR_TOKENS.radius}px`,
-            paddingInline: `${size === "sm" ? 12 : SEARCH_BAR_TOKENS.horizontalPadding}px`,
+        <BaseAutocomplete.Root
+          items={suggestions}
+          disabled={disabled}
+          value={controlledValue}
+          defaultValue={defaultValue}
+          openOnInputClick={suggestions.length > 0}
+          itemToStringValue={(item) => item.label}
+          onValueChange={(next) => {
+            if (controlledValue === undefined) {
+              setUncontrolledVal(next);
+            }
+            onValueChange?.(next);
           }}
         >
-          <button
-            type="submit"
-            disabled={disabled}
-            aria-label={t("searchBar.submit")}
-            className="m3e-search-bar__submit-icon"
-          >
-            <SearchGlassSvg />
-          </button>
-
-          <BaseAutocomplete.Input
-            disabled={disabled}
-            placeholder={resolvedPlaceholder}
-            aria-label={resolvedAriaLabel}
-            className="m3e-search-bar__input"
-            onCompositionEnd={(e) => {
-              lastCompositionEndAtRef.current = e.nativeEvent.timeStamp;
+          <div
+            className="m3e-search-bar"
+            data-size={size}
+            data-disabled={disabled ? "" : undefined}
+            style={{
+              minHeight: `${size === "sm" ? 40 : SEARCH_BAR_TOKENS.height}px`,
+              borderRadius: `${SEARCH_BAR_TOKENS.radius}px`,
+              paddingInline: `${size === "sm" ? 12 : SEARCH_BAR_TOKENS.horizontalPadding}px`,
             }}
-            onKeyDown={handleInputKeyDown}
-          />
-
-          <div className="m3e-search-bar__actions">
-            {query.length > 0 ? (
-              <BaseAutocomplete.Clear
-                aria-label={t("searchBar.clear")}
-                className="m3e-search-bar__clear"
-              >
-                <ClearCrossSvg />
-              </BaseAutocomplete.Clear>
-            ) : null}
-            {trailingSlot}
-          </div>
-        </div>
-
-        {suggestions.length > 0 ? (
-          <BaseAutocomplete.Portal container={portalContainer}>
-            <BaseAutocomplete.Positioner
-              sideOffset={6}
-              align="start"
-              className="m3e-search-bar__positioner"
+          >
+            <button
+              type="submit"
+              disabled={disabled}
+              aria-label={t("searchBar.submit")}
+              className="m3e-search-bar__submit-icon"
             >
-              <BaseAutocomplete.Popup
-                className="m3e-search-bar__popup"
-                style={{
-                  borderRadius: `${SEARCH_BAR_TOKENS.popupRadius}px`,
-                }}
-              >
-                <BaseAutocomplete.Empty className="m3e-search-bar__empty">
-                  {resolvedEmptyText}
-                </BaseAutocomplete.Empty>
-                <BaseAutocomplete.List
-                  className="m3e-search-bar__list"
-                  style={{ padding: `${SEARCH_BAR_TOKENS.popupPadding}px` }}
+              <SearchGlassSvg />
+            </button>
+
+            <BaseAutocomplete.Input
+              disabled={disabled}
+              placeholder={resolvedPlaceholder}
+              aria-label={resolvedAriaLabel}
+              className="m3e-search-bar__input"
+              onCompositionEnd={(e) => {
+                lastCompositionEndAtRef.current = e.nativeEvent.timeStamp;
+              }}
+              onKeyDown={handleInputKeyDown}
+            />
+
+            <div className="m3e-search-bar__actions">
+              {query.length > 0 ? (
+                <BaseAutocomplete.Clear
+                  aria-label={t("searchBar.clear")}
+                  className="m3e-search-bar__clear"
                 >
-                  {(item: SearchSuggestion) => (
-                    <SearchSuggestionRow
-                      key={item.value}
-                      item={item}
-                      onPick={(label) => onSearchSubmit?.(label)}
-                    />
-                  )}
-                </BaseAutocomplete.List>
-              </BaseAutocomplete.Popup>
-            </BaseAutocomplete.Positioner>
-          </BaseAutocomplete.Portal>
-        ) : null}
-      </BaseAutocomplete.Root>
-    </form>
-  );
-});
+                  <ClearCrossSvg />
+                </BaseAutocomplete.Clear>
+              ) : null}
+              {trailingSlot}
+            </div>
+          </div>
+
+          {suggestions.length > 0 ? (
+            <BaseAutocomplete.Portal container={portalContainer}>
+              <BaseAutocomplete.Positioner
+                sideOffset={6}
+                align="start"
+                className="m3e-search-bar__positioner"
+              >
+                <BaseAutocomplete.Popup
+                  className="m3e-search-bar__popup"
+                  style={{
+                    borderRadius: `${SEARCH_BAR_TOKENS.popupRadius}px`,
+                  }}
+                >
+                  <BaseAutocomplete.Empty className="m3e-search-bar__empty">
+                    {resolvedEmptyText}
+                  </BaseAutocomplete.Empty>
+                  <BaseAutocomplete.List
+                    className="m3e-search-bar__list"
+                    style={{ padding: `${SEARCH_BAR_TOKENS.popupPadding}px` }}
+                  >
+                    {(item: SearchSuggestion) => (
+                      <SearchSuggestionRow
+                        key={item.value}
+                        item={item}
+                        onPick={(label) => onSearchSubmit?.(label)}
+                      />
+                    )}
+                  </BaseAutocomplete.List>
+                </BaseAutocomplete.Popup>
+              </BaseAutocomplete.Positioner>
+            </BaseAutocomplete.Portal>
+          ) : null}
+        </BaseAutocomplete.Root>
+      </form>
+    );
+  },
+);
 
 export interface M3ESearchViewProps {
   readonly open?: boolean;
   readonly defaultOpen?: boolean;
   readonly onOpenChange?: (open: boolean) => void;
-  readonly mode?: "docked" | "fullscreen";
   readonly anchorRef?: React.RefObject<HTMLElement | null>;
   readonly value?: string;
   readonly defaultValue?: string;
@@ -348,9 +349,7 @@ function BackArrowSvg({ rtl }: { readonly rtl: boolean }) {
 }
 
 function SearchViewSurface({
-  mode,
   anchorRef,
-  autoFocusOnMount,
   query,
   setQuery,
   onClose,
@@ -365,12 +364,10 @@ function SearchViewSurface({
   className,
   style,
 }: {
-  readonly mode: "docked" | "fullscreen";
   readonly anchorRef?: React.RefObject<HTMLElement | null>;
-  readonly autoFocusOnMount?: boolean;
   readonly query: string;
   readonly setQuery: (val: string) => void;
-  readonly onClose?: () => void;
+  readonly onClose: () => void;
   readonly onSearchSubmit?: (q: string) => void;
   readonly recentSearches: readonly string[];
   readonly onClearRecent?: () => void;
@@ -392,9 +389,7 @@ function SearchViewSurface({
   useIsoLayoutEffect(() => {
     const surfaceEl = surfaceRef.current;
     const anchorEl = anchorRef?.current;
-    if (autoFocusOnMount) {
-      inputRef.current?.focus();
-    }
+    inputRef.current?.focus();
     if (
       !surfaceEl ||
       !anchorEl ||
@@ -438,7 +433,7 @@ function SearchViewSurface({
       },
     );
     return () => anim.cancel();
-  }, [anchorRef, autoFocusOnMount, reducedMotion]);
+  }, [anchorRef, reducedMotion]);
 
   const normalizedQuery = query.trim().toLowerCase();
   const filteredSuggestions = React.useMemo(() => {
@@ -483,21 +478,8 @@ function SearchViewSurface({
   return (
     <div
       ref={surfaceRef}
-      className={
-        className ? `m3e-search-view ${className}` : "m3e-search-view"
-      }
-      data-mode={mode}
-      style={{
-        borderRadius:
-          mode === "docked"
-            ? `${SEARCH_VIEW_TOKENS.dockedRadius}px`
-            : undefined,
-        maxWidth:
-          mode === "docked"
-            ? `${SEARCH_VIEW_TOKENS.dockedMaxWidth}px`
-            : undefined,
-        ...style,
-      }}
+      className={className ? `m3e-search-view ${className}` : "m3e-search-view"}
+      style={style}
     >
       <form
         role="search"
@@ -508,20 +490,14 @@ function SearchViewSurface({
           submitQuery(query);
         }}
       >
-        {onClose ? (
-          <button
-            type="button"
-            aria-label={t("searchView.back")}
-            className="m3e-search-view__back"
-            onClick={onClose}
-          >
-            <BackArrowSvg rtl={direction === "rtl"} />
-          </button>
-        ) : (
-          <span className="m3e-search-view__leading-icon" aria-hidden="true">
-            <SearchGlassSvg />
-          </span>
-        )}
+        <button
+          type="button"
+          aria-label={t("searchView.back")}
+          className="m3e-search-view__back"
+          onClick={onClose}
+        >
+          <BackArrowSvg rtl={direction === "rtl"} />
+        </button>
 
         <input
           ref={inputRef}
@@ -576,9 +552,6 @@ function SearchViewSurface({
               e.preventDefault();
               setQuery(activeTarget.label);
               submitQuery(activeTarget.label);
-            } else if (e.key === "Escape" && mode === "docked" && onClose) {
-              e.preventDefault();
-              onClose();
             }
           }}
         />
@@ -637,13 +610,18 @@ function SearchViewSurface({
                       aria-selected={isHighlighted}
                       className="m3e-search-view__item"
                       data-highlighted={isHighlighted ? "" : undefined}
-                      style={{ borderRadius: `${SEARCH_VIEW_TOKENS.itemRadius}px` }}
+                      style={{
+                        borderRadius: `${SEARCH_VIEW_TOKENS.itemRadius}px`,
+                      }}
                       onClick={() => {
                         setQuery(item);
                         submitQuery(item);
                       }}
                     >
-                      <span className="m3e-search-bar__item-icon" aria-hidden="true">
+                      <span
+                        className="m3e-search-bar__item-icon"
+                        aria-hidden="true"
+                      >
                         <HistoryClockSvg />
                       </span>
                       <span className="m3e-search-bar__item-label">{item}</span>
@@ -681,13 +659,18 @@ function SearchViewSurface({
                       aria-selected={isHighlighted}
                       className="m3e-search-view__item"
                       data-highlighted={isHighlighted ? "" : undefined}
-                      style={{ borderRadius: `${SEARCH_VIEW_TOKENS.itemRadius}px` }}
+                      style={{
+                        borderRadius: `${SEARCH_VIEW_TOKENS.itemRadius}px`,
+                      }}
                       onClick={() => {
                         setQuery(item.label);
                         submitQuery(item.label);
                       }}
                     >
-                      <span className="m3e-search-bar__item-icon" aria-hidden="true">
+                      <span
+                        className="m3e-search-bar__item-icon"
+                        aria-hidden="true"
+                      >
                         {item.icon ?? <SearchGlassSvg />}
                       </span>
                       <span className="m3e-search-bar__item-body">
@@ -725,9 +708,8 @@ function SearchViewSurface({
 
 export function SearchView({
   open: controlledOpen,
-  defaultOpen = true,
+  defaultOpen = false,
   onOpenChange,
-  mode = "docked",
   anchorRef,
   value: controlledValue,
   defaultValue = "",
@@ -777,61 +759,33 @@ export function SearchView({
   const resolvedPlaceholder = placeholder ?? t("searchBar.placeholder");
   const resolvedAriaLabel = ariaLabel ?? t("searchBar.ariaLabel");
 
-  if (mode === "fullscreen") {
-    return (
-      <BaseDialog.Root open={isOpen} onOpenChange={setOpen}>
-        <BaseDialog.Portal container={portalContainer}>
-          <BaseDialog.Backdrop className="m3e-dialog__backdrop" />
-          <BaseDialog.Popup
-            aria-label={resolvedAriaLabel}
-            className="m3e-search-view__modal-popup"
-          >
-            <SearchViewSurface
-              mode="fullscreen"
-              anchorRef={anchorRef}
-              autoFocusOnMount
-              query={query}
-              setQuery={setQuery}
-              onClose={() => setOpen(false)}
-              onSearchSubmit={onSearchSubmit}
-              recentSearches={recentSearches}
-              onClearRecent={onClearRecent}
-              suggestions={suggestions}
-              placeholder={resolvedPlaceholder}
-              ariaLabel={resolvedAriaLabel}
-              trailingSlot={trailingSlot}
-              className={className}
-              style={style}
-            >
-              {children}
-            </SearchViewSurface>
-          </BaseDialog.Popup>
-        </BaseDialog.Portal>
-      </BaseDialog.Root>
-    );
-  }
-
-  if (!isOpen) return null;
-
   return (
-    <SearchViewSurface
-      mode="docked"
-      anchorRef={anchorRef}
-      autoFocusOnMount={Boolean(anchorRef)}
-      query={query}
-      setQuery={setQuery}
-      onClose={onOpenChange ? () => setOpen(false) : undefined}
-      onSearchSubmit={onSearchSubmit}
-      recentSearches={recentSearches}
-      onClearRecent={onClearRecent}
-      suggestions={suggestions}
-      placeholder={resolvedPlaceholder}
-      ariaLabel={resolvedAriaLabel}
-      trailingSlot={trailingSlot}
-      className={className}
-      style={style}
-    >
-      {children}
-    </SearchViewSurface>
+    <BaseDialog.Root open={isOpen} onOpenChange={setOpen}>
+      <BaseDialog.Portal container={portalContainer}>
+        <BaseDialog.Backdrop className="m3e-dialog__backdrop" />
+        <BaseDialog.Popup
+          aria-label={resolvedAriaLabel}
+          className="m3e-search-view__modal-popup"
+        >
+          <SearchViewSurface
+            anchorRef={anchorRef}
+            query={query}
+            setQuery={setQuery}
+            onClose={() => setOpen(false)}
+            onSearchSubmit={onSearchSubmit}
+            recentSearches={recentSearches}
+            onClearRecent={onClearRecent}
+            suggestions={suggestions}
+            placeholder={resolvedPlaceholder}
+            ariaLabel={resolvedAriaLabel}
+            trailingSlot={trailingSlot}
+            className={className}
+            style={style}
+          >
+            {children}
+          </SearchViewSurface>
+        </BaseDialog.Popup>
+      </BaseDialog.Portal>
+    </BaseDialog.Root>
   );
 }

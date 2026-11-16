@@ -1018,7 +1018,6 @@ export const CARD_TOKENS = {
 export const NAVIGATION_TOKENS = {
   barHeight: 64,
   tallBarHeight: 80,
-  railWidth: 80,
   indicatorWidth: 56,
   indicatorHeight: 32,
   horizontalIndicatorHeight: 40,
@@ -1547,6 +1546,227 @@ function lerpKeylineList(
   };
 }
 
+interface CarouselArrangement {
+  readonly priority: number;
+  readonly smallSize: number;
+  readonly smallCount: number;
+  readonly mediumSize: number;
+  readonly mediumCount: number;
+  readonly largeSize: number;
+  readonly largeCount: number;
+}
+
+// Port of AOSP carousel/Arrangement.kt.
+function arrangementCost(a: CarouselArrangement, targetLargeSize: number): number {
+  const valid =
+    a.largeCount > 0 && a.smallCount > 0 && a.mediumCount > 0
+      ? a.largeSize > a.mediumSize && a.mediumSize > a.smallSize
+      : a.largeCount > 0 && a.smallCount > 0
+        ? a.largeSize > a.smallSize
+        : true;
+  return valid ? Math.abs(targetLargeSize - a.largeSize) * a.priority : Number.MAX_VALUE;
+}
+
+function fitArrangement(
+  priority: number,
+  availableSpace: number,
+  itemSpacing: number,
+  smallCount: number,
+  smallSize: number,
+  minSmallSize: number,
+  maxSmallSize: number,
+  mediumCount: number,
+  mediumSize: number,
+  largeCount: number,
+  largeSize: number,
+): CarouselArrangement {
+  const totalItemCount = largeCount + mediumCount + smallCount;
+  const space = availableSpace - (totalItemCount - 1) * itemSpacing;
+  let small = Math.min(maxSmallSize, Math.max(minSmallSize, smallSize));
+  const delta = space - (largeSize * largeCount + mediumSize * mediumCount + small * smallCount);
+  if (smallCount > 0 && delta > 0) {
+    small += Math.min(delta / smallCount, maxSmallSize - small);
+  } else if (smallCount > 0 && delta < 0) {
+    small += Math.max(delta / smallCount, minSmallSize - small);
+  }
+  if (smallCount === 0) small = 0;
+  let large =
+    (space - (smallCount + mediumCount / 2) * small) / (largeCount + mediumCount / 2);
+  let medium = (large + small) / 2;
+  if (mediumCount > 0 && large !== largeSize) {
+    const targetAdjustment = (largeSize - large) * largeCount;
+    const distribute = Math.min(Math.abs(targetAdjustment), medium * 0.1 * mediumCount);
+    if (targetAdjustment > 0) {
+      medium -= distribute / mediumCount;
+      large += distribute / largeCount;
+    } else {
+      medium += distribute / mediumCount;
+      large -= distribute / largeCount;
+    }
+  }
+  return {
+    priority,
+    smallSize: small,
+    smallCount,
+    mediumSize: medium,
+    mediumCount,
+    largeSize: large,
+    largeCount,
+  };
+}
+
+function findLowestCostArrangement(
+  availableSpace: number,
+  itemSpacing: number,
+  targetSmallSize: number,
+  minSmallSize: number,
+  maxSmallSize: number,
+  smallCounts: readonly number[],
+  targetMediumSize: number,
+  mediumCounts: readonly number[],
+  targetLargeSize: number,
+  largeCounts: readonly number[],
+): CarouselArrangement | null {
+  let best: CarouselArrangement | null = null;
+  let priority = 1;
+  for (const largeCount of largeCounts) {
+    for (const mediumCount of mediumCounts) {
+      for (const smallCount of smallCounts) {
+        const a = fitArrangement(
+          priority,
+          availableSpace,
+          itemSpacing,
+          smallCount,
+          targetSmallSize,
+          minSmallSize,
+          maxSmallSize,
+          mediumCount,
+          targetMediumSize,
+          largeCount,
+          targetLargeSize,
+        );
+        if (!best || arrangementCost(a, targetLargeSize) < arrangementCost(best, targetLargeSize)) {
+          best = a;
+          if (arrangementCost(best, targetLargeSize) === 0) return best;
+        }
+        priority++;
+      }
+    }
+  }
+  return best;
+}
+
+function descendingCounts(min: number, max: number): number[] {
+  const out: number[] = [];
+  for (let n = max; n >= min; n--) out.push(n);
+  return out;
+}
+
+// AOSP Keylines.kt: multiBrowseKeylineList.
+function multiBrowseArrangement(
+  size: number,
+  preferredItemSize: number,
+  itemSpacing: number,
+  itemCount: number,
+  minSmall: number,
+  maxSmall: number,
+): CarouselArrangement | null {
+  let smallCounts = [1];
+  const mediumCounts = [1, 0];
+  const targetLarge = Math.min(preferredItemSize, size);
+  const targetSmall = Math.min(maxSmall, Math.max(minSmall, targetLarge / 3));
+  const targetMedium = (targetLarge + targetSmall) / 2;
+  if (size < minSmall * 2) smallCounts = [0];
+  const minAvailableLargeSpace =
+    size - targetMedium * Math.max(...mediumCounts) - maxSmall * Math.max(...smallCounts);
+  const largeCounts = descendingCounts(
+    Math.max(1, Math.floor(minAvailableLargeSpace / targetLarge)),
+    Math.ceil(size / targetLarge),
+  );
+  const find = (sc: readonly number[], mc: readonly number[]) =>
+    findLowestCostArrangement(
+      size, itemSpacing, targetSmall, minSmall, maxSmall, sc, targetMedium, mc, targetLarge, largeCounts,
+    );
+  let arrangement = find(smallCounts, mediumCounts);
+  if (arrangement) {
+    const total = arrangement.largeCount + arrangement.mediumCount + arrangement.smallCount;
+    if (total > itemCount) {
+      let surplus = total - itemCount;
+      let smallCount = arrangement.smallCount;
+      let mediumCount = arrangement.mediumCount;
+      while (surplus > 0) {
+        if (smallCount > 0) smallCount -= 1;
+        else if (mediumCount > 1) mediumCount -= 1;
+        surplus -= 1;
+      }
+      arrangement = find([smallCount], [mediumCount]);
+    }
+  }
+  return arrangement;
+}
+
+// AOSP Keylines.kt: heroKeylineList.
+function heroArrangement(
+  size: number,
+  preferredItemSize: number,
+  itemSpacing: number,
+  itemCount: number,
+  centered: boolean,
+  minSmall: number,
+  maxSmall: number,
+): CarouselArrangement | null {
+  let smallCounts = itemCount <= 1 ? [0] : centered ? [2] : [1];
+  const targetLarge = Math.min(preferredItemSize, size);
+  const targetSmall = Math.min(maxSmall, Math.max(minSmall, targetLarge / 3));
+  if (size < minSmall * Math.max(...smallCounts) + minSmall * 1.25) smallCounts = [0];
+  const minAvailableLargeSpace = size - minSmall * Math.max(...smallCounts);
+  const largeCounts = descendingCounts(
+    Math.max(1, Math.floor(minAvailableLargeSpace / targetLarge)),
+    Math.ceil(size / targetLarge),
+  );
+  return findLowestCostArrangement(
+    size, itemSpacing, targetSmall, minSmall, maxSmall, smallCounts, 0, [0], targetLarge, largeCounts,
+  );
+}
+
+function arrangementKeylines(
+  size: number,
+  itemSpacing: number,
+  a: CarouselArrangement,
+  centered: boolean,
+): CarouselKeylineList {
+  const anchor = { size: CAROUSEL_TOKENS.anchorSize, isAnchor: true };
+  const rep = (n: number, s: number) =>
+    Array.from({ length: n }, () => ({ size: s, isAnchor: false }));
+  if (!centered) {
+    return buildKeylineList(size, itemSpacing, 1, a.largeSize / 2, [
+      anchor,
+      ...rep(a.largeCount, a.largeSize),
+      ...rep(a.mediumCount, a.mediumSize),
+      ...rep(a.smallCount, a.smallSize),
+      anchor,
+    ]);
+  }
+  const sideSmall = rep(Math.floor(a.smallCount / 2), a.smallSize);
+  const sideMedium = rep(Math.floor(a.mediumCount / 2), a.mediumSize);
+  const focalCount = a.largeCount;
+  const pivotIndex = 1 + sideSmall.length + sideMedium.length;
+  const pivotOffset =
+    size / 2 -
+    (a.largeSize / 2) * (focalCount - 1) -
+    (focalCount - 1 > 0 && (focalCount - 1) % 2 !== 0 ? itemSpacing / 2 : 0) -
+    Math.floor((focalCount - 1) / 2) * itemSpacing;
+  return buildKeylineList(size, itemSpacing, pivotIndex, pivotOffset, [
+    anchor,
+    ...sideSmall,
+    ...sideMedium,
+    ...rep(a.largeCount, a.largeSize),
+    ...sideMedium,
+    ...sideSmall,
+    anchor,
+  ]);
+}
+
 export function resolveCarouselKeylineStrategy(input: {
   readonly count: number;
   readonly containerWidth: number;
@@ -1587,7 +1807,6 @@ export function resolveCarouselKeylineStrategy(input: {
   }
 
   const anchorSize = CAROUSEL_TOKENS.anchorSize;
-  const targetSmall = (minSmallItemSize + maxSmallItemSize) / 2;
   let defaultKeylines: CarouselKeylineList;
 
   if (count === 1 || containerWidth <= maxSmallItemSize * 2 + gap) {
@@ -1604,181 +1823,43 @@ export function resolveCarouselKeylineStrategy(input: {
       specs,
     );
   } else if (variant === "uncontained") {
-    const itemSize = Math.min(preferredItemWidth, containerWidth);
-    const fullCount = Math.max(
-      1,
-      Math.floor((containerWidth + gap) / (itemSize + gap)),
-    );
-    const visibleFull = Math.min(count, fullCount);
-    const usedByFull = visibleFull * itemSize + (visibleFull - 1) * gap;
-    const remainder = containerWidth - usedByFull - gap;
-    const specs: { size: number; isAnchor: boolean }[] = [
-      { size: anchorSize, isAnchor: true },
-    ];
-    for (let i = 0; i < visibleFull; i++) {
-      specs.push({ size: itemSize, isAnchor: false });
+    // Port of AOSP Keylines.kt uncontainedKeylineList + calculateMediumChildSize.
+    const largeSize = Math.min(preferredItemWidth + gap, containerWidth);
+    const largeCount = Math.max(1, Math.floor(containerWidth / largeSize));
+    const remainingSpace = containerWidth - largeCount * largeSize;
+    let mediumSize = Math.max(remainingSpace * 1.5, anchorSize);
+    const largeThreshold = largeSize * 0.85;
+    if (mediumSize > largeThreshold) {
+      mediumSize = Math.min(Math.max(largeThreshold, remainingSpace * 1.2), largeSize);
     }
-    if (visibleFull < count && remainder > 0) {
-      const peekSize = Math.max(
-        Math.min(minSmallItemSize, itemSize),
-        Math.min(itemSize * 0.85, remainder + itemSize * 0.25),
-      );
-      specs.push({ size: peekSize, isAnchor: false });
-    }
-    specs.push({ size: anchorSize, isAnchor: true });
-    defaultKeylines = buildKeylineList(
-      containerWidth,
-      gap,
-      1,
-      itemSize / 2,
-      specs,
-    );
-  } else if (variant === "centered-hero") {
-    if (count === 2) {
-      const small = Math.min(
-        maxSmallItemSize,
-        Math.max(minSmallItemSize, targetSmall),
-      );
-      const large = Math.max(small, containerWidth - small - gap);
-      const specs = [
-        { size: anchorSize, isAnchor: true },
-        { size: large, isAnchor: false },
-        { size: small, isAnchor: false },
-        { size: anchorSize, isAnchor: true },
-      ];
-      defaultKeylines = buildKeylineList(
-        containerWidth,
-        gap,
-        1,
-        large / 2,
-        specs,
-      );
-    } else {
-      const small = Math.min(
-        maxSmallItemSize,
-        Math.max(
-          minSmallItemSize,
-          Math.min(targetSmall, (containerWidth - gap * 2) * 0.16),
-        ),
-      );
-      const large = Math.max(small, containerWidth - small * 2 - gap * 2);
-      const specs = [
-        { size: anchorSize, isAnchor: true },
-        { size: small, isAnchor: false },
-        { size: large, isAnchor: false },
-        { size: small, isAnchor: false },
-        { size: anchorSize, isAnchor: true },
-      ];
-      defaultKeylines = buildKeylineList(
-        containerWidth,
-        gap,
-        2,
-        containerWidth / 2,
-        specs,
-      );
-    }
-  } else if (variant === "hero") {
-    const small = Math.min(
-      maxSmallItemSize,
-      Math.max(
-        minSmallItemSize,
-        Math.min(targetSmall, (containerWidth - gap) * 0.18),
-      ),
-    );
-    const large = Math.max(small, containerWidth - small - gap);
-    const specs = [
+    const leftAnchor = Math.max(Math.min(anchorSize, preferredItemWidth), mediumSize * 0.5);
+    defaultKeylines = buildKeylineList(containerWidth, gap, 1, largeSize / 2, [
+      { size: leftAnchor, isAnchor: true },
+      ...Array.from({ length: largeCount }, () => ({ size: largeSize, isAnchor: false })),
+      ...(remainingSpace > 0 ? [{ size: mediumSize, isAnchor: false }] : []),
       { size: anchorSize, isAnchor: true },
-      { size: large, isAnchor: false },
-      { size: small, isAnchor: false },
-      { size: anchorSize, isAnchor: true },
-    ];
-    defaultKeylines = buildKeylineList(
-      containerWidth,
-      gap,
-      1,
-      large / 2,
-      specs,
-    );
+    ]);
   } else {
-    // AOSP multiBrowseKeylineList lowest-cost arrangement
-    const maxLargeCandidates = Math.min(
-      count,
-      Math.max(1, Math.ceil(containerWidth / Math.max(120, preferredItemWidth)) + 1),
-    );
-    let bestSpecs: { size: number; isAnchor: boolean }[] | null = null;
-    let bestCost = Number.POSITIVE_INFINITY;
-    let bestLarge = containerWidth;
-
-    for (let lCount = 1; lCount <= maxLargeCandidates; lCount++) {
-      const mCandidates = count - lCount >= 2 ? [1, 0] : [0];
-      for (const mCount of mCandidates) {
-        const sCount = count > lCount + mCount ? 1 : 0;
-        const totalSlots = lCount + mCount + sCount;
-        const available = containerWidth - (totalSlots - 1) * gap;
-        if (available <= 0) continue;
-
-        const sSize =
-          sCount > 0
-            ? Math.min(
-                maxSmallItemSize,
-                Math.max(minSmallItemSize, Math.min(targetSmall, available * 0.16)),
-              )
-            : 0;
-        const remainAfterSmall = available - sCount * sSize;
-        const mRatio = mCount > 0 ? 0.56 : 0;
-        const lSize = remainAfterSmall / (lCount + mCount * mRatio);
-        const mSize = mCount > 0 ? lSize * mRatio : 0;
-
-        if (sCount > 0 && lSize <= sSize * 1.15) continue;
-        if (mCount > 0 && (mSize <= sSize * 1.05 || mSize >= lSize * 0.92)) {
-          continue;
-        }
-
-        const cost =
-          Math.abs(lSize - preferredItemWidth) * lCount +
-          (sCount > 0 ? Math.abs(sSize - targetSmall) * 0.5 : 40);
-        if (cost < bestCost) {
-          bestCost = cost;
-          bestLarge = lSize;
-          const nextSpecs: { size: number; isAnchor: boolean }[] = [
-            { size: anchorSize, isAnchor: true },
-          ];
-          for (let i = 0; i < lCount; i++) {
-            nextSpecs.push({ size: lSize, isAnchor: false });
-          }
-          for (let i = 0; i < mCount; i++) {
-            nextSpecs.push({ size: mSize, isAnchor: false });
-          }
-          for (let i = 0; i < sCount; i++) {
-            nextSpecs.push({ size: sSize, isAnchor: false });
-          }
-          nextSpecs.push({ size: anchorSize, isAnchor: true });
-          bestSpecs = nextSpecs;
-        }
-      }
-    }
-
-    if (!bestSpecs) {
-      const small = Math.min(
-        maxSmallItemSize,
-        Math.max(minSmallItemSize, Math.min(targetSmall, (containerWidth - gap) * 0.2)),
-      );
-      bestLarge = Math.max(small, containerWidth - small - gap);
-      bestSpecs = [
-        { size: anchorSize, isAnchor: true },
-        { size: bestLarge, isAnchor: false },
-        { size: small, isAnchor: false },
-        { size: anchorSize, isAnchor: true },
-      ];
-    }
-
-    defaultKeylines = buildKeylineList(
-      containerWidth,
-      gap,
-      1,
-      bestLarge / 2,
-      bestSpecs,
-    );
+    const centered = variant === "centered-hero" && count >= 3;
+    const arrangement =
+      variant === "multi-browse"
+        ? multiBrowseArrangement(containerWidth, preferredItemWidth, gap, count, minSmallItemSize, maxSmallItemSize)
+        : heroArrangement(
+            containerWidth,
+            input.preferredItemWidth ?? containerWidth,
+            gap,
+            count,
+            centered,
+            minSmallItemSize,
+            maxSmallItemSize,
+          );
+    defaultKeylines = arrangement
+      ? arrangementKeylines(containerWidth, gap, arrangement, centered)
+      : buildKeylineList(containerWidth, gap, 1, containerWidth / 2, [
+          { size: anchorSize, isAnchor: true },
+          { size: containerWidth, isAnchor: false },
+          { size: anchorSize, isAnchor: true },
+        ]);
   }
 
   const startKeylineSteps = buildStartSteps(
@@ -2358,17 +2439,6 @@ export const DATE_PICKER_TOKENS = {
   padding: 20,
 } as const;
 
-export const PREVIEW_CARD_TOKENS = {
-  containerRadius: 24,
-  padding: 16,
-  maxWidth: 320,
-} as const;
-
-export const DIVIDER_TOKENS = {
-  thickness: 1,
-  insetStart: 16,
-} as const;
-
 export const SCROLL_AREA_TOKENS = {
   scrollbarSize: 8,
   thumbRadius: 9999,
@@ -2445,22 +2515,26 @@ export function resolveClockHandGeometry(input: {
   };
 }
 
-export const WIDE_NAVIGATION_RAIL_TOKENS = {
+export const NAVIGATION_RAIL_TOKENS = {
   collapsedWidth: 96,
-  expandedWidth: 220,
+  expandedMinWidth: 220,
+  expandedMaxWidth: 360,
   itemHeight: 56,
   itemRadius: 28,
   itemPressedRadius: 12,
   padding: 20,
+  modalCornerRadius: SHAPE_CORNER_TOKENS.large,
 } as const;
 
-export const NAVIGATION_DRAWER_TOKENS = {
+export const SIDEBAR_TOKENS = {
   width: 280,
-  cornerRadius: SHAPE_CORNER_TOKENS.large,
-  itemHeight: 56,
-  itemRadius: 28,
-  itemPressedRadius: 12,
+  modalMaxWidth: 360,
+  itemHeight: 40,
+  itemRadius: 20,
+  itemPressedRadius: 8,
   padding: 12,
+  wideMinWidth: 840,
+  modalCornerRadius: SHAPE_CORNER_TOKENS.large,
 } as const;
 
 export const NAVIGATION_SUITE_TOKENS = {
@@ -2502,8 +2576,6 @@ export const DOCKED_TOOLBAR_TOKENS = {
 } as const;
 
 export const SEARCH_VIEW_TOKENS = {
-  dockedRadius: SHAPE_CORNER_TOKENS.extraLarge,
-  dockedMaxWidth: 720,
   headerHeight: 56,
   itemRadius: 14,
 } as const;
@@ -2598,25 +2670,10 @@ export function resolveDragHandleGeometry(input: {
     : { inlineSize: thickness, blockSize: length, cornerRadius };
 }
 
-export const BOTTOM_APP_BAR_TOKENS = {
-  height: 80,
-  paddingInline: 16,
-  paddingBlock: 12,
-  actionGap: 4,
-} as const;
-
 export const PULL_TO_REFRESH_TOKENS = {
   positionalThreshold: 80,
   maxDragDistance: 132,
   dragMultiplier: 0.5,
   indicatorSize: 48,
   circularSize: 40,
-} as const;
-
-export const VIBRANT_MENU_TOKENS = {
-  containerPadding: 4,
-  groupGap: 2,
-  groupRadius: SHAPE_CORNER_TOKENS.large,
-  itemOuterRadius: SHAPE_CORNER_TOKENS.medium,
-  itemInnerRadius: SHAPE_CORNER_TOKENS.extraSmall,
 } as const;

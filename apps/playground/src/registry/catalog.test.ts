@@ -5,8 +5,8 @@ import { ALL_COMPONENT_DOCS } from "./components";
 import { DOC_GUIDES } from "./docs";
 
 it("keeps the lightweight catalog in sync with the full registry", () => {
-  expect(COMPONENT_CATALOG.map(({ slug, title, category, isNew }) => ({ slug, title, category, isNew }))).toEqual(
-    ALL_COMPONENT_DOCS.map(({ slug, title, category, isNew }) => ({ slug, title, category, isNew })),
+  expect(COMPONENT_CATALOG.map(({ slug, title, isNew }) => ({ slug, title, isNew }))).toEqual(
+    ALL_COMPONENT_DOCS.map(({ slug, title, isNew }) => ({ slug, title, isNew })),
   );
   expect(BLOCK_CATALOG).toEqual(
     BLOCKS_REGISTRY.map(({ slug, category, title }) => ({ slug, category, title })),

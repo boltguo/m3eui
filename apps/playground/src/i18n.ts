@@ -64,7 +64,6 @@ export interface PlaygroundStrings {
   readonly heroTitle: string;
   readonly heroDesc: string;
   readonly browseComponentsBtn: string;
-  readonly browseBlocksBtn: string;
   readonly readDocsBtn: string;
   readonly openStudioBtn: string;
   readonly switchPolygonTooltip: string;
@@ -112,14 +111,6 @@ export interface PlaygroundStrings {
   readonly closeFullscreen: string;
   readonly browseAllBlocks: string;
   readonly copiedCliToast: (cmd: string) => string;
-  readonly componentCategories: {
-    readonly actions: string;
-    readonly inputs: string;
-    readonly selection: string;
-    readonly display: string;
-    readonly feedback: string;
-    readonly navigation: string;
-  };
   readonly blockCategories: {
     readonly featured: string;
     readonly dashboard: string;
@@ -186,7 +177,6 @@ const ZH_CN: PlaygroundStrings = {
   heroDesc:
     "源自 Android 源码的弹簧物理、形状形变与动态色彩，构建于 Base UI 之上。",
   browseComponentsBtn: "浏览组件",
-  browseBlocksBtn: "探索 Blocks",
   readDocsBtn: "阅读指南",
   openStudioBtn: "主题工作台",
   switchPolygonTooltip: "切换多边形",
@@ -234,14 +224,6 @@ const ZH_CN: PlaygroundStrings = {
   closeFullscreen: "退出全屏",
   browseAllBlocks: "全部区块",
   copiedCliToast: (cmd) => `已复制命令：${cmd}`,
-  componentCategories: {
-    actions: "动作与按钮",
-    inputs: "表单与录入",
-    selection: "选择与滑动",
-    display: "数据展示",
-    feedback: "反馈与浮层",
-    navigation: "导航与菜单",
-  },
   blockCategories: {
     featured: "精选",
     dashboard: "仪表盘",
@@ -308,7 +290,6 @@ const EN_US: PlaygroundStrings = {
   heroDesc:
     "Spring physics, shape morphing, and dynamic color ported from the Android source, built on Base UI.",
   browseComponentsBtn: "Browse Components",
-  browseBlocksBtn: "Explore Blocks",
   readDocsBtn: "Read Docs",
   openStudioBtn: "Theme Studio",
   switchPolygonTooltip: "Cycle polygon shape",
@@ -356,14 +337,6 @@ const EN_US: PlaygroundStrings = {
   closeFullscreen: "Close fullscreen",
   browseAllBlocks: "All blocks",
   copiedCliToast: (cmd) => `Copied command: ${cmd}`,
-  componentCategories: {
-    actions: "Actions & Buttons",
-    inputs: "Inputs & Forms",
-    selection: "Selection & Sliders",
-    display: "Data Display",
-    feedback: "Feedback & Overlays",
-    navigation: "Navigation & Menus",
-  },
   blockCategories: {
     featured: "Featured",
     dashboard: "Dashboard",
@@ -430,7 +403,6 @@ const JA_JP: PlaygroundStrings = {
   heroDesc:
     "Android ソース由来のスプリング物理、シェイプモーフィング、ダイナミックカラー。Base UI 上に構築。",
   browseComponentsBtn: "コンポーネント一覧",
-  browseBlocksBtn: "Blocks を探索",
   readDocsBtn: "ガイドを読む",
   openStudioBtn: "テーマスタジオ",
   switchPolygonTooltip: "ポリゴン形状を切り替え",
@@ -478,14 +450,6 @@ const JA_JP: PlaygroundStrings = {
   closeFullscreen: "全画面を閉じる",
   browseAllBlocks: "すべてのブロック",
   copiedCliToast: (cmd) => `コマンドをコピーしました: ${cmd}`,
-  componentCategories: {
-    actions: "アクション・ボタン",
-    inputs: "フォーム入力",
-    selection: "選択・スライダー",
-    display: "データ表示",
-    feedback: "フィードバック・オーバーレイ",
-    navigation: "ナビゲーション・メニュー",
-  },
   blockCategories: {
     featured: "注目",
     dashboard: "ダッシュボード",
@@ -552,7 +516,6 @@ const AR_SA: PlaygroundStrings = {
   heroDesc:
     "فيزياء نابضية وتحوّل أشكال وألوان ديناميكية منقولة من مصدر Android، مبنية على Base UI.",
   browseComponentsBtn: "تصفح المكونات",
-  browseBlocksBtn: "استكشاف القوالب",
   readDocsBtn: "قراءة الدليل",
   openStudioBtn: "استوديو السمة",
   switchPolygonTooltip: "تبديل شكل المضلع",
@@ -600,14 +563,6 @@ const AR_SA: PlaygroundStrings = {
   closeFullscreen: "إغلاق ملء الشاشة",
   browseAllBlocks: "جميع القوالب",
   copiedCliToast: (cmd) => `تم نسخ الأمر: ${cmd}`,
-  componentCategories: {
-    actions: "الإجراءات والأزرار",
-    inputs: "حقول الإدخال",
-    selection: "الاختيار والمنزلقات",
-    display: "عرض البيانات",
-    feedback: "التنبيهات والطبقات",
-    navigation: "التنقل والقوائم",
-  },
   blockCategories: {
     featured: "مميز",
     dashboard: "لوحة التحكم",

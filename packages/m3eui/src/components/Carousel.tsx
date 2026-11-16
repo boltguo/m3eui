@@ -123,7 +123,8 @@ function resolveSlideGeometry(
     isFocal: frame.isFocal,
     cornerRadius: frame.cornerRadius,
     zIndex: frame.zIndex,
-    captionOpacity: Math.max(0, Math.min(1, (frame.prominence - 0.35) / 0.55)),
+    // Captions belong to large items only; they fade out before an item reaches medium size.
+    captionOpacity: Math.max(0, Math.min(1, (frame.prominence - 0.75) / 0.25)),
     translateX: rtlSign * frame.offsetDelta,
   };
 }
@@ -478,11 +479,8 @@ export function Carousel({
         slide.style.transform = `translate3d(${g.translateX.toFixed(2)}px, 0, 0)`;
         slide.toggleAttribute("data-unmasked", idx === currentIdx || g.isFocal);
         const inner = slide.firstElementChild as HTMLElement | null;
-        if (!inner) continue;
-        inner.style.inlineSize = `${g.slotWidth.toFixed(2)}px`;
-        const scrim = inner.querySelector<HTMLElement>(".m3e-carousel__scrim");
-        if (scrim) scrim.style.opacity = String(0.35 + 0.65 * g.captionOpacity);
-        const caption = inner.querySelector<HTMLElement>(".m3e-carousel__caption");
+        if (inner) inner.style.inlineSize = `${g.slotWidth.toFixed(2)}px`;
+        const caption = slide.querySelector<HTMLElement>(":scope > .m3e-carousel__caption");
         if (caption) {
           caption.style.opacity = String(g.captionOpacity);
           caption.style.translate = `0px ${((1 - g.captionOpacity) * 8).toFixed(1)}px`;
@@ -576,8 +574,24 @@ export function Carousel({
   );
 
   const canLoop = loop && count >= 3;
-  const prevDisabled = !canLoop && currentIdx <= 0;
-  const nextDisabled = !canLoop && currentIdx >= count - 1;
+  const canScroll = maxScrollOffset > 0.5;
+  const snapOffsets = React.useMemo(
+    () =>
+      Array.from({ length: count }, (_, i) =>
+        resolveCarouselSnapOffset({ strategy, index: i, count }),
+      ),
+    [strategy, count],
+  );
+  // Arrows advance to the next index whose snap position actually moves the track.
+  const stepTarget = (dir: 1 | -1): number | null => {
+    const from = snapOffsets[currentIdx] ?? 0;
+    for (let i = currentIdx + dir; i >= 0 && i < count; i += dir) {
+      if (Math.abs((snapOffsets[i] ?? 0) - from) > 0.5) return i;
+    }
+    return canLoop ? (dir > 0 ? 0 : count - 1) : null;
+  };
+  const prevTarget = stepTarget(-1);
+  const nextTarget = stepTarget(1);
 
   return (
     <section
@@ -587,47 +601,49 @@ export function Carousel({
       className={className ? `m3e-carousel ${className}` : "m3e-carousel"}
       style={style}
     >
-      <div className="m3e-carousel__header-bar">
-        <div className="m3e-carousel__controls">
-          <button
-            type="button"
-            disabled={prevDisabled}
-            aria-label={t("carousel.prevSlide")}
-            className="m3e-carousel__nav-btn"
-            onClick={() => selectIndex(currentIdx - 1)}
-          >
-            <ChevronSvg direction="prev" rtl={isRtl} />
-          </button>
-          <button
-            type="button"
-            disabled={nextDisabled}
-            aria-label={t("carousel.nextSlide")}
-            className="m3e-carousel__nav-btn"
-            onClick={() => selectIndex(currentIdx + 1)}
-          >
-            <ChevronSvg direction="next" rtl={isRtl} />
-          </button>
-        </div>
-
-        <nav
-          className="m3e-carousel__markers"
-          aria-label={t("carousel.paginationLabel")}
-        >
-          {items.map((item, idx) => (
+      {canScroll ? (
+        <div className="m3e-carousel__header-bar">
+          <div className="m3e-carousel__controls">
             <button
-              key={item.id}
               type="button"
-              aria-label={t("carousel.goToSlide", {
-                index: idx + 1,
-                title: item.title,
-              })}
-              aria-current={idx === currentIdx ? "true" : undefined}
-              className="m3e-carousel__marker"
-              onClick={() => selectIndex(idx)}
-            />
-          ))}
-        </nav>
-      </div>
+              disabled={prevTarget === null}
+              aria-label={t("carousel.prevSlide")}
+              className="m3e-carousel__nav-btn"
+              onClick={() => prevTarget !== null && selectIndex(prevTarget)}
+            >
+              <ChevronSvg direction="prev" rtl={isRtl} />
+            </button>
+            <button
+              type="button"
+              disabled={nextTarget === null}
+              aria-label={t("carousel.nextSlide")}
+              className="m3e-carousel__nav-btn"
+              onClick={() => nextTarget !== null && selectIndex(nextTarget)}
+            >
+              <ChevronSvg direction="next" rtl={isRtl} />
+            </button>
+          </div>
+
+          <nav
+            className="m3e-carousel__markers"
+            aria-label={t("carousel.paginationLabel")}
+          >
+            {items.map((item, idx) => (
+              <button
+                key={item.id}
+                type="button"
+                aria-label={t("carousel.goToSlide", {
+                  index: idx + 1,
+                  title: item.title,
+                })}
+                aria-current={idx === currentIdx ? "true" : undefined}
+                className="m3e-carousel__marker"
+                onClick={() => selectIndex(idx)}
+              />
+            ))}
+          </nav>
+        </div>
+      ) : null}
 
       <div
         ref={trackRef}
@@ -780,27 +796,23 @@ export function Carousel({
                   {item.content ? (
                     <div className="m3e-carousel__media">{item.content}</div>
                   ) : null}
-                  <div
-                    className="m3e-carousel__scrim"
-                    style={{ opacity: 0.35 + 0.65 * captionOpacity }}
-                  />
-                  <div
-                    className="m3e-carousel__caption"
-                    style={{
-                      opacity: captionOpacity,
-                      translate: `0px ${((1 - captionOpacity) * 8).toFixed(1)}px`,
-                    }}
-                  >
-                    {item.badge ? (
-                      <span className="m3e-carousel__badge">{item.badge}</span>
-                    ) : null}
-                    <div className="m3e-carousel__title">{item.title}</div>
-                    {item.subtitle ? (
-                      <div className="m3e-carousel__subtitle">
-                        {item.subtitle}
-                      </div>
-                    ) : null}
-                  </div>
+                </div>
+                <div
+                  className="m3e-carousel__caption"
+                  style={{
+                    opacity: captionOpacity,
+                    translate: `0px ${((1 - captionOpacity) * 8).toFixed(1)}px`,
+                  }}
+                >
+                  {item.badge ? (
+                    <span className="m3e-carousel__badge">{item.badge}</span>
+                  ) : null}
+                  <div className="m3e-carousel__title">{item.title}</div>
+                  {item.subtitle ? (
+                    <div className="m3e-carousel__subtitle">
+                      {item.subtitle}
+                    </div>
+                  ) : null}
                 </div>
                 {debugGeometry ? (
                   <span className="m3e-debug-badge" aria-hidden="true">

@@ -8,9 +8,7 @@ import {
   type CommandPaletteGroup,
   type M3EBuiltInLocale,
   MaterialShapeView,
-  NavigationDrawer,
-  type NavigationDestination,
-  SearchBar,
+  NavigationRail,
   useM3EI18n,
 } from "m3eui";
 import m3ePkg from "../../../../packages/m3eui/package.json";
@@ -18,18 +16,21 @@ import { useCopyResolver, usePlaygroundStrings } from "../i18n";
 import {
   BLOCK_CATALOG,
   COMPONENT_CATALOG,
-  COMPONENT_CATALOG_BY_CATEGORY,
-  COMPONENT_CATEGORY_ORDER,
   DOC_CATALOG,
 } from "../registry/catalog";
 import { SiteHeader } from "./SiteHeader";
 import { GITHUB_REPO_URL } from "./Icons";
 import { ThemeStudioSheet } from "./ThemeStudioSheet";
+import { siteSectionOf, useSiteSections } from "./SiteSections";
 
 export interface SiteOutletContext {
   readonly openStudio: () => void;
   readonly openCommandPalette: () => void;
+  readonly navOpen: boolean;
+  readonly setNavOpen: (open: boolean) => void;
 }
+
+const SIDEBAR_SECTIONS = /^\/(components|docs)(\/|$)/;
 
 export function SiteLayout() {
   const ui = usePlaygroundStrings();
@@ -39,14 +40,12 @@ export function SiteLayout() {
   const navigate = useNavigate();
 
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
-  const [mobileFilter, setMobileFilter] = React.useState("");
   const [studioOpen, setStudioOpen] = React.useState(false);
   const [commandOpen, setCommandOpen] = React.useState(false);
 
   // Scroll to top when pathname changes (preserve hash scrolling if #hash is set)
   React.useEffect(() => {
     setMobileNavOpen(false);
-    setMobileFilter("");
     if (location.hash) {
       const id = decodeURIComponent(location.hash.slice(1));
       const scrollToHash = () => {
@@ -145,8 +144,7 @@ export function SiteLayout() {
         items: COMPONENT_CATALOG.map((c) => ({
           id: `comp-${c.slug}`,
           label: c.title,
-          description: ui.componentCategories[c.category],
-          keywords: [c.slug, c.category, ui.componentCategories[c.category], ...(c.keywords ?? [])],
+          keywords: [c.slug, ...(c.keywords ?? [])],
           onSelect: () => navigate(`/components/${c.slug}`),
         })),
       },
@@ -164,73 +162,17 @@ export function SiteLayout() {
     ];
   }, [navigate, resolve, ui]);
 
-  const normalizedMobileFilter = mobileFilter.trim().toLowerCase();
-
-  const mobileNavItems = React.useMemo<readonly NavigationDestination<string>[]>(
-    () => {
-      const matchesFilter = (text: string) =>
-        !normalizedMobileFilter ||
-        text.toLowerCase().includes(normalizedMobileFilter);
-
-      const pageItems: NavigationDestination<string>[] = [
-        { value: "/", label: ui.navHome, section: ui.cmdGroups.pages },
-        { value: "/docs/introduction", label: ui.navDocs, section: ui.cmdGroups.pages },
-        { value: "/components/button", label: ui.navComponents, section: ui.cmdGroups.pages },
-        { value: "/blocks", label: ui.navBlocks, section: ui.cmdGroups.pages },
-      ].filter((item) => matchesFilter(String(item.label)));
-
-      const docItems: NavigationDestination<string>[] = DOC_CATALOG.filter((g) =>
-        matchesFilter(`${resolve(g.title)} ${g.slug}`),
-      ).map((g) => ({
-        value: `/docs/${g.slug}`,
-        label: resolve(g.title),
-        section: ui.navDocs,
-      }));
-
-      const blockItems: NavigationDestination<string>[] = BLOCK_CATALOG.filter(
-        (b) => matchesFilter(`${resolve(b.title)} ${b.slug} ${b.category}`),
-      ).map((b) => ({
-        value: `/blocks#${b.slug}`,
-        label: resolve(b.title),
-        section: ui.navBlocks,
-      }));
-
-      const componentItems: NavigationDestination<string>[] =
-        COMPONENT_CATEGORY_ORDER.flatMap((cat) => {
-          const filtered = COMPONENT_CATALOG_BY_CATEGORY[cat].filter((c) =>
-            matchesFilter(`${c.title} ${c.slug} ${c.keywords?.join(" ") ?? ""}`),
-          );
-          const sectionTitle = `${ui.componentCategories[cat]} (${filtered.length})`;
-          return filtered.map((c) => ({
-            value: `/components/${c.slug}`,
-            label: c.title,
-            badgeLabel: c.isNew ? "NEW" : undefined,
-            section: sectionTitle,
-          }));
-        });
-
-      const deduped = new Map<string, NavigationDestination<string>>();
-      for (const item of [
-        ...pageItems,
-        ...docItems,
-        ...blockItems,
-        ...componentItems,
-      ]) {
-        if (!deduped.has(item.value)) {
-          deduped.set(item.value, item);
-        }
-      }
-      return Array.from(deduped.values());
-    },
-    [normalizedMobileFilter, resolve, ui],
-  );
+  const sections = useSiteSections();
+  const hasSidebar = SIDEBAR_SECTIONS.test(location.pathname);
 
   const outletCtx = React.useMemo<SiteOutletContext>(
     () => ({
       openStudio: () => setStudioOpen(true),
       openCommandPalette: () => setCommandOpen(true),
+      navOpen: mobileNavOpen,
+      setNavOpen: setMobileNavOpen,
     }),
-    [],
+    [mobileNavOpen],
   );
 
   return (
@@ -245,50 +187,37 @@ export function SiteLayout() {
         onOpenCommandPalette={() => setCommandOpen(true)}
       />
 
-      <NavigationDrawer
-        variant="modal"
-        open={mobileNavOpen}
-        onOpenChange={(next) => {
-          setMobileNavOpen(next);
-          if (!next) setMobileFilter("");
-        }}
-        aria-label={ui.mobileNavAria}
-        headline={
-          <SearchBar
-            size="sm"
-            value={mobileFilter}
-            onValueChange={setMobileFilter}
-            placeholder={ui.filterComponentsPlaceholder}
-            aria-label={ui.filterComponentsPlaceholder}
-          />
-        }
-        items={mobileNavItems}
-        value={location.pathname}
-        onValueChange={(path) => {
-          navigate(path);
-          setMobileNavOpen(false);
-        }}
-        footer={
-          <ButtonGroup
-            variant="connected"
-            size="xs"
-            selectionMode="single"
-            className="studio-segmented"
-            aria-label={ui.languageLabel}
-            items={[
-              { value: "en-US", label: "EN" },
-              { value: "zh-CN", label: "中文" },
-              { value: "ja-JP", label: "日本語" },
-              { value: "ar-SA", label: "العربية" },
-            ]}
-            value={[locale]}
-            onValueChange={(vals) => {
-              const next = vals[0] as M3EBuiltInLocale | undefined;
-              if (next) setLocale(next);
-            }}
-          />
-        }
-      />
+      {hasSidebar ? null : (
+        <NavigationRail
+          modal
+          open={mobileNavOpen}
+          onOpenChange={setMobileNavOpen}
+          aria-label={ui.mobileNavAria}
+          items={sections}
+          value={siteSectionOf(location.pathname)}
+          onValueChange={(path) => navigate(path)}
+          footer={
+            <ButtonGroup
+              variant="connected"
+              size="xs"
+              selectionMode="single"
+              className="studio-segmented"
+              aria-label={ui.languageLabel}
+              items={[
+                { value: "en-US", label: "EN" },
+                { value: "zh-CN", label: "中文" },
+                { value: "ja-JP", label: "日本語" },
+                { value: "ar-SA", label: "العربية" },
+              ]}
+              value={[locale]}
+              onValueChange={(vals) => {
+                const next = vals[0] as M3EBuiltInLocale | undefined;
+                if (next) setLocale(next);
+              }}
+            />
+          }
+        />
+      )}
 
       <ThemeStudioSheet open={studioOpen} onOpenChange={setStudioOpen} />
 

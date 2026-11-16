@@ -8,16 +8,21 @@ import {
   type IconButtonWidthVariant,
   resolveIconButtonGeometry,
 } from "../tokens/index.js";
+import { isToggleProps } from "../internal/toggleProps.js";
 import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3ECornerSpringRef, usePressHoldState } from "../hooks/useM3ESpring.js";
 import type { ButtonIntent } from "./Button.js";
 
-export interface M3EIconButtonProps
+export interface M3EIconButtonActionProps
   extends Omit<
     React.HTMLAttributes<HTMLElement>,
     "children" | "className" | "style" | "onClick" | "aria-label"
   > {
   readonly icon: React.ReactNode;
+  readonly pressed?: never;
+  readonly defaultPressed?: never;
+  readonly onPressedChange?: never;
+  readonly checkedIcon?: never;
   readonly "aria-label": string;
   readonly size?: ButtonSize;
   readonly widthVariant?: IconButtonWidthVariant;
@@ -64,8 +69,8 @@ function IconSpinnerSvg({ size }: { readonly size: number }) {
   );
 }
 
-export const IconButton = React.forwardRef<HTMLElement, M3EIconButtonProps>(
-  function IconButton(
+const ActionIconButton = React.forwardRef<HTMLElement, M3EIconButtonActionProps>(
+  function ActionIconButton(
     {
       icon,
       "aria-label": ariaLabel,
@@ -166,7 +171,7 @@ export const IconButton = React.forwardRef<HTMLElement, M3EIconButtonProps>(
   },
 );
 
-export interface M3EIconToggleButtonProps
+export interface M3EIconButtonToggleProps
   extends Omit<
     React.ButtonHTMLAttributes<HTMLButtonElement>,
     "children" | "className" | "style" | "value" | "aria-label"
@@ -187,10 +192,10 @@ export interface M3EIconToggleButtonProps
   readonly style?: React.CSSProperties;
 }
 
-export const IconToggleButton = React.forwardRef<
+const ToggleIconButton = React.forwardRef<
   HTMLButtonElement,
-  M3EIconToggleButtonProps
->(function IconToggleButton(
+  M3EIconButtonToggleProps
+>(function ToggleIconButton(
   {
     icon,
     checkedIcon,
@@ -286,3 +291,20 @@ export const IconToggleButton = React.forwardRef<
     </BaseToggle>
   );
 });
+
+export type M3EIconButtonProps =
+  | M3EIconButtonActionProps
+  | M3EIconButtonToggleProps;
+
+export const IconButton = React.forwardRef<HTMLElement, M3EIconButtonProps>(
+  function IconButton(props, ref) {
+    return isToggleProps(props) ? (
+      <ToggleIconButton
+        {...(props as M3EIconButtonToggleProps)}
+        ref={ref as React.Ref<HTMLButtonElement>}
+      />
+    ) : (
+      <ActionIconButton {...(props as M3EIconButtonActionProps)} ref={ref} />
+    );
+  },
+);

@@ -4,12 +4,9 @@ import * as React from "react";
 import { Toolbar } from "@base-ui/react/toolbar";
 import {
   DOCKED_TOOLBAR_TOKENS,
-  FAB_MENU_TOKENS,
   FLOATING_TOOLBAR_TOKENS,
   type FabColorVariant,
   type FloatingToolbarTheme,
-  type ToggleFabSize,
-  resolveToggleFabGeometry,
 } from "../tokens/index.js";
 import { useM3ERuntime, useM3EI18n } from "../context/M3EContext.js";
 import {
@@ -17,7 +14,10 @@ import {
   useM3EScalarSpring,
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
-import { INERT_TRUE } from "../internal/inert.js";
+import { INERT_TRUE, inertProp } from "../internal/inert.js";
+import { FabElevationContext } from "../internal/fabElevation.js";
+import { MoreVertIconSvg } from "../internal/icons.js";
+import { DropdownMenu } from "./Menu.js";
 import { FAB, type M3EFABProps } from "./FAB.js";
 import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
 
@@ -364,449 +364,19 @@ export function FloatingToolbar({
   );
 }
 
-export interface FABMenuItemSpec {
-  readonly id: string;
-  readonly label: string;
-  readonly icon: React.ReactNode;
-  readonly disabled?: boolean;
-  readonly onSelect?: () => void;
-}
-
-export interface M3EFABMenuProps {
-  readonly items: readonly FABMenuItemSpec[];
-  readonly size?: ToggleFabSize;
-  readonly open?: boolean;
-  readonly defaultOpen?: boolean;
-  readonly onOpenChange?: (open: boolean) => void;
-  readonly icon?: React.ReactNode;
-  readonly triggerLabel?: string;
-  readonly className?: string;
-  readonly style?: React.CSSProperties;
-}
-
-function DefaultPlusSvg() {
-  return (
-    <svg
-      width="100%"
-      height="100%"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.4"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <line x1="12" y1="5" x2="12" y2="19" />
-      <line x1="5" y1="12" x2="19" y2="12" />
-    </svg>
-  );
-}
-
-function CloseCrossSvg() {
-  return (
-    <svg
-      width="100%"
-      height="100%"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.4"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <line x1="6" y1="6" x2="18" y2="18" />
-      <line x1="18" y1="6" x2="6" y2="18" />
-    </svg>
-  );
-}
-
-function StaggeredFabMenuItem({
-  item,
-  index,
-  count,
-  isOpen,
-  isRovingActive,
-  onFocusItem,
-  onDismissAndSelect,
-  buttonRef,
-}: {
-  readonly item: FABMenuItemSpec;
-  readonly index: number;
-  readonly count: number;
-  readonly isOpen: boolean;
-  readonly isRovingActive: boolean;
-  readonly onFocusItem: () => void;
-  readonly onDismissAndSelect: () => void;
-  readonly buttonRef: (el: HTMLButtonElement | null) => void;
-}) {
-  const { motionRef } = useM3ERuntime();
-  const [itemActive, setItemActive] = React.useState<boolean>(isOpen);
-
-  React.useEffect(() => {
-    const rate = Math.max(0.1, motionRef.current.playbackRate);
-    const rawDelayMs = isOpen
-      ? (count - 1 - index) * FAB_MENU_TOKENS.staggerStepMs
-      : index * 25;
-    const delayMs = rawDelayMs / rate;
-
-    if (delayMs <= 1) {
-      setItemActive(isOpen);
-      return;
-    }
-    const timer = setTimeout(() => {
-      setItemActive(isOpen);
-    }, delayMs);
-    return () => clearTimeout(timer);
-  }, [isOpen, index, count]);
-
-  const spatialProgress = useM3EScalarSpring(
-    itemActive ? 1 : 0,
-    "defaultSpatial",
-  );
-  const opacityProgress = useM3EScalarSpring(itemActive ? 1 : 0, "fastEffects");
-
-  const { isPressed, pressHandlers } = usePressHoldState(
-    !isOpen || Boolean(item.disabled),
-  );
-  const itemCornerTarget = isPressed ? 16 : FAB_MENU_TOKENS.itemRadius;
-  const { ref: mergedRef, borderRadiusCss } =
-    useM3ECornerSpringRef<HTMLButtonElement>(
-      [itemCornerTarget, itemCornerTarget, itemCornerTarget, itemCornerTarget],
-      "defaultEffects",
-      buttonRef,
-    );
-
-  const translateY = (1 - spatialProgress) * 18;
-  const scale = 0.88 + 0.12 * spatialProgress;
-  const clampedOpacity = Math.max(0, Math.min(1, opacityProgress));
-
-  return (
-    <button
-      ref={mergedRef}
-      type="button"
-      role="menuitem"
-      disabled={item.disabled}
-      tabIndex={isOpen && isRovingActive && !item.disabled ? 0 : -1}
-      onFocus={onFocusItem}
-      onClick={() => {
-        if (item.disabled) return;
-        onDismissAndSelect();
-      }}
-      className="m3e-fab-menu__item"
-      data-open={isOpen ? "" : undefined}
-      data-disabled={item.disabled ? "" : undefined}
-      data-pressed={isPressed ? "" : undefined}
-      style={{
-        height: `${FAB_MENU_TOKENS.itemHeight}px`,
-        paddingInline: `${FAB_MENU_TOKENS.itemPaddingInline}px`,
-        gap: `${FAB_MENU_TOKENS.itemIconGap}px`,
-        borderRadius: borderRadiusCss,
-        opacity: clampedOpacity,
-        translate: `0px ${translateY.toFixed(2)}px`,
-        scale: `${scale.toFixed(3)}`,
-        pointerEvents: isOpen ? "auto" : "none",
-      }}
-      {...pressHandlers}
-    >
-      <span
-        className="m3e-fab-menu__item-icon"
-        style={{
-          width: FAB_MENU_TOKENS.itemIconSize,
-          height: FAB_MENU_TOKENS.itemIconSize,
-        }}
-        aria-hidden="true"
-      >
-        {item.icon}
-      </span>
-      <span className="m3e-fab-menu__item-label">{item.label}</span>
-    </button>
-  );
-}
-
-export function FABMenu({
-  items,
-  size = "md",
-  open: controlledOpen,
-  defaultOpen = false,
-  onOpenChange,
-  icon,
-  triggerLabel,
-  className,
-  style,
-}: M3EFABMenuProps): React.JSX.Element {
-  const { debugGeometry, t } = useM3ERuntime();
-  const resolvedTriggerLabel = triggerLabel ?? t("fabMenu.triggerOpen");
-  const [uncontrolledOpen, setUncontrolledOpen] =
-    React.useState<boolean>(defaultOpen);
-  const isOpen = controlledOpen ?? uncontrolledOpen;
-  const rootRef = React.useRef<HTMLDivElement | null>(null);
-  const triggerRef = React.useRef<HTMLButtonElement | null>(null);
-  const itemRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
-
-  const findFirstEnabledIndex = React.useCallback(() => {
-    for (let i = 0; i < items.length; i++) {
-      if (!items[i]?.disabled) return i;
-    }
-    return 0;
-  }, [items]);
-
-  const [activeIndex, setActiveIndex] = React.useState<number>(
-    findFirstEnabledIndex,
-  );
-  const menuListId = React.useId();
-
-  React.useEffect(() => {
-    if (!isOpen) {
-      setActiveIndex(findFirstEnabledIndex());
-    }
-  }, [isOpen, findFirstEnabledIndex]);
-
-  const setOpen = React.useCallback(
-    (next: boolean) => {
-      if (next) {
-        setActiveIndex(findFirstEnabledIndex());
-      }
-      if (controlledOpen === undefined) {
-        setUncontrolledOpen(next);
-      }
-      onOpenChange?.(next);
-    },
-    [controlledOpen, findFirstEnabledIndex, onOpenChange],
-  );
-
-  React.useEffect(() => {
-    if (!isOpen) return;
-    const onPointerDown = (e: PointerEvent) => {
-      const target = e.target as Node | null;
-      if (target && rootRef.current && !rootRef.current.contains(target)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [isOpen, setOpen]);
-
-  const focusEnabledItemFrom = React.useCallback(
-    (startIdx: number, step: 1 | -1) => {
-      const len = items.length;
-      if (len === 0) return;
-      for (let offset = 0; offset < len; offset++) {
-        const candidate = (((startIdx + offset * step) % len) + len) % len;
-        if (!items[candidate]?.disabled) {
-          setActiveIndex(candidate);
-          itemRefs.current[candidate]?.focus();
-          return;
-        }
-      }
-    },
-    [items],
-  );
-
-  const { isPressed, pressHandlers } = usePressHoldState(false);
-  const morphProgress = useM3EScalarSpring(isOpen ? 1 : 0, "fastSpatial");
-  const clampedMorph = Math.max(0, Math.min(1, morphProgress));
-  const fabGeo = resolveToggleFabGeometry(size, morphProgress);
-
-  const effectiveRadius = isPressed
-    ? Math.max(10, fabGeo.cornerRadius - 6)
-    : fabGeo.cornerRadius;
-
-  const hasCustomIcon = icon !== undefined;
-  const customIconOpacity = Math.max(0, Math.min(1, 1 - clampedMorph * 1.4));
-  const closeIconOpacity = Math.max(0, Math.min(1, (clampedMorph - 0.2) / 0.8));
-
-  return (
-    <div
-      ref={rootRef}
-      className={className ? `m3e-fab-menu ${className}` : "m3e-fab-menu"}
-      data-open={isOpen ? "" : undefined}
-      style={{ flexDirection: "column-reverse", ...style }}
-      onBlur={(e) => {
-        if (!isOpen) return;
-        const nextFocused = e.relatedTarget as Node | null;
-        if (nextFocused) {
-          if (!e.currentTarget.contains(nextFocused)) {
-            setOpen(false);
-          }
-          return;
-        }
-        const root = e.currentTarget;
-        queueMicrotask(() => {
-          if (
-            typeof document !== "undefined" &&
-            document.activeElement &&
-            !root.contains(document.activeElement)
-          ) {
-            setOpen(false);
-          }
-        });
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Escape" && isOpen) {
-          e.stopPropagation();
-          setOpen(false);
-          triggerRef.current?.focus();
-          return;
-        }
-        if (items.length === 0) return;
-        if (e.target === triggerRef.current) {
-          if (e.key === "ArrowUp") {
-            e.preventDefault();
-            if (!isOpen) {
-              setOpen(true);
-              queueMicrotask(() => focusEnabledItemFrom(items.length - 1, -1));
-            } else {
-              focusEnabledItemFrom(items.length - 1, -1);
-            }
-          } else if (e.key === "ArrowDown") {
-            e.preventDefault();
-            if (!isOpen) {
-              setOpen(true);
-              queueMicrotask(() => focusEnabledItemFrom(0, 1));
-            } else {
-              focusEnabledItemFrom(0, 1);
-            }
-          }
-          return;
-        }
-        if (!isOpen) return;
-        const domFocusedIdx =
-          typeof document !== "undefined"
-            ? itemRefs.current.indexOf(
-                document.activeElement as HTMLButtonElement,
-              )
-            : -1;
-        const currentIdx = domFocusedIdx >= 0 ? domFocusedIdx : activeIndex;
-        if (e.key === "ArrowUp") {
-          e.preventDefault();
-          focusEnabledItemFrom(currentIdx - 1, -1);
-        } else if (e.key === "ArrowDown") {
-          e.preventDefault();
-          focusEnabledItemFrom(currentIdx + 1, 1);
-        } else if (e.key === "Home") {
-          e.preventDefault();
-          focusEnabledItemFrom(0, 1);
-        } else if (e.key === "End") {
-          e.preventDefault();
-          focusEnabledItemFrom(items.length - 1, -1);
-        }
-      }}
-    >
-      <button
-        ref={triggerRef}
-        type="button"
-        aria-label={isOpen ? t("fabMenu.triggerClose") : resolvedTriggerLabel}
-        aria-expanded={isOpen}
-        aria-haspopup="menu"
-        aria-controls={menuListId}
-        onClick={() => setOpen(!isOpen)}
-        className="m3e-toggle-fab"
-        data-open={isOpen ? "" : undefined}
-        data-size={size}
-        data-pressed={isPressed ? "" : undefined}
-        style={{
-          width: `${fabGeo.containerSize.toFixed(1)}px`,
-          height: `${fabGeo.containerSize.toFixed(1)}px`,
-          borderRadius: `${effectiveRadius.toFixed(1)}px`,
-        }}
-        {...pressHandlers}
-      >
-        <span
-          className="m3e-toggle-fab__icon"
-          style={{
-            position: "relative",
-            width: `${fabGeo.iconSize.toFixed(1)}px`,
-            height: `${fabGeo.iconSize.toFixed(1)}px`,
-            rotate: hasCustomIcon
-              ? "0deg"
-              : `${fabGeo.iconRotationDeg.toFixed(1)}deg`,
-          }}
-          aria-hidden="true"
-        >
-          {hasCustomIcon ? (
-            <>
-              <span
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  opacity: customIconOpacity,
-                  scale: `${(1 - 0.25 * clampedMorph).toFixed(3)}`,
-                  rotate: `${(45 * clampedMorph).toFixed(1)}deg`,
-                }}
-              >
-                {icon}
-              </span>
-              <span
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  opacity: closeIconOpacity,
-                  scale: `${(0.75 + 0.25 * clampedMorph).toFixed(3)}`,
-                  rotate: `${(-45 * (1 - clampedMorph)).toFixed(1)}deg`,
-                }}
-              >
-                <CloseCrossSvg />
-              </span>
-            </>
-          ) : (
-            <DefaultPlusSvg />
-          )}
-        </span>
-        {debugGeometry ? (
-          <span className="m3e-debug-badge" aria-hidden="true">
-            {Math.round(fabGeo.containerSize)}px r:{effectiveRadius.toFixed(0)}
-          </span>
-        ) : null}
-      </button>
-
-      <div
-        id={menuListId}
-        role="menu"
-        aria-label={resolvedTriggerLabel}
-        inert={!isOpen ? INERT_TRUE : undefined}
-        className="m3e-fab-menu__list"
-        style={{
-          gap: `${FAB_MENU_TOKENS.listGap}px`,
-          marginBottom: `${FAB_MENU_TOKENS.closeButtonGap}px`,
-        }}
-      >
-        {items.map((item, idx) => (
-          <StaggeredFabMenuItem
-            key={item.id}
-            item={item}
-            index={idx}
-            count={items.length}
-            isOpen={isOpen}
-            isRovingActive={idx === activeIndex}
-            onFocusItem={() => setActiveIndex(idx)}
-            buttonRef={(el) => {
-              itemRefs.current[idx] = el;
-            }}
-            onDismissAndSelect={() => {
-              item.onSelect?.();
-              setOpen(false);
-              triggerRef.current?.focus();
-            }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export type DockedToolbarLayout = "spaced" | "centered" | "leading-actions";
+
+export type DockedToolbarScrollBehavior = "pinned" | "exit-always";
 
 export interface M3EDockedToolbarProps {
   readonly items: readonly FloatingToolbarItemSpec[];
   readonly primaryAction?: React.ReactNode;
   readonly layout?: DockedToolbarLayout;
   readonly elevated?: boolean;
+  readonly maxVisibleActions?: number;
+  readonly scrollBehavior?: DockedToolbarScrollBehavior;
+  readonly scrollTargetRef?: React.RefObject<HTMLElement | Window | null>;
+  readonly hidden?: boolean;
   readonly "aria-label"?: string;
   readonly className?: string;
   readonly style?: React.CSSProperties;
@@ -852,34 +422,93 @@ function DockedToolbarActionButton({
   );
 }
 
+function useExitOnScroll(
+  enabled: boolean,
+  targetRef: React.RefObject<HTMLElement | Window | null> | undefined,
+): boolean {
+  const [hidden, setHidden] = React.useState(false);
+  React.useEffect(() => {
+    if (!enabled || typeof window === "undefined") {
+      setHidden(false);
+      return undefined;
+    }
+    const target: HTMLElement | Window = targetRef?.current ?? window;
+    const readY = () =>
+      target === window ? window.scrollY : (target as HTMLElement).scrollTop;
+    let lastY = Math.max(0, readY());
+    const onScroll = () => {
+      const y = Math.max(0, readY());
+      const dy = y - lastY;
+      if (y <= 8) {
+        lastY = y;
+        setHidden(false);
+      } else if (Math.abs(dy) > 6) {
+        lastY = y;
+        setHidden(dy > 0);
+      }
+    };
+    target.addEventListener("scroll", onScroll, { passive: true });
+    return () => target.removeEventListener("scroll", onScroll);
+  }, [enabled, targetRef]);
+  return hidden;
+}
+
 export function DockedToolbar({
   items,
   primaryAction,
   layout = primaryAction ? "leading-actions" : "spaced",
   elevated = true,
+  maxVisibleActions,
+  scrollBehavior = "pinned",
+  scrollTargetRef,
+  hidden: controlledHidden,
   "aria-label": ariaLabel,
   className,
   style,
 }: M3EDockedToolbarProps): React.JSX.Element {
   const { t } = useM3EI18n();
   const resolvedLabel = ariaLabel ?? t("dockedToolbar.ariaLabel");
+  const scrollHidden = useExitOnScroll(
+    scrollBehavior === "exit-always",
+    scrollTargetRef,
+  );
+  const isHidden = controlledHidden ?? scrollHidden;
+  const hideProgress = useM3EScalarSpring(isHidden ? 1 : 0, "defaultSpatial");
+
+  const hasOverflow =
+    maxVisibleActions !== undefined && items.length > maxVisibleActions;
+  const visibleItems = hasOverflow
+    ? items.slice(0, Math.max(0, maxVisibleActions - 1))
+    : items;
+  const overflowItems = hasOverflow ? items.slice(visibleItems.length) : [];
 
   return (
     <Toolbar.Root
       aria-label={resolvedLabel}
+      aria-hidden={isHidden ? true : undefined}
+      inert={inertProp(isHidden)}
       className={
         className ? `m3e-docked-toolbar ${className}` : "m3e-docked-toolbar"
       }
       data-layout={layout}
       data-elevated={elevated ? "" : undefined}
+      data-hidden={isHidden ? "" : undefined}
       style={{
-        minHeight: `${DOCKED_TOOLBAR_TOKENS.height}px`,
+        minHeight: `calc(${DOCKED_TOOLBAR_TOKENS.height}px + env(safe-area-inset-bottom, 0px))`,
         paddingInline: `${DOCKED_TOOLBAR_TOKENS.paddingInline}px`,
+        paddingBlockEnd: "env(safe-area-inset-bottom, 0px)",
+        ...(hideProgress > 0.002
+          ? {
+              translate: `0px ${(hideProgress * 100).toFixed(2)}%`,
+              opacity: Math.max(0, 1 - hideProgress * 0.4),
+              pointerEvents: isHidden ? "none" : undefined,
+            }
+          : null),
         ...style,
       }}
     >
       <div className="m3e-docked-toolbar__items">
-        {items.map((item, idx) => (
+        {visibleItems.map((item, idx) => (
           <React.Fragment key={item.id}>
             {item.separatorBefore && idx > 0 ? (
               <Toolbar.Separator className="m3e-docked-toolbar__separator" />
@@ -887,9 +516,41 @@ export function DockedToolbar({
             <DockedToolbarActionButton item={item} />
           </React.Fragment>
         ))}
+        {hasOverflow ? (
+          <DropdownMenu
+            align="end"
+            items={overflowItems.map((item) => ({
+              id: item.id,
+              label: item.label,
+              icon: item.icon,
+              disabled: item.disabled,
+              separatorBefore: item.separatorBefore,
+              onSelect: item.onClick,
+            }))}
+            trigger={
+              <Toolbar.Button
+                aria-label={t("topAppBar.moreActions")}
+                className="m3e-docked-toolbar__button"
+                style={{
+                  width: `${DOCKED_TOOLBAR_TOKENS.itemSize}px`,
+                  height: `${DOCKED_TOOLBAR_TOKENS.itemSize}px`,
+                  borderRadius: `${DOCKED_TOOLBAR_TOKENS.itemRadius}px`,
+                }}
+              >
+                <span className="m3e-floating-toolbar__icon" aria-hidden="true">
+                  <MoreVertIconSvg />
+                </span>
+              </Toolbar.Button>
+            }
+          />
+        ) : null}
       </div>
       {primaryAction ? (
-        <div className="m3e-docked-toolbar__primary">{primaryAction}</div>
+        <div className="m3e-docked-toolbar__primary">
+          <FabElevationContext.Provider value="none">
+            {primaryAction}
+          </FabElevationContext.Provider>
+        </div>
       ) : null}
     </Toolbar.Root>
   );

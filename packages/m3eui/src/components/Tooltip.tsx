@@ -9,16 +9,7 @@ import { useM3EPortalContainer } from "../context/M3EPortal.js";
 export interface M3ETooltipProps {
   readonly children: React.ReactElement;
   readonly content: React.ReactNode;
-  readonly side?: "top" | "bottom" | "left" | "right";
-  readonly sideOffset?: number;
-  readonly delay?: number;
-  readonly disabled?: boolean;
-}
-
-export interface M3ERichTooltipProps {
-  readonly children: React.ReactElement;
   readonly subhead?: React.ReactNode;
-  readonly content: React.ReactNode;
   readonly action?: React.ReactNode;
   readonly side?: "top" | "bottom" | "left" | "right";
   readonly sideOffset?: number;
@@ -26,7 +17,15 @@ export interface M3ERichTooltipProps {
   readonly disabled?: boolean;
 }
 
-export function Tooltip({
+export function Tooltip(props: M3ETooltipProps): React.JSX.Element {
+  return props.subhead != null || props.action != null ? (
+    <RichTooltip {...props} />
+  ) : (
+    <PlainTooltip {...props} />
+  );
+}
+
+function PlainTooltip({
   children,
   content,
   side = "top",
@@ -60,7 +59,7 @@ export function Tooltip({
   );
 }
 
-export function RichTooltip({
+function RichTooltip({
   children,
   subhead,
   content,
@@ -69,7 +68,7 @@ export function RichTooltip({
   sideOffset = 10,
   delay = 250,
   disabled = false,
-}: M3ERichTooltipProps): React.JSX.Element {
+}: M3ETooltipProps): React.JSX.Element {
   const portalContainer = useM3EPortalContainer();
   const [open, setOpen] = React.useState(false);
   const pointerTypeRef = React.useRef("");

@@ -105,7 +105,7 @@ describe("m3eui CLI — Declarative m3e.json & Theme Sync CLI Suite", () => {
     );
     expect(generated).toContain("export const frFRMessages: M3EMessages");
     expect(generated).toContain('"datePicker.title"');
-    expect(generated).toContain('"collapsible.expandAll"');
+    expect(generated).toContain('"accordion.expandAll"');
   });
 
   it("passes full workspace m3e doctor audit on the repository root", () => {

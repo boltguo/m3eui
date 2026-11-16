@@ -1,23 +1,6 @@
 import type * as React from "react";
 import type { LocalizedCopy } from "../i18n";
 
-export type ComponentCategoryKey =
-  | "actions"
-  | "inputs"
-  | "selection"
-  | "display"
-  | "feedback"
-  | "navigation";
-
-export const COMPONENT_CATEGORY_ORDER: readonly ComponentCategoryKey[] = [
-  "actions",
-  "inputs",
-  "selection",
-  "display",
-  "feedback",
-  "navigation",
-];
-
 export interface PropSpec {
   readonly name: string;
   readonly type: string;
@@ -86,7 +69,6 @@ export interface ComponentDocSpec {
   readonly slug: string;
   readonly title: string;
   readonly subtitle: LocalizedCopy;
-  readonly category: ComponentCategoryKey;
   readonly importStatement: string;
   readonly primitive?: string;
   readonly isNew?: boolean;

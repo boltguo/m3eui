@@ -270,7 +270,6 @@ export const SELECTION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "checkbox",
     title: "Checkbox",
-    category: "selection",
     subtitle: {
       zh: "支持按压圆角弹簧微动效的 M3E 复选框与复选框组，完整覆盖受控/非受控、半选（indeterminate）全选联动、辅助描述行与禁用态。",
       en: "M3E checkbox and checkbox group with spring-animated press corners, supporting controlled/uncontrolled usage, parent indeterminate tri-state, rich helper descriptions, and disabled states.",
@@ -504,7 +503,6 @@ const isIndeterminate = selected.length > 0 && !allChecked;
   {
     slug: "radio-group",
     title: "RadioGroup",
-    category: "selection",
     subtitle: {
       zh: "用于互斥单选场景的 M3E 单选按钮组，支持垂直详情卡片列表、水平行内排列、方向键漫游聚焦与细粒度禁用。",
       en: "Mutually exclusive M3E radio selection group supporting vertical descriptive stacks, horizontal inline layouts, roving arrow-key focus, and granular disabled states.",
@@ -716,7 +714,6 @@ const isIndeterminate = selected.length > 0 && !allChecked;
   {
     slug: "switch",
     title: "Switch",
-    category: "selection",
     subtitle: {
       zh: "即时生效的双态滑动开关，滑块直径在未开启（16px）、开启（24px）与按压（28px）三态间通过物理弹簧平滑缩放并自动适配 RTL 镜像。",
       en: "Immediate binary toggle switch whose thumb spring-morphs between 16px (off), 24px (on), and 28px (pressed) diameters with automatic RTL mirroring and optional state icons.",
@@ -888,7 +885,6 @@ const isIndeterminate = selected.length > 0 && !allChecked;
   {
     slug: "slider",
     title: "Slider",
-    category: "selection",
     subtitle: {
       zh: "采用 M3E 竖条手柄与轨道镂空断口（Track Cutout）设计的滑块组件，支持连续调节、离散刻度点、双滑块区间选择、悬浮数值气泡与三档轨道厚度。",
       en: "M3E vertical-handlebar slider with dynamic spring track cutouts, floating value bubbles, discrete tick marks, dual-thumb range selection, and three track height scales.",

@@ -11,7 +11,7 @@ import {
   Avatar,
   AvatarGroup,
   Badge,
-  BottomSheet,
+  Sheet,
   Breadcrumb,
   Button,
   ButtonGroup,
@@ -21,52 +21,40 @@ import {
   CheckboxGroup,
   Chip,
   CircularProgressIndicator,
-  CircularWavyProgressIndicator,
-  Collapsible,
   ColorPicker,
   ColorPickerField,
   ColorSwatch,
   Combobox,
   CommandPalette,
-  ContainedLoadingIndicator,
+  LoadingIndicator,
   CopyButton,
   DataTable,
   DatePickerField,
-  DateRangePicker,
-  DateRangePickerField,
-  DateTimePickerField,
+  DatePicker,
   Dialog,
   Divider,
-  DockedDatePicker,
   DockedToolbar,
   DropdownMenu,
   Empty,
-  ExtendedFAB,
   FAB,
   FABMenu,
   Fieldset,
   FileUpload,
-  FilterChip,
   FloatingToolbar,
   Form,
   IconButton,
-  InputChip,
   Kbd,
   LinearProgressIndicator,
-  LinearWavyProgressIndicator,
   List,
   ListItem,
-  LoadingIndicator,
   M3E_BUILT_IN_LOCALES,
   type M3EConfig,
   M3EProvider,
   MaterialShapeView,
   Menubar,
   Meter,
-  DatePickerDialog,
-  MultiCombobox,
-  MultiSelect,
-  NavigationDrawer,
+  Select,
+  Sidebar,
   NavigationMenu,
   NavigationSuite,
   NumberField,
@@ -78,25 +66,18 @@ import {
   ScrollArea,
   SearchBar,
   SearchView,
-  SegmentedList,
-  ListItem,
-  Select,
-  SideSheet,
   Skeleton,
   Slider,
   Snippet,
   SplitButton,
-  SuggestionChip,
   Switch,
   Tab,
   Tabs,
   TabsList,
   TabsPanel,
-  TextareaField,
   TextField,
   TimePicker,
   TimePickerField,
-  ToggleButton,
   TopAppBar,
   arSAMessages,
   canonicalizeBcp47Locale,
@@ -453,19 +434,19 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     );
   });
 
-  it("localizes DockedDatePicker and TimePicker titles, weekdays, and AM/PM across en-US, zh-CN, and ja-JP", () => {
+  it("localizes DatePicker and TimePicker titles, weekdays, and AM/PM across en-US, zh-CN, and ja-JP", () => {
     act(() => {
       root.render(
         <div>
           <div data-testid="en">
             <PausedWrapper locale="en-US">
-              <DockedDatePicker defaultValue="2026-11-18" />
+              <DatePicker defaultValue="2026-11-18" />
               <TimePicker defaultValue="09:15" use24Hour={false} />
             </PausedWrapper>
           </div>
           <div data-testid="ja">
             <PausedWrapper locale="ja-JP">
-              <DockedDatePicker defaultValue="2026-11-18" />
+              <DatePicker defaultValue="2026-11-18" />
               <TimePicker defaultValue="09:15" use24Hour={false} />
             </PausedWrapper>
           </div>
@@ -499,53 +480,38 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(jaAmBtn).toBe("午前");
   });
 
-  it("renders Collapsible with hidden='until-found', nested content padding wrapper, and RTL chevron rotation", () => {
+  it("renders a single-item Accordion with variant, trailingBadge, and hidden='until-found' panel", () => {
     act(() => {
       root.render(
-        <div>
-          <div data-testid="ltr-col">
-            <PausedWrapper locale="en-US" direction="ltr">
-              <Collapsible title="Architecture Notes" defaultOpen={false}>
-                Searchable hidden paragraph
-              </Collapsible>
-            </PausedWrapper>
-          </div>
-          <div data-testid="rtl-col">
-            <PausedWrapper locale="ar-SA" direction="rtl">
-              <Collapsible title="ملاحظات" defaultOpen={false}>
-                محتوى قابل للبحث
-              </Collapsible>
-            </PausedWrapper>
-          </div>
-        </div>,
+        <PausedWrapper locale="en-US">
+          <Accordion
+            variant="outlined"
+            items={[
+              {
+                value: "notes",
+                title: "Architecture Notes",
+                trailingBadge: <span>New</span>,
+                content: "Searchable hidden paragraph",
+              },
+            ]}
+          />
+        </PausedWrapper>,
       );
     });
 
-    const ltrPanel = container.querySelector<HTMLElement>(
-      '[data-testid="ltr-col"] .m3e-collapsible__panel',
-    );
-    expect(ltrPanel?.getAttribute("hidden")).toBe("until-found");
     expect(
-      ltrPanel?.querySelector(".m3e-collapsible__content")?.textContent,
-    ).toBe("Searchable hidden paragraph");
-
-    const ltrChevron = container.querySelector<HTMLElement>(
-      '[data-testid="ltr-col"] .m3e-collapsible__chevron',
-    );
-    const rtlChevron = container.querySelector<HTMLElement>(
-      '[data-testid="rtl-col"] .m3e-collapsible__chevron',
-    );
-    expect(ltrChevron?.hasAttribute("data-open")).toBe(false);
-    expect(rtlChevron?.hasAttribute("data-open")).toBe(false);
-
-    const trigger = container.querySelector<HTMLButtonElement>(
-      '[data-testid="ltr-col"] .m3e-collapsible__trigger',
+      container.querySelector(".m3e-accordion")?.getAttribute("data-variant"),
+    ).toBe("outlined");
+    expect(container.querySelector(".m3e-accordion__badge")?.textContent).toBe("New");
+    const panel = container.querySelector<HTMLElement>(".m3e-accordion__panel");
+    expect(panel?.getAttribute("hidden")).toBe("until-found");
+    expect(panel?.querySelector(".m3e-accordion__content")?.textContent).toBe(
+      "Searchable hidden paragraph",
     );
     act(() => {
-      trigger!.click();
+      container.querySelector<HTMLButtonElement>(".m3e-accordion__trigger")!.click();
     });
-    expect(ltrPanel?.hasAttribute("hidden")).toBe(false);
-    expect(ltrChevron?.hasAttribute("data-open")).toBe(true);
+    expect(panel?.hasAttribute("hidden")).toBe(false);
   });
 
   it("synchronizes Accordion showExpandAll aria-expanded strictly when all items are open", () => {
@@ -623,14 +589,13 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(activeLink?.getAttribute("aria-current")).toBe("page");
   });
 
-  it("forwards refs cleanly across Button, IconButton, Switch, Checkbox, Card, TextField, and Collapsible", () => {
+  it("forwards refs cleanly across Button, IconButton, Switch, Checkbox, Card, and TextField", () => {
     const btnRef = React.createRef<HTMLElement>();
     const iconBtnRef = React.createRef<HTMLElement>();
     const switchRef = React.createRef<HTMLElement>();
     const checkRef = React.createRef<HTMLElement>();
     const cardRef = React.createRef<HTMLElement>();
     const inputRef = React.createRef<HTMLInputElement>();
-    const colRef = React.createRef<HTMLDivElement>();
 
     act(() => {
       root.render(
@@ -641,9 +606,6 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
           <Checkbox ref={checkRef} aria-label="Agree" />
           <Card ref={cardRef}>Card content</Card>
           <TextField ref={inputRef} label="Email" type="email" />
-          <Collapsible ref={colRef} title="More">
-            Details
-          </Collapsible>
         </PausedWrapper>,
       );
     });
@@ -654,7 +616,6 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(checkRef.current).toBeInstanceOf(HTMLElement);
     expect(cardRef.current?.tagName.toLowerCase()).toBe("article");
     expect(inputRef.current?.tagName.toLowerCase()).toBe("input");
-    expect(colRef.current?.classList.contains("m3e-collapsible")).toBe(true);
   });
 
   it("handles TextField identifier attributes, password reveal toggle, clearable button, OTPField, and SearchBar", () => {
@@ -721,7 +682,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
       root.render(
         <PausedWrapper locale="en-US">
           <ToastTrigger />
-          <ToggleButton defaultPressed>Pin</ToggleButton>
+          <Button defaultPressed>Pin</Button>
           <SplitButton
             menuItems={[{ id: "1", label: "Schedule" }]}
             onClick={() => {}}
@@ -736,8 +697,8 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
             <TabsPanel value="a">Panel A</TabsPanel>
             <TabsPanel value="b">Panel B</TabsPanel>
           </Tabs>
-          <FilterChip defaultSelected>Expressive</FilterChip>
-          <InputChip onRemove={() => {}}>m3eui</InputChip>
+          <Chip defaultSelected>Expressive</Chip>
+          <Chip onRemove={() => {}}>m3eui</Chip>
           <Avatar shape="clover4Leaf" fallback="M3" />
           <Badge count={128} max={99}>
             <span>Inbox</span>
@@ -747,8 +708,8 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
           </Dialog>
           <LinearProgressIndicator value={64} />
           <Meter value={85} label="CPU" />
-          <LinearWavyProgressIndicator value={0.5} />
-          <CircularWavyProgressIndicator value={0.7} />
+          <LinearProgressIndicator wavy value={0.5} />
+          <CircularProgressIndicator wavy value={0.7} />
         </PausedWrapper>,
       );
     });
@@ -803,7 +764,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(activeIdx).toBe(1);
   });
 
-  it("renders TopAppBar, FloatingToolbar, FAB, ExtendedFAB, SegmentedList, MaterialShapeView, LoadingIndicator & CircularProgress", async () => {
+  it("renders TopAppBar, FloatingToolbar, FAB, extended FAB, segmented List, MaterialShapeView, LoadingIndicator & CircularProgress", async () => {
     await act(async () => {
       root.render(
         <PausedWrapper locale="en-US">
@@ -821,13 +782,13 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
             ]}
           />
           <FAB aria-label="Create" icon="+" variant="primary" size="md" />
-          <ExtendedFAB expanded icon="+">
+          <FAB expanded icon="+">
             Compose
-          </ExtendedFAB>
-          <SegmentedList>
+          </FAB>
+          <List variant="segmented">
             <ListItem selected headline="First item" supportingText="Sub" />
             <ListItem headline="Second item" />
-          </SegmentedList>
+          </List>
           <MaterialShapeView
             shape="cookie9Sided"
             toShape="heart"
@@ -835,7 +796,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
             size={64}
           />
           <LoadingIndicator />
-          <ContainedLoadingIndicator />
+          <LoadingIndicator contained />
           <CircularProgressIndicator value={45} />
           <ScrollArea maxHeight={120}>
             <div>Scrollable content</div>
@@ -859,7 +820,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     ).toBeGreaterThanOrEqual(2);
   });
 
-  it("renders Combobox, RadioGroup, CheckboxGroup, TextareaField, Menubar & BottomSheet with localized labels", () => {
+  it("renders Combobox, RadioGroup, CheckboxGroup, multiline TextField, Menubar & bottom Sheet with localized labels", () => {
     act(() => {
       root.render(
         <PausedWrapper locale="ja-JP">
@@ -867,7 +828,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
             label="コンポーネント検索"
             options={[{ value: "btn", label: "Button" }]}
           />
-          <TextareaField label="説明" invalid />
+          <TextField multiline label="説明" invalid />
           <RadioGroup defaultValue="a" aria-label="モード">
             <Radio value="a" label="A" />
             <Radio value="b" label="B" />
@@ -884,9 +845,9 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
               },
             ]}
           />
-          <BottomSheet open title="設定シート">
+          <Sheet open title="設定シート">
             Sheet content
-          </BottomSheet>
+          </Sheet>
         </PausedWrapper>,
       );
     });
@@ -938,7 +899,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
         <PausedWrapper>
           <TimePickerField name="t" label="Time" defaultValue="" />
           <Slider name="s" aria-label="Level" defaultValue={80} max={50} />
-          <DockedDatePicker defaultValue="2026-01-15" minDate="2026-04-01" />
+          <DatePicker defaultValue="2026-01-15" minDate="2026-04-01" />
         </PausedWrapper>,
       );
     });
@@ -954,11 +915,11 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     act(() => {
       root.render(
         <PausedWrapper>
-          <BottomSheet open title="Sheet">
+          <Sheet open title="Sheet">
             <Dialog open title="Confirm">
               Body
             </Dialog>
-          </BottomSheet>
+          </Sheet>
         </PausedWrapper>,
       );
     });
@@ -1175,14 +1136,15 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(status?.textContent).toContain("已按版本号降序排列");
   });
 
-  it("renders TimePicker (24h dual ring), DateRangePicker, Form/Fieldset, NavigationSuite & Skeleton", () => {
+  it("renders TimePicker (24h dual ring), range DatePicker, Form/Fieldset, NavigationSuite & Skeleton", () => {
     let pickedRange: { start: string; end: string } | null = null;
 
     act(() => {
       root.render(
         <PausedWrapper locale="zh-CN">
           <TimePicker defaultValue="14:30" use24Hour />
-          <DateRangePicker
+          <DatePicker
+            mode="range"
             defaultValue={{ start: "2026-11-10", end: "2026-11-14" }}
             onValueChange={(r) => {
               pickedRange = r;
@@ -1302,11 +1264,11 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     ).not.toBeNull();
   });
 
-  it("toggles DockedDatePicker year grid view and selects a year cleanly", () => {
+  it("toggles DatePicker year grid view and selects a year cleanly", () => {
     act(() => {
       root.render(
         <PausedWrapper locale="en-US">
-          <DockedDatePicker defaultValue="2026-11-18" />
+          <DatePicker defaultValue="2026-11-18" />
         </PausedWrapper>,
       );
     });
@@ -1424,16 +1386,14 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(buttons.length).toBe(3);
   });
 
-  it("renders NavigationDrawer semantic anchor links with badgeLabel & scrollSpy and compact SearchBar", () => {
+  it("renders Sidebar anchor links with section titles, badgeLabel, and a compact SearchBar header", () => {
     let selected = "theme-setup";
     act(() => {
       root.render(
         <PausedWrapper locale="zh-CN">
           <div>
-            <SearchBar size="sm" placeholder="快速搜索组件" />
-            <NavigationDrawer
-              variant="permanent"
-              scrollSpy
+            <Sidebar
+              header={<SearchBar size="sm" placeholder="快速搜索组件" />}
               value={selected}
               onValueChange={(v) => {
                 selected = v;
@@ -1465,15 +1425,17 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(compactBar).not.toBeNull();
     expect(compactBar!.style.minHeight).toBe("40px");
 
-    const links = container.querySelectorAll<HTMLAnchorElement>(
-      "nav.m3e-nav-drawer[data-scrollspy] a.m3e-wide-rail__item",
-    );
+    const nav = container.querySelector<HTMLElement>("nav.m3e-sidebar");
+    expect(nav?.getAttribute("aria-label")).toBe("栏目");
+    expect(nav?.querySelector(".m3e-sidebar__header .m3e-search-bar")).not.toBeNull();
+    expect(
+      [...nav!.querySelectorAll(".m3e-nav-list__section-title")].map((el) => el.textContent),
+    ).toEqual(["入门", "动作"]);
+    const links = nav!.querySelectorAll<HTMLAnchorElement>("a.m3e-nav-list__item");
     expect(links.length).toBe(2);
     expect(links[0]!.getAttribute("href")).toBe("#theme-setup");
     expect(links[0]!.getAttribute("aria-current")).toBe("true");
-    expect(links[0]!.querySelector(".m3e-wide-rail__tag")?.textContent).toBe(
-      "v1.0",
-    );
+    expect(links[0]!.querySelector(".m3e-nav-list__tag")?.textContent).toBe("v1.0");
 
     act(() => {
       links[1]!.click();
@@ -1545,24 +1507,24 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(outlines[0]!.hasAttribute("data-floating")).toBe(true);
   });
 
-  it("preserves ToggleButton leadingIcon by default when selected, supports showCheckIcon, and renders ButtonGroup overflow trigger", () => {
+  it("preserves toggle Button leadingIcon by default when selected, supports showCheckIcon, and renders ButtonGroup overflow trigger", () => {
     act(() => {
       root.render(
         <PausedWrapper locale="en-US">
           <div>
-            <ToggleButton
+            <Button
               defaultPressed
               leadingIcon={<span data-testid="star-glyph">*</span>}
             >
               Favorite
-            </ToggleButton>
-            <ToggleButton
+            </Button>
+            <Button
               defaultPressed
               showCheckIcon
               leadingIcon={<span data-testid="pin-glyph">#</span>}
             >
               Pinned
-            </ToggleButton>
+            </Button>
             <ButtonGroup
               maxVisibleItems={2}
               items={[
@@ -1653,7 +1615,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(fabMenuList!.inert).toBe(true);
   });
 
-  it("adapts DockedDatePicker firstDayOfWeek by locale and supports 2D arrow-key roving grid navigation", () => {
+  it("adapts DatePicker firstDayOfWeek by locale and supports 2D arrow-key roving grid navigation", () => {
     expect(getLocaleFirstDayOfWeek("en-US")).toBe(0);
     expect(getLocaleFirstDayOfWeek("ar-SA")).toBe(6);
     expect(getLocaleFirstDayOfWeek("zh-CN")).toBe(1);
@@ -1662,7 +1624,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     act(() => {
       root.render(
         <PausedWrapper locale="en-US">
-          <DockedDatePicker defaultValue="2026-05-15" />
+          <DatePicker defaultValue="2026-05-15" />
         </PausedWrapper>,
       );
     });
@@ -1814,7 +1776,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(collapsedState).toBe(false);
   });
 
-  it("applies scoped BCP 47 lang/dir, CLDR 12h/24h TimePicker BiDi digits, localized Carousel/Badge/Progress, and RTL Slider/SideSheet geometry", () => {
+  it("applies scoped BCP 47 lang/dir, CLDR 12h/24h TimePicker BiDi digits, localized Carousel/Badge/Progress, and RTL Slider/end Sheet geometry", () => {
     act(() => {
       root.render(
         <div>
@@ -1822,12 +1784,10 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
             <M3EProvider locale="ar_sa" initialDirection="auto" syncDocumentRoot={false}>
               <TimePicker defaultValue="14:30" />
               <Carousel
-                items={[
-                  { id: "1", title: "الأولى" },
-                  { id: "2", title: "الثانية" },
-                ]}
+                items={Array.from({ length: 8 }, (_, i) => ({ id: String(i), title: `${i + 1}` }))}
               />
-              <DateRangePicker
+              <DatePicker
+                mode="range"
                 defaultValue={{ start: "2026-11-10", end: "2026-11-14" }}
               />
               <CircularProgressIndicator value={45} showValueLabel />
@@ -1835,9 +1795,9 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
                 <span>Inbox</span>
               </Badge>
               <Slider defaultValue={40} step={20} showTicks aria-label="مستوى الصوت" />
-              <SideSheet open title="لوحة جانبية">
+              <Sheet side="end" open title="لوحة جانبية">
                 <span>محتوى</span>
-              </SideSheet>
+              </Sheet>
             </M3EProvider>
           </div>
           <div data-testid="zh-scope">
@@ -1919,11 +1879,11 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(firstTick?.style.insetInlineStart).toContain("calc(6px +");
     expect(firstTick?.style.left).toBe("");
 
-    // SideSheet defaults to logical side="end", resolving to data-side="left" in RTL
-    const rtlSideSheet = document.body.querySelector<HTMLElement>(
+    // end Sheet defaults to logical side="end", resolving to data-side="left" in RTL
+    const rtlEndSheet = document.body.querySelector<HTMLElement>(
       ".m3e-sheet__popup",
     );
-    expect(rtlSideSheet?.getAttribute("data-side")).toBe("left");
+    expect(rtlEndSheet?.getAttribute("data-side")).toBe("left");
   });
 
   it("supports Button loading/danger/fullWidth/href, TextField prefix/suffix, Select clearable/groups, and new Alert/Chip/Breadcrumb/Pagination/Empty/CommandPalette components", () => {
@@ -2137,6 +2097,40 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(ranCommand).toBe("go-blocks");
   });
 
+  it("filters CommandPalette items by keywords and runs the highlighted one on Enter", async () => {
+    const ran: string[] = [];
+    act(() => {
+      root.render(
+        <PausedWrapper>
+          <CommandPalette
+            open
+            items={[
+              { id: "a", label: "Alpha", onSelect: () => ran.push("a") },
+              { id: "b", label: "Beta", keywords: ["spring"], onSelect: () => ran.push("b") },
+            ]}
+          />
+        </PausedWrapper>,
+      );
+    });
+    const input = document.body.querySelector<HTMLInputElement>(
+      ".m3e-command-palette__input",
+    )!;
+    await act(async () => {
+      input.focus();
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(
+        input,
+        "spring",
+      );
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    const options = document.body.querySelectorAll(".m3e-command-palette__item");
+    expect([...options].map((o) => o.textContent)).toEqual(["Beta"]);
+    await act(async () => {
+      input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    });
+    expect(ran).toEqual(["b"]);
+  });
+
   it("renders IconButton as a semantic anchor element when href is provided", () => {
     act(() => {
       root.render(
@@ -2161,7 +2155,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(link?.getAttribute("type")).toBeNull();
   });
 
-  it("renders Phase 1 M3E spec components: SuggestionChip, DockedToolbar, SearchView (docked & fullscreen), and standard List", () => {
+  it("renders Phase 1 M3E spec components: filter Chip, DockedToolbar, SearchView, and standard List", () => {
     let chipClicks = 0;
     let submittedSearch = "";
     let clearedRecent = false;
@@ -2170,16 +2164,16 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
       root.render(
         <PausedWrapper locale="zh-CN">
           <div>
-            <SuggestionChip
+            <Chip
               selected
               elevated
               icon={<span>✨</span>}
-              onClick={() => {
+              onSelectedChange={() => {
                 chipClicks += 1;
               }}
             >
               总结本周变更
-            </SuggestionChip>
+            </Chip>
 
             <DockedToolbar
               items={[
@@ -2190,7 +2184,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
             />
 
             <SearchView
-              mode="docked"
+              open
               recentSearches={["MaterialShapes", "HCT 色彩"]}
               onClearRecent={() => {
                 clearedRecent = true;
@@ -2203,13 +2197,6 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
               }}
             />
 
-            <SearchView
-              open
-              mode="fullscreen"
-              defaultValue="spring"
-              suggestions={[{ value: "sp", label: "Spring Motion" }]}
-            />
-
             <List dividers="inset" aria-label="标准设置列表">
               <ListItem headline="通知偏好" supportingText="管理推送渠道" selected />
               <ListItem headline="安全与密钥" />
@@ -2220,7 +2207,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     });
 
     const suggestionChip = container.querySelector<HTMLButtonElement>(
-      ".m3e-chip--suggestion",
+      ".m3e-chip--filter",
     );
     expect(suggestionChip).not.toBeNull();
     expect(suggestionChip?.getAttribute("aria-pressed")).toBe("true");
@@ -2238,13 +2225,13 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(dockedToolbar?.getAttribute("data-layout")).toBe("leading-actions");
     expect(dockedToolbar?.querySelector(".m3e-docked-toolbar__primary")).not.toBeNull();
 
-    const dockedSearchView = container.querySelector<HTMLElement>(
-      '.m3e-search-view[data-mode="docked"]',
+    const searchView = document.body.querySelector<HTMLElement>(
+      ".m3e-search-view__modal-popup .m3e-search-view",
     );
-    expect(dockedSearchView?.querySelector('form[role="search"]')).not.toBeNull();
-    const recentList = dockedSearchView?.querySelector('ul[role="listbox"]');
+    expect(searchView?.querySelector('form[role="search"]')).not.toBeNull();
+    const recentList = searchView?.querySelector('ul[role="listbox"]');
     expect(recentList).not.toBeNull();
-    const clearRecentBtn = dockedSearchView?.querySelector<HTMLButtonElement>(
+    const clearRecentBtn = searchView?.querySelector<HTMLButtonElement>(
       ".m3e-search-view__clear-recent",
     );
     act(() => {
@@ -2252,18 +2239,13 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     });
     expect(clearedRecent).toBe(true);
 
-    const recentBtn = dockedSearchView?.querySelector<HTMLButtonElement>(
+    const recentBtn = searchView?.querySelector<HTMLButtonElement>(
       ".m3e-search-view__item",
     );
     act(() => {
       recentBtn?.click();
     });
     expect(submittedSearch).toBe("MaterialShapes");
-
-    const fullscreenSearch = document.body.querySelector<HTMLElement>(
-      '.m3e-search-view[data-mode="fullscreen"]',
-    );
-    expect(fullscreenSearch).not.toBeNull();
 
     const stdList = container.querySelector<HTMLElement>(
       '.m3e-segmented-list[data-variant="standard"]',
@@ -2274,7 +2256,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(stdItems?.[1]?.style.borderRadius).toBe("0px");
   });
 
-  it("supports Phase 2 upgrades: MultiSelect, MultiCombobox, AvatarGroup, expandable/sticky DataTable, and DatePicker variants", () => {
+  it("supports Phase 2 upgrades: multiple Select, multiple Combobox, AvatarGroup, expandable/sticky DataTable, and DatePicker variants", () => {
     let multiValues: string[] = ["design", "eng"];
     let modalConfirmedDate = "";
 
@@ -2282,7 +2264,8 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
       root.render(
         <PausedWrapper locale="zh-CN">
           <div>
-            <MultiSelect
+            <Select
+              multiple
               label="负责团队"
               maxVisibleTags={1}
               value={multiValues}
@@ -2296,7 +2279,8 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
               ]}
             />
 
-            <MultiCombobox
+            <Combobox
+              multiple
               label="技术栈"
               defaultValue={[{ value: "react", label: "React 19" }]}
               options={[
@@ -2332,21 +2316,19 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
               )}
             />
 
-            <DockedDatePicker
+            <DatePicker
               defaultValue="2026-06-15"
               minDate="2026-06-10"
               maxDate="2026-06-20"
             />
-            <DateRangePickerField
+            <DatePickerField
+              mode="range"
               label="迭代周期"
               defaultValue={{ start: "2026-06-10", end: "2026-06-18" }}
             />
-            <DateTimePickerField
-              label="发布时间"
-              defaultValue={{ date: "2026-06-15", time: "14:30" }}
-            />
-            <DatePickerDialog
-              open
+            <DatePickerField
+              id="modal-date"
+              modal
               defaultValue="2026-06-15"
               onValueChange={(val) => {
                 modalConfirmedDate = val;
@@ -2357,7 +2339,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
       );
     });
 
-    // MultiSelect summary & clear
+    // multiple Select summary & clear
     const multiClear = container.querySelector<HTMLButtonElement>(
       ".m3e-multi-select .m3e-select__clear-btn",
     );
@@ -2367,7 +2349,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     });
     expect(multiValues).toEqual([]);
 
-    // MultiCombobox chip
+    // multiple Combobox chip
     expect(
       container.querySelector(".m3e-multi-combobox__chip-text")?.textContent,
     ).toBe("React 19");
@@ -2394,13 +2376,16 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
       container.querySelector('[data-testid="expanded-n1"]')?.textContent,
     ).toContain("ap-east");
 
-    // DockedDatePicker minDate/maxDate constraints
+    // DatePicker minDate/maxDate constraints
     const disabledDays = container.querySelectorAll(
       ".m3e-date-picker__day:disabled",
     );
     expect(disabledDays.length).toBeGreaterThan(10);
 
-    // DatePickerDialog mode toggle & confirm
+    // modal DatePickerField confirm
+    act(() => {
+      container.querySelector<HTMLButtonElement>("#modal-date")!.click();
+    });
     const modalPopup = document.body.querySelector(".m3e-modal-date-picker");
     expect(modalPopup).not.toBeNull();
     const confirmBtn = Array.from(
@@ -2548,7 +2533,6 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
       ".m3e-segmented-menu__positioner",
       ".m3e-popover__positioner",
       ".m3e-search-bar__positioner",
-      ".m3e-preview-card__positioner",
     ];
     for (const selector of popupPositioners) {
       expect(getZIndex(selector)).toBeGreaterThan(maxModalZ);
@@ -2600,9 +2584,9 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
           >
             Publish
           </SplitButton>
-          <NavigationDrawer
-            variant="permanent"
+          <Sidebar
             value="b"
+            onValueChange={() => {}}
             items={[
               { value: "a", label: "Overview", section: "Docs" },
               { value: "b", label: "Button", section: "Components" },
@@ -2628,7 +2612,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     expect(menuKbds.length).toBe(2);
 
     expect(
-      container.querySelector(".m3e-nav-drawer .m3e-divider"),
+      container.querySelector(".m3e-sidebar .m3e-nav-list__divider"),
     ).not.toBeNull();
     expect(
       container.querySelector(".m3e-alert .m3e-icon-button.m3e-alert__close"),
@@ -2649,7 +2633,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
               { value: "vibrant", label: "Vibrant" },
             ]}
           />
-          <SideSheet open title="Studio">
+          <Sheet side="end" open title="Studio">
             <Popover
               trigger={
                 <Button size="xs" variant="outlined">
@@ -2664,7 +2648,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
                 }}
               />
             </Popover>
-          </SideSheet>
+          </Sheet>
         </PausedWrapper>,
       );
     });
@@ -2724,9 +2708,6 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
     );
     expect(css).toContain(
       ".m3e-icon-button[data-toggle][data-selected]:hover:where(:not([data-disabled], [data-pressed]))",
-    );
-    expect(css).toContain(
-      ".m3e-chip--suggestion:hover:where(:not(:disabled, [data-disabled], [data-selected], [data-elevated], [data-pressed]))",
     );
     expect(css).toContain(
       ".m3e-docked-toolbar__button:hover:where(:not(:disabled, [data-selected], [data-pressed]))",

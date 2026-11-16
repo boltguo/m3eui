@@ -3,32 +3,23 @@ import {
   Alert,
   AlertDialog,
   AlertDialogClose,
-  Avatar,
-  BottomSheet,
+  Sheet,
   Button,
   Chip,
   CircularProgressIndicator,
-  CircularWavyProgressIndicator,
-  ContainedLoadingIndicator,
+  LoadingIndicator,
   Dialog,
   DialogClose,
   Divider,
   IconButton,
   LinearProgressIndicator,
-  LinearWavyProgressIndicator,
-  LoadingIndicator,
   Meter,
-  PreviewCard,
-  RichTooltip,
+  Tooltip,
   ScrollArea,
-  Sheet,
   SheetClose,
-  SideSheet,
   Slider,
   Switch,
-  TextareaField,
   TextField,
-  Tooltip,
   useM3EToast,
 } from "m3eui";
 import { useCopyResolver } from "../../i18n";
@@ -190,7 +181,8 @@ function DialogStandardDemo() {
             onValueChange={setName}
             clearable
           />
-          <TextareaField
+          <TextField
+            multiline
             label={copy({ zh: "版本说明", en: "Release notes" })}
             rows={3}
             value={notes}
@@ -278,7 +270,7 @@ function DialogScrollableDemo() {
     {
       ver: "v0.2.4",
       note: copy({
-        zh: "重构 LinearWavyProgressIndicator 与 CircularWavyProgressIndicator 相位动画。",
+        zh: "重构 wavy 线性与环形进度条的相位动画。",
         en: "Refined phase velocity and amplitude settling on wavy progress indicators.",
       }),
     },
@@ -338,7 +330,7 @@ function SideSheetInspectorDemo() {
 
   return (
     <div style={ROW_WRAP}>
-      <SideSheet
+      <Sheet
         side="end"
         title={copy({ zh: "令牌属性检查器", en: "Token inspector" })}
         description={copy({
@@ -347,7 +339,7 @@ function SideSheetInspectorDemo() {
         })}
         trigger={
           <Button variant="tonal" leadingIcon={<SettingsGearIcon size={16} />}>
-            {copy({ zh: "打开右侧抽屉 (side=\"end\")", en: "Open end SideSheet" })}
+            {copy({ zh: "打开右侧抽屉 (side=\"end\")", en: "Open end sheet" })}
           </Button>
         }
       >
@@ -374,9 +366,9 @@ function SideSheetInspectorDemo() {
             showIcons
           />
         </div>
-      </SideSheet>
+      </Sheet>
 
-      <SideSheet
+      <Sheet
         side="start"
         title={copy({ zh: "项目资源树", en: "Workspace explorer" })}
         description={copy({
@@ -385,7 +377,7 @@ function SideSheetInspectorDemo() {
         })}
         trigger={
           <Button variant="outlined">
-            {copy({ zh: "打开起始侧抽屉 (side=\"start\")", en: "Open start SideSheet" })}
+            {copy({ zh: "打开起始侧抽屉 (side=\"start\")", en: "Open start sheet" })}
           </Button>
         }
       >
@@ -397,7 +389,7 @@ function SideSheetInspectorDemo() {
           <div style={{ padding: "8px 12px", borderRadius: 10 }}>tokens / shapes.ts</div>
           <div style={{ padding: "8px 12px", borderRadius: 10 }}>components / Alert.tsx</div>
         </div>
-      </SideSheet>
+      </Sheet>
     </div>
   );
 }
@@ -423,7 +415,7 @@ function BottomSheetModalDemo() {
 
   return (
     <div style={ROW_WRAP}>
-      <BottomSheet
+      <Sheet
         title={copy({ zh: "分享与导出主题", en: "Share & export theme" })}
         description={copy({
           zh: "顶部自带拖拽手柄，支持向下滑动手势关闭。",
@@ -431,7 +423,7 @@ function BottomSheetModalDemo() {
         })}
         trigger={
           <Button leadingIcon={<ShareIcon size={16} />}>
-            {copy({ zh: "打开底部面板", en: "Open BottomSheet" })}
+            {copy({ zh: "打开底部面板", en: "Open bottom sheet" })}
           </Button>
         }
       >
@@ -458,7 +450,7 @@ function BottomSheetModalDemo() {
             />
           ))}
         </div>
-      </BottomSheet>
+      </Sheet>
     </div>
   );
 }
@@ -677,13 +669,13 @@ function LoadingIndicatorDemo() {
           </span>
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-          <ContainedLoadingIndicator paused={paused} />
+          <LoadingIndicator contained paused={paused} />
           <span style={{ fontSize: 12, color: "var(--m3e-color-on-surface-variant)" }}>
             Contained
           </span>
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-          <ContainedLoadingIndicator size={56} progress={detProgress / 100} />
+          <LoadingIndicator contained size={56} progress={detProgress / 100} />
           <span style={{ fontSize: 12, color: "var(--m3e-color-on-surface-variant)" }}>
             {copy({ zh: `确定性 ${detProgress}%`, en: `Determinate ${detProgress}%` })}
           </span>
@@ -719,9 +711,9 @@ function WavyProgressDemo() {
     <div style={STACK_COL}>
       <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
         <div style={{ flex: "1 1 220px" }}>
-          <LinearWavyProgressIndicator value={progress} />
+          <LinearProgressIndicator wavy value={progress} />
         </div>
-        <CircularWavyProgressIndicator value={progress} size={52} />
+        <CircularProgressIndicator wavy value={progress} size={52} />
       </div>
       <Slider
         label={copy({ zh: "实时波浪进度 (0–100%)", en: "Live wavy progress (0–100%)" })}
@@ -742,9 +734,9 @@ function WavyIndeterminateDemo() {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap", width: "100%" }}>
       <div style={{ flex: "1 1 220px" }}>
-        <LinearWavyProgressIndicator value={null} paused={paused} />
+        <LinearProgressIndicator wavy value={null} paused={paused} />
       </div>
-      <CircularWavyProgressIndicator value={null} size={52} paused={paused} />
+      <CircularProgressIndicator wavy value={null} size={52} paused={paused} />
       <Button size="xs" variant="outlined" onClick={() => setPaused((p) => !p)}>
         {paused
           ? copy({ zh: "恢复相位动画", en: "Resume wave" })
@@ -754,13 +746,13 @@ function WavyIndeterminateDemo() {
   );
 }
 
-function RichTooltipActionDemo() {
+function TooltipRichDemo() {
   const copy = useCopyResolver();
   const { toast } = useM3EToast();
 
   return (
     <div style={ROW_WRAP}>
-      <RichTooltip
+      <Tooltip
         subhead={copy({ zh: "解析弹簧物理引擎", en: "Analytical spring physics" })}
         content={copy({
           zh: "使用闭合解二阶微分方程实时计算欠阻尼弹性形变，帧率无关且无内存分配开销。",
@@ -782,62 +774,9 @@ function RichTooltipActionDemo() {
         }
       >
         <Button variant="tonal" leadingIcon={<SparkleIcon size={16} />}>
-          {copy({ zh: "悬停查看富文本提示", en: "Hover for RichTooltip" })}
+          {copy({ zh: "悬停查看富文本提示", en: "Hover for rich tooltip" })}
         </Button>
-      </RichTooltip>
-    </div>
-  );
-}
-
-function PreviewCardDemo() {
-  const copy = useCopyResolver();
-
-  return (
-    <div style={{ fontSize: 14, color: "var(--m3e-color-on-surface)" }}>
-      {copy({ zh: "将指针悬停在组件库维护者 ", en: "Hover over maintainer handle " })}
-      <PreviewCard
-        trigger={
-          <a
-            href="#preview-card"
-            onClick={(e) => e.preventDefault()}
-            style={{
-              color: "var(--m3e-color-primary)",
-              fontWeight: 650,
-              textDecoration: "underline",
-              textUnderlineOffset: 3,
-            }}
-          >
-            @m3e-design-core
-          </a>
-        }
-      >
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <Avatar fallback="M3" shape="clover4Leaf" size="md" />
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 14 }}>M3E Design Engineering</div>
-              <div style={{ fontSize: 12, color: "var(--m3e-color-on-surface-variant)" }}>
-                @m3e-design-core · SPEC_2025
-              </div>
-            </div>
-          </div>
-          <p style={{ margin: 0, fontSize: 12.5, color: "var(--m3e-color-on-surface-variant)" }}>
-            {copy({
-              zh: "负责维护 HCT 色彩空间算法、35 种圆角多边形路径与 Base UI 无障碍原语封装。",
-              en: "Maintains HCT color science, 35 morphing rounded polygons, and accessible Base UI primitives.",
-            })}
-          </p>
-          <div style={{ display: "flex", gap: 8 }}>
-            <Chip size="sm" tone="primary">
-              45 Modules
-            </Chip>
-            <Chip size="sm" tone="success">
-              WCAG AAA Ready
-            </Chip>
-          </div>
-        </div>
-      </PreviewCard>
-      {copy({ zh: " 即可预览悬浮资料卡片。", en: " to inspect the rich hover card." })}
+      </Tooltip>
     </div>
   );
 }
@@ -846,7 +785,6 @@ export const FEEDBACK_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "alert",
     title: "Alert",
-    category: "feedback",
     isNew: true,
     subtitle: {
       zh: "内联状态横幅，涵盖四种语义严重度、三种视觉表面变体、尾部动作插槽与无障碍实时播报角色。",
@@ -1082,14 +1020,13 @@ export const FEEDBACK_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "dialog",
     title: "Dialog",
-    category: "feedback",
     primitive: "@base-ui/react/dialog · @base-ui/react/alert-dialog",
     subtitle: {
-      zh: "基于 Base UI 构建的模态对话框与强制确认警告框，具备焦点锁定、28px 大圆角容器与无障碍标题关联。",
-      en: "Modal Dialog and interruptive AlertDialog with focus trapping, 28px expressive container radius, and accessible title/description wiring.",
+      zh: "模态对话框：焦点锁定、28px 圆角容器与无障碍标题关联。",
+      en: "Modal dialog with focus trapping, 28px container radius, and accessible title/description wiring.",
     },
     importStatement:
-      'import { Dialog, DialogClose, AlertDialog, AlertDialogClose } from "m3eui";',
+      'import { Dialog, DialogClose } from "m3eui";',
     scenarios: [
       {
         id: "dialog-standard",
@@ -1119,30 +1056,6 @@ export const FEEDBACK_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   <TextField label="Workspace name" value={name} onValueChange={setName} />
 </Dialog>`,
         render: () => <DialogStandardDemo />,
-      },
-      {
-        id: "alert-dialog-destructive",
-        title: {
-          zh: "不可逆危险确认 (AlertDialog)",
-          en: "Destructive confirmation AlertDialog",
-        },
-        description: {
-          zh: "AlertDialog 屏蔽背景点击意外关闭，配合 intent=\"danger\" 按钮守护高风险删除操作。",
-          en: "AlertDialog prevents accidental backdrop dismissal and pairs with intent=\"danger\" buttons for irreversible actions.",
-        },
-        code: `<AlertDialog
-  icon={<TrashIcon />}
-  title="Revoke production key permanently?"
-  description="This action cannot be undone. Clients using m3e_live_98a2 will fail with 401."
-  trigger={<Button variant="tonal" intent="danger">Revoke API key</Button>}
-  actions={
-    <>
-      <AlertDialogClose render={<Button variant="text">Keep key</Button>} />
-      <AlertDialogClose render={<Button intent="danger">Revoke key</Button>} />
-    </>
-  }
-/>`,
-        render: () => <AlertDialogDestructiveDemo />,
       },
       {
         id: "dialog-scrollable",
@@ -1255,8 +1168,46 @@ export const FEEDBACK_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
           },
         ],
       },
+    ],
+  },
+  {
+    slug: "alert-dialog",
+    title: "AlertDialog",
+    primitive: "@base-ui/react/alert-dialog",
+    subtitle: {
+      zh: "需要明确选择才能关闭的打断式确认框，role=\"alertdialog\"，点击遮罩不关闭。",
+      en: "Interruptive confirmation that closes only on an explicit choice; role=\"alertdialog\", no backdrop dismissal.",
+    },
+    importStatement: 'import { AlertDialog, AlertDialogClose } from "m3eui";',
+    scenarios: [
       {
-        title: "AlertDialog & Close Helper Props",
+        id: "alert-dialog-destructive",
+        title: {
+          zh: "不可逆危险确认",
+          en: "Destructive confirmation",
+        },
+        description: {
+          zh: "AlertDialog 屏蔽背景点击意外关闭，配合 intent=\"danger\" 按钮守护高风险删除操作。",
+          en: "AlertDialog prevents accidental backdrop dismissal and pairs with intent=\"danger\" buttons for irreversible actions.",
+        },
+        code: `<AlertDialog
+  icon={<TrashIcon />}
+  title="Revoke production key permanently?"
+  description="This action cannot be undone. Clients using m3e_live_98a2 will fail with 401."
+  trigger={<Button variant="tonal" intent="danger">Revoke API key</Button>}
+  actions={
+    <>
+      <AlertDialogClose render={<Button variant="text">Keep key</Button>} />
+      <AlertDialogClose render={<Button intent="danger">Revoke key</Button>} />
+    </>
+  }
+/>`,
+        render: () => <AlertDialogDestructiveDemo />,
+      },
+    ],
+    apis: [
+      {
+        title: "AlertDialog Props",
         rows: [
           {
             name: "title / description / icon / actions",
@@ -1268,7 +1219,7 @@ export const FEEDBACK_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
             },
           },
           {
-            name: "DialogClose / AlertDialogClose.render",
+            name: "AlertDialogClose.render",
             type: "React.ReactElement",
             description: {
               zh: "将关闭行为组合到自定义按钮（如 <Button variant=\"text\" />）上，避免嵌套原生 button。",
@@ -1282,68 +1233,67 @@ export const FEEDBACK_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "sheet",
     title: "Sheet",
-    category: "feedback",
     primitive: "@base-ui/react/drawer",
     subtitle: {
       zh: "模态侧边抽屉与底部抽屉面板，支持逻辑方向（start / end）自动镜像、手势滑动关闭与固定底栏。",
-      en: "Modal SideSheet and BottomSheet drawers with logical BiDi edge resolution, swipe-to-dismiss gestures, and sticky footers.",
+      en: "Modal side and bottom sheets with logical BiDi edge resolution, swipe-to-dismiss gestures, and sticky footers.",
     },
     importStatement:
-      'import { Sheet, SideSheet, BottomSheet, SheetClose } from "m3eui";',
+      'import { Sheet, SheetClose } from "m3eui";',
     scenarios: [
       {
         id: "side-sheet-end",
         title: {
           zh: "逻辑侧边检查器抽屉 (end & start)",
-          en: "SideSheet inspector (end & start)",
+          en: "Side sheet inspector (end & start)",
         },
         description: {
           zh: "支持 side=\"end\" 与 side=\"start\" 逻辑方向，在阿拉伯语等 RTL 布局下自动翻转滑入边缘与圆角。",
           en: "Logical side=\"end\" and side=\"start\" automatically mirror slide edge, swipe direction, and corner radii in RTL.",
         },
-        code: `<SideSheet
+        code: `<Sheet
   side="end"
   title="Token inspector"
   description="Logical end drawer (mirrors in RTL layouts)."
-  trigger={<Button variant="tonal">Open end SideSheet</Button>}
+  trigger={<Button variant="tonal">Open end sheet</Button>}
 >
   <Switch label="Medium-high contrast (+0.5)" defaultChecked />
-</SideSheet>
+</Sheet>
 
-<SideSheet
+<Sheet
   side="start"
   title="Workspace explorer"
-  trigger={<Button variant="outlined">Open start SideSheet</Button>}
+  trigger={<Button variant="outlined">Open start sheet</Button>}
 >
   {/* Navigation or tree items */}
-</SideSheet>`,
+</Sheet>`,
         render: () => <SideSheetInspectorDemo />,
       },
       {
         id: "bottom-sheet-modal",
         title: {
           zh: "底部模态抽屉与拖拽手柄",
-          en: "Modal BottomSheet with drag handle",
+          en: "Modal bottom sheet with drag handle",
         },
         description: {
-          zh: "BottomSheet 自动渲染顶部 32×4px 拖拽指示条并启用向下滑动关闭手势。",
-          en: "BottomSheet renders the M3 32×4px drag handle and supports downward swipe dismissal.",
+          zh: "底部 Sheet 自动渲染顶部 32×4px 拖拽指示条并启用向下滑动关闭手势。",
+          en: "The bottom sheet renders the M3 32×4px drag handle and supports downward swipe dismissal.",
         },
-        code: `<BottomSheet
+        code: `<Sheet
   title="Share & export theme"
   description="Includes an M3 drag handle and swipe-down gesture dismissal."
-  trigger={<Button>Open BottomSheet</Button>}
+  trigger={<Button>Open bottom sheet</Button>}
 >
   <SheetClose render={<Button variant="tonal" fullWidth>Copy share link</Button>} />
   <SheetClose render={<Button variant="tonal" fullWidth>Export m3e.json tokens</Button>} />
-</BottomSheet>`,
+</Sheet>`,
         render: () => <BottomSheetModalDemo />,
       },
       {
         id: "sheet-form-footer",
         title: {
           zh: "带固定底栏的表单抽屉",
-          en: "SideSheet with sticky footer",
+          en: "Side sheet with sticky footer",
         },
         description: {
           zh: "通过 footer 属性固定保存与取消操作，配合 SheetClose 无缝关闭面板。",
@@ -1367,7 +1317,7 @@ export const FEEDBACK_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
     ],
     apis: [
       {
-        title: "Sheet, SideSheet & BottomSheet Props",
+        title: "Sheet Props",
         rows: [
           {
             name: "title",
@@ -1389,11 +1339,11 @@ export const FEEDBACK_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
           },
           {
             name: "side",
-            type: '"start" | "end" | "right" | "left"',
-            defaultValue: '"end"',
+            type: '"bottom" | "start" | "end" | "left" | "right"',
+            defaultValue: '"bottom"',
             description: {
-              zh: "SideSheet 滑出方向；BottomSheet 固定为底部滑出。",
-              en: "Edge from which SideSheet slides in; omitted on BottomSheet (fixed to \"bottom\").",
+              zh: "滑出边。",
+              en: "Edge the sheet slides in from.",
             },
           },
           {
@@ -1443,7 +1393,6 @@ export const FEEDBACK_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "toast",
     title: "Toast",
-    category: "feedback",
     primitive: "@base-ui/react/toast",
     subtitle: {
       zh: "由 M3EProvider 托管视口的轻量消息通知（Snackbar），通过 useM3EToast() 钩子在任意组件内命令式触发。",
@@ -1589,13 +1538,12 @@ toast({
   {
     slug: "loading-indicator",
     title: "LoadingIndicator",
-    category: "feedback",
     subtitle: {
       zh: "在 7 个 Material 多边形之间弹簧形变的加载指示器，支持不确定与确定进度。",
       en: "Loading indicator that spring-morphs across seven Material polygons, indeterminate or determinate.",
     },
     importStatement:
-      'import { LoadingIndicator, ContainedLoadingIndicator } from "m3eui";',
+      'import { LoadingIndicator } from "m3eui";',
     scenarios: [
       {
         id: "loading-indicator",
@@ -1608,8 +1556,8 @@ toast({
           en: "Continuously morphs across rounded Material polygons using spring physics, supporting both indeterminate and determinate progress.",
         },
         code: `<LoadingIndicator />
-<ContainedLoadingIndicator />
-<ContainedLoadingIndicator size={56} progress={0.64} />`,
+<LoadingIndicator contained />
+<LoadingIndicator contained size={56} progress={0.64} />`,
         render: () => <LoadingIndicatorDemo />,
       },
     ],
@@ -1639,7 +1587,7 @@ toast({
             type: "boolean",
             defaultValue: "false",
             description: {
-              zh: "是否渲染圆形主色容器背景（ContainedLoadingIndicator 默认开启）。",
+              zh: "是否渲染圆形主色容器背景。",
               en: "Renders a filled circular tonal container behind the polygon.",
             },
           },
@@ -1658,14 +1606,13 @@ toast({
   {
     slug: "progress-indicator",
     title: "ProgressIndicator",
-    category: "feedback",
     primitive: "@base-ui/react/progress",
     subtitle: {
       zh: "线形与环形进度指示器，含 M3E 断开轨道、终点圆点与波形（Wavy）变体。",
       en: "Linear and circular progress with M3E split track, stop dot, and wavy variants.",
     },
     importStatement:
-      'import { LinearProgressIndicator, CircularProgressIndicator, LinearWavyProgressIndicator, CircularWavyProgressIndicator } from "m3eui";',
+      'import { LinearProgressIndicator, CircularProgressIndicator } from "m3eui";',
     scenarios: [
       {
         id: "standard-progress",
@@ -1701,11 +1648,11 @@ toast({
           en: "Wavy",
         },
         description: {
-          zh: "LinearWavyProgressIndicator 与 CircularWavyProgressIndicator 在接近 0% 与 100% 时自动平滑收敛振幅。",
+          zh: "wavy 线性与环形进度条 在接近 0% 与 100% 时自动平滑收敛振幅。",
           en: "Linear and circular wavy indicators animate phase continuously and smoothly taper wave amplitude near 0% and 100%.",
         },
-        code: `<LinearWavyProgressIndicator value={progress} />
-<CircularWavyProgressIndicator value={progress} size={52} />`,
+        code: `<LinearProgressIndicator wavy value={progress} />
+<CircularProgressIndicator wavy value={progress} size={52} />`,
         render: () => <WavyProgressDemo />,
       },
       {
@@ -1718,8 +1665,8 @@ toast({
           zh: "当 value={null} 时进入周期性伸缩波浪巡航模式，并自动响应系统减弱动态偏好。",
           en: "Passing value={null} activates indeterminate wave cycling while respecting prefers-reduced-motion.",
         },
-        code: `<LinearWavyProgressIndicator value={null} />
-<CircularWavyProgressIndicator value={null} size={52} />`,
+        code: `<LinearProgressIndicator wavy value={null} />
+<CircularProgressIndicator wavy value={null} size={52} />`,
         render: () => <WavyIndeterminateDemo />,
       },
     ],
@@ -1763,7 +1710,7 @@ toast({
         ],
       },
       {
-        title: "LinearWavyProgressIndicator & CircularWavyProgressIndicator Props",
+        title: "Wavy Props (wavy: true)",
         rows: [
           {
             name: "value",
@@ -1778,7 +1725,7 @@ toast({
             name: "amplitude / wavelength",
             type: "number",
             description: {
-              zh: "自定义波幅比例（0–1）或波长像素值（LinearWavyProgressIndicator）。",
+              zh: "自定义波幅比例（0–1）或波长像素值（线性）。",
               en: "Optional wave amplitude (0–1) and wavelength in px.",
             },
           },
@@ -1787,8 +1734,8 @@ toast({
             type: "number",
             defaultValue: "48",
             description: {
-              zh: "CircularWavyProgressIndicator 外径尺寸（px）。",
-              en: "Outer diameter in pixels for CircularWavyProgressIndicator.",
+              zh: "环形外径尺寸（px）。",
+              en: "Outer diameter in pixels for the circular indicator.",
             },
           },
           {
@@ -1806,7 +1753,6 @@ toast({
   {
     slug: "meter",
     title: "Meter",
-    category: "feedback",
     primitive: "@base-ui/react/meter",
     subtitle: {
       zh: "表示容量或用量的静态量表，按阈值切换正常、警告与危险色。",
@@ -1875,14 +1821,13 @@ toast({
   {
     slug: "tooltip",
     title: "Tooltip",
-    category: "feedback",
     primitive: "@base-ui/react/tooltip",
     subtitle: {
-      zh: "纯文本 Tooltip 与带标题、操作按钮的 RichTooltip。",
-      en: "Plain label Tooltip and RichTooltip with subhead and action.",
+      zh: "纯文本提示；传 subhead 或 action 即为 rich 提示。",
+      en: "Plain label tooltip; subhead or action makes it rich.",
     },
     importStatement:
-      'import { Tooltip, RichTooltip } from "m3eui";',
+      'import { Tooltip } from "m3eui";',
     scenarios: [
       {
         id: "tooltip-plain",
@@ -1927,19 +1872,19 @@ toast({
           zh: "包含 subhead 小标题、多行正文与可点击的 action 按钮，指针移入浮层时保持开启。",
           en: "Displays a structured subhead, multi-line explanation, and an interactive action button.",
         },
-        code: `<RichTooltip
+        code: `<Tooltip
   subhead="Analytical spring physics"
   content="Computes under-damped spatial motion in closed form with zero allocations."
   action={<Button size="xs" variant="text">Read ODE spec</Button>}
 >
-  <Button variant="tonal">Hover for RichTooltip</Button>
-</RichTooltip>`,
-        render: () => <RichTooltipActionDemo />,
+  <Button variant="tonal">Hover for rich tooltip</Button>
+</Tooltip>`,
+        render: () => <TooltipRichDemo />,
       },
     ],
     apis: [
       {
-        title: "Tooltip & RichTooltip Props",
+        title: "Tooltip Props",
         rows: [
           {
             name: "children",
@@ -1963,16 +1908,16 @@ toast({
             name: "subhead",
             type: "React.ReactNode",
             description: {
-              zh: "RichTooltip 顶部加粗小标题。",
-              en: "Optional bold heading rendered at the top of RichTooltip.",
+              zh: "加粗小标题，设置后为 rich 提示。",
+              en: "Bold heading; makes the tooltip rich.",
             },
           },
           {
             name: "action",
             type: "React.ReactNode",
             description: {
-              zh: "RichTooltip 底部交互操作节点。",
-              en: "Interactive footer action rendered inside RichTooltip.",
+              zh: "底部操作，设置后为 rich 提示。",
+              en: "Footer action; makes the tooltip rich.",
             },
           },
           {
@@ -1987,7 +1932,7 @@ toast({
           {
             name: "sideOffset",
             type: "number",
-            defaultValue: "8 (Tooltip) / 10 (RichTooltip)",
+            defaultValue: "8 (plain) / 10 (rich)",
             description: {
               zh: "触发器与浮层之间的像素间距。",
               en: "Distance in pixels between trigger and popup.",
@@ -2009,82 +1954,6 @@ toast({
             description: {
               zh: "禁用提示弹出。",
               en: "Disables opening the tooltip.",
-            },
-          },
-        ],
-      },
-    ],
-  },
-  {
-    slug: "preview-card",
-    title: "PreviewCard",
-    category: "feedback",
-    primitive: "@base-ui/react/preview-card",
-    subtitle: {
-      zh: "悬停或聚焦链接时展示的实体预览卡片。",
-      en: "Entity preview surface revealed on link hover or focus.",
-    },
-    importStatement:
-      'import { PreviewCard } from "m3eui";',
-    scenarios: [
-      {
-        id: "preview-card",
-        title: {
-          zh: "链接预览",
-          en: "Link preview",
-        },
-        description: {
-          zh: "悬停或聚焦在触发链接上时展示作者、仓库或组件元信息卡片。",
-          en: "Reveals a rich surface card when hovering or focusing inline mentions and entity links.",
-        },
-        code: `<PreviewCard
-  trigger={<a href="#author">@m3e-design-core</a>}
-  side="bottom"
-  align="start"
->
-  <div>M3E Design Engineering · 45 Modules</div>
-</PreviewCard>`,
-        render: () => <PreviewCardDemo />,
-      },
-    ],
-    apis: [
-      {
-        title: "Props",
-        rows: [
-          {
-            name: "trigger",
-            type: "React.ReactElement",
-            required: true,
-            description: {
-              zh: "触发预览卡片的链接或行内元素。",
-              en: "Trigger link or element that opens the preview card on hover/focus.",
-            },
-          },
-          {
-            name: "children",
-            type: "React.ReactNode",
-            required: true,
-            description: {
-              zh: "预览卡片内部自定义布局内容。",
-              en: "Rich content rendered inside the preview popup.",
-            },
-          },
-          {
-            name: "side / align",
-            type: '"top" | "bottom" | "left" | "right" · "start" | "center" | "end"',
-            defaultValue: '"bottom" / "start"',
-            description: {
-              zh: "预览卡弹出方位与对齐方式。",
-              en: "Popup side and alignment relative to the trigger.",
-            },
-          },
-          {
-            name: "delay / closeDelay",
-            type: "number",
-            defaultValue: "280 / 200",
-            description: {
-              zh: "悬停打开与离开关闭的延迟毫秒数。",
-              en: "Open and close hover delays in milliseconds.",
             },
           },
         ],

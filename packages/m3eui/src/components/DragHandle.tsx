@@ -29,7 +29,6 @@ export interface M3EDragHandleProps
   readonly style?: React.CSSProperties;
 }
 
-export type M3EVerticalDragHandleProps = Omit<M3EDragHandleProps, "orientation">;
 
 function clampRange(val: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, val));
@@ -303,10 +302,3 @@ export const DragHandle = React.forwardRef<HTMLDivElement, M3EDragHandleProps>(
     );
   },
 );
-
-export const VerticalDragHandle = React.forwardRef<
-  HTMLDivElement,
-  M3EVerticalDragHandleProps
->(function VerticalDragHandle(props, ref) {
-  return <DragHandle {...props} ref={ref} orientation="vertical" />;
-});

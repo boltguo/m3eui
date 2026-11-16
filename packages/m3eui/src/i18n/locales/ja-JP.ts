@@ -23,8 +23,8 @@ export const jaJPMessages: M3EMessages = {
   "chip.remove": "チップを削除",
   "chip.removeItem": "{label} を削除",
 
-  "collapsible.expandAll": "すべて展開",
-  "collapsible.collapseAll": "すべて折りたたむ",
+  "accordion.expandAll": "すべて展開",
+  "accordion.collapseAll": "すべて折りたたむ",
 
   "combobox.placeholder": "キーワードで絞り込み…",
   "combobox.empty": "一致する項目がありません",
@@ -61,7 +61,6 @@ export const jaJPMessages: M3EMessages = {
   "toast.viewportLabel": "通知",
 
   "empty.title": "データがありません",
-  "empty.description": "表示できる項目がありません。条件を変更するか新しく作成してください。",
 
   "fabMenu.triggerOpen": "クイック操作",
   "fabMenu.triggerClose": "クイックメニューを閉じる",
@@ -80,11 +79,10 @@ export const jaJPMessages: M3EMessages = {
   "menubar.ariaLabel": "アプリケーションコマンド",
   "navigation.barLabel": "メイン",
   "navigation.railLabel": "サイドレール",
-  "navigation.wideRailLabel": "ワイドサイドレール",
   "navigation.collapseRail": "サイドレールを折りたたむ",
   "navigation.expandRail": "サイドレールを展開",
-  "navigation.drawerLabel": "メインドロワー",
   "navigation.suiteLabel": "アダプティブメイン",
+  "navigation.sidebarLabel": "セクション",
   "navigation.siteMenuLabel": "サイト",
 
   "numberField.decrement": "値を減らす",
@@ -133,7 +131,6 @@ export const jaJPMessages: M3EMessages = {
 
   "topAppBar.actionsLabel": "アプリバーの操作",
   "topAppBar.moreActions": "その他の操作",
-  "bottomAppBar.ariaLabel": "ボトムアプリバー",
   "dragHandle.ariaLabel": "ペインのサイズを変更",
   "pullToRefresh.pulling": "引っ張って更新",
   "pullToRefresh.release": "離して更新",
@@ -145,7 +142,6 @@ export const jaJPMessages: M3EMessages = {
   "searchView.clearRecent": "履歴を消去",
   "searchView.suggestionsHeading": "検索候補",
 
-  "select.selectedCount": "{count} 件選択中",
 
   "datePicker.switchToInput": "テキスト日付入力に切り替え",
   "datePicker.switchToCalendar": "カレンダー選択に切り替え",

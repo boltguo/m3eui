@@ -18,19 +18,13 @@ import {
   formatLocalizedInteger,
   formatLocalizedMonthYear,
   formatLocalizedNumber,
-  formatLocalizedWallTime,
   getLocaleFirstDayOfWeek,
-  getLocaleUses24Hour,
   getLocalizedWeekdays,
 } from "../i18n/index.js";
 import { Button } from "./Button.js";
 import { TextField } from "./TextField.js";
-import {
-  type PlainTimeString,
-  TimePicker,
-  parsePlainTime,
-} from "./TimePicker.js";
 import { FormHiddenValue } from "../internal/formField.js";
+import { FieldRoot, FieldTrigger } from "../internal/pickerField.js";
 import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
 
 export type PlainDateString = `${number}-${string}-${string}` | string;
@@ -46,7 +40,9 @@ interface ParsedPlainDate {
   readonly day: number;
 }
 
-export function parsePlainDate(iso: string | undefined): ParsedPlainDate | null {
+export function parsePlainDate(
+  iso: string | undefined,
+): ParsedPlainDate | null {
   if (!iso) return null;
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso.trim());
   if (!match) return null;
@@ -93,8 +89,13 @@ function getLeadingBlanksForMonth(
   return (jsDay - normalizedFirst + 7) % 7;
 }
 
-function addDaysPlainDate(base: ParsedPlainDate, deltaDays: number): ParsedPlainDate {
-  const utc = new Date(Date.UTC(base.year, base.month - 1, base.day + deltaDays, 12, 0, 0));
+function addDaysPlainDate(
+  base: ParsedPlainDate,
+  deltaDays: number,
+): ParsedPlainDate {
+  const utc = new Date(
+    Date.UTC(base.year, base.month - 1, base.day + deltaDays, 12, 0, 0),
+  );
   return {
     year: utc.getUTCFullYear(),
     month: utc.getUTCMonth() + 1,
@@ -122,7 +123,10 @@ function stepMonthClamped(
   return { year: nextY, month: nextM, day: Math.min(day, maxDay) };
 }
 
-function buildWeekRows(leadingBlanks: number, daysInMonth: number): Array<Array<number | null>> {
+function buildWeekRows(
+  leadingBlanks: number,
+  daysInMonth: number,
+): Array<Array<number | null>> {
   const cells: Array<number | null> = [];
   for (let i = 0; i < leadingBlanks; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
@@ -233,10 +237,18 @@ function isMonthSteppable(
     month: stepped.month,
     day: getDaysInMonth(stepped.year, stepped.month),
   });
-  if (deltaMonths < 0 && minDate && comparePlainDates(lastOfMonth, minDate) < 0) {
+  if (
+    deltaMonths < 0 &&
+    minDate &&
+    comparePlainDates(lastOfMonth, minDate) < 0
+  ) {
     return false;
   }
-  if (deltaMonths > 0 && maxDate && comparePlainDates(firstOfMonth, maxDate) > 0) {
+  if (
+    deltaMonths > 0 &&
+    maxDate &&
+    comparePlainDates(firstOfMonth, maxDate) > 0
+  ) {
     return false;
   }
   return true;
@@ -318,7 +330,8 @@ function CalendarDayButton({
   );
 }
 
-export interface M3EDockedDatePickerProps {
+export interface M3EDatePickerSingleProps {
+  readonly mode?: "single";
   readonly value?: PlainDateString;
   readonly defaultValue?: PlainDateString;
   readonly onValueChange?: (value: string) => void;
@@ -331,7 +344,7 @@ export interface M3EDockedDatePickerProps {
   readonly style?: React.CSSProperties;
 }
 
-export function DockedDatePicker({
+function SingleDatePicker({
   value: controlledValue,
   defaultValue,
   onValueChange,
@@ -342,7 +355,7 @@ export function DockedDatePicker({
   title,
   className,
   style,
-}: M3EDockedDatePickerProps): React.JSX.Element {
+}: M3EDatePickerSingleProps): React.JSX.Element {
   const { locale, direction, t } = useM3ERuntime();
   const resolvedTitle = title ?? t("datePicker.title");
   const resolvedFirstDay = firstDayOfWeek ?? getLocaleFirstDayOfWeek(locale);
@@ -368,7 +381,9 @@ export function DockedDatePicker({
   const minParsed = React.useMemo(() => parsePlainDate(minDate), [minDate]);
   const maxParsed = React.useMemo(() => parsePlainDate(maxDate), [maxDate]);
 
-  const dayButtonRefs = React.useRef<Record<number, HTMLButtonElement | null>>({});
+  const dayButtonRefs = React.useRef<Record<number, HTMLButtonElement | null>>(
+    {},
+  );
   const pendingFocusDayRef = React.useRef<number | null>(null);
 
   useIsoLayoutEffect(() => {
@@ -471,10 +486,16 @@ export function DockedDatePicker({
       moveGridFocusTo(addDaysPlainDate(current, 6 - col), -1);
     } else if (e.key === "PageUp") {
       e.preventDefault();
-      moveGridFocusTo(stepMonthClamped(viewYear, viewMonth, activeFocusDay, -1), -1);
+      moveGridFocusTo(
+        stepMonthClamped(viewYear, viewMonth, activeFocusDay, -1),
+        -1,
+      );
     } else if (e.key === "PageDown") {
       e.preventDefault();
-      moveGridFocusTo(stepMonthClamped(viewYear, viewMonth, activeFocusDay, 1), 1);
+      moveGridFocusTo(
+        stepMonthClamped(viewYear, viewMonth, activeFocusDay, 1),
+        1,
+      );
     }
   };
 
@@ -503,9 +524,7 @@ export function DockedDatePicker({
 
   return (
     <div
-      className={
-        className ? `m3e-date-picker ${className}` : "m3e-date-picker"
-      }
+      className={className ? `m3e-date-picker ${className}` : "m3e-date-picker"}
       style={{
         borderRadius: `${DATE_PICKER_TOKENS.containerRadius}px`,
         padding: `${DATE_PICKER_TOKENS.padding}px`,
@@ -558,7 +577,11 @@ export function DockedDatePicker({
           >
             <span
               aria-hidden="true"
-              style={direction === "rtl" ? { display: "inline-block", scale: "-1 1" } : undefined}
+              style={
+                direction === "rtl"
+                  ? { display: "inline-block", scale: "-1 1" }
+                  : undefined
+              }
             >
               ‹
             </span>
@@ -580,7 +603,11 @@ export function DockedDatePicker({
           >
             <span
               aria-hidden="true"
-              style={direction === "rtl" ? { display: "inline-block", scale: "-1 1" } : undefined}
+              style={
+                direction === "rtl"
+                  ? { display: "inline-block", scale: "-1 1" }
+                  : undefined
+              }
             >
               ›
             </span>
@@ -610,10 +637,18 @@ export function DockedDatePicker({
                 onClick={() => {
                   if (yrDisabled) return;
                   let nextM = viewMonth;
-                  if (minParsed && yr === minParsed.year && nextM < minParsed.month) {
+                  if (
+                    minParsed &&
+                    yr === minParsed.year &&
+                    nextM < minParsed.month
+                  ) {
                     nextM = minParsed.month;
                   }
-                  if (maxParsed && yr === maxParsed.year && nextM > maxParsed.month) {
+                  if (
+                    maxParsed &&
+                    yr === maxParsed.year &&
+                    nextM > maxParsed.month
+                  ) {
                     nextM = maxParsed.month;
                   }
                   setViewYear(yr);
@@ -721,7 +756,8 @@ export function DockedDatePicker({
   );
 }
 
-export interface M3EDateRangePickerProps {
+export interface M3EDatePickerRangeProps {
+  readonly mode: "range";
   readonly value?: PlainDateRange;
   readonly defaultValue?: PlainDateRange;
   readonly onValueChange?: (range: PlainDateRange) => void;
@@ -734,7 +770,7 @@ export interface M3EDateRangePickerProps {
   readonly style?: React.CSSProperties;
 }
 
-export function DateRangePicker({
+function RangeDatePicker({
   value: controlledRange,
   defaultValue,
   onValueChange,
@@ -745,7 +781,7 @@ export function DateRangePicker({
   title,
   className,
   style,
-}: M3EDateRangePickerProps): React.JSX.Element {
+}: Omit<M3EDatePickerRangeProps, "mode">): React.JSX.Element {
   const { locale, direction, t } = useM3ERuntime();
   const resolvedTitle = title ?? t("datePicker.rangeTitle");
   const resolvedFirstDay = firstDayOfWeek ?? getLocaleFirstDayOfWeek(locale);
@@ -784,7 +820,9 @@ export function DateRangePicker({
   const minParsed = React.useMemo(() => parsePlainDate(minDate), [minDate]);
   const maxParsed = React.useMemo(() => parsePlainDate(maxDate), [maxDate]);
 
-  const dayButtonRefs = React.useRef<Record<number, HTMLButtonElement | null>>({});
+  const dayButtonRefs = React.useRef<Record<number, HTMLButtonElement | null>>(
+    {},
+  );
   const pendingFocusDayRef = React.useRef<number | null>(null);
 
   useIsoLayoutEffect(() => {
@@ -921,10 +959,16 @@ export function DateRangePicker({
       moveGridFocusTo(addDaysPlainDate(current, 6 - col), -1);
     } else if (e.key === "PageUp") {
       e.preventDefault();
-      moveGridFocusTo(stepMonthClamped(viewYear, viewMonth, activeFocusDay, -1), -1);
+      moveGridFocusTo(
+        stepMonthClamped(viewYear, viewMonth, activeFocusDay, -1),
+        -1,
+      );
     } else if (e.key === "PageDown") {
       e.preventDefault();
-      moveGridFocusTo(stepMonthClamped(viewYear, viewMonth, activeFocusDay, 1), 1);
+      moveGridFocusTo(
+        stepMonthClamped(viewYear, viewMonth, activeFocusDay, 1),
+        1,
+      );
     }
   };
 
@@ -975,7 +1019,9 @@ export function DateRangePicker({
         {draftAnchor ? t("datePicker.selectEndPrompt") : ""}
       </div>
       <div className="m3e-date-picker__headline m3e-date-range-picker__headline">
-        <span>{formatLocalizedDateRange(locale, displayStart, displayEnd)}</span>
+        <span>
+          {formatLocalizedDateRange(locale, displayStart, displayEnd)}
+        </span>
       </div>
 
       <div className="m3e-date-picker__toolbar">
@@ -1018,7 +1064,11 @@ export function DateRangePicker({
           >
             <span
               aria-hidden="true"
-              style={direction === "rtl" ? { display: "inline-block", scale: "-1 1" } : undefined}
+              style={
+                direction === "rtl"
+                  ? { display: "inline-block", scale: "-1 1" }
+                  : undefined
+              }
             >
               ‹
             </span>
@@ -1040,7 +1090,11 @@ export function DateRangePicker({
           >
             <span
               aria-hidden="true"
-              style={direction === "rtl" ? { display: "inline-block", scale: "-1 1" } : undefined}
+              style={
+                direction === "rtl"
+                  ? { display: "inline-block", scale: "-1 1" }
+                  : undefined
+              }
             >
               ›
             </span>
@@ -1070,10 +1124,18 @@ export function DateRangePicker({
                 onClick={() => {
                   if (yrDisabled) return;
                   let nextM = viewMonth;
-                  if (minParsed && yr === minParsed.year && nextM < minParsed.month) {
+                  if (
+                    minParsed &&
+                    yr === minParsed.year &&
+                    nextM < minParsed.month
+                  ) {
                     nextM = minParsed.month;
                   }
-                  if (maxParsed && yr === maxParsed.year && nextM > maxParsed.month) {
+                  if (
+                    maxParsed &&
+                    yr === maxParsed.year &&
+                    nextM > maxParsed.month
+                  ) {
                     nextM = maxParsed.month;
                   }
                   setViewYear(yr);
@@ -1098,95 +1160,96 @@ export function DateRangePicker({
           className="m3e-date-picker__grid m3e-date-range-picker__grid"
           onKeyDown={handleGridKeyDown}
         >
-        <div role="row" className="m3e-date-picker__weekdays">
-          {weekdayLabels.map((w, idx) => (
-            <span
-              key={`rwd-${idx}`}
-              role="columnheader"
-              className="m3e-date-picker__weekday"
-            >
-              {w}
-            </span>
-          ))}
-        </div>
+          <div role="row" className="m3e-date-picker__weekdays">
+            {weekdayLabels.map((w, idx) => (
+              <span
+                key={`rwd-${idx}`}
+                role="columnheader"
+                className="m3e-date-picker__weekday"
+              >
+                {w}
+              </span>
+            ))}
+          </div>
 
-        {weekRows.map((row, rIdx) => (
-          <div
-            key={`rrow-${rIdx}`}
-            role="row"
-            className="m3e-date-picker__week-row"
-          >
-            {row.map((d, cIdx) => {
-              if (d === null) {
+          {weekRows.map((row, rIdx) => (
+            <div
+              key={`rrow-${rIdx}`}
+              role="row"
+              className="m3e-date-picker__week-row"
+            >
+              {row.map((d, cIdx) => {
+                if (d === null) {
+                  return (
+                    <div
+                      key={`rblank-${rIdx}-${cIdx}`}
+                      role="gridcell"
+                      aria-hidden="true"
+                      className="m3e-date-picker__day-empty"
+                    />
+                  );
+                }
+                const iso = formatPlainDate({
+                  year: viewYear,
+                  month: viewMonth,
+                  day: d,
+                });
+                const isStart = iso === effectiveRange.start;
+                const isEnd = iso === effectiveRange.end;
+                const isSelected = isStart || isEnd;
+                const isInRange =
+                  comparePlainDates(iso, effectiveRange.start) >= 0 &&
+                  comparePlainDates(iso, effectiveRange.end) <= 0 &&
+                  effectiveRange.start !== effectiveRange.end;
+                const isToday =
+                  viewYear === today.year &&
+                  viewMonth === today.month &&
+                  d === today.day;
+                const disabledDay = isIsoOutOfBounds(
+                  iso,
+                  minDate,
+                  maxDate,
+                  isDateDisabled,
+                );
+
                 return (
-                  <div
-                    key={`rblank-${rIdx}-${cIdx}`}
-                    role="gridcell"
-                    aria-hidden="true"
-                    className="m3e-date-picker__day-empty"
+                  <CalendarDayButton
+                    key={iso}
+                    day={d}
+                    dayText={formatLocalizedInteger(locale, d)}
+                    isSelected={isSelected}
+                    isInRange={isInRange}
+                    isRangeStart={isStart && isInRange}
+                    isRangeEnd={isEnd && isInRange}
+                    isToday={isToday}
+                    isDisabled={disabledDay}
+                    isFocusable={d === activeFocusDay}
+                    buttonRef={(el) => {
+                      dayButtonRefs.current[d] = el;
+                    }}
+                    onFocusDay={() => setFocusedDay(d)}
+                    fullDateLabel={formatLocalizedFullDate(locale, {
+                      year: viewYear,
+                      month: viewMonth,
+                      day: d,
+                    })}
+                    onSelect={() => {
+                      if (!disabledDay) handleDayPick(iso, d);
+                    }}
+                    onHover={draftAnchor ? () => setHoverIso(iso) : undefined}
                   />
                 );
-              }
-              const iso = formatPlainDate({
-                year: viewYear,
-                month: viewMonth,
-                day: d,
-              });
-              const isStart = iso === effectiveRange.start;
-              const isEnd = iso === effectiveRange.end;
-              const isSelected = isStart || isEnd;
-              const isInRange =
-                comparePlainDates(iso, effectiveRange.start) >= 0 &&
-                comparePlainDates(iso, effectiveRange.end) <= 0 &&
-                effectiveRange.start !== effectiveRange.end;
-              const isToday =
-                viewYear === today.year &&
-                viewMonth === today.month &&
-                d === today.day;
-              const disabledDay = isIsoOutOfBounds(
-                iso,
-                minDate,
-                maxDate,
-                isDateDisabled,
-              );
-
-              return (
-                <CalendarDayButton
-                  key={iso}
-                  day={d}
-                  dayText={formatLocalizedInteger(locale, d)}
-                  isSelected={isSelected}
-                  isInRange={isInRange}
-                  isRangeStart={isStart && isInRange}
-                  isRangeEnd={isEnd && isInRange}
-                  isToday={isToday}
-                  isDisabled={disabledDay}
-                  isFocusable={d === activeFocusDay}
-                  buttonRef={(el) => {
-                    dayButtonRefs.current[d] = el;
-                  }}
-                  onFocusDay={() => setFocusedDay(d)}
-                  fullDateLabel={formatLocalizedFullDate(locale, {
-                    year: viewYear,
-                    month: viewMonth,
-                    day: d,
-                  })}
-                  onSelect={() => {
-                    if (!disabledDay) handleDayPick(iso, d);
-                  }}
-                  onHover={draftAnchor ? () => setHoverIso(iso) : undefined}
-                />
-              );
-            })}
-          </div>
-        ))}
+              })}
+            </div>
+          ))}
         </div>
       )}
     </div>
   );
 }
 
-export interface M3EDatePickerFieldProps {
+export interface M3EDatePickerFieldSingleProps {
+  readonly mode?: "single";
   readonly id?: string;
   readonly name?: string;
   readonly label?: React.ReactNode;
@@ -1203,6 +1266,7 @@ export interface M3EDatePickerFieldProps {
   readonly isDateDisabled?: (iso: PlainDateString) => boolean;
   readonly disabled?: boolean;
   readonly readOnly?: boolean;
+  readonly modal?: boolean;
   readonly className?: string;
   readonly style?: React.CSSProperties;
 }
@@ -1228,7 +1292,7 @@ function CalendarIconSvg() {
   );
 }
 
-export function DatePickerField({
+function SingleDatePickerField({
   id: idProp,
   name,
   label,
@@ -1245,9 +1309,10 @@ export function DatePickerField({
   isDateDisabled,
   disabled = false,
   readOnly = false,
+  modal = false,
   className,
   style,
-}: M3EDatePickerFieldProps): React.JSX.Element {
+}: M3EDatePickerFieldSingleProps): React.JSX.Element {
   const { locale } = useM3ERuntime();
   const portalContainer = useM3EPortalContainer();
   const isDisabled = useFieldsetDisabled(disabled);
@@ -1264,6 +1329,10 @@ export function DatePickerField({
     if ((isDisabled || readOnly) && open) setOpen(false);
   }, [isDisabled, readOnly, open]);
   const currentIso = controlledValue ?? uncontrolledIso;
+  const commit = (next: string) => {
+    if (controlledValue === undefined) setUncontrolledIso(next);
+    onValueChange?.(next);
+  };
   const parsed = parsePlainDate(currentIso);
   const isFloatingLabel = labelPosition === "floating" && Boolean(label);
 
@@ -1306,7 +1375,8 @@ export function DatePickerField({
         disabled={isDisabled}
         required={required}
       />
-      <BasePopover.Root
+      <FieldRoot
+        modal={modal}
         open={readOnly ? false : open}
         onOpenChange={(next) => {
           if (!readOnly && !isDisabled) setOpen(next);
@@ -1335,7 +1405,8 @@ export function DatePickerField({
               {labelNode}
             </label>
           ) : null}
-          <BasePopover.Trigger
+          <FieldTrigger
+            modal={modal}
             id={triggerId}
             disabled={isDisabled}
             aria-invalid={invalid ? true : undefined}
@@ -1359,37 +1430,46 @@ export function DatePickerField({
             <span className="m3e-select__chevron" aria-hidden="true">
               <CalendarIconSvg />
             </span>
-          </BasePopover.Trigger>
+          </FieldTrigger>
         </div>
 
-        <BasePopover.Portal container={portalContainer}>
-          <BasePopover.Positioner
-            side="bottom"
-            align="start"
-            sideOffset={6}
-            className="m3e-popover__positioner"
-          >
-            <BasePopover.Popup
-              initialFocus={(openType) => openType === "keyboard"}
-              className="m3e-date-picker-field__popup"
+        {modal ? (
+          <ModalDatePickerPopup
+            open={open}
+            onClose={() => setOpen(false)}
+            value={currentIso}
+            onValueCommit={commit}
+            minDate={minDate}
+            maxDate={maxDate}
+            isDateDisabled={isDateDisabled}
+          />
+        ) : (
+          <BasePopover.Portal container={portalContainer}>
+            <BasePopover.Positioner
+              side="bottom"
+              align="start"
+              sideOffset={6}
+              className="m3e-popover__positioner"
             >
-              <DockedDatePicker
-                value={currentIso}
-                minDate={minDate}
-                maxDate={maxDate}
-                isDateDisabled={isDateDisabled}
-                onValueChange={(next) => {
-                  if (controlledValue === undefined) {
-                    setUncontrolledIso(next);
-                  }
-                  onValueChange?.(next);
-                  setOpen(false);
-                }}
-              />
-            </BasePopover.Popup>
-          </BasePopover.Positioner>
-        </BasePopover.Portal>
-      </BasePopover.Root>
+              <BasePopover.Popup
+                initialFocus={(openType) => openType === "keyboard"}
+                className="m3e-date-picker-field__popup"
+              >
+                <SingleDatePicker
+                  value={currentIso}
+                  minDate={minDate}
+                  maxDate={maxDate}
+                  isDateDisabled={isDateDisabled}
+                  onValueChange={(next) => {
+                    commit(next);
+                    setOpen(false);
+                  }}
+                />
+              </BasePopover.Popup>
+            </BasePopover.Positioner>
+          </BasePopover.Portal>
+        )}
+      </FieldRoot>
 
       {description && !(invalid && errorMessage) ? (
         <p id={descId} className="m3e-field__description">
@@ -1406,7 +1486,8 @@ export function DatePickerField({
   );
 }
 
-export interface M3EDateRangePickerFieldProps {
+export interface M3EDatePickerFieldRangeProps {
+  readonly mode: "range";
   readonly id?: string;
   readonly name?: string;
   readonly label?: React.ReactNode;
@@ -1423,11 +1504,12 @@ export interface M3EDateRangePickerFieldProps {
   readonly isDateDisabled?: (iso: PlainDateString) => boolean;
   readonly disabled?: boolean;
   readonly readOnly?: boolean;
+  readonly modal?: boolean;
   readonly className?: string;
   readonly style?: React.CSSProperties;
 }
 
-export function DateRangePickerField({
+function RangeDatePickerField({
   id: idProp,
   name,
   label,
@@ -1444,9 +1526,10 @@ export function DateRangePickerField({
   isDateDisabled,
   disabled = false,
   readOnly = false,
+  modal = false,
   className,
   style,
-}: M3EDateRangePickerFieldProps): React.JSX.Element {
+}: Omit<M3EDatePickerFieldRangeProps, "mode">): React.JSX.Element {
   const { locale } = useM3ERuntime();
   const portalContainer = useM3EPortalContainer();
   const isDisabled = useFieldsetDisabled(disabled);
@@ -1462,14 +1545,17 @@ export function DateRangePickerField({
   });
   const [uncontrolledRange, setUncontrolledRange] =
     React.useState<PlainDateRange>(
-      () =>
-        defaultValue ?? { start: formatPlainDate(today), end: fallbackEnd },
+      () => defaultValue ?? { start: formatPlainDate(today), end: fallbackEnd },
     );
   const [open, setOpen] = React.useState(false);
   React.useEffect(() => {
     if ((isDisabled || readOnly) && open) setOpen(false);
   }, [isDisabled, readOnly, open]);
   const activeRange = controlledRange ?? uncontrolledRange;
+  const commit = (next: PlainDateRange) => {
+    if (controlledRange === undefined) setUncontrolledRange(next);
+    onValueChange?.(next);
+  };
   const startParsed = parsePlainDate(activeRange.start) ?? today;
   const endParsed = parsePlainDate(activeRange.end) ?? startParsed;
   const isFloatingLabel = labelPosition === "floating" && Boolean(label);
@@ -1512,7 +1598,8 @@ export function DateRangePickerField({
         disabled={isDisabled}
         required={required}
       />
-      <BasePopover.Root
+      <FieldRoot
+        modal={modal}
         open={readOnly ? false : open}
         onOpenChange={(next) => {
           if (!readOnly && !isDisabled) setOpen(next);
@@ -1541,7 +1628,8 @@ export function DateRangePickerField({
               {labelNode}
             </label>
           ) : null}
-          <BasePopover.Trigger
+          <FieldTrigger
+            modal={modal}
             id={triggerId}
             disabled={isDisabled}
             aria-invalid={invalid ? true : undefined}
@@ -1565,37 +1653,46 @@ export function DateRangePickerField({
             <span className="m3e-select__chevron" aria-hidden="true">
               <CalendarIconSvg />
             </span>
-          </BasePopover.Trigger>
+          </FieldTrigger>
         </div>
 
-        <BasePopover.Portal container={portalContainer}>
-          <BasePopover.Positioner
-            side="bottom"
-            align="start"
-            sideOffset={6}
-            className="m3e-popover__positioner"
-          >
-            <BasePopover.Popup
-              initialFocus={(openType) => openType === "keyboard"}
-              className="m3e-date-picker-field__popup"
+        {modal ? (
+          <ModalDatePickerPopup
+            open={open}
+            onClose={() => setOpen(false)}
+            range={activeRange}
+            onRangeCommit={commit}
+            minDate={minDate}
+            maxDate={maxDate}
+            isDateDisabled={isDateDisabled}
+          />
+        ) : (
+          <BasePopover.Portal container={portalContainer}>
+            <BasePopover.Positioner
+              side="bottom"
+              align="start"
+              sideOffset={6}
+              className="m3e-popover__positioner"
             >
-              <DateRangePicker
-                value={activeRange}
-                minDate={minDate}
-                maxDate={maxDate}
-                isDateDisabled={isDateDisabled}
-                onValueChange={(next) => {
-                  if (controlledRange === undefined) {
-                    setUncontrolledRange(next);
-                  }
-                  onValueChange?.(next);
-                  setOpen(false);
-                }}
-              />
-            </BasePopover.Popup>
-          </BasePopover.Positioner>
-        </BasePopover.Portal>
-      </BasePopover.Root>
+              <BasePopover.Popup
+                initialFocus={(openType) => openType === "keyboard"}
+                className="m3e-date-picker-field__popup"
+              >
+                <RangeDatePicker
+                  value={activeRange}
+                  minDate={minDate}
+                  maxDate={maxDate}
+                  isDateDisabled={isDateDisabled}
+                  onValueChange={(next) => {
+                    commit(next);
+                    setOpen(false);
+                  }}
+                />
+              </BasePopover.Popup>
+            </BasePopover.Positioner>
+          </BasePopover.Portal>
+        )}
+      </FieldRoot>
 
       {description && !(invalid && errorMessage) ? (
         <p id={descId} className="m3e-field__description">
@@ -1612,24 +1709,17 @@ export function DateRangePickerField({
   );
 }
 
-export interface M3EDatePickerDialogProps {
-  readonly open?: boolean;
-  readonly defaultOpen?: boolean;
-  readonly onOpenChange?: (open: boolean) => void;
-  readonly trigger?: React.ReactElement;
-  readonly mode?: "single" | "range";
+interface ModalDatePickerPopupProps {
+  readonly open: boolean;
+  readonly onClose: () => void;
   readonly value?: PlainDateString;
-  readonly defaultValue?: PlainDateString;
-  readonly onValueChange?: (value: string) => void;
-  readonly rangeValue?: PlainDateRange;
-  readonly defaultRangeValue?: PlainDateRange;
-  readonly onRangeValueChange?: (range: PlainDateRange) => void;
+  readonly onValueCommit?: (value: string) => void;
+  readonly range?: PlainDateRange;
+  readonly onRangeCommit?: (range: PlainDateRange) => void;
   readonly minDate?: PlainDateString;
   readonly maxDate?: PlainDateString;
   readonly isDateDisabled?: (iso: PlainDateString) => boolean;
-  readonly title?: React.ReactNode;
 }
-
 
 function EditModePencilSvg() {
   return (
@@ -1649,52 +1739,20 @@ function EditModePencilSvg() {
   );
 }
 
-export function DatePickerDialog({
-  open: controlledOpen,
-  defaultOpen = false,
-  onOpenChange,
-  trigger,
-  mode = "single",
-  value: controlledValue,
-  defaultValue,
-  onValueChange,
-  rangeValue: controlledRange,
-  defaultRangeValue,
-  onRangeValueChange,
+function ModalDatePickerPopup({
+  open,
+  onClose,
+  value: committedIso = "",
+  onValueCommit,
+  range,
+  onRangeCommit,
   minDate,
   maxDate,
   isDateDisabled,
-  title,
-}: M3EDatePickerDialogProps): React.JSX.Element {
+}: ModalDatePickerPopupProps): React.JSX.Element {
   const { locale, t } = useM3ERuntime();
   const portalContainer = useM3EPortalContainer();
-  const today = React.useMemo(() => getTodayPlainDate(), []);
-  const defaultEndIso = React.useMemo(
-    () =>
-      formatPlainDate({
-        year: today.year,
-        month: today.month,
-        day: Math.min(getDaysInMonth(today.year, today.month), today.day + 4),
-      }),
-    [today],
-  );
-  const [uncontrolledOpen, setUncontrolledOpen] =
-    React.useState<boolean>(defaultOpen);
-  const [uncontrolledIso, setUncontrolledIso] = React.useState<string>(
-    () => defaultValue ?? formatPlainDate(today),
-  );
-  const [uncontrolledRange, setUncontrolledRange] =
-    React.useState<PlainDateRange>(
-      () =>
-        defaultRangeValue ?? {
-          start: formatPlainDate(today),
-          end: defaultEndIso,
-        },
-    );
-  const isOpen = controlledOpen ?? uncontrolledOpen;
-  const committedIso = controlledValue ?? uncontrolledIso;
-  const committedRange = controlledRange ?? uncontrolledRange;
-
+  const committedRange = range ?? EMPTY_RANGE;
   const [draftIso, setDraftIso] = React.useState<string>(committedIso);
   const [draftRange, setDraftRange] =
     React.useState<PlainDateRange>(committedRange);
@@ -1703,20 +1761,13 @@ export function DatePickerDialog({
   );
 
   React.useEffect(() => {
-    if (isOpen) {
+    if (open) {
       setDraftIso(committedIso);
       setDraftRange(committedRange);
     }
-  }, [isOpen, committedIso, committedRange]);
+  }, [open, committedIso, committedRange]);
 
-  const setOpen = (next: boolean) => {
-    if (controlledOpen === undefined) {
-      setUncontrolledOpen(next);
-    }
-    onOpenChange?.(next);
-  };
-
-  const isRangeMode = mode === "range";
+  const isRangeMode = range !== undefined;
   const parsedDraft = parsePlainDate(draftIso);
   const parsedRangeStart = parsePlainDate(draftRange.start);
   const parsedRangeEnd = parsePlainDate(draftRange.end);
@@ -1739,12 +1790,11 @@ export function DatePickerDialog({
       : draftIso;
 
   return (
-    <BaseDialog.Root open={isOpen} onOpenChange={setOpen}>
-      {trigger ? <BaseDialog.Trigger render={trigger} /> : null}
-      <BaseDialog.Portal container={portalContainer}>
-        <BaseDialog.Backdrop className="m3e-dialog__backdrop" />
+    <BaseDialog.Portal container={portalContainer}>
+      <BaseDialog.Backdrop className="m3e-dialog__backdrop" />
+      <BaseDialog.Viewport className="m3e-dialog__viewport">
         <BaseDialog.Popup
-          className="m3e-dialog m3e-modal-date-picker"
+          className="m3e-dialog__popup m3e-modal-date-picker"
           style={{
             borderRadius: `${DATE_PICKER_TOKENS.containerRadius}px`,
             padding: 0,
@@ -1755,10 +1805,9 @@ export function DatePickerDialog({
           <div className="m3e-modal-date-picker__header">
             <div className="m3e-modal-date-picker__header-copy">
               <BaseDialog.Title className="m3e-date-picker__overline">
-                {title ??
-                  (isRangeMode
-                    ? t("datePicker.rangeTitle")
-                    : t("datePicker.title"))}
+                {isRangeMode
+                  ? t("datePicker.rangeTitle")
+                  : t("datePicker.title")}
               </BaseDialog.Title>
               <div className="m3e-modal-date-picker__headline">
                 {headlineText}
@@ -1787,7 +1836,7 @@ export function DatePickerDialog({
           <div className="m3e-modal-date-picker__body">
             {inputMode === "calendar" ? (
               isRangeMode ? (
-                <DateRangePicker
+                <RangeDatePicker
                   value={
                     parsedRangeStart && parsedRangeEnd
                       ? draftRange
@@ -1800,7 +1849,7 @@ export function DatePickerDialog({
                   className="m3e-modal-date-picker__calendar"
                 />
               ) : (
-                <DockedDatePicker
+                <SingleDatePicker
                   value={parsedDraft ? draftIso : committedIso}
                   minDate={minDate}
                   maxDate={maxDate}
@@ -1814,7 +1863,9 @@ export function DatePickerDialog({
                 <TextField
                   label={t("datePicker.dateInputLabel")}
                   value={draftRange.start}
-                  invalid={draftRange.start.length > 0 && parsedRangeStart === null}
+                  invalid={
+                    draftRange.start.length > 0 && parsedRangeStart === null
+                  }
                   onValueChange={(v) =>
                     setDraftRange((prev) => ({ ...prev, start: v }))
                   }
@@ -1844,11 +1895,7 @@ export function DatePickerDialog({
           </div>
 
           <div className="m3e-modal-date-picker__actions">
-            <Button
-              variant="text"
-              size="sm"
-              onClick={() => setOpen(false)}
-            >
+            <Button variant="text" size="sm" onClick={onClose}>
               {t("datePicker.cancel")}
             </Button>
             <Button
@@ -1857,250 +1904,42 @@ export function DatePickerDialog({
               disabled={!isDraftValid}
               onClick={() => {
                 if (!isDraftValid) return;
-                if (isRangeMode) {
-                  if (controlledRange === undefined) {
-                    setUncontrolledRange(draftRange);
-                  }
-                  onRangeValueChange?.(draftRange);
-                } else {
-                  if (controlledValue === undefined) {
-                    setUncontrolledIso(draftIso);
-                  }
-                  onValueChange?.(draftIso);
-                }
-                setOpen(false);
+                if (isRangeMode) onRangeCommit?.(draftRange);
+                else onValueCommit?.(draftIso);
+                onClose();
               }}
             >
               {t("datePicker.confirm")}
             </Button>
           </div>
         </BaseDialog.Popup>
-      </BaseDialog.Portal>
-    </BaseDialog.Root>
+      </BaseDialog.Viewport>
+    </BaseDialog.Portal>
   );
 }
 
+const EMPTY_RANGE: PlainDateRange = { start: "", end: "" };
 
-export interface PlainDateTimeValue {
-  readonly date: PlainDateString;
-  readonly time: PlainTimeString;
-}
+export type M3EDatePickerProps =
+  M3EDatePickerSingleProps | M3EDatePickerRangeProps;
 
-export interface M3EDateTimePickerFieldProps {
-  readonly id?: string;
-  readonly name?: string;
-  readonly label?: React.ReactNode;
-  readonly labelPosition?: "floating" | "outside";
-  readonly description?: React.ReactNode;
-  readonly errorMessage?: React.ReactNode;
-  readonly invalid?: boolean;
-  readonly required?: boolean;
-  readonly value?: PlainDateTimeValue;
-  readonly defaultValue?: PlainDateTimeValue;
-  readonly onValueChange?: (value: PlainDateTimeValue) => void;
-  readonly use24Hour?: boolean;
-  readonly minDate?: PlainDateString;
-  readonly maxDate?: PlainDateString;
-  readonly isDateDisabled?: (iso: PlainDateString) => boolean;
-  readonly disabled?: boolean;
-  readonly readOnly?: boolean;
-  readonly className?: string;
-  readonly style?: React.CSSProperties;
-}
-
-export function DateTimePickerField({
-  id: idProp,
-  name,
-  label,
-  labelPosition = "floating",
-  description,
-  errorMessage,
-  invalid = false,
-  required = false,
-  value: controlledValue,
-  defaultValue,
-  onValueChange,
-  use24Hour,
-  minDate,
-  maxDate,
-  isDateDisabled,
-  disabled = false,
-  readOnly = false,
-  className,
-  style,
-}: M3EDateTimePickerFieldProps): React.JSX.Element {
-  const { locale } = useM3ERuntime();
-  const portalContainer = useM3EPortalContainer();
-  const isDisabled = useFieldsetDisabled(disabled);
-  const generatedId = React.useId();
-  const triggerId = idProp ?? generatedId;
-  const descId = React.useId();
-  const errId = React.useId();
-  const today = React.useMemo(() => getTodayPlainDate(), []);
-  const resolved24h = use24Hour ?? getLocaleUses24Hour(locale);
-  const [uncontrolled, setUncontrolled] = React.useState<PlainDateTimeValue>(
-    () =>
-      defaultValue ?? {
-        date: formatPlainDate(today),
-        time: "09:30",
-      },
+export function DatePicker(props: M3EDatePickerProps): React.JSX.Element {
+  return props.mode === "range" ? (
+    <RangeDatePicker {...props} />
+  ) : (
+    <SingleDatePicker {...props} />
   );
-  const [open, setOpen] = React.useState(false);
-  React.useEffect(() => {
-    if ((isDisabled || readOnly) && open) setOpen(false);
-  }, [isDisabled, readOnly, open]);
+}
 
-  const current = controlledValue ?? uncontrolled;
-  const parsedDate = parsePlainDate(current.date) ?? today;
-  const parsedTime = parsePlainTime(current.time);
-  const isFloatingLabel = labelPosition === "floating" && Boolean(label);
-  const height = isFloatingLabel ? SELECT_TOKENS.outlinedHeight : 48;
-  const radius = isFloatingLabel
-    ? SELECT_TOKENS.outlinedRadius
-    : SELECT_TOKENS.outsideLabelRadius;
-  const labelNode = label ? (
-    <>
-      {label}
-      {required ? (
-        <span className="m3e-field__required" aria-hidden="true">
-          {" *"}
-        </span>
-      ) : null}
-    </>
-  ) : null;
+export type M3EDatePickerFieldProps =
+  M3EDatePickerFieldSingleProps | M3EDatePickerFieldRangeProps;
 
-  const commit = (next: PlainDateTimeValue) => {
-    if (controlledValue === undefined) {
-      setUncontrolled(next);
-    }
-    onValueChange?.(next);
-  };
-
-  const formattedDisplay = `${formatLocalizedFullDate(locale, parsedDate)} · ${formatLocalizedWallTime(locale, { hour: parsedTime.hour24, minute: parsedTime.minute }, resolved24h)}`;
-
-  return (
-    <div
-      className={
-        className
-          ? `m3e-date-picker-field m3e-datetime-picker-field ${className}`
-          : "m3e-date-picker-field m3e-datetime-picker-field"
-      }
-      data-label-position={labelPosition}
-      data-disabled={isDisabled ? "" : undefined}
-      data-readonly={readOnly ? "" : undefined}
-      data-invalid={invalid ? "" : undefined}
-      style={style}
-    >
-      {labelNode && !isFloatingLabel ? (
-        <label htmlFor={triggerId} className="m3e-field__label">
-          {labelNode}
-        </label>
-      ) : null}
-      <FormHiddenValue
-        name={name}
-        value={`${current.date}T${current.time}`}
-        disabled={isDisabled}
-        required={required}
-      />
-      <BasePopover.Root
-        open={readOnly ? false : open}
-        onOpenChange={(next) => {
-          if (!readOnly && !isDisabled) setOpen(next);
-        }}
-      >
-        <div
-          className="m3e-select__shell"
-          data-variant="outlined"
-          data-label-position={labelPosition}
-          data-floating=""
-          data-popup-open={!readOnly && open ? "" : undefined}
-          data-disabled={isDisabled ? "" : undefined}
-          data-readonly={readOnly ? "" : undefined}
-          data-invalid={invalid ? "" : undefined}
-          style={{ borderRadius: `${radius}px` }}
-        >
-          {isFloatingLabel ? (
-            <FieldNotchedOutline label={labelNode} floating />
-          ) : null}
-          {isFloatingLabel ? (
-            <label
-              htmlFor={triggerId}
-              className="m3e-field__floating-label m3e-select__floating-label"
-              data-floating=""
-            >
-              {labelNode}
-            </label>
-          ) : null}
-          <BasePopover.Trigger
-            id={triggerId}
-            disabled={isDisabled}
-            aria-invalid={invalid ? true : undefined}
-            aria-describedby={
-              invalid && errorMessage ? errId : description ? descId : undefined
-            }
-            className="m3e-select__trigger m3e-date-picker-field__trigger"
-            data-variant="outlined"
-            data-label-position={labelPosition}
-            data-floating=""
-            data-readonly={readOnly ? "" : undefined}
-            style={{
-              minHeight: `${height}px`,
-              borderRadius: `${radius}px`,
-              paddingInline: `${SELECT_TOKENS.paddingInline}px`,
-            }}
-          >
-            <span className="m3e-select__value">{formattedDisplay}</span>
-            <span className="m3e-select__chevron" aria-hidden="true">
-              <CalendarIconSvg />
-            </span>
-          </BasePopover.Trigger>
-        </div>
-
-        <BasePopover.Portal container={portalContainer}>
-          <BasePopover.Positioner
-            side="bottom"
-            align="start"
-            sideOffset={6}
-            className="m3e-popover__positioner"
-          >
-            <BasePopover.Popup
-              initialFocus={(openType) => openType === "keyboard"}
-              className="m3e-date-picker-field__popup m3e-datetime-picker-field__popup"
-            >
-              <div className="m3e-datetime-picker-field__grid">
-                <DockedDatePicker
-                  value={current.date}
-                  minDate={minDate}
-                  maxDate={maxDate}
-                  isDateDisabled={isDateDisabled}
-                  onValueChange={(nextDate) =>
-                    commit({ date: nextDate, time: current.time })
-                  }
-                />
-                <TimePicker
-                  value={current.time}
-                  use24Hour={use24Hour}
-                  onValueChange={(nextTime) =>
-                    commit({ date: current.date, time: nextTime })
-                  }
-                />
-              </div>
-            </BasePopover.Popup>
-          </BasePopover.Positioner>
-        </BasePopover.Portal>
-      </BasePopover.Root>
-
-      {description && !(invalid && errorMessage) ? (
-        <p id={descId} className="m3e-field__description">
-          {description}
-        </p>
-      ) : null}
-      {invalid && errorMessage ? (
-        <div id={errId} role="alert" className="m3e-field__error">
-          <FieldErrorIconSvg />
-          <span>{errorMessage}</span>
-        </div>
-      ) : null}
-    </div>
+export function DatePickerField(
+  props: M3EDatePickerFieldProps,
+): React.JSX.Element {
+  return props.mode === "range" ? (
+    <RangeDatePickerField {...props} />
+  ) : (
+    <SingleDatePickerField {...props} />
   );
 }

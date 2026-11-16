@@ -3,14 +3,11 @@ import {
   Button,
   ButtonGroup,
   DockedToolbar,
-  ExtendedFAB,
   FAB,
   FABMenu,
   FloatingToolbar,
   IconButton,
-  IconToggleButton,
   SplitButton,
-  ToggleButton,
 } from "m3eui";
 import {
   BellIcon,
@@ -112,22 +109,22 @@ function ButtonLinkAndToggleDemo() {
         >
           Material 3 Spec
         </Button>
-        <ToggleButton
+        <Button
           variant="tonal"
           pressed={starred}
           onPressedChange={setStarred}
           leadingIcon={<HeartIcon filled={starred} size={16} />}
         >
           {starred ? "Starred (128)" : "Star"}
-        </ToggleButton>
-        <ToggleButton
+        </Button>
+        <Button
           variant="outlined"
           pressed={pinned}
           onPressedChange={setPinned}
           showCheckIcon
         >
           {pinned ? "Pinned to Top" : "Pin Issue"}
-        </ToggleButton>
+        </Button>
       </div>
       <Button variant="filled" fullWidth leadingIcon={<SparkleIcon size={16} />}>
         Full-Width Primary Action
@@ -143,7 +140,7 @@ function IconButtonToggleDemo() {
 
   return (
     <div className="demo-row">
-      <IconToggleButton
+      <IconButton
         variant="tonal"
         pressed={liked}
         onPressedChange={setLiked}
@@ -151,14 +148,14 @@ function IconButtonToggleDemo() {
         checkedIcon={<HeartIcon filled size={18} />}
         aria-label="Favorite item"
       />
-      <IconToggleButton
+      <IconButton
         variant="outlined"
         pressed={subscribed}
         onPressedChange={setSubscribed}
         icon={<BellIcon size={18} />}
         aria-label="Toggle notifications"
       />
-      <IconToggleButton
+      <IconButton
         variant="filled"
         shape="square"
         pressed={bookmarked}
@@ -166,7 +163,7 @@ function IconButtonToggleDemo() {
         icon={<SparkleIcon size={18} />}
         aria-label="Toggle AI assist"
       />
-      <IconToggleButton
+      <IconButton
         variant="standard"
         defaultPressed={false}
         icon={<SettingsGearIcon size={18} />}
@@ -443,32 +440,32 @@ function ExtendedFabCollapseDemo() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div className="demo-row">
-        <ToggleButton
+        <Button
           variant="outlined"
           pressed={!expanded}
           onPressedChange={(collapsed) => setExpanded(!collapsed)}
           showCheckIcon
         >
           {expanded ? "Collapse to Icon FAB" : "Expand Label"}
-        </ToggleButton>
+        </Button>
       </div>
       <div className="demo-row">
-        <ExtendedFAB
+        <FAB
           expanded={expanded}
           variant="primary"
           size="sm"
           icon={<PlusIcon size={20} />}
         >
           Compose Message
-        </ExtendedFAB>
-        <ExtendedFAB
+        </FAB>
+        <FAB
           expanded={expanded}
           variant="tertiary"
           size="md"
           icon={<SparkleIcon size={22} />}
         >
           Generate Summary
-        </ExtendedFAB>
+        </FAB>
       </div>
     </div>
   );
@@ -593,14 +590,14 @@ function FloatingToolbarCollapsibleDemo() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <div className="demo-row">
-        <ToggleButton
+        <Button
           variant="outlined"
           pressed={collapsed}
           onPressedChange={setCollapsed}
           showCheckIcon
         >
           {collapsed ? "Collapsed (Companion FAB Prominent)" : "Collapse Toolbar"}
-        </ToggleButton>
+        </Button>
       </div>
       <div className="demo-row">
         <FloatingToolbar
@@ -642,19 +639,94 @@ const COMMON_SPLIT_MENU = [
   { id: "draft", label: "Save as template" },
 ] as const;
 
+function DockedToolbarScrollDemo() {
+  const feedRef = React.useRef<HTMLDivElement | null>(null);
+  const [behavior, setBehavior] = React.useState<"pinned" | "exit-always">("exit-always");
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", maxWidth: 480 }}>
+      <div className="demo-row" style={{ gap: 8 }}>
+        <Button
+          size="xs"
+          variant={behavior === "exit-always" ? "filled" : "outlined"}
+          onClick={() => setBehavior("exit-always")}
+        >
+          exit-always
+        </Button>
+        <Button
+          size="xs"
+          variant={behavior === "pinned" ? "filled" : "outlined"}
+          onClick={() => setBehavior("pinned")}
+        >
+          pinned
+        </Button>
+      </div>
+      <div
+        style={{
+          position: "relative",
+          height: 248,
+          borderRadius: 24,
+          overflow: "hidden",
+          border: "1px solid var(--m3e-color-outline-variant)",
+          background: "var(--m3e-color-surface)",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <div
+          ref={feedRef}
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: 14,
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+          }}
+        >
+          {Array.from({ length: 10 }, (_, idx) => (
+            <div
+              key={idx}
+              style={{
+                padding: "10px 14px",
+                borderRadius: 12,
+                background: "var(--m3e-color-surface-container-low)",
+                fontSize: 13,
+              }}
+            >
+              Message thread #{idx + 1}
+            </div>
+          ))}
+        </div>
+        <DockedToolbar
+          scrollBehavior={behavior}
+          scrollTargetRef={feedRef}
+          maxVisibleActions={3}
+          items={[
+            { id: "search", label: "Search", icon: <SearchIcon size={18} /> },
+            { id: "folder", label: "Move", icon: <FolderIcon size={18} /> },
+            { id: "share", label: "Share", icon: <ShareIcon size={18} /> },
+            { id: "sparkle", label: "Summarize", icon: <SparkleIcon size={18} /> },
+          ]}
+          primaryAction={<FAB icon={<EditIcon size={20} />} aria-label="Compose" />}
+        />
+      </div>
+    </div>
+  );
+}
+
 export const ACTIONS_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   /* ---------------------------------------------------------------------- */
-  /* 1. Button & ToggleButton                                               */
+  /* 1. Button                                                              */
   /* ---------------------------------------------------------------------- */
   {
     slug: "button",
     title: "Button",
-    category: "actions",
     subtitle: {
       zh: "具备物理弹簧圆角形变（按压态与选中态平滑过渡）的 Material 3 Expressive 按钮与切换按钮，支持五级尺寸、危险意图、异步加载与多态链接渲染。",
       en: "Material 3 Expressive push and toggle buttons featuring spring-driven corner morphing on press and selection, five size scales, danger intent, async loading, and polymorphic link rendering.",
     },
-    importStatement: 'import { Button, ToggleButton } from "m3eui";',
+    importStatement: 'import { Button } from "m3eui";',
     primitive: "@base-ui/react/button · @base-ui/react/toggle",
     scenarios: [
       {
@@ -839,8 +911,8 @@ export const ACTIONS_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
           en: "Disabled State Matrix",
         },
         description: {
-          zh: "展示全部五种 Button 变体以及未选中/已选中 ToggleButton 在 disabled 状态下的 12% 容器与 38% 前景对比度表现。",
-          en: "Complete disabled matrix across filled, tonal, elevated, outlined, and text buttons plus unselected and selected ToggleButton states.",
+          zh: "五种变体及未选中 / 已选中切换按钮的禁用态（12% 容器、38% 前景）。",
+          en: "Disabled states across all five variants plus unselected and selected toggle buttons.",
         },
         code: `<div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
   <div className="demo-row">
@@ -851,10 +923,10 @@ export const ACTIONS_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
     <Button variant="text" disabled>Text</Button>
   </div>
   <div className="demo-row">
-    <ToggleButton variant="tonal" disabled>Toggle Off</ToggleButton>
-    <ToggleButton variant="tonal" defaultPressed showCheckIcon disabled>
+    <Button defaultPressed={false} variant="tonal" disabled>Toggle Off</Button>
+    <Button variant="tonal" defaultPressed showCheckIcon disabled>
       Toggle On
-    </ToggleButton>
+    </Button>
   </div>
 </div>`,
         render: () => (
@@ -877,12 +949,12 @@ export const ACTIONS_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
               </Button>
             </div>
             <div className="demo-row">
-              <ToggleButton variant="tonal" disabled>
+              <Button defaultPressed={false} variant="tonal" disabled>
                 Toggle Off
-              </ToggleButton>
-              <ToggleButton variant="tonal" defaultPressed showCheckIcon disabled>
+              </Button>
+              <Button variant="tonal" defaultPressed showCheckIcon disabled>
                 Toggle On
-              </ToggleButton>
+              </Button>
             </div>
           </div>
         ),
@@ -891,11 +963,11 @@ export const ACTIONS_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
         id: "button-link-toggle",
         title: {
           zh: "多态链接、通栏按钮与切换按钮",
-          en: "Link Button, Full-Width & Stateful ToggleButton",
+          en: "Link, full-width & toggle",
         },
         description: {
-          zh: "传入 href 自动退化为原生 <a> 锚点元素；fullWidth 铺满父级容器宽度；ToggleButton 在选中时动态切换圆角曲率与选中态色板。",
-          en: "Passing href renders a semantic anchor element; fullWidth stretches to 100% inline size; ToggleButton morphs between unselected and selected radii with aria-pressed state.",
+          zh: "href 渲染为 <a>；fullWidth 铺满容器；传 pressed / defaultPressed 即为切换按钮，选中时圆角形变。",
+          en: "href renders an <a>; fullWidth fills the container; pressed / defaultPressed makes it a toggle that morphs its corners.",
         },
         code: `const [starred, setStarred] = React.useState(true);
 const [pinned, setPinned] = React.useState(false);
@@ -909,17 +981,17 @@ const [pinned, setPinned] = React.useState(false);
 >
   Material 3 Spec
 </Button>
-<ToggleButton
+<Button
   variant="tonal"
   pressed={starred}
   onPressedChange={setStarred}
   leadingIcon={<HeartIcon filled={starred} size={16} />}
 >
   {starred ? "Starred (128)" : "Star"}
-</ToggleButton>
-<ToggleButton variant="outlined" pressed={pinned} onPressedChange={setPinned} showCheckIcon>
+</Button>
+<Button variant="outlined" pressed={pinned} onPressedChange={setPinned} showCheckIcon>
   {pinned ? "Pinned to Top" : "Pin Issue"}
-</ToggleButton>
+</Button>
 <Button variant="filled" fullWidth leadingIcon={<SparkleIcon size={16} />}>
   Full-Width Primary Action
 </Button>`,
@@ -1050,7 +1122,7 @@ const [pinned, setPinned] = React.useState(false);
         ],
       },
       {
-        title: "ToggleButton Props",
+        title: "Button Props (toggle)",
         description: {
           zh: "具备 aria-pressed 双态切换与圆角形态记忆的切换按钮属性。",
           en: "Props for stateful toggle buttons with selection corner morphing.",
@@ -1149,17 +1221,16 @@ const [pinned, setPinned] = React.useState(false);
   },
 
   /* ---------------------------------------------------------------------- */
-  /* 2. IconButton & IconToggleButton                                       */
+  /* 2. IconButton                                                          */
   /* ---------------------------------------------------------------------- */
   {
     slug: "icon-button",
     title: "IconButton",
-    category: "actions",
     subtitle: {
       zh: "紧凑型纯图标操作按钮与双态切换图标按钮，内置窄/标准/宽三种水平比例、五档尺寸、异步加载与危险语义。",
       en: "Compact icon-only action and toggle buttons supporting narrow/default/wide aspect ratios, five sizes, loading spinners, and destructive intent.",
     },
-    importStatement: 'import { IconButton, IconToggleButton } from "m3eui";',
+    importStatement: 'import { IconButton } from "m3eui";',
     primitive: "@base-ui/react/button · @base-ui/react/toggle",
     scenarios: [
       {
@@ -1283,7 +1354,7 @@ const [pinned, setPinned] = React.useState(false);
         id: "icon-button-toggle",
         title: {
           zh: "可切换状态图标按钮",
-          en: "Stateful IconToggleButton",
+          en: "Toggle",
         },
         description: {
           zh: "适用于收藏、订阅通知、固定面板等双态开关，支持通过 checkedIcon 在激活时替换为实心图标并自动形变圆角。",
@@ -1292,7 +1363,7 @@ const [pinned, setPinned] = React.useState(false);
         code: `const [liked, setLiked] = React.useState(true);
 const [subscribed, setSubscribed] = React.useState(false);
 
-<IconToggleButton
+<IconButton
   variant="tonal"
   pressed={liked}
   onPressedChange={setLiked}
@@ -1300,7 +1371,7 @@ const [subscribed, setSubscribed] = React.useState(false);
   checkedIcon={<HeartIcon filled />}
   aria-label="Favorite item"
 />
-<IconToggleButton
+<IconButton
   variant="outlined"
   pressed={subscribed}
   onPressedChange={setSubscribed}
@@ -1336,16 +1407,16 @@ const [subscribed, setSubscribed] = React.useState(false);
           en: "Disabled Matrix",
         },
         description: {
-          zh: "完整覆盖 standard、filled、tonal、outlined 四种 IconButton 变体及未选中/已选中 IconToggleButton 的禁用态。",
-          en: "Disabled states across all four IconButton variants alongside unpressed and pressed IconToggleButton instances.",
+          zh: "四种变体及未选中 / 已选中切换态的禁用态。",
+          en: "Disabled states across all four variants plus unpressed and pressed toggles.",
         },
         code: `<div className="demo-row">
   <IconButton variant="standard" disabled icon={<SearchIcon />} aria-label="Search" />
   <IconButton variant="filled" disabled icon={<PlusIcon />} aria-label="Create" />
   <IconButton variant="tonal" disabled icon={<ShareIcon />} aria-label="Share" />
   <IconButton variant="outlined" disabled icon={<SettingsGearIcon />} aria-label="Settings" />
-  <IconToggleButton variant="tonal" disabled icon={<HeartIcon />} aria-label="Favorite off" />
-  <IconToggleButton
+  <IconButton defaultPressed={false} variant="tonal" disabled icon={<HeartIcon />} aria-label="Favorite off" />
+  <IconButton
     variant="tonal"
     defaultPressed
     disabled
@@ -1379,13 +1450,14 @@ const [subscribed, setSubscribed] = React.useState(false);
               icon={<SettingsGearIcon size={18} />}
               aria-label="Settings disabled"
             />
-            <IconToggleButton
+            <IconButton
+              defaultPressed={false}
               variant="tonal"
               disabled
               icon={<HeartIcon size={18} />}
               aria-label="Favorite disabled off"
             />
-            <IconToggleButton
+            <IconButton
               variant="tonal"
               defaultPressed
               disabled
@@ -1516,7 +1588,7 @@ const [subscribed, setSubscribed] = React.useState(false);
         ],
       },
       {
-        title: "IconToggleButton Props",
+        title: "IconButton Props (toggle)",
         rows: [
           {
             name: "icon",
@@ -1598,7 +1670,6 @@ const [subscribed, setSubscribed] = React.useState(false);
   {
     slug: "button-group",
     title: "ButtonGroup",
-    category: "actions",
     subtitle: {
       zh: "支持按压宽度弹簧挤压传递的 Standard 按钮组与共享内侧小圆角的 Connected 分段控制器，内置单选、多选与响应式溢出菜单。",
       en: "Expressive button groups supporting spring width-sharing neighbor compression (standard) and shared inner-corner segmented controls (connected) with single/multiple selection and overflow menus.",
@@ -1915,7 +1986,6 @@ const [subscribed, setSubscribed] = React.useState(false);
   {
     slug: "split-button",
     title: "SplitButton",
-    category: "actions",
     subtitle: {
       zh: "将高频主操作与次级下拉菜单合二为一的双段式按钮，右侧触发器具备光学中心补偿、悬停内角形变与 180° 弹簧箭头旋转。",
       en: "Dual-segment action button pairing a primary trigger with a segmented dropdown menu, complete with optical chevron centering, hover inner-corner morphing, and 180° spring chevron rotation.",
@@ -2147,17 +2217,16 @@ const [subscribed, setSubscribed] = React.useState(false);
   },
 
   /* ---------------------------------------------------------------------- */
-  /* 5. FAB, ExtendedFAB & FABMenu                                          */
+  /* 5. FAB & FABMenu                                                       */
   /* ---------------------------------------------------------------------- */
   {
     slug: "fab",
     title: "FAB",
-    category: "actions",
     subtitle: {
-      zh: "页面最高优先级的悬浮主操作按钮家族：涵盖四种容器色板的标准 FAB、宽度平滑伸缩的 ExtendedFAB 以及错峰弹簧展开的 FABMenu。",
-      en: "High-emphasis floating action family comprising multi-palette FABs, width-morphing ExtendedFABs, and staggered spring-animated FABMenu speed dials.",
+      zh: "页面最高优先级的悬浮主操作。传 children 即为带文字的 FAB，expanded 控制展开收起。",
+      en: "Highest-emphasis floating action. Pass children for a labelled FAB; expanded collapses it to icon-only.",
     },
-    importStatement: 'import { FAB, ExtendedFAB, FABMenu } from "m3eui";',
+    importStatement: 'import { FAB } from "m3eui";',
     primitive: "@base-ui/react/button",
     scenarios: [
       {
@@ -2224,8 +2293,8 @@ const [subscribed, setSubscribed] = React.useState(false);
       {
         id: "extended-fab-collapse",
         title: {
-          zh: "ExtendedFAB 展开与收起动画",
-          en: "Collapsible ExtendedFAB",
+          zh: "带文字与展开收起",
+          en: "Labelled & collapsible",
         },
         description: {
           zh: "切换 expanded 属性可在「图标 + 文本标签」与紧凑正方图标按钮之间通过弹簧物理平滑过渡宽度与不透明度。",
@@ -2233,31 +2302,10 @@ const [subscribed, setSubscribed] = React.useState(false);
         },
         code: `const [expanded, setExpanded] = React.useState(true);
 
-<ExtendedFAB expanded={expanded} variant="primary" icon={<PlusIcon size={20} />}>
+<FAB expanded={expanded} variant="primary" icon={<PlusIcon size={20} />}>
   Compose Message
-</ExtendedFAB>`,
+</FAB>`,
         render: () => <ExtendedFabCollapseDemo />,
-      },
-      {
-        id: "fab-menu",
-        title: {
-          zh: "FABMenu 快捷创建菜单",
-          en: "Interactive FABMenu Speed Dial",
-        },
-        description: {
-          zh: "点击主触发器按钮后，加号旋转 45° 变为关闭图标，子操作项按 35ms 错峰物理弹簧向上扇出，支持方向键循环聚焦与 Esc 关闭。",
-          en: "Activating FABMenu rotates the trigger glyph 45° into a close icon while staggering child action pills upward with roving keyboard navigation.",
-        },
-        code: `<FABMenu
-  size="md"
-  triggerLabel="Create resource"
-  items={[
-    { id: "doc", label: "New Document", icon: <EditIcon /> },
-    { id: "folder", label: "New Folder", icon: <FolderIcon /> },
-    { id: "share", label: "Share Invite", icon: <ShareIcon /> },
-  ]}
-/>`,
-        render: () => <FabMenuDemo />,
       },
       {
         id: "fab-visibility-elevation",
@@ -2277,29 +2325,29 @@ const [subscribed, setSubscribed] = React.useState(false);
       {
         id: "fab-disabled",
         title: {
-          zh: "FAB 与 ExtendedFAB 禁用态",
-          en: "Disabled FAB & ExtendedFAB",
+          zh: "禁用态",
+          en: "Disabled",
         },
         description: {
           zh: "禁用状态下自动移除悬浮阴影并降低容器与图标对比度。",
-          en: "Disabled FAB and ExtendedFAB flatten elevation shadows and apply muted M3 disabled surface/foreground tokens.",
+          en: "Disabled FABs drop elevation and use muted M3 disabled tokens.",
         },
         code: `<div className="demo-row">
   <FAB disabled icon={<PlusIcon size={22} />} aria-label="Disabled FAB" />
-  <ExtendedFAB disabled icon={<EditIcon size={20} />}>New Entry</ExtendedFAB>
-  <ExtendedFAB disabled expanded={false} icon={<SparkleIcon size={20} />}>
+  <FAB disabled icon={<EditIcon size={20} />}>New Entry</FAB>
+  <FAB disabled expanded={false} icon={<SparkleIcon size={20} />}>
     Collapsed Disabled
-  </ExtendedFAB>
+  </FAB>
 </div>`,
         render: () => (
           <div className="demo-row">
             <FAB disabled icon={<PlusIcon size={22} />} aria-label="Disabled FAB" />
-            <ExtendedFAB disabled icon={<EditIcon size={20} />}>
+            <FAB disabled icon={<EditIcon size={20} />}>
               New Entry
-            </ExtendedFAB>
-            <ExtendedFAB disabled expanded={false} icon={<SparkleIcon size={20} />}>
+            </FAB>
+            <FAB disabled expanded={false} icon={<SparkleIcon size={20} />}>
               Collapsed Disabled
-            </ExtendedFAB>
+            </FAB>
           </div>
         ),
       },
@@ -2356,7 +2404,7 @@ const [subscribed, setSubscribed] = React.useState(false);
         ],
       },
       {
-        title: "ExtendedFAB Props",
+        title: "FAB Props (with label)",
         rows: [
           {
             name: "icon",
@@ -2405,6 +2453,42 @@ const [subscribed, setSubscribed] = React.useState(false);
           },
         ],
       },
+    ],
+  },
+
+  {
+    slug: "fab-menu",
+    title: "FABMenu",
+    primitive: "@base-ui/react/menu",
+    subtitle: {
+      zh: "由 FAB 展开的快捷操作菜单，子项错峰弹出。",
+      en: "Speed-dial menu expanded from a FAB, with staggered items.",
+    },
+    importStatement: 'import { FABMenu } from "m3eui";',
+    scenarios: [
+      {
+        id: "fab-menu",
+        title: {
+          zh: "快捷创建",
+          en: "Speed dial",
+        },
+        description: {
+          zh: "点击主触发器按钮后，加号旋转 45° 变为关闭图标，子操作项按 35ms 错峰物理弹簧向上扇出，支持方向键循环聚焦与 Esc 关闭。",
+          en: "Activating FABMenu rotates the trigger glyph 45° into a close icon while staggering child action pills upward with roving keyboard navigation.",
+        },
+        code: `<FABMenu
+  size="md"
+  triggerLabel="Create resource"
+  items={[
+    { id: "doc", label: "New Document", icon: <EditIcon /> },
+    { id: "folder", label: "New Folder", icon: <FolderIcon /> },
+    { id: "share", label: "Share Invite", icon: <ShareIcon /> },
+  ]}
+/>`,
+        render: () => <FabMenuDemo />,
+      },
+    ],
+    apis: [
       {
         title: "FABMenu Props",
         rows: [
@@ -2454,12 +2538,11 @@ const [subscribed, setSubscribed] = React.useState(false);
   {
     slug: "floating-toolbar",
     title: "FloatingToolbar",
-    category: "actions",
     subtitle: {
-      zh: "胶囊悬浮工具栏 FloatingToolbar 与替代旧版 BottomAppBar 的贴底通栏 DockedToolbar，支持双主题、伴随 FAB 与滚动折叠。",
-      en: "Pill-shaped FloatingToolbar and full-width bottom DockedToolbar with companion FABs, vibrant themes, and scroll collapse.",
+      zh: "胶囊悬浮工具栏，支持双主题、伴随 FAB 与滚动折叠。",
+      en: "Pill-shaped floating toolbar with vibrant themes, companion FAB, and scroll collapse.",
     },
-    importStatement: 'import { FloatingToolbar, DockedToolbar } from "m3eui";',
+    importStatement: 'import { FloatingToolbar } from "m3eui";',
     primitive: "@base-ui/react/toolbar",
     scenarios: [
       {
@@ -2562,7 +2645,7 @@ const [subscribed, setSubscribed] = React.useState(false);
         id: "floating-toolbar-collapsible",
         title: {
           zh: "可折叠收起态",
-          en: "Interactive Collapsible State",
+          en: "Interactive collapsed state",
         },
         description: {
           zh: "开启 collapsed（或配合 scrollCollapse 监听滚动）时，工具栏胶囊平滑收起并设为 inert，同时伴随 FAB 弹性放大 8% 保持核心入口突出。",
@@ -2582,44 +2665,6 @@ const [subscribed, setSubscribed] = React.useState(false);
   companionFab={<FAB size="sm" variant="tertiary" icon={<SparkleIcon />} aria-label="Ask AI" />}
 />`,
         render: () => <FloatingToolbarCollapsibleDemo />,
-      },
-      {
-        id: "docked-toolbar-layouts",
-        title: {
-          zh: "贴底通栏工具栏 (DockedToolbar)",
-          en: "Full-Width DockedToolbar",
-        },
-        description: {
-          zh: "M3E 规范用于替代旧版 BottomAppBar 的贴底全宽工具栏，支持 spaced、centered 与带主动作按钮的 leading-actions 排布。",
-          en: "Replaces legacy BottomAppBar with spaced, centered, or leading-actions full-width bottom bars.",
-        },
-        code: `<DockedToolbar
-  items={[
-    { id: "edit", label: "Edit", icon: <EditIcon />, selected: true },
-    { id: "copy", label: "Copy", icon: <CopyIcon /> },
-    { id: "share", label: "Share", icon: <ShareIcon /> },
-  ]}
-  primaryAction={<Button variant="filled" size="sm">Publish</Button>}
-/>`,
-        render: () => (
-          <div style={{ width: "100%", maxWidth: 520, borderRadius: 16, overflow: "hidden", border: "1px solid var(--m3e-color-outline-variant)" }}>
-            <DockedToolbar
-              elevated={false}
-              style={{ borderBlockStart: "none" }}
-              aria-label="Editor docked toolbar"
-              items={[
-                { id: "edit", label: "Edit", icon: <EditIcon size={18} />, selected: true },
-                { id: "copy", label: "Copy", icon: <CopyIcon size={18} /> },
-                { id: "share", label: "Share", icon: <ShareIcon size={18} /> },
-              ]}
-              primaryAction={
-                <Button variant="filled" size="sm" leadingIcon={<SendIcon size={16} />}>
-                  Publish
-                </Button>
-              }
-            />
-          </div>
-        ),
       },
     ],
     apis: [
@@ -2689,6 +2734,65 @@ const [subscribed, setSubscribed] = React.useState(false);
           },
         ],
       },
+    ],
+  },
+  {
+    slug: "docked-toolbar",
+    title: "DockedToolbar",
+    primitive: "@base-ui/react/toolbar",
+    subtitle: {
+      zh: "贴底全宽操作栏，可带主操作与滚动隐藏。",
+      en: "Full-width bottom action bar with optional primary action and scroll-away.",
+    },
+    importStatement: 'import { DockedToolbar } from "m3eui";',
+    scenarios: [
+      {
+        id: "docked-toolbar-layouts",
+        title: { zh: "排布与主操作", en: "Layout & primary action" },
+        description: { zh: "spaced、centered、leading-actions 三种排布。", en: "spaced, centered, or leading-actions layouts." },
+        code: `<DockedToolbar
+  items={[
+    { id: "edit", label: "Edit", icon: <EditIcon />, selected: true },
+    { id: "copy", label: "Copy", icon: <CopyIcon /> },
+    { id: "share", label: "Share", icon: <ShareIcon /> },
+  ]}
+  primaryAction={<Button variant="filled" size="sm">Publish</Button>}
+/>`,
+        render: () => (
+          <div style={{ width: "100%", maxWidth: 520, borderRadius: 16, overflow: "hidden", border: "1px solid var(--m3e-color-outline-variant)" }}>
+            <DockedToolbar
+              elevated={false}
+              style={{ borderBlockStart: "none" }}
+              aria-label="Editor docked toolbar"
+              items={[
+                { id: "edit", label: "Edit", icon: <EditIcon size={18} />, selected: true },
+                { id: "copy", label: "Copy", icon: <CopyIcon size={18} /> },
+                { id: "share", label: "Share", icon: <ShareIcon size={18} /> },
+              ]}
+              primaryAction={
+                <Button variant="filled" size="sm" leadingIcon={<SendIcon size={16} />}>
+                  Publish
+                </Button>
+              }
+            />
+          </div>
+        ),
+      },
+      {
+        id: "docked-toolbar-scroll",
+        title: { zh: "溢出与滚动隐藏", en: "Overflow & scroll-away" },
+        description: { zh: "超出 maxVisibleActions 的动作收进菜单；主操作 FAB 自动去阴影。", en: "Actions beyond maxVisibleActions overflow into a menu; the FAB is flattened." },
+        code: `<DockedToolbar
+  scrollBehavior="exit-always"
+  scrollTargetRef={feedRef}
+  maxVisibleActions={3}
+  items={actions}
+  primaryAction={<FAB icon={<EditIcon />} aria-label="Compose" />}
+/>`,
+        render: () => <DockedToolbarScrollDemo />,
+      },
+    ],
+    apis: [
       {
         title: "DockedToolbar Props",
         rows: [
@@ -2709,6 +2813,17 @@ const [subscribed, setSubscribed] = React.useState(false);
               zh: "右侧主动作槽位与按钮排布模式。",
               en: "Trailing primary action slot and horizontal alignment mode.",
             },
+          },
+          {
+            name: "maxVisibleActions",
+            type: "number",
+            description: { zh: "超出的动作收进溢出菜单。", en: "Extra actions move into an overflow menu." },
+          },
+          {
+            name: "scrollBehavior / scrollTargetRef / hidden",
+            type: '"pinned" | "exit-always" / React.RefObject<HTMLElement | Window | null> / boolean',
+            defaultValue: '"pinned"',
+            description: { zh: "向下滚动时隐藏，或受控隐藏。", en: "Hide on downward scroll, or control visibility." },
           },
           {
             name: "elevated",

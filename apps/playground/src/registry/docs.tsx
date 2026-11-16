@@ -25,7 +25,6 @@ import {
   Snippet,
   Switch,
   TextField,
-  ToggleButton,
   useM3E,
   useM3EI18n,
   useM3EToast,
@@ -36,7 +35,6 @@ import { AOSP_SCHEME_OPTIONS, SeedSwatchDot } from "../layout/ThemeStudioSheet";
 import { ALL_COMPONENT_DOCS } from "./components";
 import { getComponentDesignSpec } from "./design";
 import type {
-  ComponentCategoryKey,
   DesignProvenanceKind,
   DocGuideSpec,
 } from "./types";
@@ -113,7 +111,7 @@ function LiveThemingGuideWidget() {
           {seeds.map((s) => {
             const selected = seedHex.toLowerCase() === s.hex.toLowerCase();
             return (
-              <ToggleButton
+              <Button
                 key={s.hex}
                 size="xs"
                 variant="outlined"
@@ -123,7 +121,7 @@ function LiveThemingGuideWidget() {
                 leadingIcon={<SeedSwatchDot hex={s.hex} />}
               >
                 {s.label}
-              </ToggleButton>
+              </Button>
             );
           })}
 
@@ -424,8 +422,6 @@ function IntroDocContent() {
 interface ProvenanceRow {
   readonly slug: string;
   readonly title: string;
-  readonly category: ComponentCategoryKey;
-  readonly categoryLabel: string;
   readonly provenance: DesignProvenanceKind;
   readonly aospSources: readonly string[];
   readonly primitive?: string;
@@ -434,7 +430,6 @@ interface ProvenanceRow {
 
 function ComponentMatrixDocContent() {
   const resolve = useCopyResolver();
-  const ui = usePlaygroundStrings();
   const [filter, setFilter] = React.useState<"all" | DesignProvenanceKind>("all");
   const [query, setQuery] = React.useState("");
 
@@ -444,15 +439,13 @@ function ComponentMatrixDocContent() {
       return {
         slug: doc.slug,
         title: doc.title,
-        category: doc.category,
-        categoryLabel: ui.componentCategories[doc.category],
         provenance: spec?.provenance ?? "m3e-web-adaptation",
         aospSources: spec?.aospSources ?? [],
         primitive: doc.primitive,
         tokenSources: spec?.tokenSources ?? [],
       };
     });
-  }, [ui.componentCategories]);
+  }, []);
 
   const officialCount = React.useMemo(
     () => allRows.filter((r) => r.provenance === "official-m3e").length,
@@ -468,7 +461,6 @@ function ComponentMatrixDocContent() {
       return (
         row.title.toLowerCase().includes(q) ||
         row.slug.toLowerCase().includes(q) ||
-        row.categoryLabel.toLowerCase().includes(q) ||
         row.aospSources.some((s) => s.toLowerCase().includes(q)) ||
         (row.primitive?.toLowerCase().includes(q) ?? false)
       );
@@ -484,21 +476,16 @@ function ComponentMatrixDocContent() {
         sortable: true,
         sortAccessor: (r) => r.title,
         cell: (row) => (
-          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <Link
-              to={`/components/${row.slug}`}
-              style={{
-                color: "var(--m3e-color-primary)",
-                fontWeight: 600,
-                textDecoration: "none",
-              }}
-            >
-              {row.title}
-            </Link>
-            <span style={{ fontSize: 12, color: "var(--m3e-color-on-surface-variant)" }}>
-              {row.categoryLabel}
-            </span>
-          </div>
+          <Link
+            to={`/components/${row.slug}`}
+            style={{
+              color: "var(--m3e-color-primary)",
+              fontWeight: 600,
+              textDecoration: "none",
+            }}
+          >
+            {row.title}
+          </Link>
         ),
       },
       {
@@ -565,8 +552,8 @@ function ComponentMatrixDocContent() {
           <Card variant="outlined" title={`${allRows.length}`}>
             <p className="doc-prose-p">
               {resolve({
-                zh: "组件文档模块总数（覆盖动作、录入、选择、展示、反馈、导航 6 大分类）",
-                en: "Total component modules across Actions, Inputs, Selection, Display, Feedback, and Navigation.",
+                zh: "组件总数",
+                en: "Total components",
               })}
             </p>
           </Card>
@@ -652,8 +639,8 @@ function ComponentMatrixDocContent() {
         <h2>{resolve({ zh: "收敛边界原则", en: "Scope & Boundary Principles" })}</h2>
         <p className="doc-prose-p">
           {resolve({
-            zh: "核心库坚持最小正交集：能通过现有原语属性表达的能力绝不拆分为冗余组件（例如静态标签直接复用不传 onClick/onRemove 的只读 Chip + tone，多选直接复用 MultiSelect / MultiCombobox）；强业务流程型复杂控件（如穿梭框、产品导览、级联选择器等）不进入核心包，可在应用层基于 m3eui 组件自由组合。",
-            en: "Core exports stay orthogonal: capabilities expressible via existing props never become redundant components (e.g., static tags use non-interactive Chip + tone; multi-value inputs use MultiSelect / MultiCombobox), keeping domain-heavy widgets out of the core bundle.",
+            zh: "核心库坚持最小正交集：能通过现有原语属性表达的能力绝不拆分为冗余组件（例如静态标签直接复用不传 onClick/onRemove 的只读 Chip + tone，多选直接用 Select / Combobox 的 multiple）；强业务流程型复杂控件（如穿梭框、产品导览、级联选择器等）不进入核心包，可在应用层基于 m3eui 组件自由组合。",
+            en: "Core exports stay orthogonal: capabilities expressible via existing props never become redundant components (e.g., static tags use non-interactive Chip + tone; multi-value inputs use Select / Combobox with multiplebox), keeping domain-heavy widgets out of the core bundle.",
           })}
         </p>
       </section>
@@ -839,7 +826,7 @@ function StylingDocContent() {
       {
         token: "--m3e-color-secondary-container / --m3e-color-on-secondary-container",
         group: resolve({ zh: "色调容器", en: "Tonal Container" }),
-        usage: resolve({ zh: "Tonal 按钮、选中导航胶囊、FilterChip", en: "Tonal buttons, selected nav pills, FilterChips" }),
+        usage: resolve({ zh: "Tonal 按钮、选中导航胶囊、筛选 Chip", en: "Tonal buttons, selected nav pills, filter chips" }),
         swatch: "var(--m3e-color-secondary-container)",
       },
       {

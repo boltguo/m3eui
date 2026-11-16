@@ -1,5 +1,4 @@
 import * as React from "react";
-import { NavigationDrawer, type NavigationDestination } from "m3eui";
 import { usePlaygroundStrings } from "../i18n";
 
 export interface TocAnchorItem {
@@ -13,34 +12,48 @@ export function OnThisPage({
   readonly items: readonly TocAnchorItem[];
 }) {
   const ui = usePlaygroundStrings();
-  const [activeId, setActiveId] = React.useState<string>(items[0]?.id ?? "");
+  const ids = items.map((item) => item.id).join(" ");
+  const [activeId, setActiveId] = React.useState(items[0]?.id ?? "");
 
   React.useEffect(() => {
-    setActiveId(items[0]?.id ?? "");
-  }, [items]);
-
-  const drawerItems = React.useMemo<readonly NavigationDestination<string>[]>(
-    () =>
-      items.map((item) => ({
-        value: item.id,
-        label: item.label,
-        href: `#${item.id}`,
-      })),
-    [items],
-  );
+    const idList = ids ? ids.split(" ") : [];
+    setActiveId(idList[0] ?? "");
+    if (typeof IntersectionObserver === "undefined") return;
+    const targets = idList
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => el !== null);
+    if (targets.length === 0) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) setActiveId(entry.target.id);
+        }
+      },
+      { rootMargin: "-25% 0px -65% 0px" },
+    );
+    for (const el of targets) observer.observe(el);
+    return () => observer.disconnect();
+  }, [ids]);
 
   if (items.length === 0) return null;
 
   return (
-    <NavigationDrawer
-      variant="permanent"
-      scrollSpy
-      className="m3e-toc-drawer"
-      aria-label={ui.onThisPage}
-      headline={ui.onThisPage}
-      items={drawerItems}
-      value={activeId}
-      onValueChange={setActiveId}
-    />
+    <nav className="m3e-toc" aria-label={ui.onThisPage}>
+      <div className="m3e-toc__title">{ui.onThisPage}</div>
+      <ul className="m3e-toc__list">
+        {items.map((item) => (
+          <li key={item.id}>
+            <a
+              href={`#${item.id}`}
+              className="m3e-toc__link"
+              aria-current={item.id === activeId ? "true" : undefined}
+              onClick={() => setActiveId(item.id)}
+            >
+              {item.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
   );
 }

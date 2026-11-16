@@ -14,7 +14,7 @@ import {
   resolveDeterminateWaveAmplitude,
 } from "../tokens/index.js";
 import { useM3ERuntime } from "../context/M3EContext.js";
-import { useOffscreen } from "../internal/useOffscreen.js";
+import { useOffscreen } from "./useOffscreen.js";
 
 const MAX_LINEAR_TRACK_SEGMENTS = 3;
 const MAX_LINEAR_ACTIVE_SEGMENTS = 2;

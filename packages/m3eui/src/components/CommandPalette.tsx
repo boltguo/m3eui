@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Autocomplete as BaseAutocomplete } from "@base-ui/react/autocomplete";
 import { Dialog as BaseDialog } from "@base-ui/react/dialog";
 import { useM3EI18n } from "../context/M3EContext.js";
 import { useM3EPortalContainer } from "../context/M3EPortal.js";
@@ -113,6 +114,11 @@ export function CommandPalette({
   );
 }
 
+interface CommandEntry {
+  readonly item: CommandPaletteItem;
+  readonly text: string;
+}
+
 function CommandPaletteBody({
   groups,
   items = [],
@@ -129,172 +135,88 @@ function CommandPaletteBody({
   readonly onClose: () => void;
 }): React.JSX.Element {
   const { t } = useM3EI18n();
-  const [query, setQuery] = React.useState<string>("");
-  const [activeIndex, setActiveIndex] = React.useState<number>(0);
-  const lastCompositionEndAtRef = React.useRef<number>(-Infinity);
-  const listRef = React.useRef<HTMLDivElement | null>(null);
 
-  const listboxId = React.useId();
-  const optionPrefix = React.useId();
-
-  const normalizedGroups = React.useMemo<readonly CommandPaletteGroup[]>(() => {
-    const baseGroups: readonly CommandPaletteGroup[] = groups
-      ? groups
-      : [{ id: "default", heading: "", items }];
-
-    const q = query.trim().toLowerCase();
-    if (!q) {
-      return baseGroups.filter((g) => g.items.length > 0);
-    }
-
-    return baseGroups
-      .map((g) => ({
-        ...g,
-        items: g.items.filter((item) => {
-          const haystack = [
-            item.label,
-            item.description ?? "",
-            g.heading,
-            ...(item.keywords ?? []),
-          ]
-            .join(" ")
-            .toLowerCase();
-          return haystack.includes(q);
-        }),
-      }))
-      .filter((g) => g.items.length > 0);
-  }, [groups, items, query]);
-
-  const flatSelectable = React.useMemo(
+  const entries = React.useMemo(
     () =>
-      normalizedGroups
-        .flatMap((g) => g.items)
-        .filter((item) => !item.disabled),
-    [normalizedGroups],
+      (groups ?? [{ id: "default", heading: "", items }])
+        .filter((g) => g.items.length > 0)
+        .map((g) => ({
+          id: g.id,
+          heading: g.heading,
+          items: g.items.map<CommandEntry>((item) => ({
+            item,
+            text: [
+              item.label,
+              item.description,
+              g.heading,
+              ...(item.keywords ?? []),
+            ]
+              .join(" ")
+              .toLowerCase(),
+          })),
+        })),
+    [groups, items],
   );
 
-  React.useEffect(() => {
-    setActiveIndex(0);
-  }, [query]);
-
-  const clampedActive =
-    flatSelectable.length > 0
-      ? Math.min(activeIndex, flatSelectable.length - 1)
-      : -1;
-  const activeItem =
-    clampedActive >= 0 ? flatSelectable[clampedActive] : undefined;
-
-  const activeId = activeItem?.id;
-  React.useEffect(() => {
-    if (activeId === undefined) return;
-    listRef.current
-      ?.querySelector<HTMLElement>("[data-highlighted]")
-      ?.scrollIntoView({ block: "nearest" });
-  }, [activeId]);
-
   const runItem = (item: CommandPaletteItem) => {
-    if (item.disabled) return;
     onClose();
     item.onSelect();
   };
 
-  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (
-      e.nativeEvent.isComposing ||
-      e.keyCode === 229 ||
-      e.nativeEvent.timeStamp - lastCompositionEndAtRef.current < 32
-    ) {
-      return;
-    }
-    if (flatSelectable.length === 0) return;
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setActiveIndex((prev) => (prev + 1) % flatSelectable.length);
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setActiveIndex(
-        (prev) => (prev - 1 + flatSelectable.length) % flatSelectable.length,
-      );
-    } else if (e.key === "Home") {
-      e.preventDefault();
-      setActiveIndex(0);
-    } else if (e.key === "End") {
-      e.preventDefault();
-      setActiveIndex(flatSelectable.length - 1);
-    } else if (e.key === "Enter" && activeItem) {
-      e.preventDefault();
-      runItem(activeItem);
-    }
-  };
-
   return (
-    <>
+    <BaseAutocomplete.Root
+      inline
+      open
+      items={entries}
+      autoHighlight="always"
+      itemToStringValue={(entry: CommandEntry) => entry.item.label}
+      filter={(entry: CommandEntry, query) =>
+        entry.text.includes(query.trim().toLowerCase())
+      }
+    >
       <div className="m3e-command-palette__input-bar">
         <span className="m3e-command-palette__search-icon" aria-hidden="true">
           <CommandSearchSvg />
         </span>
-        <input
-          type="text"
-          role="combobox"
-          aria-expanded={true}
-          aria-controls={listboxId}
-          aria-activedescendant={
-            activeItem ? `${optionPrefix}-${activeItem.id}` : undefined
-          }
+        <BaseAutocomplete.Input
           aria-label={ariaLabel}
           placeholder={placeholder ?? t("command.placeholder")}
-          value={query}
           autoFocus
           className="m3e-command-palette__input"
-          onCompositionEnd={(e) => {
-            lastCompositionEndAtRef.current = e.nativeEvent.timeStamp;
-          }}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={handleInputKeyDown}
         />
       </div>
 
-      <div
-        ref={listRef}
-        id={listboxId}
-        role="listbox"
+      <BaseAutocomplete.Empty>
+        <Empty
+          compact
+          className="m3e-command-palette__empty"
+          title={emptyMessage ?? t("command.empty")}
+        />
+      </BaseAutocomplete.Empty>
+      <BaseAutocomplete.List
         aria-label={ariaLabel}
         className="m3e-command-palette__list"
       >
-        {normalizedGroups.length === 0 ? (
-          <Empty
-            compact
-            className="m3e-command-palette__empty"
-            title={emptyMessage ?? t("command.empty")}
-          />
-        ) : (
-          normalizedGroups.map((group) => (
-            <div key={group.id} className="m3e-command-palette__group">
-              {group.heading ? (
-                <div className="m3e-command-palette__group-heading">
-                  {group.heading}
-                </div>
-              ) : null}
-              {group.items.map((item) => {
-                const isHighlighted = activeItem?.id === item.id;
+        {(group: (typeof entries)[number]) => (
+          <BaseAutocomplete.Group
+            key={group.id}
+            items={group.items}
+            className="m3e-command-palette__group"
+          >
+            {group.heading ? (
+              <BaseAutocomplete.GroupLabel className="m3e-command-palette__group-heading">
+                {group.heading}
+              </BaseAutocomplete.GroupLabel>
+            ) : null}
+            <BaseAutocomplete.Collection>
+              {(entry: CommandEntry) => {
+                const { item } = entry;
                 return (
-                  <div
+                  <BaseAutocomplete.Item
                     key={item.id}
-                    id={`${optionPrefix}-${item.id}`}
-                    role="option"
-                    aria-selected={isHighlighted}
-                    aria-disabled={item.disabled || undefined}
+                    value={entry}
+                    disabled={item.disabled}
                     className="m3e-command-palette__item"
-                    data-highlighted={isHighlighted ? "" : undefined}
-                    data-disabled={item.disabled ? "" : undefined}
-                    onMouseEnter={() => {
-                      if (!item.disabled) {
-                        const idx = flatSelectable.findIndex(
-                          (s) => s.id === item.id,
-                        );
-                        if (idx >= 0) setActiveIndex(idx);
-                      }
-                    }}
                     onClick={() => runItem(item)}
                   >
                     {item.icon ? (
@@ -324,17 +246,17 @@ function CommandPaletteBody({
                         {item.shortcut}
                       </Kbd>
                     ) : null}
-                  </div>
+                  </BaseAutocomplete.Item>
                 );
-              })}
-            </div>
-          ))
+              }}
+            </BaseAutocomplete.Collection>
+          </BaseAutocomplete.Group>
         )}
-      </div>
+      </BaseAutocomplete.List>
 
       <div className="m3e-command-palette__footer">
         <span>{footerHint ?? t("command.navigateHint")}</span>
       </div>
-    </>
+    </BaseAutocomplete.Root>
   );
 }

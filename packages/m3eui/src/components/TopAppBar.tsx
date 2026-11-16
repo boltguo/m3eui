@@ -11,6 +11,7 @@ import { useM3EI18n } from "../context/M3EContext.js";
 import { useM3EScalarSpringEffect } from "../hooks/useM3ESpring.js";
 import { IconButton } from "./IconButton.js";
 import { DropdownMenu, type M3EMenuItemSpec } from "./Menu.js";
+import { MoreVertIconSvg } from "../internal/icons.js";
 import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
 
 export type TopAppBarScrollBehavior =
@@ -35,22 +36,6 @@ export interface M3EAppBarRowProps {
   readonly moreActionsLabel?: string;
   readonly className?: string;
   readonly style?: React.CSSProperties;
-}
-
-function MoreVertIconSvg() {
-  return (
-    <svg
-      width={20}
-      height={20}
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="5" r="2" />
-      <circle cx="12" cy="12" r="2" />
-      <circle cx="12" cy="19" r="2" />
-    </svg>
-  );
 }
 
 export function AppBarRow({
