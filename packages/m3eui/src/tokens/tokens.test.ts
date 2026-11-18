@@ -653,7 +653,6 @@ describe("m3eui/tokens — AOSP Compose Material 3 Expressive 1.5.0 Parity", () 
     const legacy2021 = generateM3EThemeTokens({
       seedHex: "#6750A4",
       variant: "tonalSpot",
-      specVersion: "2021",
     });
     for (const [baseKey, dimKey] of [
       ["primary", "primaryDim"],
@@ -706,8 +705,8 @@ describe("m3eui/tokens — AOSP Compose Material 3 Expressive 1.5.0 Parity", () 
   });
 
   it("tracks convex/concave corner features for AOSP FeatureMapping, determinate LoadingIndicator morph, dual-segment wavy, and SplitButton hover inner corners", () => {
-    expect(MATERIAL_SHAPES.softBurst.features.some((f) => f.convex)).toBe(true);
-    expect(MATERIAL_SHAPES.softBurst.features.some((f) => !f.convex)).toBe(true);
+    expect(MATERIAL_SHAPES.softBurst.features.some((f) => f.type === "corner" && f.convex)).toBe(true);
+    expect(MATERIAL_SHAPES.softBurst.features.some((f) => f.type === "corner" && !f.convex)).toBe(true);
 
     expect(LOADING_INDICATOR_DETERMINATE_MORPH_SEQUENCE.length).toBe(1);
     expect(LOADING_INDICATOR_DETERMINATE_MORPH_SEQUENCE[0].from).toBe("circle");

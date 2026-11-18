@@ -19,7 +19,7 @@ import {
   MOTION_SCHEMES,
   type MotionSchemeName,
 } from "../tokens/motion.js";
-import { M3EToastViewportHost } from "../components/Toast.js";
+import { M3EToastViewportHost } from "../components/Toast/Toast.js";
 import {
   M3EToastManagerContext,
   createM3EToastManager,

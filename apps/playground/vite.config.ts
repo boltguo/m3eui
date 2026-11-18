@@ -28,6 +28,10 @@ export default defineConfig({
         replacement: resolve(__dirname, "../../packages/m3eui/src/primitives.ts"),
       },
       {
+        find: /^m3eui\/components\/([^/]+)$/,
+        replacement: resolve(__dirname, "../../packages/m3eui/src/components/$1/$1.tsx"),
+      },
+      {
         find: "m3eui",
         replacement: resolve(__dirname, "../../packages/m3eui/src/index.ts"),
       },

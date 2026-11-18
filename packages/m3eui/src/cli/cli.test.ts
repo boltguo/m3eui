@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -212,5 +212,25 @@ describe("m3eui CLI — Declarative m3e.json & Theme Sync CLI Suite", () => {
       doctorReport.checks.find((c) => c.name === "i18n-locale-resolution")
         ?.passed,
     ).toBe(false);
+  });
+
+  it("scans nested component directories for hardcoded UI literals in m3e doctor", () => {
+    runM3ECli(["init"], {
+      cwd: tempDir,
+      log: () => {},
+      error: () => {},
+    });
+    const nestedDir = join(tempDir, "packages/m3eui/src/components/Button");
+    mkdirSync(nestedDir, { recursive: true });
+    writeFileSync(
+      join(nestedDir, "Button.tsx"),
+      'export function Button() { return <button aria-label="Close">x</button>; }\n',
+      "utf8",
+    );
+    const report = runM3EDoctor(tempDir);
+    const check = report.checks.find((c) => c.name === "zero-hardcoded-ui-literals");
+    expect(report.ok).toBe(false);
+    expect(check?.passed).toBe(false);
+    expect(check?.detail).toContain("Button");
   });
 });

@@ -501,7 +501,10 @@ function scanHardcodedUiLiterals(componentsDir: string): string[] {
   const offenders: string[] = [];
   if (!existsSync(componentsDir)) return offenders;
 
-  for (const entry of readdirSync(componentsDir).sort()) {
+  for (const entry of readdirSync(componentsDir, {
+    recursive: true,
+    encoding: "utf8",
+  }).sort()) {
     if (!entry.endsWith(".tsx")) continue;
     if (entry.endsWith(".test.tsx")) continue;
     const full = join(componentsDir, entry);
