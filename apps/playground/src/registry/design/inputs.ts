@@ -662,7 +662,7 @@ export const INPUTS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>> 
   "date-picker": {
     provenance: "official-m3e",
     provenanceSummary:
-      "Implements official Material 3 Expressive calendar pickers (`DockedDatePicker`, `DatePickerField`, and `DateRangePicker`), matching AOSP `DatePicker.kt` / `DateRangePicker.kt` `28px` surface geometry and `40px` day targets while enforcing a timezone-drift-free `YYYY-MM-DD` string data model.",
+      "Implements official Material 3 Expressive calendar pickers (`DockedDatePicker`, `DatePickerField`, and `DateRangePicker`), matching AOSP `DatePicker.kt` / `DateRangePicker.kt` `28px` surface geometry and `40px` visual/interactive day buttons inside a compact 7-column web grid while enforcing a timezone-drift-free `YYYY-MM-DD` string data model.",
     tokenSources: [
       "DATE_PICKER_TOKENS",
       "SELECT_TOKENS",
@@ -707,7 +707,7 @@ export const INPUTS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>> 
           ],
           [
             "Day Cell Button (7-column Grid)",
-            "40 × 40px (`row gap: 4px`, weekday header `28px`)",
+            "40 × 40px button (`row gap: 4px`, weekday header `28px`; exceeds WCAG 2.2 AA 24px minimum)",
             "Rest/Hover/Selected `20px` circle → Pressed `10px`",
             "Selected `primary` / `on-primary`; Today `1.5px primary` ring + `primary` bold text",
           ],

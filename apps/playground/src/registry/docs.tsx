@@ -664,8 +664,8 @@ function InstallationDocContent() {
         <h2>{resolve({ zh: "2. 配置 M3EProvider 与样式", en: "2. Configure M3EProvider & Styles" })}</h2>
         <p className="doc-prose-p">
           {resolve({
-            zh: "在应用入口引入 m3eui/styles.css，并用 M3EProvider 包裹根节点即可启用动态色彩、Toast 队列与多语言上下文：",
-            en: "Import m3eui/styles.css at your app entry and wrap your root tree in M3EProvider to activate dynamic HCT tokens, Toast notifications, and i18n:",
+            zh: "静态主题 CSS（推荐）由 CLI 生成并在构建期注入全部颜色变量；仅在需要运行时动态切换种子色、配色方案或对比度时，显式传入 generateM3EThemeTokens 作为 themeEngine。",
+            en: "Static theme CSS (recommended) supplies all color tokens from build-time CSS. Pass generateM3EThemeTokens to themeEngine only when changing seed, scheme variant, or contrast dynamically at runtime.",
           })}
         </p>
         <CodeBlock
@@ -673,17 +673,31 @@ function InstallationDocContent() {
           title="src/App.tsx"
           showHeader
           showCopyButton
-          code={`import "m3eui/styles.css";
+          code={`import "./styles/m3e-theme.css";
+import "m3eui/styles.css";
 import { M3EProvider, Button } from "m3eui";
+import { generateM3EThemeTokens } from "m3eui/tokens";
+import m3eConfig from "../m3e.json";
 
-export function App() {
+// Default lightweight path (uses static m3e-theme.css):
+export function StaticApp() {
+  return (
+    <M3EProvider config={m3eConfig}>
+      <Button variant="filled">Hello Material 3 Expressive</Button>
+    </M3EProvider>
+  );
+}
+
+// Runtime HCT recoloring path (pass themeEngine explicitly):
+export function DynamicThemeApp() {
   return (
     <M3EProvider
-      initialSeedHex="#6750A4"
-      initialSchemeVariant="expressive"
-      locale="en-US"
+      config={m3eConfig}
+      themeEngine={generateM3EThemeTokens}
+      initialSeedHex="#0B6B58"
+      initialSchemeVariant="vibrant"
     >
-      <Button variant="filled">Hello Material 3 Expressive</Button>
+      <Button variant="filled">Dynamic HCT Theme</Button>
     </M3EProvider>
   );
 }`}
@@ -787,14 +801,15 @@ function I18nDocContent() {
           title="src/App.tsx"
           showHeader
           showCopyButton
-          code={`import { M3EProvider, registerM3ELocale } from "m3eui";
+          code={`import { M3EProvider } from "m3eui";
+import { frFRMessages } from "./i18n/fr-FR"; // generated via: npx m3eui locale fr-FR
 
-// Register a full locale pack or override specific keys per provider:
+// Pass a custom locale pack (via CLI scaffold) or override keys per provider:
 <M3EProvider
-  locale="zh-CN"
+  locale="fr-FR"
   messages={{
-    "command.placeholder": "输入命令或组件名称…",
-    "empty.title": "当前筛选条件下暂无记录",
+    ...frFRMessages,
+    "command.placeholder": "Rechercher une commande…",
   }}
 >
   <App />

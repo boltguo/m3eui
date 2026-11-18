@@ -39,12 +39,16 @@ export function App() {
 
 ### 运行时换色
 
-颜色默认来自生成的主题 CSS。需要在运行时切换种子色、配色方案或对比度时，传入 HCT 引擎：
+颜色默认来自 CLI 生成的静态 `m3e-theme.css`。需要在浏览器运行时切换种子色、配色方案或对比度时，显式传入 HCT 引擎：
 
 ```tsx
+import { M3EProvider } from "m3eui";
 import { generateM3EThemeTokens } from "m3eui/tokens";
+import m3eConfig from "../m3e.json";
 
 <M3EProvider config={m3eConfig} themeEngine={generateM3EThemeTokens}>
+  <App />
+</M3EProvider>
 ```
 
 ## 子路径导出与 CLI

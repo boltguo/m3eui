@@ -19,7 +19,7 @@ export const ACTIONS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
       },
       {
         title: "Minimum 95ms Press-Hold Latch & Corner Tightening",
-        body: "On pointerdown or keyboard activation, all four corners tighten toward pressedCornerRadius under the underdamped fastSpatial spring (ζ = 0.6, k = 800). Because rapid human taps last only 15–30ms, a 95ms minimum hold latch ensures the spring visibly compresses before releasing.",
+        body: "On pointerdown or keyboard activation, corners tighten toward pressedCornerRadius: standard action Button uses critically-damped defaultEffects (ζ = 1.0, k = 1600, no corner overshoot per AOSP Button.kt), while ToggleButton uses underdamped fastSpatial (ζ = 0.6, k = 800, ToggleButton.kt). A 95ms minimum hold latch ensures rapid 15–30ms taps visibly settle.",
       },
       {
         title: "Shape Inversion on ToggleButton Selection",
@@ -43,7 +43,7 @@ export const ACTIONS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
           "Toggle Selected",
         ],
         rows: [
-          ["xs", "32", "12", "20 / 8", "14 / 20", "16", "12", "8", "12 (or 16 if square)"],
+          ["xs", "32", "12", "20 / 4", "14 / 20", "16", "12", "8", "12 (or 16 if square)"],
           ["sm", "40", "16", "20 / 8", "14 / 20", "20", "12", "8", "12 (or 20 if square)"],
           ["md", "56", "24", "24 / 8", "16 / 24", "28", "16", "12", "16 (or 28 if square)"],
           ["lg", "96", "48", "32 / 12", "24 / 32", "48", "28", "16", "28 (or 48 if square)"],
@@ -52,7 +52,7 @@ export const ACTIONS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
       },
     ],
     invariants: [
-      "Corner radius morphing MUST use fastSpatial (ζ = 0.6, k = 800); background, border, and foreground color transitions MUST use fastEffects (ζ = 1.0, k = 3800) with zero overshoot.",
+      "Action Button corner morphing MUST use critically-damped defaultEffects (ζ = 1.0, k = 1600), while ToggleButton corner morphing uses fastSpatial (ζ = 0.6, k = 800); background, border, and foreground color transitions MUST use fastEffects (ζ = 1.0, k = 3800) with zero overshoot.",
       "Corner state priority strictly follows pressed > selected > rest so pressing an already-selected ToggleButton still visibly compresses its corners.",
       "When href or render={<Link />} is supplied, render a native <a> anchor without role=\"button\" or type=\"button\" while preserving corner spring physics.",
       "Five surface emphases map deterministically to HCT roles: filled (primary), tonal (secondary-container), elevated (surface-container-low + level1 shadow), outlined (outline-variant 1px), and text (transparent).",
