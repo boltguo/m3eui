@@ -1,0 +1,333 @@
+.m3e-time-picker {
+  box-sizing: border-box;
+  width: min(100%, 328px);
+  background-color: var(--m3e-color-surface-container-high);
+  color: var(--m3e-color-on-surface);
+  border: 1px solid var(--m3e-color-outline-variant);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.m3e-time-picker__header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.m3e-time-picker__mode-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--m3e-color-on-surface-variant);
+  cursor: pointer;
+  transition: background-color 120ms ease-out, color 120ms ease-out;
+}
+
+@media (hover: hover) {
+  .m3e-time-picker__mode-btn:hover {
+    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 9%, transparent);
+    color: var(--m3e-color-on-surface);
+  }
+}
+
+.m3e-time-picker__mode-btn:focus-visible {
+  outline: 2px solid var(--m3e-color-primary);
+  outline-offset: 2px;
+}
+
+.m3e-time-picker__selector-row,
+.m3e-time-picker__keyboard-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.m3e-time-picker__digits-ltr {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+}
+
+.m3e-time-picker__field-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
+  background-color: var(--m3e-color-surface-container-highest);
+  color: var(--m3e-color-on-surface);
+  font-family: inherit;
+  font-size: 57px;
+  line-height: 64px;
+  font-weight: 400;
+  letter-spacing: -0.25px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition:
+    background-color var(--m3e-effects-fast-duration, 140ms) ease-out,
+    color var(--m3e-effects-fast-duration, 140ms) ease-out,
+    border-color var(--m3e-effects-fast-duration, 140ms) ease-out;
+}
+
+@media (hover: hover) {
+  .m3e-time-picker__field-chip:hover:not([data-active]) {
+    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 8%, var(--m3e-color-surface-container-highest));
+  }
+}
+
+.m3e-time-picker__field-chip[data-active] {
+  background-color: var(--m3e-color-primary-container);
+  color: var(--m3e-color-on-primary-container);
+}
+
+.m3e-time-picker__field-chip:focus-visible {
+  outline: 2.5px solid var(--m3e-color-primary);
+  outline-offset: 2px;
+}
+
+.m3e-time-picker__colon {
+  inline-size: 24px;
+  text-align: center;
+  font-size: 57px;
+  line-height: 64px;
+  font-weight: 400;
+  color: var(--m3e-color-on-surface);
+  user-select: none;
+}
+
+.m3e-time-picker__period {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  margin-inline-start: 4px;
+  overflow: clip;
+  border: 1px solid var(--m3e-color-outline);
+}
+
+.m3e-time-picker__period-btn {
+  flex: 1 1 0;
+  border: 0;
+  background-color: transparent;
+  color: var(--m3e-color-on-surface-variant);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.15px;
+  cursor: pointer;
+  transition:
+    background-color var(--m3e-effects-fast-duration, 140ms) ease-out,
+    color var(--m3e-effects-fast-duration, 140ms) ease-out;
+}
+
+.m3e-time-picker__period-btn + .m3e-time-picker__period-btn {
+  border-block-start: 1px solid var(--m3e-color-outline);
+}
+
+@media (hover: hover) {
+  .m3e-time-picker__period-btn:hover:where(:not(:disabled, [data-selected])) {
+    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 8%, transparent);
+  }
+}
+
+.m3e-time-picker__period-btn[data-selected] {
+  background-color: var(--m3e-color-tertiary-container);
+  color: var(--m3e-color-on-tertiary-container);
+}
+
+@media (hover: hover) {
+  .m3e-time-picker__period-btn[data-selected]:hover:where(:not(:disabled)) {
+    background-color: color-mix(in srgb, var(--m3e-color-tertiary-container) 92%, var(--m3e-color-on-tertiary-container));
+    color: var(--m3e-color-on-tertiary-container);
+  }
+}
+
+.m3e-time-picker__period-btn:focus-visible {
+  outline: 2px solid var(--m3e-color-primary);
+  outline-offset: -2px;
+}
+
+.m3e-time-picker__dial {
+  position: relative;
+  border-radius: 9999px;
+  background-color: var(--m3e-color-surface-container-highest);
+  touch-action: none;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.m3e-time-picker__dial:focus-visible {
+  outline: 3px solid var(--m3e-color-secondary);
+  outline-offset: 3px;
+}
+
+.m3e-time-picker__hand-svg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.m3e-time-picker__dial-num {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin-left: -24px;
+  margin-top: -24px;
+  padding: 0;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--m3e-color-on-surface);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  z-index: 2;
+  transition: background-color 100ms ease-out;
+}
+
+.m3e-time-picker__dial-num--inner {
+  width: 32px;
+  height: 32px;
+  margin-left: -16px;
+  margin-top: -16px;
+  font-size: 14px;
+  color: var(--m3e-color-on-surface-variant);
+}
+
+@media (hover: hover) {
+  .m3e-time-picker__dial-num:hover:where(:not([data-selected], .m3e-time-picker__dial-num--overlay)) {
+    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 8%, transparent);
+  }
+}
+
+.m3e-time-picker__dial-num[data-selected] {
+  font-weight: 700;
+}
+
+.m3e-time-picker__dial-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.m3e-time-picker__dial-num--overlay {
+  color: var(--m3e-color-on-primary);
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.m3e-time-picker__dial-num:focus-visible {
+  outline: 2px solid var(--m3e-color-primary);
+  outline-offset: 2px;
+}
+
+.m3e-time-picker__kb-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+
+.m3e-time-picker__kb-input {
+  width: 88px;
+  height: 64px;
+  box-sizing: border-box;
+  border: 2px solid var(--m3e-color-outline-variant);
+  border-radius: 12px;
+  background-color: var(--m3e-color-surface-container-highest);
+  color: var(--m3e-color-on-surface);
+  font-family: inherit;
+  font-size: 28px;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.m3e-time-picker__kb-input:focus {
+  outline: none;
+  border-color: var(--m3e-color-primary);
+  background-color: var(--m3e-color-primary-container);
+  color: var(--m3e-color-on-primary-container);
+}
+
+.m3e-time-picker__kb-caption {
+  font-size: 12px;
+  color: var(--m3e-color-on-surface-variant);
+}
+
+.m3e-time-picker[data-variant="vibrant"] {
+  background-color: var(--m3e-color-tertiary-container);
+  color: var(--m3e-color-on-tertiary-container);
+}
+
+.m3e-time-picker[data-variant="vibrant"] .m3e-date-picker__eyebrow {
+  color: var(--m3e-color-on-tertiary-container);
+}
+
+.m3e-time-picker[data-variant="vibrant"] .m3e-time-picker__field-chip[data-active] {
+  background-color: var(--m3e-color-tertiary);
+  color: var(--m3e-color-on-tertiary);
+}
+
+.m3e-time-picker-dialog {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: var(--m3e-color-surface-container-high);
+  color: var(--m3e-color-on-surface);
+  border: 1px solid var(--m3e-color-outline-variant);
+}
+
+.m3e-time-picker-dialog__picker {
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  padding-block-end: 12px;
+}
+
+.m3e-time-picker-dialog__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 22px 18px;
+}
+
+.m3e-time-picker-dialog__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-inline-start: auto;
+}
+
+@media (forced-colors: active) {
+  .m3e-time-picker,
+  .m3e-time-picker-dialog {
+    border: 1px solid ButtonText;
+  }
+
+  .m3e-time-picker__period-btn[data-selected],
+  .m3e-time-picker__dial-num[data-selected] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+}

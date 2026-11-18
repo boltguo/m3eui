@@ -1,0 +1,52 @@
+.m3e-control-row {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+  box-sizing: border-box;
+  padding-block: 4px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.m3e-control-row[data-disabled] {
+  cursor: not-allowed;
+}
+
+.m3e-control-row[data-disabled] .m3e-control-row__label,
+.m3e-control-row[data-disabled] .m3e-control-row__description {
+  color: color-mix(in srgb, var(--m3e-color-on-surface) 38%, transparent);
+}
+
+.m3e-control-row__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.m3e-control-row__label {
+  font-size: 14.5px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--m3e-color-on-surface);
+}
+
+.m3e-control-row__description {
+  font-size: 12.5px;
+  line-height: 17px;
+  color: var(--m3e-color-on-surface-variant);
+}
+
+@media (hover: hover) {
+  .m3e-control-row:hover:not([data-disabled]) .m3e-checkbox:not([data-pressed]) .m3e-checkbox__halo,
+  .m3e-control-row:hover:not([data-disabled]) .m3e-radio:not([data-pressed]) .m3e-radio__halo {
+    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 8%, transparent);
+  }
+
+  .m3e-control-row:hover:not([data-disabled]) .m3e-checkbox:is([data-checked], [data-indeterminate]):not([data-pressed]) .m3e-checkbox__halo,
+  .m3e-control-row:hover:not([data-disabled]) .m3e-radio[data-checked]:not([data-pressed]) .m3e-radio__halo {
+    background-color: color-mix(in srgb, var(--m3e-color-primary) 8%, transparent);
+  }
+}

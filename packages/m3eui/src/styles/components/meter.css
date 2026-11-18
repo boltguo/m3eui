@@ -1,0 +1,31 @@
+.m3e-meter__indicator {
+  height: 100%;
+  border-radius: 9999px;
+  background-color: var(--m3e-color-primary);
+  transition: background-color 180ms ease-out;
+}
+
+.m3e-meter__indicator[data-tone="success"] {
+  background-color: var(--m3e-color-success);
+}
+
+.m3e-meter__indicator[data-tone="warning"] {
+  background-color: var(--m3e-color-warning);
+}
+
+.m3e-meter__indicator[data-tone="critical"] {
+  background-color: var(--m3e-color-error);
+}
+
+.m3e-meter__rest {
+  flex: 1 1 auto;
+  height: 100%;
+  border-radius: 9999px;
+  background-color: var(--m3e-color-secondary-container);
+}
+
+@media (forced-colors: active) {
+  .m3e-meter__indicator {
+    background-color: Highlight;
+  }
+}

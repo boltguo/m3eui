@@ -1,0 +1,220 @@
+.m3e-wavy-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.m3e-wavy-progress__svg {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+
+.m3e-circular-wavy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.m3e-linear-progress,
+.m3e-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.m3e-linear-progress__header,
+.m3e-meter__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.m3e-linear-progress__label,
+.m3e-meter__label {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--m3e-color-on-surface);
+}
+
+.m3e-linear-progress__value,
+.m3e-meter__value {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--m3e-color-on-surface-variant);
+}
+
+.m3e-linear-progress__track-host {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 9999px;
+}
+
+.m3e-linear-progress__split,
+.m3e-meter__track {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  height: 100%;
+}
+
+.m3e-linear-progress__active {
+  height: 100%;
+  border-radius: 9999px;
+  background-color: var(--m3e-color-primary);
+}
+
+.m3e-linear-progress__rest {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1 1 auto;
+  height: 100%;
+  border-radius: 9999px;
+  background-color: var(--m3e-color-secondary-container);
+}
+
+.m3e-linear-progress__stop-dot {
+  border-radius: 9999px;
+  background-color: var(--m3e-color-primary);
+  flex-shrink: 0;
+}
+
+.m3e-linear-progress__track-host[data-thickness="thick"] .m3e-linear-progress__stop-dot {
+  margin-inline-end: 2px;
+}
+
+.m3e-linear-progress__indet-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  background-color: var(--m3e-color-secondary-container);
+  overflow: hidden;
+  --m3e-linear-indet-duration: 1.75s;
+}
+
+.m3e-linear-progress__indet-wrap:dir(rtl),
+[dir="rtl"] .m3e-linear-progress__indet-wrap {
+  scale: -1 1;
+}
+
+.m3e-linear-progress__indet-seg {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  border-radius: 9999px;
+  background-color: var(--m3e-color-primary);
+}
+
+.m3e-linear-progress__indet-seg--primary {
+  width: 42%;
+  animation: m3e-linear-indet-1 var(--m3e-linear-indet-duration) infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.m3e-linear-progress__indet-seg--secondary {
+  width: 28%;
+  animation: m3e-linear-indet-2 var(--m3e-linear-indet-duration) infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes m3e-linear-indet-1 {
+  0% {
+    translate: -110% 0;
+  }
+  65% {
+    translate: 245% 0;
+  }
+  100% {
+    translate: 245% 0;
+  }
+}
+
+@keyframes m3e-linear-indet-2 {
+  0% {
+    translate: -120% 0;
+  }
+  38% {
+    translate: -120% 0;
+  }
+  100% {
+    translate: 365% 0;
+  }
+}
+
+.m3e-circular-progress {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  --m3e-circular-indet-duration: 1.4s;
+}
+
+.m3e-circular-progress__svg {
+  display: block;
+}
+
+.m3e-circular-progress[data-indeterminate] .m3e-circular-progress__svg {
+  animation: m3e-circular-spin var(--m3e-circular-indet-duration) linear infinite;
+}
+
+.m3e-circular-progress__indet-arc {
+  stroke-dasharray: var(--m3e-circ-dash-min, 10px) var(--m3e-circ-circumference, 110px);
+  stroke-dashoffset: 0;
+  animation: m3e-circular-dash var(--m3e-circular-indet-duration) cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes m3e-circular-dash {
+  0% {
+    stroke-dasharray: var(--m3e-circ-dash-min, 10px) var(--m3e-circ-circumference, 110px);
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: var(--m3e-circ-dash-max, 80px) var(--m3e-circ-circumference, 110px);
+    stroke-dashoffset: var(--m3e-circ-offset-mid, -30px);
+  }
+  100% {
+    stroke-dasharray: var(--m3e-circ-dash-min, 10px) var(--m3e-circ-circumference, 110px);
+    stroke-dashoffset: var(--m3e-circ-offset-end, -110px);
+  }
+}
+
+@keyframes m3e-circular-spin {
+  from {
+    rotate: 0deg;
+  }
+  to {
+    rotate: 360deg;
+  }
+}
+
+.m3e-circular-progress__center {
+  position: absolute;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--m3e-color-on-surface);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m3e-linear-progress__indet-wrap {
+    --m3e-linear-indet-duration: 7s;
+  }
+
+  .m3e-circular-progress {
+    --m3e-circular-indet-duration: 6s;
+  }
+}
+
+@media (forced-colors: active) {
+  .m3e-linear-progress__active,
+  .m3e-linear-progress__indet-seg {
+    background-color: Highlight;
+  }
+}

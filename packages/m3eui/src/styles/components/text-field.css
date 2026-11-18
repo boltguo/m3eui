@@ -1,0 +1,283 @@
+.m3e-text-field__control-stack {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-self: stretch;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.m3e-text-field__shell--textarea:not([data-floating]) .m3e-field__floating-label {
+  top: 28px;
+}
+
+:is(.m3e-text-field__shell, .m3e-combobox__shell, .m3e-select__shell)[data-variant="filled"] .m3e-field__floating-label[data-floating] {
+  top: 16px;
+  scale: 0.75;
+  max-inline-size: calc(133.33% - 8px);
+}
+
+:is(.m3e-text-field__shell, .m3e-combobox__shell, .m3e-select__shell)[data-variant="outlined"] .m3e-field__floating-label[data-floating] {
+  top: 0;
+  scale: 0.75;
+  max-inline-size: calc(133.33% - 8px);
+}
+
+:is(.m3e-text-field__shell, .m3e-combobox__shell)[data-variant="outlined"][data-has-leading] .m3e-field__floating-label[data-floating] {
+  inset-inline-start: -28px;
+}
+
+:is(.m3e-text-field__shell, .m3e-combobox__shell):focus-within .m3e-field__floating-label,
+.m3e-select__shell:is([data-popup-open], :has(> .m3e-select__trigger:is([data-popup-open], :focus-visible))) > .m3e-field__floating-label {
+  color: var(--m3e-color-primary);
+}
+
+:is(.m3e-text-field__shell, .m3e-combobox__shell, .m3e-select__shell):is([data-invalid], :has(:is(:user-invalid, [data-invalid]))) .m3e-field__floating-label {
+  color: var(--m3e-color-error);
+}
+
+@media (hover: hover) {
+  :is(.m3e-text-field__shell, .m3e-combobox__shell, .m3e-select__shell):hover:where(
+    :not(:focus-within, [data-popup-open], [data-invalid], [data-disabled], [data-readonly], :has(:disabled, [data-disabled], :user-invalid, [data-invalid]))
+  ) > .m3e-field__outline {
+    border-color: var(--m3e-color-on-surface);
+  }
+}
+
+:is(.m3e-text-field__shell, .m3e-combobox__shell):focus-within > .m3e-field__outline,
+.m3e-select__shell:is([data-popup-open], :has(> .m3e-select__trigger:is([data-popup-open], :focus-visible))) > .m3e-field__outline {
+  border-color: var(--m3e-color-primary);
+}
+
+:is(.m3e-text-field__shell, .m3e-combobox__shell):focus-within > .m3e-field__outline-active,
+.m3e-select__shell:is([data-popup-open], :has(> .m3e-select__trigger:is([data-popup-open], :focus-visible))) > .m3e-field__outline-active {
+  opacity: 1;
+}
+
+:is(.m3e-text-field__shell, .m3e-combobox__shell, .m3e-select__shell):is([data-invalid], :has(:is(:user-invalid, [data-invalid]))) > :is(.m3e-field__outline, .m3e-field__outline-active) {
+  border-color: var(--m3e-color-error);
+}
+
+.m3e-text-field__shell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  transition:
+    border-color var(--m3e-effects-default-duration, 180ms) var(--m3e-effects-default-easing, cubic-bezier(0.2, 0, 0, 1)),
+    background-color var(--m3e-effects-default-duration, 180ms) var(--m3e-effects-default-easing, cubic-bezier(0.2, 0, 0, 1)),
+    box-shadow var(--m3e-effects-default-duration, 180ms) var(--m3e-effects-default-easing, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.m3e-text-field__shell--textarea {
+  align-items: stretch;
+  padding-block: 10px;
+}
+
+.m3e-text-field__shell--textarea[data-variant="outlined"]:has(> .m3e-field__outline) {
+  padding-block: 0;
+}
+
+.m3e-text-field__shell--textarea[data-variant="filled"]:has(.m3e-field__floating-label) {
+  padding-block: 0;
+}
+
+.m3e-text-field__shell[data-variant="outlined"] {
+  background-color: transparent;
+  border: 1px solid var(--m3e-color-outline);
+  box-shadow: inset 0 0 0 0 transparent;
+}
+
+.m3e-text-field__shell[data-variant="outlined"]:has(> .m3e-field__outline) {
+  border: 0;
+  box-shadow: none;
+}
+
+@media (hover: hover) {
+  .m3e-text-field__shell[data-variant="outlined"]:hover:where(
+    :not(:focus-within, [data-invalid], [data-readonly], :has(:disabled, :user-invalid, [data-invalid]), :has(> .m3e-field__outline))
+  ) {
+    border-color: var(--m3e-color-on-surface);
+  }
+}
+
+.m3e-text-field__shell[data-variant="outlined"]:focus-within:not(:has(> .m3e-field__outline)) {
+  border-color: var(--m3e-color-primary);
+  box-shadow: inset 0 0 0 1px var(--m3e-color-primary);
+}
+
+.m3e-text-field__shell[data-variant="filled"] {
+  background-color: var(--m3e-color-surface-container-highest);
+  border: 0;
+  border-block-end: 1px solid var(--m3e-color-on-surface-variant);
+}
+
+@media (hover: hover) {
+  .m3e-text-field__shell[data-variant="filled"]:hover:where(:not([data-readonly], :has(:disabled))) {
+    background-color: var(--m3e-color-surface-container-high);
+  }
+}
+
+.m3e-text-field__shell[data-variant="filled"]:focus-within {
+  background-color: var(--m3e-color-surface-container-high);
+  border-block-end-color: var(--m3e-color-primary);
+  box-shadow: inset 0 -1px 0 0 var(--m3e-color-primary);
+}
+
+.m3e-text-field__shell[data-variant="outlined"]:is([data-invalid], :has(:is(:user-invalid, [data-invalid]))):not(:has(> .m3e-field__outline)) {
+  border-color: var(--m3e-color-error);
+}
+
+.m3e-text-field__shell[data-variant="outlined"]:is([data-invalid], :has(:is(:user-invalid, [data-invalid]))):focus-within:not(:has(> .m3e-field__outline)) {
+  border-color: var(--m3e-color-error);
+  box-shadow: inset 0 0 0 1px var(--m3e-color-error);
+}
+
+.m3e-text-field__shell[data-variant="filled"]:is([data-invalid], :has(:is(:user-invalid, [data-invalid]))) {
+  border-block-end-color: var(--m3e-color-error);
+}
+
+.m3e-text-field__shell[data-variant="filled"]:is([data-invalid], :has(:is(:user-invalid, [data-invalid]))):focus-within {
+  border-block-end-color: var(--m3e-color-error);
+  box-shadow: inset 0 -1px 0 0 var(--m3e-color-error);
+}
+
+.m3e-text-field__shell:has(:disabled) {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.m3e-text-field__affix {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 20px;
+  color: var(--m3e-color-on-surface-variant);
+  flex-shrink: 0;
+}
+
+.m3e-text-field__affix:has(+ .m3e-text-field__control-stack) {
+  inline-size: 20px;
+}
+
+.m3e-text-field__input-line {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+}
+
+.m3e-text-field__text-affix {
+  font-size: 14.5px;
+  line-height: 24px;
+  font-weight: 500;
+  color: var(--m3e-color-on-surface-variant);
+  white-space: nowrap;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.m3e-text-field__input {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--m3e-color-on-surface);
+  font: inherit;
+  font-size: max(1rem, 16px);
+  line-height: 24px;
+  outline: none;
+  padding-block: 8px;
+}
+
+.m3e-text-field__shell[data-variant="filled"][data-label-position="floating"] .m3e-field__floating-label + .m3e-text-field__input-line > :is(.m3e-text-field__input, .m3e-text-field__text-affix),
+.m3e-text-field__shell[data-variant="filled"][data-label-position="floating"] .m3e-field__floating-label + .m3e-text-field__input {
+  padding-top: 24px;
+  padding-bottom: 8px;
+}
+
+.m3e-text-field__shell[data-variant="filled"][data-readonly] {
+  background-color: color-mix(in srgb, var(--m3e-color-surface-container) 65%, transparent);
+}
+
+.m3e-text-field__shell[data-variant="outlined"][data-readonly]:not(:focus-within) > .m3e-field__outline,
+.m3e-text-field__shell[data-variant="outlined"][data-readonly]:not(:focus-within):not(:has(> .m3e-field__outline)) {
+  border-color: var(--m3e-color-outline-variant);
+}
+
+.m3e-text-field__textarea {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 76px;
+  border: 0;
+  background: transparent;
+  color: var(--m3e-color-on-surface);
+  font: inherit;
+  font-size: max(1rem, 16px);
+  line-height: 24px;
+  outline: none;
+  resize: vertical;
+  padding-block: 12px;
+}
+
+.m3e-text-field__shell[data-variant="filled"][data-label-position="floating"] .m3e-field__floating-label + .m3e-text-field__textarea {
+  padding-top: 26px;
+  padding-bottom: 10px;
+}
+
+.m3e-text-field__input::placeholder,
+.m3e-text-field__textarea::placeholder,
+.m3e-combobox__input::placeholder {
+  color: color-mix(in srgb, var(--m3e-color-on-surface-variant) 70%, transparent);
+}
+
+.m3e-text-field__input:-webkit-autofill,
+.m3e-text-field__textarea:-webkit-autofill,
+.m3e-combobox__input:-webkit-autofill {
+  -webkit-text-fill-color: var(--m3e-color-on-surface);
+  caret-color: var(--m3e-color-primary);
+  transition: background-color 600000s ease-in-out 0s;
+}
+
+:is(.m3e-text-field__shell, .m3e-combobox__shell)[data-label-position="floating"]:not([data-floating]):has(.m3e-field__floating-label) :is(.m3e-text-field__input, .m3e-text-field__textarea, .m3e-combobox__input)::placeholder {
+  color: transparent;
+}
+
+.m3e-text-field__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--m3e-color-on-surface-variant);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 120ms ease-out, color 120ms ease-out;
+}
+
+@media (hover: hover) {
+  .m3e-text-field__icon-btn:hover {
+    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 10%, transparent);
+    color: var(--m3e-color-on-surface);
+  }
+}
+
+.m3e-text-field__icon-btn:focus-visible {
+  outline: 2px solid var(--m3e-color-primary);
+  outline-offset: 1px;
+}
+
+@media (forced-colors: active) {
+  .m3e-text-field__shell {
+    border: 1px solid ButtonText;
+  }
+}

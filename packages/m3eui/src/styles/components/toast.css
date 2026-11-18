@@ -1,0 +1,180 @@
+.m3e-toast__viewport {
+  position: fixed;
+  inset-inline-end: calc(20px + env(safe-area-inset-right, 0px));
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  width: min(420px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.m3e-snackbar {
+  pointer-events: auto;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: var(--m3e-color-inverse-surface);
+  color: var(--m3e-color-inverse-on-surface);
+  box-shadow: var(--m3e-elevation-level3);
+  opacity: 1;
+  scale: 1;
+  translate: var(--toast-swipe-movement-x, 0px) var(--toast-swipe-movement-y, 0px);
+  transition:
+    opacity var(--m3e-effects-fast-duration, 140ms) ease-out,
+    scale var(--m3e-spatial-fast-duration, 240ms) var(--m3e-spatial-fast-easing, ease-out),
+    translate var(--m3e-spatial-fast-duration, 240ms) var(--m3e-spatial-fast-easing, ease-out);
+}
+
+.m3e-snackbar[data-swiping] {
+  transition: none;
+}
+
+.m3e-snackbar[data-limited] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.m3e-snackbar[data-starting-style],
+.m3e-snackbar[data-ending-style] {
+  opacity: 0;
+  scale: 0.95;
+  translate: 0px 12px;
+}
+
+.m3e-snackbar[data-ending-style][data-swipe-direction="down"] {
+  translate: var(--toast-swipe-movement-x, 0px) calc(var(--toast-swipe-movement-y, 0px) + 120%);
+}
+
+.m3e-snackbar[data-ending-style][data-swipe-direction="right"] {
+  translate: calc(var(--toast-swipe-movement-x, 0px) + 120%) var(--toast-swipe-movement-y, 0px);
+}
+
+.m3e-snackbar[data-ending-style][data-swipe-direction="left"] {
+  translate: calc(var(--toast-swipe-movement-x, 0px) - 120%) var(--toast-swipe-movement-y, 0px);
+}
+
+.m3e-snackbar[data-type="error"] {
+  background-color: var(--m3e-color-error-container);
+  color: var(--m3e-color-on-error-container);
+}
+
+.m3e-snackbar[data-type="error"] .m3e-snackbar__action {
+  color: var(--m3e-color-error);
+}
+
+.m3e-snackbar[data-type="success"] {
+  background-color: var(--m3e-color-success-container);
+  color: var(--m3e-color-on-success-container);
+}
+
+.m3e-snackbar[data-type="success"] .m3e-snackbar__action {
+  color: var(--m3e-color-success);
+}
+
+.m3e-snackbar[data-type="warning"] {
+  background-color: var(--m3e-color-warning-container);
+  color: var(--m3e-color-on-warning-container);
+}
+
+.m3e-snackbar[data-type="warning"] .m3e-snackbar__action {
+  color: var(--m3e-color-warning);
+}
+
+.m3e-snackbar__content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.m3e-snackbar__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.m3e-snackbar__title {
+  margin: 0;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+}
+
+.m3e-snackbar__description {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 17px;
+  opacity: 0.85;
+}
+
+.m3e-snackbar__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.m3e-snackbar__action {
+  border: 0;
+  background: transparent;
+  color: var(--m3e-color-inverse-primary);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .m3e-snackbar__action:hover {
+    background-color: color-mix(in srgb, var(--m3e-color-inverse-on-surface) 10%, transparent);
+  }
+}
+
+.m3e-snackbar__action:focus-visible {
+  outline: 2px solid var(--m3e-color-inverse-primary);
+  outline-offset: 2px;
+}
+
+.m3e-snackbar__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.8;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .m3e-snackbar__close:hover {
+    opacity: 1;
+    background-color: color-mix(in srgb, var(--m3e-color-inverse-on-surface) 12%, transparent);
+  }
+}
+
+.m3e-snackbar__close:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--m3e-color-inverse-primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m3e-snackbar {
+    transition-duration: 90ms;
+    transition-timing-function: ease-out;
+  }
+}
+
+@media (forced-colors: active) {
+  .m3e-snackbar {
+    border: 1px solid ButtonText;
+  }
+}

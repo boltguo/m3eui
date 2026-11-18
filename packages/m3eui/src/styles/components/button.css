@@ -1,0 +1,331 @@
+.m3e-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  font-family: inherit;
+  white-space: nowrap;
+  user-select: none;
+  cursor: pointer;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition-property: background-color, color, border-color, box-shadow;
+  transition-duration: var(--m3e-effects-fast-duration, 140ms);
+  transition-timing-function: var(--m3e-effects-fast-easing, ease-out);
+}
+
+.m3e-button:is([data-size="xs"], [data-size="sm"])::after,
+.m3e-icon-button:is([data-size="xs"], [data-size="sm"])::after,
+.m3e-fab:is([data-size="xs"], [data-size="sm"])::after {
+  content: "";
+  position: absolute;
+  inset-inline: min(0px, calc((100% - 48px) / 2));
+  inset-block: min(0px, calc((100% - 48px) / 2));
+}
+
+.m3e-button:focus-visible {
+  outline: 2.5px solid var(--m3e-color-primary);
+  outline-offset: 3px;
+}
+
+.m3e-button[data-variant="filled"] {
+  background-color: var(--m3e-color-primary);
+  color: var(--m3e-color-on-primary);
+}
+
+.m3e-button[data-variant="filled"][data-pressed]:where(:not([data-disabled], [data-toggle])) {
+  background-color: color-mix(in srgb, var(--m3e-color-primary) 90%, var(--m3e-color-on-primary));
+}
+
+.m3e-button[data-variant="tonal"] {
+  background-color: var(--m3e-color-secondary-container);
+  color: var(--m3e-color-on-secondary-container);
+}
+
+.m3e-button[data-variant="tonal"][data-pressed]:where(:not([data-disabled], [data-toggle])) {
+  background-color: color-mix(in srgb, var(--m3e-color-secondary-container) 90%, var(--m3e-color-on-secondary-container));
+}
+
+.m3e-button[data-variant="elevated"] {
+  background-color: var(--m3e-color-surface-container-low);
+  color: var(--m3e-color-primary);
+  box-shadow: var(--m3e-elevation-level1, 0 1px 3px color-mix(in srgb, var(--m3e-color-shadow) 14%, transparent));
+}
+
+.m3e-button[data-variant="elevated"][data-pressed]:where(:not([data-disabled], [data-selected])) {
+  background-color: color-mix(in srgb, var(--m3e-color-surface-container-low) 90%, var(--m3e-color-primary));
+}
+
+.m3e-button[data-variant="outlined"] {
+  background-color: transparent;
+  color: var(--m3e-color-on-surface-variant);
+  border-color: var(--m3e-color-outline-variant);
+}
+
+.m3e-button[data-variant="outlined"][data-pressed]:where(:not([data-disabled], [data-selected])) {
+  background-color: color-mix(in srgb, var(--m3e-color-on-surface-variant) var(--m3e-state-pressed-opacity, 10%), transparent);
+}
+
+.m3e-button[data-variant="text"] {
+  background-color: transparent;
+  color: var(--m3e-color-primary);
+}
+
+.m3e-button[data-variant="text"][data-pressed]:where(:not([data-disabled])) {
+  background-color: color-mix(in srgb, var(--m3e-color-primary) var(--m3e-state-pressed-opacity, 10%), transparent);
+}
+
+.m3e-button[data-toggle][data-variant="filled"]:where(:not([data-selected], [data-disabled])) {
+  background-color: var(--m3e-color-surface-container);
+  color: var(--m3e-color-on-surface-variant);
+}
+
+.m3e-button[data-toggle][data-variant="filled"]:where(:not([data-selected], [data-disabled]))[data-pressed] {
+  background-color: color-mix(in srgb, var(--m3e-color-surface-container) 90%, var(--m3e-color-on-surface-variant));
+}
+
+.m3e-button[data-toggle][data-variant="tonal"]:where(:not([data-selected], [data-disabled])) {
+  background-color: var(--m3e-color-secondary-container);
+  color: var(--m3e-color-on-secondary-container);
+}
+
+.m3e-button[data-toggle][data-variant="tonal"]:where(:not([data-selected], [data-disabled]))[data-pressed] {
+  background-color: color-mix(in srgb, var(--m3e-color-secondary-container) 90%, var(--m3e-color-on-secondary-container));
+}
+
+.m3e-button[data-selected]:where(:not([data-disabled])) {
+  background-color: var(--m3e-color-primary);
+  color: var(--m3e-color-on-primary);
+  border-color: transparent;
+}
+
+.m3e-button[data-selected][data-pressed]:where(:not([data-disabled])) {
+  background-color: color-mix(in srgb, var(--m3e-color-primary) 90%, var(--m3e-color-on-primary));
+}
+
+.m3e-button[data-variant="tonal"][data-selected]:where(:not([data-disabled])) {
+  background-color: var(--m3e-color-secondary);
+  color: var(--m3e-color-on-secondary);
+  border-color: transparent;
+}
+
+.m3e-button[data-variant="tonal"][data-selected][data-pressed]:where(:not([data-disabled])) {
+  background-color: color-mix(in srgb, var(--m3e-color-secondary) 90%, var(--m3e-color-on-secondary));
+}
+
+.m3e-button[data-variant="outlined"][data-selected]:where(:not([data-disabled])) {
+  background-color: var(--m3e-color-inverse-surface);
+  color: var(--m3e-color-inverse-on-surface);
+  border-color: transparent;
+}
+
+.m3e-button[data-variant="outlined"][data-selected][data-pressed]:where(:not([data-disabled])) {
+  background-color: color-mix(in srgb, var(--m3e-color-inverse-surface) 90%, var(--m3e-color-inverse-on-surface));
+}
+
+@media (hover: hover) {
+  .m3e-button[data-variant="filled"]:hover:where(:not([data-disabled], [data-toggle], [data-pressed])) {
+    background-color: color-mix(in srgb, var(--m3e-color-primary) 92%, var(--m3e-color-on-primary));
+    box-shadow: var(--m3e-elevation-level1, 0 2px 6px color-mix(in srgb, var(--m3e-color-shadow) 16%, transparent));
+  }
+
+  .m3e-button[data-variant="tonal"]:hover:where(:not([data-disabled], [data-toggle], [data-pressed])) {
+    background-color: color-mix(in srgb, var(--m3e-color-secondary-container) 92%, var(--m3e-color-on-secondary-container));
+  }
+
+  .m3e-button[data-variant="elevated"]:hover:where(:not([data-disabled], [data-selected], [data-pressed])) {
+    background-color: color-mix(in srgb, var(--m3e-color-surface-container-low) 92%, var(--m3e-color-primary));
+    box-shadow: var(--m3e-elevation-level2);
+  }
+
+  .m3e-button[data-variant="outlined"]:hover:where(:not([data-disabled], [data-selected], [data-pressed])) {
+    background-color: color-mix(in srgb, var(--m3e-color-on-surface-variant) var(--m3e-state-hover-opacity, 8%), transparent);
+    border-color: var(--m3e-color-outline-variant);
+  }
+
+  .m3e-button[data-variant="text"]:hover:where(:not([data-disabled], [data-pressed])) {
+    background-color: color-mix(in srgb, var(--m3e-color-primary) var(--m3e-state-hover-opacity, 8%), transparent);
+  }
+
+  .m3e-button[data-toggle][data-variant="filled"]:not([data-selected]):hover:where(:not([data-disabled], [data-pressed])) {
+    background-color: color-mix(in srgb, var(--m3e-color-surface-container) 92%, var(--m3e-color-on-surface-variant));
+  }
+
+  .m3e-button[data-toggle][data-variant="tonal"]:not([data-selected]):hover:where(:not([data-disabled], [data-pressed])) {
+    background-color: color-mix(in srgb, var(--m3e-color-secondary-container) 92%, var(--m3e-color-on-secondary-container));
+  }
+
+  .m3e-button[data-selected]:hover:where(:not([data-disabled], [data-pressed])) {
+    background-color: color-mix(in srgb, var(--m3e-color-primary) 92%, var(--m3e-color-on-primary));
+    color: var(--m3e-color-on-primary);
+    border-color: transparent;
+  }
+
+  .m3e-button[data-variant="tonal"][data-selected]:hover:where(:not([data-disabled], [data-pressed])) {
+    background-color: color-mix(in srgb, var(--m3e-color-secondary) 92%, var(--m3e-color-on-secondary));
+    color: var(--m3e-color-on-secondary);
+  }
+
+  .m3e-button[data-variant="outlined"][data-selected]:hover:where(:not([data-disabled], [data-pressed])) {
+    background-color: color-mix(in srgb, var(--m3e-color-inverse-surface) 92%, var(--m3e-color-inverse-on-surface));
+    color: var(--m3e-color-inverse-on-surface);
+  }
+}
+
+.m3e-button:is([data-disabled]:not([data-loading]), [data-explicit-disabled]) {
+  cursor: not-allowed;
+  pointer-events: none;
+  box-shadow: none;
+  color: color-mix(in srgb, var(--m3e-color-on-surface) var(--m3e-state-disabled-content-opacity, 38%), transparent);
+}
+
+.m3e-button:is([data-variant="filled"], [data-variant="tonal"], [data-variant="elevated"]):is([data-disabled]:not([data-loading]), [data-explicit-disabled]) {
+  background-color: color-mix(in srgb, var(--m3e-color-on-surface) 10%, transparent);
+  color: color-mix(in srgb, var(--m3e-color-on-surface) var(--m3e-state-disabled-content-opacity, 38%), transparent);
+  box-shadow: none;
+}
+
+.m3e-button[data-variant="outlined"]:is([data-disabled]:not([data-loading]), [data-explicit-disabled]) {
+  background-color: transparent;
+  border-color: color-mix(in srgb, var(--m3e-color-on-surface) var(--m3e-state-disabled-outline-opacity, 12%), transparent);
+  color: color-mix(in srgb, var(--m3e-color-on-surface) var(--m3e-state-disabled-content-opacity, 38%), transparent);
+}
+
+.m3e-button[data-variant="outlined"][data-selected]:is([data-disabled]:not([data-loading]), [data-explicit-disabled]) {
+  background-color: color-mix(in srgb, var(--m3e-color-on-surface) 10%, transparent);
+  border-color: transparent;
+}
+
+.m3e-button[data-variant="text"]:is([data-disabled]:not([data-loading]), [data-explicit-disabled]) {
+  background-color: transparent;
+  color: color-mix(in srgb, var(--m3e-color-on-surface) var(--m3e-state-disabled-content-opacity, 38%), transparent);
+}
+
+.m3e-button__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.m3e-button__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@keyframes m3e-btn-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+.m3e-button__spinner {
+  animation: m3e-btn-spin 760ms linear infinite;
+}
+
+.m3e-button[data-full-width] {
+  display: flex;
+  width: 100%;
+}
+
+.m3e-button[data-loading]:not([data-explicit-disabled]),
+.m3e-icon-button[data-loading]:not([data-explicit-disabled]) {
+  cursor: progress;
+}
+
+.m3e-button[data-intent="danger"][data-variant="filled"]:not([data-explicit-disabled]):where(:not([data-disabled]), [data-loading]) {
+  background-color: var(--m3e-color-error);
+  color: var(--m3e-color-on-error);
+}
+
+.m3e-button[data-intent="danger"][data-variant="filled"][data-pressed]:not([data-disabled]) {
+  background-color: color-mix(in srgb, var(--m3e-color-error) 90%, var(--m3e-color-on-error));
+}
+
+.m3e-button[data-intent="danger"][data-variant="tonal"]:not([data-explicit-disabled]):where(:not([data-disabled]), [data-loading]) {
+  background-color: var(--m3e-color-error-container);
+  color: var(--m3e-color-on-error-container);
+}
+
+.m3e-button[data-intent="danger"][data-variant="tonal"][data-pressed]:not([data-disabled]) {
+  background-color: color-mix(in srgb, var(--m3e-color-error-container) 90%, var(--m3e-color-on-error-container));
+}
+
+.m3e-button[data-intent="danger"][data-variant="elevated"]:not([data-explicit-disabled]):where(:not([data-disabled]), [data-loading]) {
+  color: var(--m3e-color-error);
+}
+
+.m3e-button[data-intent="danger"][data-variant="elevated"][data-pressed]:not([data-disabled]) {
+  background-color: color-mix(in srgb, var(--m3e-color-surface-container-low) 90%, var(--m3e-color-error));
+}
+
+.m3e-button[data-intent="danger"][data-variant="outlined"]:not([data-explicit-disabled]):where(:not([data-disabled]), [data-loading]) {
+  color: var(--m3e-color-error);
+  border-color: color-mix(in srgb, var(--m3e-color-error) 55%, var(--m3e-color-outline-variant));
+}
+
+.m3e-button[data-intent="danger"][data-variant="outlined"][data-pressed]:not([data-disabled]) {
+  background-color: color-mix(in srgb, var(--m3e-color-error) 10%, transparent);
+}
+
+.m3e-button[data-intent="danger"][data-variant="text"]:not([data-explicit-disabled]):where(:not([data-disabled]), [data-loading]) {
+  color: var(--m3e-color-error);
+}
+
+.m3e-button[data-intent="danger"][data-variant="text"][data-pressed]:not([data-disabled]) {
+  background-color: color-mix(in srgb, var(--m3e-color-error) 10%, transparent);
+}
+
+@media (hover: hover) {
+  .m3e-button[data-intent="danger"][data-variant="filled"]:hover:where(:not([data-disabled], [data-pressed])) {
+    background-color: color-mix(in srgb, var(--m3e-color-error) 92%, var(--m3e-color-on-error));
+    box-shadow: var(--m3e-elevation-level1);
+  }
+
+  .m3e-button[data-intent="danger"][data-variant="tonal"]:hover:where(:not([data-disabled], [data-pressed])) {
+    background-color: color-mix(in srgb, var(--m3e-color-error-container) 92%, var(--m3e-color-on-error-container));
+  }
+
+  .m3e-button[data-intent="danger"][data-variant="elevated"]:hover:where(:not([data-disabled], [data-pressed])) {
+    background-color: color-mix(in srgb, var(--m3e-color-surface-container-low) 92%, var(--m3e-color-error));
+    box-shadow: var(--m3e-elevation-level2);
+  }
+
+  .m3e-button[data-intent="danger"][data-variant="outlined"]:hover:where(:not([data-disabled], [data-pressed])) {
+    background-color: color-mix(in srgb, var(--m3e-color-error) 8%, transparent);
+    border-color: var(--m3e-color-error);
+  }
+
+  .m3e-button[data-intent="danger"][data-variant="text"]:hover:where(:not([data-disabled], [data-pressed])) {
+    background-color: color-mix(in srgb, var(--m3e-color-error) 8%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m3e-button__spinner {
+    animation-duration: 2.2s;
+  }
+
+  .m3e-button {
+    transition-duration: 90ms;
+    transition-timing-function: ease-out;
+  }
+}
+
+@media (forced-colors: active) {
+  .m3e-button {
+    border: 1px solid ButtonText;
+  }
+
+  .m3e-button[data-selected] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+
+  .m3e-button:is(:disabled, [data-disabled]) {
+    border-color: GrayText;
+    color: GrayText;
+  }
+}

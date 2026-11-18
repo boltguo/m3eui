@@ -1,0 +1,455 @@
+.m3e-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  user-select: none;
+  border: 1px solid var(--m3e-color-outline-variant);
+  background-color: transparent;
+  color: var(--m3e-color-on-surface);
+  transition:
+    background-color var(--m3e-effects-fast-duration, 140ms) ease-out,
+    color var(--m3e-effects-fast-duration, 140ms) ease-out,
+    border-color var(--m3e-effects-fast-duration, 140ms) ease-out,
+    box-shadow var(--m3e-effects-fast-duration, 140ms) ease-out;
+}
+
+.m3e-chip--assist,
+.m3e-chip--filter {
+  cursor: pointer;
+}
+
+.m3e-chip--assist[data-elevated],
+.m3e-chip--filter[data-elevated] {
+  background-color: var(--m3e-color-surface-container-low);
+  border-color: transparent;
+  box-shadow: var(--m3e-elevation-level1);
+}
+
+@media (hover: hover) {
+  .m3e-chip--assist[data-elevated]:hover:where(:not(:disabled, [data-disabled], [data-pressed])),
+  .m3e-chip--filter[data-elevated]:hover:where(:not(:disabled, [data-disabled], [data-selected], [data-pressed])) {
+    background-color: var(--m3e-color-surface-container);
+    box-shadow: var(--m3e-elevation-level2);
+  }
+
+  .m3e-chip--assist:hover:where(:not(:disabled, [data-disabled], [data-elevated], [data-pressed])),
+  .m3e-chip--filter:hover:where(:not(:disabled, [data-disabled], [data-selected], [data-elevated], [data-pressed])) {
+    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 8%, transparent);
+  }
+}
+
+.m3e-chip--assist[data-elevated][data-pressed]:where(:not(:disabled, [data-disabled])),
+.m3e-chip--filter[data-elevated][data-pressed]:where(:not(:disabled, [data-disabled], [data-selected])) {
+  background-color: var(--m3e-color-surface-container-high);
+  box-shadow: var(--m3e-elevation-level1);
+}
+
+.m3e-chip--assist[data-pressed]:where(:not(:disabled, [data-disabled], [data-elevated])),
+.m3e-chip--filter[data-pressed]:where(:not(:disabled, [data-disabled], [data-selected], [data-elevated])) {
+  background-color: color-mix(in srgb, var(--m3e-color-on-surface) 10%, transparent);
+}
+
+.m3e-chip--filter[data-selected] {
+  background-color: var(--m3e-color-secondary-container);
+  color: var(--m3e-color-on-secondary-container);
+  border-color: transparent;
+}
+
+@media (hover: hover) {
+  .m3e-chip--filter[data-selected]:hover:where(:not(:disabled, [data-disabled], [data-pressed])) {
+    background-color: color-mix(in srgb, var(--m3e-color-secondary-container) 92%, var(--m3e-color-on-secondary-container));
+    color: var(--m3e-color-on-secondary-container);
+  }
+
+  .m3e-chip--filter[data-elevated][data-selected]:hover:where(:not(:disabled, [data-disabled], [data-pressed])) {
+    box-shadow: var(--m3e-elevation-level2);
+  }
+}
+
+.m3e-chip--filter[data-selected][data-pressed]:where(:not(:disabled, [data-disabled])) {
+  background-color: color-mix(in srgb, var(--m3e-color-secondary-container) 90%, var(--m3e-color-on-secondary-container));
+}
+
+.m3e-chip--input {
+  padding-inline: 10px 6px;
+  background-color: var(--m3e-color-surface-container-low);
+}
+
+.m3e-chip--input[data-selected] {
+  background-color: var(--m3e-color-secondary-container);
+  color: var(--m3e-color-on-secondary-container);
+  border-color: transparent;
+}
+
+.m3e-chip--input[data-compound] {
+  padding-inline-start: 0;
+  gap: 2px;
+}
+
+.m3e-chip__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding-inline: 10px 4px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  outline: none;
+}
+
+.m3e-chip__action:focus-visible {
+  outline: 2.5px solid var(--m3e-color-primary);
+  outline-offset: 2px;
+}
+
+.m3e-chip:focus-visible {
+  outline: 2.5px solid var(--m3e-color-primary);
+  outline-offset: 2px;
+}
+
+.m3e-chip:is(:disabled, [data-disabled]) {
+  opacity: 0.38;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.m3e-chip__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--m3e-color-primary);
+  flex-shrink: 0;
+}
+
+.m3e-chip--filter[data-selected] .m3e-chip__icon {
+  color: inherit;
+}
+
+.m3e-chip__avatar {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-start: -4px;
+}
+
+.m3e-chip__remove {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--m3e-color-on-surface-variant);
+  cursor: pointer;
+  padding: 0;
+}
+
+@media (pointer: coarse) {
+  .m3e-chip:not(:has(button, a)) {
+    position: relative;
+  }
+
+  .m3e-chip:not(:has(button, a))::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block: min(0px, calc((100% - 48px) / 2));
+  }
+}
+
+.m3e-chip__remove::after {
+  content: "";
+  position: absolute;
+  inset-block: -5px;
+  inset-inline: -1px -6px;
+}
+
+@media (hover: hover) {
+  .m3e-chip__remove:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 12%, transparent);
+    color: var(--m3e-color-on-surface);
+  }
+}
+
+.m3e-chip__remove:focus-visible {
+  outline: 2px solid var(--m3e-color-primary);
+}
+
+.m3e-chip-status {
+  --m3e-chip-status-bg: var(--m3e-color-surface-container-highest);
+  --m3e-chip-status-fg: var(--m3e-color-on-surface-variant);
+  --m3e-chip-status-border: var(--m3e-color-outline-variant);
+  --m3e-chip-status-dot: var(--m3e-color-on-surface-variant);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-sizing: border-box;
+  block-size: 26px;
+  padding-inline: 10px;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-color: var(--m3e-chip-status-bg);
+  color: var(--m3e-chip-status-fg);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.m3e-chip-status[data-size="sm"] {
+  block-size: 22px;
+  padding-inline: 8px;
+  font-size: 11px;
+  gap: 5px;
+}
+
+.m3e-chip-status[data-tone="primary"] {
+  --m3e-chip-status-bg: var(--m3e-color-primary-container);
+  --m3e-chip-status-fg: var(--m3e-color-on-primary-container);
+  --m3e-chip-status-border: color-mix(in srgb, var(--m3e-color-primary) 42%, transparent);
+  --m3e-chip-status-dot: var(--m3e-color-primary);
+}
+
+.m3e-chip-status[data-tone="secondary"] {
+  --m3e-chip-status-bg: var(--m3e-color-secondary-container);
+  --m3e-chip-status-fg: var(--m3e-color-on-secondary-container);
+  --m3e-chip-status-border: color-mix(in srgb, var(--m3e-color-secondary) 42%, transparent);
+  --m3e-chip-status-dot: var(--m3e-color-secondary);
+}
+
+.m3e-chip-status[data-tone="tertiary"] {
+  --m3e-chip-status-bg: var(--m3e-color-tertiary-container);
+  --m3e-chip-status-fg: var(--m3e-color-on-tertiary-container);
+  --m3e-chip-status-border: color-mix(in srgb, var(--m3e-color-tertiary) 42%, transparent);
+  --m3e-chip-status-dot: var(--m3e-color-tertiary);
+}
+
+.m3e-chip-status[data-tone="success"] {
+  --m3e-chip-status-bg: var(--m3e-color-success-container);
+  --m3e-chip-status-fg: var(--m3e-color-on-success-container);
+  --m3e-chip-status-border: color-mix(in srgb, var(--m3e-color-success) 42%, transparent);
+  --m3e-chip-status-dot: var(--m3e-color-success);
+}
+
+.m3e-chip-status[data-tone="warning"] {
+  --m3e-chip-status-bg: var(--m3e-color-warning-container);
+  --m3e-chip-status-fg: var(--m3e-color-on-warning-container);
+  --m3e-chip-status-border: color-mix(in srgb, var(--m3e-color-warning) 44%, transparent);
+  --m3e-chip-status-dot: var(--m3e-color-warning);
+}
+
+.m3e-chip-status[data-tone="error"] {
+  --m3e-chip-status-bg: var(--m3e-color-error-container);
+  --m3e-chip-status-fg: var(--m3e-color-on-error-container);
+  --m3e-chip-status-border: color-mix(in srgb, var(--m3e-color-error) 45%, transparent);
+  --m3e-chip-status-dot: var(--m3e-color-error);
+}
+
+.m3e-chip-status[data-variant="outlined"] {
+  background-color: transparent;
+  border-color: var(--m3e-chip-status-border);
+}
+
+.m3e-chip-status[data-variant="solid"] {
+  --m3e-chip-status-bg: var(--m3e-chip-status-dot);
+  --m3e-chip-status-fg: var(--m3e-color-surface-container-lowest);
+  background-color: var(--m3e-chip-status-bg);
+  color: var(--m3e-chip-status-fg);
+}
+
+.m3e-chip-status[data-variant="solid"][data-tone="primary"] {
+  --m3e-chip-status-bg: var(--m3e-color-primary);
+  --m3e-chip-status-fg: var(--m3e-color-on-primary);
+  background-color: var(--m3e-chip-status-bg);
+  color: var(--m3e-chip-status-fg);
+}
+
+.m3e-chip-status[data-variant="solid"][data-tone="secondary"] {
+  --m3e-chip-status-bg: var(--m3e-color-secondary);
+  --m3e-chip-status-fg: var(--m3e-color-on-secondary);
+  background-color: var(--m3e-chip-status-bg);
+  color: var(--m3e-chip-status-fg);
+}
+
+.m3e-chip-status[data-variant="solid"][data-tone="tertiary"] {
+  --m3e-chip-status-bg: var(--m3e-color-tertiary);
+  --m3e-chip-status-fg: var(--m3e-color-on-tertiary);
+  background-color: var(--m3e-chip-status-bg);
+  color: var(--m3e-chip-status-fg);
+}
+
+.m3e-chip-status[data-variant="solid"][data-tone="success"] {
+  --m3e-chip-status-bg: var(--m3e-color-success);
+  --m3e-chip-status-fg: var(--m3e-color-on-success);
+  background-color: var(--m3e-chip-status-bg);
+  color: var(--m3e-chip-status-fg);
+}
+
+.m3e-chip-status[data-variant="solid"][data-tone="warning"] {
+  --m3e-chip-status-bg: var(--m3e-color-warning);
+  --m3e-chip-status-fg: var(--m3e-color-on-warning);
+  background-color: var(--m3e-chip-status-bg);
+  color: var(--m3e-chip-status-fg);
+}
+
+.m3e-chip-status[data-variant="solid"][data-tone="error"] {
+  --m3e-chip-status-bg: var(--m3e-color-error);
+  --m3e-chip-status-fg: var(--m3e-color-on-error);
+  background-color: var(--m3e-chip-status-bg);
+  color: var(--m3e-chip-status-fg);
+}
+
+.m3e-chip-status[data-variant="solid"] .m3e-chip-status__dot {
+  background-color: currentColor;
+}
+
+.m3e-chip-status[data-interactive] {
+  cursor: pointer;
+  outline: none;
+  transition:
+    background-color 140ms ease-out,
+    border-color 140ms ease-out;
+}
+
+.m3e-chip-status[data-compound] {
+  padding-inline-start: 0;
+  gap: 2px;
+}
+
+.m3e-chip-status__action {
+  display: inline-flex;
+  align-items: center;
+  gap: inherit;
+  height: 100%;
+  padding-inline: 10px 4px;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  outline: none;
+}
+
+.m3e-chip-status[data-size="sm"] .m3e-chip-status__action {
+  padding-inline: 8px 3px;
+}
+
+.m3e-chip-status__action:focus-visible {
+  outline: 2px solid var(--m3e-color-primary);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .m3e-chip-status[data-interactive]:hover:where(:not(:disabled, [data-disabled], [data-pressed])) {
+    background-color: color-mix(in srgb, currentColor 8%, var(--m3e-chip-status-bg));
+  }
+
+  .m3e-chip-status[data-interactive][data-variant="outlined"]:hover:where(:not(:disabled, [data-disabled], [data-pressed])) {
+    background-color: color-mix(in srgb, currentColor 8%, transparent);
+  }
+}
+
+.m3e-chip-status[data-interactive][data-pressed]:where(:not(:disabled, [data-disabled])) {
+  background-color: color-mix(in srgb, currentColor 10%, var(--m3e-chip-status-bg));
+}
+
+.m3e-chip-status[data-interactive][data-variant="outlined"][data-pressed]:where(:not(:disabled, [data-disabled])) {
+  background-color: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.m3e-chip-status[data-interactive]:focus-visible {
+  outline: 2px solid var(--m3e-color-primary);
+  outline-offset: 2px;
+}
+
+.m3e-chip-status[data-disabled],
+.m3e-chip-status:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.m3e-chip-status__dot {
+  inline-size: 7px;
+  block-size: 7px;
+  border-radius: 9999px;
+  background-color: var(--m3e-chip-status-dot);
+  flex-shrink: 0;
+}
+
+.m3e-chip-status__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.m3e-chip-status__remove {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 16px;
+  block-size: 16px;
+  margin-inline-end: -3px;
+  padding: 0;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: currentColor;
+  opacity: 0.72;
+  outline: none;
+  cursor: pointer;
+}
+
+.m3e-chip-status__remove::after {
+  content: "";
+  position: absolute;
+  inset-block: -6px;
+  inset-inline: -1px -6px;
+}
+
+@media (hover: hover) {
+  .m3e-chip-status__remove:hover:not(:disabled) {
+    opacity: 1;
+    background-color: color-mix(in srgb, currentColor 15%, transparent);
+  }
+}
+
+.m3e-chip-status__remove:focus-visible {
+  opacity: 1;
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m3e-chip {
+    transition-duration: 90ms;
+    transition-timing-function: ease-out;
+  }
+}
+
+@media (forced-colors: active) {
+  .m3e-chip,
+  .m3e-chip-status {
+    border: 1px solid ButtonText;
+  }
+
+  .m3e-chip--filter[data-selected] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+}

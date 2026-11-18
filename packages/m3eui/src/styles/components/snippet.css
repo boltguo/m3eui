@@ -1,0 +1,93 @@
+.m3e-copy-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background-color: transparent;
+  color: var(--m3e-color-on-surface-variant);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 140ms ease-out, color 140ms ease-out;
+}
+
+.m3e-copy-button[data-variant="tonal"] {
+  background-color: var(--m3e-color-secondary-container);
+  color: var(--m3e-color-on-secondary-container);
+}
+
+.m3e-copy-button[data-variant="outlined"] {
+  border: 1px solid var(--m3e-color-outline-variant);
+}
+
+@media (hover: hover) {
+  .m3e-copy-button:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 10%, transparent);
+  }
+}
+
+.m3e-copy-button[data-pressed]:not(:disabled) {
+  background-color: color-mix(in srgb, var(--m3e-color-on-surface) 14%, transparent);
+}
+
+.m3e-copy-button[data-copied] {
+  background-color: var(--m3e-color-primary-container);
+  color: var(--m3e-color-on-primary-container);
+}
+
+.m3e-copy-button[data-error] {
+  background-color: var(--m3e-color-error-container);
+  color: var(--m3e-color-on-error-container);
+}
+
+.m3e-copy-button:focus-visible {
+  outline: 2px solid var(--m3e-color-primary);
+  outline-offset: 2px;
+}
+
+.m3e-snippet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-inline-size: 100%;
+  padding-inline-start: 14px;
+  padding-inline-end: 6px;
+  padding-block: 6px;
+  background-color: var(--m3e-color-surface-container-high);
+  color: var(--m3e-color-on-surface);
+}
+
+.m3e-snippet[data-variant="outlined"] {
+  background-color: var(--m3e-color-surface-container-lowest);
+  border: 1px solid var(--m3e-color-outline-variant);
+}
+
+.m3e-snippet__pre {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.m3e-snippet__line {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.m3e-snippet__symbol {
+  user-select: none;
+  color: var(--m3e-color-primary);
+  font-weight: 700;
+}
+
+@media (forced-colors: active) {
+  .m3e-snippet {
+    border: 1px solid ButtonText;
+  }
+}

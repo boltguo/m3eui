@@ -1,0 +1,63 @@
+.m3e-drag-handle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  align-self: stretch;
+  cursor: col-resize;
+  user-select: none;
+  touch-action: pan-y;
+  outline: none;
+}
+
+.m3e-drag-handle[data-orientation="horizontal"] {
+  inline-size: 100%;
+  cursor: row-resize;
+  touch-action: pan-x;
+}
+
+.m3e-drag-handle::before {
+  content: "";
+  position: absolute;
+  inset-inline: -12px;
+  inset-block: 0;
+}
+
+.m3e-drag-handle[data-orientation="horizontal"]::before {
+  inset-inline: 0;
+  inset-block: -12px;
+}
+
+.m3e-drag-handle[data-disabled] {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.m3e-drag-handle__pill {
+  display: block;
+  background-color: var(--m3e-color-outline);
+  transition: background-color var(--m3e-effects-fast-duration, 140ms) ease-out;
+}
+
+.m3e-drag-handle[data-active] .m3e-drag-handle__pill {
+  background-color: var(--m3e-color-on-surface);
+}
+
+@media (hover: hover) {
+  .m3e-drag-handle:hover:not([data-disabled]):not([data-active]) .m3e-drag-handle__pill {
+    background-color: var(--m3e-color-on-surface-variant);
+  }
+}
+
+.m3e-drag-handle:focus-visible .m3e-drag-handle__pill {
+  outline: 2.5px solid var(--m3e-color-primary);
+  outline-offset: 4px;
+}
+
+@media (forced-colors: active) {
+  .m3e-drag-handle__pill {
+    background-color: ButtonText;
+  }
+}

@@ -286,16 +286,19 @@ export function generateM3EStaticThemeCss(config?: M3EConfigInput): string {
     `}`,
     "",
     `:root[data-color-mode="dark"],`,
-    `:root:has(> head > meta[name="color-scheme"][content="dark"]) {`,
+    `:root:has(> head > meta[name="color-scheme"][content="dark"]),`,
+    `.m3e-scope[data-color-mode="dark"] {`,
     `  color-scheme: dark;`,
     `}`,
     "",
     `:root[data-color-mode="light"],`,
-    `:root:has(> head > meta[name="color-scheme"][content="light"]) {`,
+    `:root:has(> head > meta[name="color-scheme"][content="light"]),`,
+    `.m3e-scope[data-color-mode="light"] {`,
     `  color-scheme: light;`,
     `}`,
     "",
-    `:root[data-color-mode="system"] {`,
+    `:root[data-color-mode="system"],`,
+    `.m3e-scope[data-color-mode="system"] {`,
     `  color-scheme: light dark;`,
     `}`,
     "",
@@ -310,14 +313,16 @@ export function generateM3EStaticThemeCss(config?: M3EConfigInput): string {
   }
   lines.push(`  }`);
   lines.push(`  @media (prefers-color-scheme: dark) {`);
-  lines.push(`    :root:not([data-color-mode="light"]) {`);
+  lines.push(`    :root:not([data-color-mode="light"]),`);
+  lines.push(`    .m3e-scope[data-color-mode="system"] {`);
   for (const key of roleKeys) {
     const cssVar = roleKeyToCssVarName(key);
     lines.push(`      ${cssVar}: var(${cssVar}-dark, ${tokens.dark[key]});`);
   }
   lines.push(`    }`);
   lines.push(`  }`);
-  lines.push(`  :root[data-color-mode="dark"] {`);
+  lines.push(`  :root[data-color-mode="dark"],`);
+  lines.push(`  .m3e-scope[data-color-mode="dark"] {`);
   for (const key of roleKeys) {
     const cssVar = roleKeyToCssVarName(key);
     lines.push(`    ${cssVar}: var(${cssVar}-dark, ${tokens.dark[key]});`);

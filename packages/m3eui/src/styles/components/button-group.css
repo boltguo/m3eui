@@ -1,0 +1,35 @@
+.m3e-button-group[data-group-variant="connected"] .m3e-button:is([data-size="xs"], [data-size="sm"])::after {
+  inset-inline: 0;
+}
+
+.m3e-button-group {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+}
+
+.m3e-button-group[data-group-variant="standard"] {
+  gap: 12px;
+}
+
+.m3e-button-group[data-group-variant="connected"] {
+  gap: 2px;
+}
+
+.m3e-button-group__item {
+  flex: 0 0 auto;
+  min-width: 36px;
+  overflow: hidden;
+}
+
+.m3e-button-group__item .m3e-button__label {
+  flex-shrink: 0;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.m3e-button-group__item:focus-visible {
+  outline-offset: 1px;
+  z-index: 2;
+}

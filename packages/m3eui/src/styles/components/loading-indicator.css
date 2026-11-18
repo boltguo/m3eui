@@ -1,0 +1,13 @@
+.m3e-loading-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--m3e-color-primary);
+}
+
+.m3e-loading-indicator[data-contained] {
+  border-radius: 9999px;
+  background-color: var(--m3e-color-primary-container);
+  color: var(--m3e-color-on-primary-container);
+}

@@ -9,7 +9,7 @@ export default defineConfig({
     alias: [
       {
         find: "m3eui/styles.css",
-        replacement: resolve(__dirname, "../../packages/m3eui/src/styles/m3e.css"),
+        replacement: resolve(__dirname, "../../packages/m3eui/src/styles/index.css"),
       },
       {
         find: "m3eui/tokens",

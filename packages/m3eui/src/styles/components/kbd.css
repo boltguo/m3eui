@@ -1,0 +1,25 @@
+.m3e-kbd {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding-inline: 6px;
+  border: 1px solid var(--m3e-color-outline-variant);
+  border-block-end-width: 2px;
+  background-color: var(--m3e-color-surface-container-low);
+  color: var(--m3e-color-on-surface);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.m3e-kbd[data-size="sm"] {
+  font-size: 10.5px;
+  padding-inline: 5px;
+}
+
+@media (forced-colors: active) {
+  .m3e-kbd {
+    border: 1px solid ButtonText;
+  }
+}

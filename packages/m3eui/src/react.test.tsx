@@ -133,6 +133,15 @@ function PauseMount({ children }: { readonly children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+const readLibraryCss = (): string => {
+  const dir = resolve(__dirname, "styles");
+  return readdirSync(dir, { recursive: true, encoding: "utf8" })
+    .filter((f) => f.endsWith(".css"))
+    .sort()
+    .map((f) => readFileSync(join(dir, f), "utf8"))
+    .join("\n");
+};
+
 function collectCjkViolations(dir: string, excludedSegment: string): string[] {
   const cjkRe = /[\u3400-\u9FFF\uF900-\uFAFF]/;
   const violations: string[] = [];
@@ -2415,19 +2424,13 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
   });
 
   it("styles scrollbars via scoped webkit pseudo-elements without disabling overlay scrollbars", () => {
-    const css = readFileSync(
-      resolve(__dirname, "styles/m3e.css"),
-      "utf8",
-    );
+    const css = readLibraryCss();
     expect(css).not.toMatch(/scrollbar-color:|scrollbar-width:\s*thin/);
     expect(css).not.toMatch(/(?:^|[\s,])(?:html|body|:root|\*)::-webkit-scrollbar/);
   });
 
   it("layers floating popup positioners above Dialog, Sheet, SearchView, and CommandPalette modals", () => {
-    const css = readFileSync(
-      resolve(__dirname, "styles/m3e.css"),
-      "utf8",
-    );
+    const css = readLibraryCss();
     const getZIndex = (selector: string): number => {
       const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const match = css.match(
@@ -2621,7 +2624,7 @@ describe("m3eui — DOM Component & Interaction Regression Suite", () => {
   });
 
   it("prevents unselected :hover rules from overriding [data-selected] or solid backgrounds via specificity inflation", () => {
-    const css = readFileSync(resolve(__dirname, "styles/m3e.css"), "utf8");
+    const css = readLibraryCss();
 
     expect(css).toContain(
       '.m3e-button[data-variant="outlined"]:hover:where(:not([data-disabled], [data-selected], [data-pressed]))',

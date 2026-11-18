@@ -1,0 +1,165 @@
+.m3e-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+}
+
+.m3e-field__label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.m3e-field__label {
+  font-size: 13.5px;
+  line-height: 18px;
+  font-weight: 600;
+  color: var(--m3e-color-on-surface);
+}
+
+.m3e-field[data-disabled] .m3e-field__label {
+  opacity: 0.48;
+}
+
+.m3e-field__required {
+  color: var(--m3e-color-error);
+  font-weight: 600;
+}
+
+.m3e-field__counter {
+  font-size: 12px;
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+  color: var(--m3e-color-on-surface-variant);
+}
+
+.m3e-field__description {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 17px;
+  color: var(--m3e-color-on-surface-variant);
+}
+
+.m3e-field__supporting-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding-inline: 16px;
+}
+
+.m3e-field__supporting-row > .m3e-field__counter {
+  margin-inline-start: auto;
+  flex-shrink: 0;
+}
+
+.m3e-field__floating-label {
+  position: absolute;
+  z-index: 2;
+  inset-inline-start: 0;
+  top: 50%;
+  translate: 0 -50%;
+  scale: 1;
+  max-inline-size: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+  color: var(--m3e-color-on-surface-variant);
+  pointer-events: none;
+  transform-origin: 0% 50%;
+  transition:
+    top var(--m3e-spatial-fast-duration, 200ms) var(--m3e-spatial-fast-easing, cubic-bezier(0.2, 0, 0, 1)),
+    inset-inline-start var(--m3e-spatial-fast-duration, 200ms) var(--m3e-spatial-fast-easing, cubic-bezier(0.2, 0, 0, 1)),
+    translate var(--m3e-spatial-fast-duration, 200ms) var(--m3e-spatial-fast-easing, cubic-bezier(0.2, 0, 0, 1)),
+    scale var(--m3e-spatial-fast-duration, 200ms) var(--m3e-spatial-fast-easing, cubic-bezier(0.2, 0, 0, 1)),
+    color var(--m3e-effects-default-duration, 180ms) var(--m3e-effects-default-easing, cubic-bezier(0.2, 0, 0, 1));
+}
+
+[dir="rtl"] .m3e-field__floating-label,
+.m3e-field__floating-label:dir(rtl) {
+  transform-origin: 100% 50%;
+}
+
+.m3e-field__outline,
+.m3e-field__outline-active {
+  position: absolute;
+  z-index: 1;
+  inset-block: -5px 0;
+  inset-inline: 0;
+  margin: 0;
+  padding-block: 0;
+  min-inline-size: 0;
+  text-align: start;
+  background: transparent;
+  border-radius: inherit;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.m3e-field__outline {
+  padding-inline: 11px;
+  border: 1px solid var(--m3e-color-outline);
+  transition:
+    border-color var(--m3e-effects-default-duration, 180ms) var(--m3e-effects-default-easing, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.m3e-field__outline-active {
+  padding-inline: 10px;
+  border: 2px solid var(--m3e-color-primary);
+  opacity: 0;
+  transition:
+    opacity var(--m3e-effects-default-duration, 180ms) var(--m3e-effects-default-easing, cubic-bezier(0.2, 0, 0, 1)),
+    border-color var(--m3e-effects-default-duration, 180ms) var(--m3e-effects-default-easing, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.m3e-field__outline-legend {
+  display: block;
+  inline-size: auto;
+  max-inline-size: 100%;
+  block-size: 11px;
+  line-height: 11px;
+  padding: 0;
+  font-family: inherit;
+  font-size: 0.01px;
+  font-weight: 400;
+  letter-spacing: inherit;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  visibility: hidden;
+  white-space: nowrap;
+  transition:
+    font-size var(--m3e-spatial-fast-duration, 200ms) var(--m3e-spatial-fast-easing, cubic-bezier(0.2, 0, 0, 1)),
+    padding-inline var(--m3e-spatial-fast-duration, 200ms) var(--m3e-spatial-fast-easing, cubic-bezier(0.2, 0, 0, 1));
+}
+
+:is(.m3e-field__outline, .m3e-field__outline-active)[data-floating] > .m3e-field__outline-legend {
+  font-size: 12px;
+  padding-inline: 4px;
+}
+
+.m3e-field__error {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  line-height: 17px;
+  font-weight: 500;
+  color: var(--m3e-color-error);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m3e-field__floating-label,
+  .m3e-field__outline,
+  .m3e-field__outline-active,
+  .m3e-field__outline-legend {
+    transition-duration: 90ms;
+    transition-timing-function: ease-out;
+  }
+}

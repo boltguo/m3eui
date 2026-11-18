@@ -374,16 +374,19 @@
 }
 
 :root[data-color-mode="dark"],
-:root:has(> head > meta[name="color-scheme"][content="dark"]) {
+:root:has(> head > meta[name="color-scheme"][content="dark"]),
+.m3e-scope[data-color-mode="dark"] {
   color-scheme: dark;
 }
 
 :root[data-color-mode="light"],
-:root:has(> head > meta[name="color-scheme"][content="light"]) {
+:root:has(> head > meta[name="color-scheme"][content="light"]),
+.m3e-scope[data-color-mode="light"] {
   color-scheme: light;
 }
 
-:root[data-color-mode="system"] {
+:root[data-color-mode="system"],
+.m3e-scope[data-color-mode="system"] {
   color-scheme: light dark;
 }
 
@@ -452,7 +455,8 @@
     --m3e-color-scrim: var(--m3e-color-scrim-light, #000000);
   }
   @media (prefers-color-scheme: dark) {
-    :root:not([data-color-mode="light"]) {
+    :root:not([data-color-mode="light"]),
+    .m3e-scope[data-color-mode="system"] {
       --m3e-color-primary: var(--m3e-color-primary-dark, #c7b4f5);
       --m3e-color-primary-dim: var(--m3e-color-primary-dim-dark, #b9a7e7);
       --m3e-color-on-primary: var(--m3e-color-on-primary-dark, #403168);
@@ -516,7 +520,8 @@
       --m3e-color-scrim: var(--m3e-color-scrim-dark, #000000);
     }
   }
-  :root[data-color-mode="dark"] {
+  :root[data-color-mode="dark"],
+  .m3e-scope[data-color-mode="dark"] {
     --m3e-color-primary: var(--m3e-color-primary-dark, #c7b4f5);
     --m3e-color-primary-dim: var(--m3e-color-primary-dim-dark, #b9a7e7);
     --m3e-color-on-primary: var(--m3e-color-on-primary-dark, #403168);

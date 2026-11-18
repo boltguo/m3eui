@@ -1,0 +1,97 @@
+@media (hover: hover) {
+  .m3e-radio:hover:where(:not([data-disabled], [data-pressed])) .m3e-radio__halo {
+    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 8%, transparent);
+  }
+
+  .m3e-radio[data-checked]:hover:where(:not([data-disabled], [data-pressed])) .m3e-radio__halo {
+    background-color: color-mix(in srgb, var(--m3e-color-primary) 8%, transparent);
+  }
+}
+
+.m3e-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.m3e-radio-group[data-orientation="horizontal"] {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.m3e-radio {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border-radius: 9999px;
+  border: 2px solid var(--m3e-color-on-surface-variant);
+  background-color: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition-property: border-color;
+  transition-duration: var(--m3e-effects-fast-duration, 140ms);
+  transition-timing-function: ease-out;
+}
+
+.m3e-radio:not(.m3e-control-row *)::after {
+  content: "";
+  position: absolute;
+  inset: -14px;
+}
+
+.m3e-radio[data-checked] {
+  border-color: var(--m3e-color-primary);
+}
+
+.m3e-radio:focus-visible {
+  outline: 2.5px solid var(--m3e-color-primary);
+  outline-offset: 3px;
+}
+
+.m3e-radio[data-disabled] {
+  cursor: not-allowed;
+  pointer-events: none;
+  border-color: color-mix(in srgb, var(--m3e-color-on-surface) 38%, transparent);
+}
+
+.m3e-radio__dot {
+  position: relative;
+  z-index: 1;
+  border-radius: 9999px;
+  background-color: var(--m3e-color-primary);
+  scale: 0;
+  transition: scale var(--m3e-spatial-fast-duration, 260ms) var(--m3e-spatial-fast-easing, ease-out);
+}
+
+.m3e-radio[data-disabled] .m3e-radio__dot {
+  background-color: color-mix(in srgb, var(--m3e-color-on-surface) 38%, transparent);
+}
+
+.m3e-radio[data-checked] .m3e-radio__dot {
+  scale: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m3e-radio__dot {
+    transition-duration: 90ms;
+    transition-timing-function: ease-out;
+  }
+}
+
+@media (forced-colors: active) {
+  .m3e-radio {
+    border: 1px solid ButtonText;
+  }
+
+  .m3e-radio__dot {
+    background-color: Highlight;
+  }
+
+  .m3e-radio[data-disabled] {
+    border-color: GrayText;
+    color: GrayText;
+  }
+}

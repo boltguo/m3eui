@@ -1,5 +1,5 @@
-import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 import * as React from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -60,6 +60,15 @@ import {
 
 (globalThis as Record<string, unknown>).IS_REACT_ACT_ENVIRONMENT = true;
 
+const readLibraryCss = (): string => {
+  const dir = resolve(process.cwd(), "packages/m3eui/src/styles");
+  return readdirSync(dir, { recursive: true, encoding: "utf8" })
+    .filter((f) => f.endsWith(".css"))
+    .sort()
+    .map((f) => readFileSync(join(dir, f), "utf8"))
+    .join("\n");
+};
+
 describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
   let container: HTMLDivElement;
   let root: Root;
@@ -114,12 +123,8 @@ describe("m3eui — AOSP & Web Interaction Remediation Suite", () => {
     }
   });
 
-  it("gates every :hover rule in m3e.css inside @media (hover: hover)", () => {
-    const cssPath = resolve(
-      process.cwd(),
-      "packages/m3eui/src/styles/m3e.css",
-    );
-    const lines = readFileSync(cssPath, "utf8").split("\n");
+  it("gates every :hover rule in library CSS inside @media (hover: hover)", () => {
+    const lines = readLibraryCss().split("\n");
     let depth = 0;
     let hoverMediaStack: number[] = [];
     const ungated: string[] = [];

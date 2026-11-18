@@ -1,0 +1,50 @@
+.m3e-badge-anchor {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.m3e-badge {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background-color: var(--m3e-color-error);
+  color: var(--m3e-color-on-error);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.m3e-badge[data-color="primary"] {
+  background-color: var(--m3e-color-primary);
+  color: var(--m3e-color-on-primary);
+}
+
+.m3e-badge[data-color="secondary"] {
+  background-color: var(--m3e-color-secondary);
+  color: var(--m3e-color-on-secondary);
+}
+
+.m3e-badge[data-anchored].m3e-badge--dot {
+  position: absolute;
+  top: -1px;
+  inset-inline-end: -2px;
+}
+
+.m3e-badge[data-anchored].m3e-badge--pill {
+  position: absolute;
+  top: -6px;
+  inset-inline-end: -10px;
+}
+
+@media (forced-colors: active) {
+  .m3e-badge {
+    background-color: Highlight;
+  }
+}

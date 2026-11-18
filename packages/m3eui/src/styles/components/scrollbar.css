@@ -1,0 +1,45 @@
+@supports not (scrollbar-width: none) {
+  .m3e-tabs__list::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@supports not (scrollbar-width: none) {
+  .m3e-carousel__markers::-webkit-scrollbar,
+  .m3e-carousel__track::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@supports not (scrollbar-width: none) {
+  .m3e-scroll-area__viewport::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+:where([class^="m3e-"], [class*=" m3e-"])::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+:where([class^="m3e-"], [class*=" m3e-"])::-webkit-scrollbar-track,
+:where([class^="m3e-"], [class*=" m3e-"])::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+:where([class^="m3e-"], [class*=" m3e-"])::-webkit-scrollbar-track {
+  margin: 8px;
+}
+
+:where([class^="m3e-"], [class*=" m3e-"])::-webkit-scrollbar-thumb {
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  background: var(--m3e-color-outline-variant) padding-box;
+}
+
+@media (hover: hover) {
+  :where([class^="m3e-"], [class*=" m3e-"])::-webkit-scrollbar-thumb:hover {
+    border-width: 0;
+    background-color: var(--m3e-color-outline);
+  }
+}

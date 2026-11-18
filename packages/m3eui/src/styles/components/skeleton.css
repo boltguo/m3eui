@@ -1,0 +1,53 @@
+.m3e-skeleton {
+  display: inline-block;
+  flex-shrink: 0;
+  background-color: var(--m3e-color-surface-container-high);
+}
+
+.m3e-skeleton:not(.m3e-skeleton--shape)[data-animated] {
+  background-image: linear-gradient(
+    90deg,
+    var(--m3e-color-surface-container-high) 0%,
+    var(--m3e-color-surface-container-highest) 35%,
+    color-mix(in srgb, var(--m3e-color-on-surface) 8%, var(--m3e-color-surface-container-highest)) 50%,
+    var(--m3e-color-surface-container-highest) 65%,
+    var(--m3e-color-surface-container-high) 100%
+  );
+  background-size: 220% 100%;
+  animation: m3e-skeleton-shimmer 1.65s ease-in-out infinite;
+}
+
+.m3e-skeleton--shape {
+  background: transparent;
+  color: var(--m3e-color-surface-container-highest);
+}
+
+.m3e-skeleton--shape[data-animated] {
+  animation: m3e-skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes m3e-skeleton-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@keyframes m3e-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.92;
+  }
+  50% {
+    opacity: 0.48;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m3e-skeleton:not(.m3e-skeleton--shape)[data-animated],
+  .m3e-skeleton--shape[data-animated] {
+    animation: none;
+  }
+}

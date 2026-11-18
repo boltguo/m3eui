@@ -1,0 +1,131 @@
+.m3e-checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.m3e-checkbox__halo,
+.m3e-radio__halo {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  translate: -50% -50%;
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  pointer-events: none;
+  transition: background-color var(--m3e-effects-fast-duration, 140ms) ease-out;
+}
+
+@media (hover: hover) {
+  .m3e-checkbox:hover:where(:not([data-disabled], [data-pressed])) .m3e-checkbox__halo {
+    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 8%, transparent);
+  }
+
+  .m3e-checkbox:is([data-checked], [data-indeterminate]):hover:where(:not([data-disabled], [data-pressed])) .m3e-checkbox__halo {
+    background-color: color-mix(in srgb, var(--m3e-color-primary) 8%, transparent);
+  }
+}
+
+.m3e-checkbox:is(:focus-visible, [data-pressed]):not([data-disabled]) .m3e-checkbox__halo,
+.m3e-radio:is(:focus-visible, [data-pressed]):not([data-disabled]) .m3e-radio__halo,
+.m3e-control-row:active:not([data-disabled]) .m3e-checkbox__halo,
+.m3e-control-row:active:not([data-disabled]) .m3e-radio__halo {
+  background-color: color-mix(in srgb, var(--m3e-color-on-surface) 10%, transparent);
+}
+
+.m3e-checkbox:is([data-checked], [data-indeterminate]):is(:focus-visible, [data-pressed]):not([data-disabled]) .m3e-checkbox__halo,
+.m3e-radio[data-checked]:is(:focus-visible, [data-pressed]):not([data-disabled]) .m3e-radio__halo,
+.m3e-control-row:active:not([data-disabled]) .m3e-checkbox:is([data-checked], [data-indeterminate]) .m3e-checkbox__halo,
+.m3e-control-row:active:not([data-disabled]) .m3e-radio[data-checked] .m3e-radio__halo {
+  background-color: color-mix(in srgb, var(--m3e-color-primary) 10%, transparent);
+}
+
+.m3e-checkbox {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 2px solid var(--m3e-color-on-surface-variant);
+  background-color: transparent;
+  color: var(--m3e-color-on-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition-property: background-color, border-color, color;
+  transition-duration: var(--m3e-effects-fast-duration, 140ms);
+  transition-timing-function: var(--m3e-effects-fast-easing, ease-out);
+}
+
+.m3e-checkbox:not(.m3e-control-row *)::after {
+  content: "";
+  position: absolute;
+  inset: -15px;
+}
+
+.m3e-checkbox[data-checked],
+.m3e-checkbox[data-indeterminate] {
+  background-color: var(--m3e-color-primary);
+  border-color: var(--m3e-color-primary);
+}
+
+.m3e-checkbox:focus-visible {
+  outline: 2.5px solid var(--m3e-color-primary);
+  outline-offset: 3px;
+}
+
+.m3e-checkbox[data-disabled] {
+  cursor: not-allowed;
+  pointer-events: none;
+  border-color: color-mix(in srgb, var(--m3e-color-on-surface) 38%, transparent);
+}
+
+.m3e-checkbox:is([data-checked], [data-indeterminate])[data-disabled] {
+  background-color: color-mix(in srgb, var(--m3e-color-on-surface) 38%, transparent);
+  border-color: transparent;
+  color: var(--m3e-color-surface);
+}
+
+.m3e-checkbox__indicator {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  scale: 0.5;
+  transition:
+    opacity var(--m3e-effects-fast-duration, 140ms) ease-out,
+    scale var(--m3e-spatial-fast-duration, 240ms) var(--m3e-spatial-fast-easing, ease-out);
+}
+
+.m3e-checkbox[data-checked] .m3e-checkbox__indicator,
+.m3e-checkbox[data-indeterminate] .m3e-checkbox__indicator {
+  opacity: 1;
+  scale: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m3e-checkbox,
+  .m3e-checkbox__indicator {
+    transition-duration: 90ms;
+    transition-timing-function: ease-out;
+  }
+}
+
+@media (forced-colors: active) {
+  .m3e-checkbox {
+    border: 1px solid ButtonText;
+  }
+
+  .m3e-checkbox:is([data-checked], [data-indeterminate]) {
+    background-color: Highlight;
+    color: HighlightText;
+    border-color: Highlight;
+  }
+
+  .m3e-checkbox[data-disabled] {
+    border-color: GrayText;
+    color: GrayText;
+  }
+}

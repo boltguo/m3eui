@@ -1,0 +1,104 @@
+.m3e-top-app-bar {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 100%;
+  box-sizing: border-box;
+  padding-block: 8px;
+  background-color: var(--m3e-color-surface);
+  color: var(--m3e-color-on-surface);
+  border-bottom: 1px solid transparent;
+  transition:
+    background-color var(--m3e-effects-fast-duration, 140ms) ease-out,
+    border-color var(--m3e-effects-fast-duration, 140ms) ease-out;
+}
+
+.m3e-top-app-bar[data-elevated] {
+  background-color: var(--m3e-color-surface-container);
+  border-bottom-color: var(--m3e-color-outline-variant);
+}
+
+.m3e-top-app-bar:last-child {
+  border-bottom-width: 0;
+}
+
+.m3e-top-app-bar__top-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  width: 100%;
+}
+
+.m3e-top-app-bar[data-variant="center-aligned"] .m3e-top-app-bar__top-row {
+  display: grid;
+  grid-template-columns: 1fr minmax(0, auto) 1fr;
+  align-items: center;
+}
+
+.m3e-top-app-bar[data-variant="center-aligned"] .m3e-top-app-bar__nav {
+  justify-self: start;
+}
+
+.m3e-top-app-bar[data-variant="center-aligned"] .m3e-top-app-bar__actions {
+  justify-self: end;
+}
+
+.m3e-top-app-bar__nav {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.m3e-top-app-bar__inline-titles {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.m3e-top-app-bar__inline-titles[data-centered] {
+  align-items: center;
+  text-align: center;
+}
+
+.m3e-top-app-bar__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.m3e-top-app-bar__expanded-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-inline: 4px;
+  padding-bottom: 8px;
+}
+
+.m3e-top-app-bar__title {
+  font-weight: 650;
+  line-height: 1.24;
+  color: var(--m3e-color-on-surface);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.m3e-top-app-bar__subtitle {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--m3e-color-on-surface-variant);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.m3e-app-bar-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}

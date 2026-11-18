@@ -1,6 +1,5 @@
 import {
   chmodSync,
-  copyFileSync,
   existsSync,
   mkdirSync,
   readdirSync,
@@ -14,11 +13,9 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const pkgRoot = resolve(__dirname, "..");
 const distDir = join(pkgRoot, "dist");
-const cssSrc = join(pkgRoot, "src", "styles", "m3e.css");
-const cssDest = join(distDir, "styles.css");
+const stylesDir = join(pkgRoot, "src", "styles");
 
 mkdirSync(distDir, { recursive: true });
-copyFileSync(cssSrc, cssDest);
 
 const pkgJson = JSON.parse(readFileSync(join(pkgRoot, "package.json"), "utf8"));
 const schemaJson = JSON.parse(
@@ -80,6 +77,23 @@ if (
     `Schema $id mismatch: m3e.schema.json (${String(schemaJson.$id)}) must reference @${pkgJson.version}/`,
   );
 }
+
+const { generateM3EStaticThemeCss } = await import(join(distDir, "config.js"));
+const indexCss = readFileSync(join(stylesDir, "index.css"), "utf8");
+const layerOrder = indexCss.match(/^@layer ([^;{]+);/m)[1].split(/\s*,\s*/);
+const layerParts = new Map([["m3e.tokens", [generateM3EStaticThemeCss()]]]);
+for (const [, file, layer] of indexCss.matchAll(/@import "([^"]+)" layer\(([^)]+)\);/g)) {
+  if (!layerParts.has(layer)) layerParts.set(layer, []);
+  layerParts.get(layer).push(readFileSync(join(stylesDir, file), "utf8").trim());
+}
+writeFileSync(
+  join(distDir, "styles.css"),
+  [
+    `@layer ${layerOrder.join(", ")};`,
+    ...layerOrder.map((l) => `@layer ${l} {\n${layerParts.get(l).join("\n\n").trim()}\n}`),
+  ].join("\n\n") + "\n",
+  "utf8",
+);
 
 const tokens = {
   ...(await import(join(distDir, "tokens", "motion.js"))),

@@ -1,0 +1,70 @@
+.m3e-tooltip__positioner {
+  z-index: 110;
+  pointer-events: none;
+}
+
+.m3e-tooltip {
+  box-sizing: border-box;
+  opacity: 1;
+  scale: 1;
+  translate: 0px 0px;
+  transform-origin: var(--transform-origin, bottom center);
+  transition:
+    opacity var(--m3e-effects-fast-duration, 140ms) ease-out,
+    scale var(--m3e-effects-fast-duration, 140ms) ease-out,
+    translate var(--m3e-effects-fast-duration, 140ms) ease-out;
+}
+
+.m3e-tooltip[data-starting-style],
+.m3e-tooltip[data-ending-style] {
+  opacity: 0;
+  scale: 0.94;
+  translate: 0px 3px;
+}
+
+.m3e-tooltip--plain {
+  background-color: var(--m3e-color-inverse-surface);
+  color: var(--m3e-color-inverse-on-surface);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--m3e-color-shadow) 20%, transparent);
+  max-width: min(200px, calc(100vw - 16px));
+  overflow-wrap: anywhere;
+}
+
+.m3e-tooltip--rich {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background-color: var(--m3e-color-surface-container);
+  color: var(--m3e-color-on-surface-variant);
+  border: 0;
+  box-shadow: var(--m3e-elevation-level2);
+}
+
+.m3e-tooltip__subhead {
+  font-size: 13.5px;
+  line-height: 18px;
+  font-weight: 600;
+  color: var(--m3e-color-on-surface);
+}
+
+.m3e-tooltip__supporting {
+  font-size: 12.5px;
+  line-height: 18px;
+}
+
+.m3e-tooltip__action {
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m3e-tooltip {
+    transition-duration: 90ms;
+    transition-timing-function: ease-out;
+  }
+}

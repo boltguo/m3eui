@@ -1,0 +1,139 @@
+.m3e-switch-row {
+  justify-content: space-between;
+  width: 100%;
+  gap: 16px;
+}
+
+.m3e-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 52px;
+  height: 32px;
+  box-sizing: border-box;
+  border-radius: 9999px;
+  border: 2px solid var(--m3e-color-outline);
+  background-color: var(--m3e-color-surface-container-highest);
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition-property: background-color, border-color;
+  transition-duration: var(--m3e-effects-fast-duration, 140ms);
+  transition-timing-function: var(--m3e-effects-fast-easing, ease-out);
+}
+
+.m3e-switch::before {
+  content: "";
+  position: absolute;
+  inset-inline: -2px;
+  inset-block: -8px;
+}
+
+.m3e-switch[data-checked] {
+  background-color: var(--m3e-color-primary);
+  border-color: transparent;
+}
+
+.m3e-switch:focus-visible {
+  outline: 2.5px solid var(--m3e-color-primary);
+  outline-offset: 3px;
+}
+
+.m3e-switch[data-disabled] {
+  cursor: not-allowed;
+  pointer-events: none;
+  border-color: color-mix(in srgb, var(--m3e-color-on-surface) 12%, transparent);
+  background-color: color-mix(in srgb, var(--m3e-color-surface-container-highest) 12%, transparent);
+}
+
+.m3e-switch[data-checked][data-disabled] {
+  border-color: transparent;
+  background-color: color-mix(in srgb, var(--m3e-color-on-surface) 12%, transparent);
+}
+
+.m3e-switch__thumb {
+  position: absolute;
+  inset-inline-start: -2px;
+  top: 50%;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--m3e-color-outline);
+  color: var(--m3e-color-surface-container-highest);
+  translate: 8px -50%;
+  scale: 1;
+  transition-property: background-color, color, box-shadow;
+  transition-duration: var(--m3e-effects-fast-duration, 140ms);
+  transition-timing-function: var(--m3e-effects-fast-easing, ease-out);
+}
+
+@media (hover: hover) {
+  .m3e-switch:hover:where(:not([data-disabled], [data-checked], [data-pressed])) .m3e-switch__thumb {
+    background-color: var(--m3e-color-on-surface-variant);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--m3e-color-on-surface) 8%, transparent);
+  }
+
+  .m3e-switch[data-checked]:hover:where(:not([data-disabled], [data-pressed])) .m3e-switch__thumb {
+    background-color: var(--m3e-color-primary-container);
+    color: var(--m3e-color-on-primary-container);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--m3e-color-primary) 8%, transparent);
+  }
+}
+
+.m3e-switch:is(:focus-visible, [data-pressed]):not([data-disabled]):not([data-checked]) .m3e-switch__thumb {
+  background-color: var(--m3e-color-on-surface-variant);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--m3e-color-on-surface) 10%, transparent);
+}
+
+.m3e-switch[data-checked] .m3e-switch__thumb {
+  background-color: var(--m3e-color-on-primary);
+  color: var(--m3e-color-primary);
+}
+
+.m3e-switch[data-disabled] .m3e-switch__thumb {
+  background-color: color-mix(in srgb, var(--m3e-color-on-surface) 38%, transparent);
+  color: var(--m3e-color-surface-container-highest);
+}
+
+.m3e-switch[data-checked][data-disabled] .m3e-switch__thumb {
+  background-color: var(--m3e-color-surface);
+  color: color-mix(in srgb, var(--m3e-color-on-surface) 38%, transparent);
+}
+
+.m3e-switch[data-checked]:is(:focus-visible, [data-pressed]):not([data-disabled]) .m3e-switch__thumb {
+  background-color: var(--m3e-color-primary-container);
+  color: var(--m3e-color-on-primary-container);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--m3e-color-primary) 10%, transparent);
+}
+
+.m3e-switch__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m3e-switch,
+  .m3e-switch__thumb {
+    transition-duration: 90ms;
+    transition-timing-function: ease-out;
+  }
+}
+
+@media (forced-colors: active) {
+  .m3e-switch {
+    border: 1px solid ButtonText;
+  }
+
+  .m3e-switch__thumb {
+    background-color: Highlight;
+  }
+
+  .m3e-switch[data-disabled] {
+    border-color: GrayText;
+    color: GrayText;
+  }
+}

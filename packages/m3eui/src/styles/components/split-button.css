@@ -1,0 +1,30 @@
+.m3e-split-button__leading:is([data-size="xs"], [data-size="sm"])::after {
+  inset-inline-start: min(0px, calc(100% - 48px));
+  inset-inline-end: 0;
+}
+
+.m3e-split-button__trailing:is([data-size="xs"], [data-size="sm"])::after {
+  inset-inline-start: 0;
+  inset-inline-end: min(0px, calc(100% - 48px));
+}
+
+.m3e-split-button {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.m3e-split-button__leading,
+.m3e-split-button__trailing {
+  flex: 0 0 auto;
+}
+
+.m3e-split-button__chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  translate: 0px 0px;
+  rotate: 0deg;
+  scale: 1;
+}
