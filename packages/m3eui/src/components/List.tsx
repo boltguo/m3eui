@@ -8,6 +8,7 @@ import {
 } from "../tokens/topology.js";
 import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3ECornerSpringRef, usePressHoldState } from "../hooks/useM3ESpring.js";
+import { CheckIcon } from "../internal/icons.js";
 
 export type ListVariant = "segmented" | "standard";
 export type ListDividerMode = "none" | "full" | "inset";
@@ -79,24 +80,6 @@ export interface ListItemProps {
   readonly style?: React.CSSProperties;
 }
 
-function CheckBadgeSvg() {
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
-
 function formatTupleBadge(c: CornerTuple): string {
   const [a, b, d, e] = c.map((v) => Math.round(v));
   if (a === b && b === d && d === e) return `r:${c[0].toFixed(1)}`;
@@ -156,7 +139,7 @@ export function ListItem({
     <>
       {hasLeading ? (
         <span className="m3e-segmented-list__leading" aria-hidden="true">
-          {selected ? <CheckBadgeSvg /> : leading}
+          {selected ? <CheckIcon strokeWidth={2.5} /> : leading}
         </span>
       ) : null}
       <span className="m3e-segmented-list__content">

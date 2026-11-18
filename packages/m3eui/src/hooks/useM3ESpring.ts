@@ -9,6 +9,7 @@ import {
 } from "../tokens/topology.js";
 import { useM3ERuntime } from "../context/M3EContext.js";
 import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
+import { assignRef } from "../internal/assignRef.js";
 
 type SpringFrameSubscriber = (dtSec: number) => boolean;
 
@@ -265,11 +266,7 @@ export function useM3ECornerSpringRef<T extends HTMLElement = HTMLElement>(
       if (node) {
         node.style.borderRadius = formatCornersBorderRadius(currentRef.current);
       }
-      if (typeof forwardedRef === "function") {
-        forwardedRef(node);
-      } else if (forwardedRef && typeof forwardedRef === "object") {
-        (forwardedRef as React.MutableRefObject<T | null>).current = node;
-      }
+      assignRef(forwardedRef, node);
     },
     [forwardedRef],
   );

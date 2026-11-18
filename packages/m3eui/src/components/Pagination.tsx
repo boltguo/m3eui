@@ -7,6 +7,7 @@ import {
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
 import { formatLocalizedInteger } from "../i18n/index.js";
+import { ChevronLeftIcon, ChevronRightIcon } from "../internal/icons.js";
 
 export type PaginationSize = "sm" | "md";
 
@@ -150,29 +151,6 @@ function PageNumberButton({
   );
 }
 
-function ChevronStepSvg({ direction }: { readonly direction: "prev" | "next" }) {
-  return (
-    <svg
-      width={16}
-      height={16}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.3"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className="m3e-pagination__chevron"
-    >
-      {direction === "prev" ? (
-        <polyline points="15 18 9 12 15 6" />
-      ) : (
-        <polyline points="9 18 15 12 9 6" />
-      )}
-    </svg>
-  );
-}
-
 export function Pagination({
   page: controlledPage,
   defaultPage = 1,
@@ -281,7 +259,10 @@ export function Pagination({
       },
       ...(isPrev ? prevHandlers : nextHandlers),
     };
-    const glyph = <ChevronStepSvg direction={dir} />;
+    const Chevron = dir === "prev" ? ChevronLeftIcon : ChevronRightIcon;
+    const glyph = (
+      <Chevron size={16} strokeWidth={2.3} className="m3e-pagination__chevron" />
+    );
     if (href) {
       return (
         <a

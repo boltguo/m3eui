@@ -14,6 +14,8 @@ import {
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
 import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
+import { ClockIcon, CloseIcon } from "../internal/icons.js";
+import { assignRef } from "../internal/assignRef.js";
 
 export interface SearchSuggestion {
   readonly value: string;
@@ -58,43 +60,6 @@ function SearchGlassSvg() {
   );
 }
 
-function ClearCrossSvg() {
-  return (
-    <svg
-      width={16}
-      height={16}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.3"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
-}
-
-function HistoryClockSvg() {
-  return (
-    <svg
-      width={17}
-      height={17}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="9" />
-      <polyline points="12 7 12 12 15.5 14" />
-    </svg>
-  );
-}
-
 function SearchSuggestionRow({
   item,
   onPick,
@@ -121,7 +86,7 @@ function SearchSuggestionRow({
       {...pressHandlers}
     >
       <span className="m3e-search-bar__item-icon" aria-hidden="true">
-        {item.icon ?? <HistoryClockSvg />}
+        {item.icon ?? <ClockIcon size={17} />}
       </span>
       <span className="m3e-search-bar__item-text">
         <span className="m3e-search-bar__item-label">{item.label}</span>
@@ -170,11 +135,7 @@ export const SearchBar = React.forwardRef<HTMLFormElement, M3ESearchBarProps>(
     const setMergedFormRef = React.useCallback(
       (node: HTMLFormElement | null) => {
         formRef.current = node;
-        if (typeof forwardedRef === "function") {
-          forwardedRef(node);
-        } else if (forwardedRef) {
-          forwardedRef.current = node;
-        }
+        assignRef(forwardedRef, node);
       },
       [forwardedRef],
     );
@@ -266,7 +227,7 @@ export const SearchBar = React.forwardRef<HTMLFormElement, M3ESearchBarProps>(
                   aria-label={t("searchBar.clear")}
                   className="m3e-search-bar__clear"
                 >
-                  <ClearCrossSvg />
+                  <CloseIcon size={16} strokeWidth={2.3} />
                 </BaseAutocomplete.Clear>
               ) : null}
               {trailingSlot}
@@ -570,7 +531,7 @@ function SearchViewSurface({
                 inputRef.current?.focus();
               }}
             >
-              <ClearCrossSvg />
+              <CloseIcon size={16} strokeWidth={2.3} />
             </button>
           ) : null}
           {trailingSlot}
@@ -625,7 +586,7 @@ function SearchViewSurface({
                         className="m3e-search-bar__item-icon"
                         aria-hidden="true"
                       >
-                        <HistoryClockSvg />
+                        <ClockIcon size={17} />
                       </span>
                       <span className="m3e-search-bar__item-label">{item}</span>
                     </button>

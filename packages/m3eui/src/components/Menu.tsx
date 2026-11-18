@@ -12,6 +12,7 @@ import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3EPortalContainer } from "../context/M3EPortal.js";
 import { useM3ECornerSpringRef, usePressHoldState } from "../hooks/useM3ESpring.js";
 import { Kbd } from "./Kbd.js";
+import { CheckIcon } from "../internal/icons.js";
 
 export type M3EMenuTheme = "standard" | "vibrant";
 export type M3EMenuVariant = "segmented" | "standard";
@@ -84,24 +85,6 @@ function SubmenuChevronSvg({ rtl }: { readonly rtl: boolean }) {
       style={rtl ? { scale: "-1 1" } : undefined}
     >
       <polyline points="9 18 15 12 9 6" />
-    </svg>
-  );
-}
-
-function MenuCheckSvg() {
-  return (
-    <svg
-      width={15}
-      height={15}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <polyline points="20 6 9 17 4 12" />
     </svg>
   );
 }
@@ -385,7 +368,7 @@ function MenuItem({
         >
           <span className="m3e-segmented-menu__icon" aria-hidden="true">
             <BaseMenu.CheckboxItemIndicator>
-              <MenuCheckSvg />
+              <CheckIcon size={15} strokeWidth={2.6} />
             </BaseMenu.CheckboxItemIndicator>
           </span>
           {label}

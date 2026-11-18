@@ -8,6 +8,7 @@ import {
 } from "../tokens/topology.js";
 import { useM3EI18n } from "../context/M3EContext.js";
 import { useM3EPortalContainer } from "../context/M3EPortal.js";
+import { CloseIcon } from "../internal/icons.js";
 
 export interface M3EDialogProps {
   readonly open?: boolean;
@@ -98,19 +99,7 @@ export function Dialog({
                 aria-label={t("dialog.close")}
                 className="m3e-dialog__close-btn"
               >
-                <svg
-                  width={18}
-                  height={18}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  aria-hidden="true"
-                >
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
+                <CloseIcon strokeWidth={2.2} />
               </BaseDialog.Close>
             ) : null}
             <div
@@ -198,19 +187,7 @@ export function AlertDialog({
                 aria-label={t("dialog.close")}
                 className="m3e-dialog__close-btn"
               >
-                <svg
-                  width={18}
-                  height={18}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                  aria-hidden="true"
-                >
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
+                <CloseIcon strokeWidth={2.2} />
               </BaseAlertDialog.Close>
             ) : null}
             <div

@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useM3EI18n } from "../context/M3EContext.js";
 import { IconButton } from "./IconButton.js";
+import { CloseIcon } from "../internal/icons.js";
 
 export type AlertSeverity = "info" | "success" | "warning" | "error";
 export type AlertVariant = "tonal" | "outlined" | "filled";
@@ -100,24 +101,6 @@ function DefaultAlertGlyph({ severity }: { readonly severity: AlertSeverity }) {
   );
 }
 
-function CloseAlertSvg() {
-  return (
-    <svg
-      width={16}
-      height={16}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
-}
-
 export const Alert = React.forwardRef<HTMLDivElement, M3EAlertProps>(
   function Alert(
     {
@@ -181,7 +164,7 @@ export const Alert = React.forwardRef<HTMLDivElement, M3EAlertProps>(
             variant="standard"
             aria-label={t("alert.close")}
             className="m3e-alert__close"
-            icon={<CloseAlertSvg />}
+            icon={<CloseIcon size={16} strokeWidth={2.2} />}
             onClick={() => {
               if (controlledOpen === undefined) {
                 setUncontrolledOpen(false);

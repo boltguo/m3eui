@@ -6,6 +6,7 @@ import {
 import { useM3EPortalContainer } from "../context/M3EPortal.js";
 import { useM3ERuntime, useM3EI18n } from "../context/M3EContext.js";
 import { M3EToastManagerContext } from "../internal/toastManager.js";
+import { CloseIcon } from "../internal/icons.js";
 
 export type M3EToastType =
   | "default"
@@ -29,25 +30,6 @@ export interface ShowM3EToastOptions {
   readonly showClose?: boolean;
   readonly timeout?: number;
   readonly type?: M3EToastType;
-}
-
-function CloseGlyph() {
-  return (
-    <svg
-      width={16}
-      height={16}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
 }
 
 export function M3EToastViewportHost(): React.JSX.Element {
@@ -112,7 +94,7 @@ export function M3EToastViewportHost(): React.JSX.Element {
                       aria-label={t("toast.close")}
                       className="m3e-snackbar__close"
                     >
-                      <CloseGlyph />
+                      <CloseIcon size={16} strokeWidth={2.2} />
                     </BaseToast.Close>
                   ) : null}
                 </div>

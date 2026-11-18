@@ -9,6 +9,7 @@ import {
 import { useM3EScalarSpring, usePressHoldState } from "../hooks/useM3ESpring.js";
 import { FieldsetDisabledContext, useFieldsetDisabled } from "../internal/fieldOutline.js";
 import { FormFieldScope, useFormReset } from "../internal/formField.js";
+import { CheckIcon } from "../internal/icons.js";
 
 export interface M3ECheckboxProps {
   readonly checked?: boolean;
@@ -58,21 +59,7 @@ function CheckGlyph({ indeterminate }: { readonly indeterminate: boolean }) {
       </svg>
     );
   }
-  return (
-    <svg
-      width={13}
-      height={13}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="3.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
+  return <CheckIcon size={13} strokeWidth={3.2} />;
 }
 
 export const Checkbox = React.forwardRef<HTMLElement, M3ECheckboxProps>(

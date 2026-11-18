@@ -10,6 +10,7 @@ import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3EScalarSpringEffect, usePressHoldState } from "../hooks/useM3ESpring.js";
 import { useFieldsetDisabled } from "../internal/fieldOutline.js";
 import { FormFieldScope, useFormReset } from "../internal/formField.js";
+import { CheckIcon, CloseIcon } from "../internal/icons.js";
 
 export interface M3ESwitchProps {
   readonly checked?: boolean;
@@ -28,43 +29,6 @@ export interface M3ESwitchProps {
   readonly "aria-label"?: string;
   readonly className?: string;
   readonly style?: React.CSSProperties;
-}
-
-function SwitchCheckSvg() {
-  return (
-    <svg
-      width={SWITCH_TOKENS.thumbIconSize}
-      height={SWITCH_TOKENS.thumbIconSize}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
-
-function SwitchCloseSvg() {
-  return (
-    <svg
-      width={SWITCH_TOKENS.thumbIconSize}
-      height={SWITCH_TOKENS.thumbIconSize}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
 }
 
 export const Switch = React.forwardRef<HTMLElement, M3ESwitchProps>(
@@ -100,9 +64,17 @@ export const Switch = React.forwardRef<HTMLElement, M3ESwitchProps>(
     const { isPressed, pressHandlers } = usePressHoldState(isDisabled || readOnly);
 
     const resolvedCheckedIcon =
-      checkedIcon !== undefined ? checkedIcon : showIcons ? <SwitchCheckSvg /> : null;
+      checkedIcon !== undefined
+        ? checkedIcon
+        : showIcons
+          ? <CheckIcon size={SWITCH_TOKENS.thumbIconSize} strokeWidth={2.8} />
+          : null;
     const resolvedUncheckedIcon =
-      uncheckedIcon !== undefined ? uncheckedIcon : showIcons ? <SwitchCloseSvg /> : null;
+      uncheckedIcon !== undefined
+        ? uncheckedIcon
+        : showIcons
+          ? <CloseIcon size={SWITCH_TOKENS.thumbIconSize} strokeWidth={2.6} />
+          : null;
 
     const geo = resolveSwitchGeometry({
       checked: isChecked,

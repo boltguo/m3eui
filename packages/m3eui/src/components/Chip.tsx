@@ -11,6 +11,7 @@ import {
   useM3EScalarSpring,
   usePressHoldState,
 } from "../hooks/useM3ESpring.js";
+import { CheckIcon, CloseIcon } from "../internal/icons.js";
 
 export type ChipTone =
   | "neutral"
@@ -78,60 +79,6 @@ export type M3EChipProps =
   | M3EChipAssistProps
   | M3EChipFilterProps
   | M3EChipInputProps;
-
-function ChipCheckSvg() {
-  return (
-    <svg
-      width={15}
-      height={15}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
-
-function ChipCloseSvg() {
-  return (
-    <svg
-      width={14}
-      height={14}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.4"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
-}
-
-function ChipStatusRemoveSvg() {
-  return (
-    <svg
-      width={12}
-      height={12}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
-}
 
 function LabelChip({
   children,
@@ -233,7 +180,7 @@ function LabelChip({
           className="m3e-chip-status__remove"
           onClick={onRemove}
         >
-          <ChipStatusRemoveSvg />
+          <CloseIcon size={12} strokeWidth={2.5} />
         </button>
       </span>
     );
@@ -258,7 +205,7 @@ function LabelChip({
           className="m3e-chip-status__remove"
           onClick={onRemove}
         >
-          <ChipStatusRemoveSvg />
+          <CloseIcon size={12} strokeWidth={2.5} />
         </button>
       ) : null}
     </span>
@@ -369,7 +316,7 @@ function FilterChip({
     >
       {isSelected ? (
         <span className="m3e-chip__icon" aria-hidden="true">
-          <ChipCheckSvg />
+          <CheckIcon size={15} strokeWidth={2.6} />
         </span>
       ) : icon ? (
         <span className="m3e-chip__icon" aria-hidden="true">
@@ -477,7 +424,7 @@ function InputChip({
           onClick={onRemove}
           onKeyDown={handleRemoveKey}
         >
-          <ChipCloseSvg />
+          <CloseIcon size={14} strokeWidth={2.4} />
         </button>
       ) : null}
     </span>

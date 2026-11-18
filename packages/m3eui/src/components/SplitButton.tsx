@@ -16,6 +16,7 @@ import {
 } from "../hooks/useM3ESpring.js";
 import type { ButtonVariant } from "./Button.js";
 import { DropdownMenu, type M3EMenuItemSpec } from "./Menu.js";
+import { ChevronDownIcon } from "../internal/icons.js";
 
 export type SplitButtonVariant = Exclude<ButtonVariant, "text">;
 
@@ -41,24 +42,6 @@ export interface M3ESplitButtonProps {
   readonly menuTriggerLabel?: string;
   readonly className?: string;
   readonly style?: React.CSSProperties;
-}
-
-function ChevronDownSvg({ size }: { readonly size: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.25"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <polyline points="6 9 12 15 18 9" />
-    </svg>
-  );
 }
 
 function formatTupleBadge(c: CornerTuple): string {
@@ -243,7 +226,7 @@ export function SplitButton({
               }}
               aria-hidden="true"
             >
-              <ChevronDownSvg size={spec.trailingIconSize} />
+              <ChevronDownIcon size={spec.trailingIconSize} strokeWidth={2.25} />
             </span>
             {debugGeometry ? (
               <span className="m3e-debug-badge" aria-hidden="true">

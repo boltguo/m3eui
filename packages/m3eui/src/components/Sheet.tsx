@@ -7,6 +7,7 @@ import {
 } from "../tokens/topology.js";
 import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3EPortalContainer } from "../context/M3EPortal.js";
+import { CloseIcon } from "../internal/icons.js";
 
 export type SheetSide = "bottom" | "start" | "end" | "right" | "left";
 export type SheetSnapPoint = number | string;
@@ -37,24 +38,6 @@ export interface M3ESheetCloseProps {
   readonly render?: React.ReactElement;
   readonly children?: React.ReactNode;
   readonly className?: string;
-}
-
-function CloseIconSvg() {
-  return (
-    <svg
-      width={18}
-      height={18}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
 }
 
 export function SheetClose({
@@ -200,7 +183,7 @@ export function Sheet({
                 aria-label={t("sheet.close")}
                 className="m3e-sheet__close-btn"
               >
-                <CloseIconSvg />
+                <CloseIcon strokeWidth={2.2} />
               </BaseDrawer.Close>
             </div>
 

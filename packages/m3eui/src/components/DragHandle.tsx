@@ -7,6 +7,7 @@ import {
 } from "../tokens/topology.js";
 import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3EScalarSpring } from "../hooks/useM3ESpring.js";
+import { assignRef } from "../internal/assignRef.js";
 
 export interface M3EDragHandleProps
   extends Omit<
@@ -89,11 +90,7 @@ export const DragHandle = React.forwardRef<HTMLDivElement, M3EDragHandleProps>(
     const setMergedRef = React.useCallback(
       (node: HTMLDivElement | null) => {
         rootRef.current = node;
-        if (typeof forwardedRef === "function") {
-          forwardedRef(node);
-        } else if (forwardedRef) {
-          forwardedRef.current = node;
-        }
+        assignRef(forwardedRef, node);
       },
       [forwardedRef],
     );

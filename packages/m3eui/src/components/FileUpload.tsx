@@ -13,6 +13,7 @@ import { formatLocalizedInteger, formatLocalizedNumber } from "../i18n/index.js"
 import { IconButton } from "./IconButton.js";
 import { LinearProgressIndicator } from "./ProgressIndicator.js";
 import { useFieldsetDisabled } from "../internal/fieldOutline.js";
+import { CloseIcon } from "../internal/icons.js";
 
 export type FileUploadStatus = "idle" | "uploading" | "completed" | "error";
 
@@ -75,24 +76,6 @@ function FileDocSvg() {
     >
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
       <polyline points="14 2 14 8 20 8" />
-    </svg>
-  );
-}
-
-function TrashCrossSvg() {
-  return (
-    <svg
-      width={15}
-      height={15}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.3"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
     </svg>
   );
 }
@@ -471,7 +454,7 @@ export function FileUpload({
                         name: item.name,
                       })}
                       className="m3e-file-upload__remove"
-                      icon={<TrashCrossSvg />}
+                      icon={<CloseIcon size={15} strokeWidth={2.3} />}
                       onClick={() => handleRemove(item.id)}
                     />
                   ) : null}
