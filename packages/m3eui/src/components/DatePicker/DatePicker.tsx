@@ -10,8 +10,6 @@ import {
 import { useM3ERuntime } from "../../context/M3EContext.js";
 import { useM3EPortalContainer } from "../../context/M3EPortal.js";
 import {
-  FieldErrorIconSvg,
-  FieldNotchedOutline,
   useFieldsetDisabled,
 } from "../../internal/fieldOutline.js";
 import {
@@ -20,10 +18,15 @@ import {
 } from "../../i18n/index.js";
 import { Button } from "../Button/Button.js";
 import { TextField } from "../TextField/TextField.js";
-import { FormHiddenValue } from "../../internal/formField.js";
-import { FieldRoot, FieldTrigger } from "../../internal/pickerField.js";
+import { useFormReset } from "../../internal/formField.js";
+import {
+  FieldRoot,
+  FieldTrigger,
+  PickerFieldFrame,
+} from "../../internal/pickerField.js";
 import { DateCalendar } from "../../internal/calendar.js";
 import {
+  clampPlainDateToBounds,
   comparePlainDates,
   formatPlainDate,
   getDaysInMonth,
@@ -71,24 +74,42 @@ function SingleDatePicker({
   const { locale, t } = useM3ERuntime();
   const resolvedTitle = title ?? t("datePicker.title");
   const today = React.useMemo(() => getTodayPlainDate(), []);
-  const [uncontrolledIso, setUncontrolledIso] = React.useState<string>(
-    () => defaultValue ?? formatPlainDate(today),
+  const [defaultIso] = React.useState<string>(() =>
+    defaultValue !== undefined ? defaultValue : formatPlainDate(today),
+  );
+  const [uncontrolledIso, setUncontrolledIso] = React.useState<string>(defaultIso);
+  const [resetCount, setResetCount] = React.useState(0);
+  const calendarRef = React.useRef<HTMLDivElement | null>(null);
+  useFormReset(
+    calendarRef,
+    () => {
+      setUncontrolledIso(defaultIso);
+      setResetCount((c) => c + 1);
+    },
+    controlledValue === undefined,
   );
   const selectedIso = controlledValue ?? uncontrolledIso;
-  const selected = parsePlainDate(selectedIso) ?? today;
+  const parsed = parsePlainDate(selectedIso);
+  const initialDate =
+    parsed ?? clampPlainDateToBounds(today, minDate, maxDate);
 
   return (
     <DateCalendar
+      containerRef={calendarRef}
       header={
         <>
           <div className="m3e-date-picker__eyebrow">{resolvedTitle}</div>
           <div className="m3e-date-picker__headline">
-            {formatLocalizedFullDate(locale, selected)}
+            {parsed ? formatLocalizedFullDate(locale, parsed) : "—"}
           </div>
         </>
       }
-      initialDate={selected}
-      selection={{ start: selectedIso, end: selectedIso }}
+      initialDate={initialDate}
+      anchorIso={parsed ? selectedIso : ""}
+      resetCount={resetCount}
+      selection={
+        parsed ? { start: selectedIso, end: selectedIso } : EMPTY_RANGE
+      }
       minDate={minDate}
       maxDate={maxDate}
       isDateDisabled={isDateDisabled}
@@ -147,15 +168,30 @@ function RangeDatePicker({
   const resolvedTitle = title ?? t("datePicker.rangeTitle");
   const today = React.useMemo(() => getTodayPlainDate(), []);
 
+  const [defaultRange] = React.useState<PlainDateRange>(
+    () => defaultValue ?? getDefaultRange(),
+  );
   const [uncontrolledRange, setUncontrolledRange] =
-    React.useState<PlainDateRange>(() => defaultValue ?? getDefaultRange());
-  const activeRange = controlledRange ?? uncontrolledRange;
-
+    React.useState<PlainDateRange>(defaultRange);
+  const [resetCount, setResetCount] = React.useState(0);
   const [draftAnchor, setDraftAnchor] = React.useState<string | null>(null);
   const [hoverIso, setHoverIso] = React.useState<string | null>(null);
+  const calendarRef = React.useRef<HTMLDivElement | null>(null);
 
-  const startParsed = parsePlainDate(activeRange.start) ?? today;
-  const endParsed = parsePlainDate(activeRange.end) ?? startParsed;
+  useFormReset(
+    calendarRef,
+    () => {
+      setUncontrolledRange(defaultRange);
+      setDraftAnchor(null);
+      setHoverIso(null);
+      setResetCount((c) => c + 1);
+    },
+    controlledRange === undefined,
+  );
+
+  const activeRange = controlledRange ?? uncontrolledRange;
+  const startParsed = parsePlainDate(activeRange.start);
+  const endParsed = parsePlainDate(activeRange.end);
 
   const effectiveRange = React.useMemo<PlainDateRange>(() => {
     if (draftAnchor) {
@@ -164,10 +200,19 @@ function RangeDatePicker({
         ? { start: draftAnchor, end: target }
         : { start: target, end: draftAnchor };
     }
-    return comparePlainDates(activeRange.start, activeRange.end) <= 0
-      ? activeRange
-      : { start: activeRange.end, end: activeRange.start };
-  }, [draftAnchor, hoverIso, activeRange]);
+    if (startParsed && endParsed) {
+      return comparePlainDates(activeRange.start, activeRange.end) <= 0
+        ? activeRange
+        : { start: activeRange.end, end: activeRange.start };
+    }
+    if (startParsed) {
+      return { start: activeRange.start, end: activeRange.start };
+    }
+    if (endParsed) {
+      return { start: activeRange.end, end: activeRange.end };
+    }
+    return EMPTY_RANGE;
+  }, [draftAnchor, hoverIso, activeRange, startParsed, endParsed]);
 
   const handleDayPick = (iso: string) => {
     if (!draftAnchor) {
@@ -187,11 +232,32 @@ function RangeDatePicker({
     onValueChange?.(nextRange);
   };
 
-  const displayStart = parsePlainDate(effectiveRange.start) ?? startParsed;
-  const displayEnd = parsePlainDate(effectiveRange.end) ?? endParsed;
+  const displayStart = parsePlainDate(effectiveRange.start);
+  const displayEnd = parsePlainDate(effectiveRange.end);
+  const headlineText =
+    draftAnchor || (startParsed && endParsed)
+      ? displayStart && displayEnd
+        ? formatLocalizedDateRange(locale, displayStart, displayEnd)
+        : "—"
+      : startParsed
+        ? `${formatLocalizedFullDate(locale, startParsed)} – …`
+        : endParsed
+          ? `… – ${formatLocalizedFullDate(locale, endParsed)}`
+          : "—";
+
+  const initialDate =
+    startParsed ??
+    endParsed ??
+    clampPlainDateToBounds(today, minDate, maxDate);
+  const anchorIso = startParsed
+    ? activeRange.start
+    : endParsed
+      ? activeRange.end
+      : "";
 
   return (
     <DateCalendar
+      containerRef={calendarRef}
       range
       header={
         <>
@@ -200,13 +266,13 @@ function RangeDatePicker({
             {draftAnchor ? t("datePicker.selectEndPrompt") : ""}
           </div>
           <div className="m3e-date-picker__headline m3e-date-range-picker__headline">
-            <span>
-              {formatLocalizedDateRange(locale, displayStart, displayEnd)}
-            </span>
+            <span>{headlineText}</span>
           </div>
         </>
       }
-      initialDate={startParsed}
+      initialDate={initialDate}
+      anchorIso={anchorIso}
+      resetCount={resetCount}
       selection={effectiveRange}
       minDate={minDate}
       maxDate={maxDate}
@@ -280,7 +346,7 @@ function CalendarIconSvg() {
 }
 
 function DatePickerFieldShell({
-  id: idProp,
+  id,
   name,
   label,
   labelPosition = "floating",
@@ -293,25 +359,31 @@ function DatePickerFieldShell({
   modal = false,
   className,
   style,
+  triggerRef,
+  hasValue,
   hiddenValue,
+  hiddenPattern,
+  validate,
   displayText,
+  popupAriaLabel,
   renderModal,
   renderPopover,
 }: Omit<
   DatePickerFieldBaseProps,
   "minDate" | "maxDate" | "isDateDisabled"
 > & {
+  readonly triggerRef: React.RefObject<HTMLButtonElement | null>;
+  readonly hasValue: boolean;
   readonly hiddenValue: string;
+  readonly hiddenPattern?: string;
+  readonly validate?: () => string | string[] | null;
   readonly displayText: React.ReactNode;
+  readonly popupAriaLabel: string;
   readonly renderModal: (open: boolean, close: () => void) => React.ReactNode;
   readonly renderPopover: (close: () => void) => React.ReactNode;
 }): React.JSX.Element {
   const portalContainer = useM3EPortalContainer();
   const isDisabled = useFieldsetDisabled(disabled);
-  const generatedId = React.useId();
-  const triggerId = idProp ?? generatedId;
-  const descId = React.useId();
-  const errId = React.useId();
   const [open, setOpen] = React.useState(false);
 
   React.useEffect(() => {
@@ -319,88 +391,55 @@ function DatePickerFieldShell({
   }, [isDisabled, readOnly, open]);
 
   const close = () => setOpen(false);
+  const isLabelFloated = hasValue || open;
   const isFloatingLabel = labelPosition === "floating" && Boolean(label);
   const height = isFloatingLabel ? SELECT_TOKENS.outlinedHeight : 48;
   const radius = isFloatingLabel
     ? SELECT_TOKENS.outlinedRadius
     : SELECT_TOKENS.outsideLabelRadius;
-  const labelNode = label ? (
-    <>
-      {label}
-      {required ? (
-        <span className="m3e-field__required" aria-hidden="true">
-          {" *"}
-        </span>
-      ) : null}
-    </>
-  ) : null;
 
   return (
-    <div
-      className={
-        className
-          ? `m3e-date-picker-field ${className}`
-          : "m3e-date-picker-field"
-      }
-      data-label-position={labelPosition}
-      data-disabled={isDisabled ? "" : undefined}
-      data-readonly={readOnly ? "" : undefined}
-      data-invalid={invalid ? "" : undefined}
-      style={style}
+    <FieldRoot
+      modal={modal}
+      open={readOnly ? false : open}
+      onOpenChange={(next) => {
+        if (!readOnly && !isDisabled) setOpen(next);
+      }}
     >
-      {labelNode && !isFloatingLabel ? (
-        <label htmlFor={triggerId} className="m3e-field__label">
-          {labelNode}
-        </label>
-      ) : null}
-      <FormHiddenValue
+      <PickerFieldFrame
+        id={id}
         name={name}
-        value={hiddenValue}
-        disabled={isDisabled}
+        label={label}
+        labelPosition={labelPosition}
+        description={description}
+        errorMessage={errorMessage}
+        invalid={invalid}
         required={required}
-      />
-      <FieldRoot
-        modal={modal}
-        open={readOnly ? false : open}
-        onOpenChange={(next) => {
-          if (!readOnly && !isDisabled) setOpen(next);
-        }}
+        disabled={isDisabled}
+        readOnly={readOnly}
+        floating={isLabelFloated}
+        popupOpen={!readOnly && open}
+        hiddenValue={hiddenValue}
+        hiddenPattern={hiddenPattern}
+        validate={validate}
+        triggerRef={triggerRef}
+        className={
+          className
+            ? `m3e-date-picker-field ${className}`
+            : "m3e-date-picker-field"
+        }
+        style={style}
       >
-        <div
-          className="m3e-select__shell"
-          data-variant="outlined"
-          data-label-position={labelPosition}
-          data-floating=""
-          data-popup-open={!readOnly && open ? "" : undefined}
-          data-disabled={isDisabled ? "" : undefined}
-          data-readonly={readOnly ? "" : undefined}
-          data-invalid={invalid ? "" : undefined}
-          style={{ borderRadius: `${radius}px` }}
-        >
-          {isFloatingLabel ? (
-            <FieldNotchedOutline label={labelNode} floating />
-          ) : null}
-          {isFloatingLabel ? (
-            <label
-              htmlFor={triggerId}
-              className="m3e-field__floating-label m3e-select__floating-label"
-              data-floating=""
-            >
-              {labelNode}
-            </label>
-          ) : null}
+        {({ triggerAriaProps }) => (
           <FieldTrigger
             modal={modal}
-            id={triggerId}
+            ref={triggerRef}
+            {...triggerAriaProps}
             disabled={isDisabled}
-            aria-invalid={invalid ? true : undefined}
-            aria-describedby={
-              invalid && errorMessage ? errId : description ? descId : undefined
-            }
             className="m3e-select__trigger m3e-date-picker-field__trigger"
             data-variant="outlined"
             data-label-position={labelPosition}
-            data-floating=""
+            data-floating={isLabelFloated ? "" : undefined}
             data-readonly={readOnly ? "" : undefined}
             style={{
               minHeight: `${height}px`,
@@ -413,41 +452,30 @@ function DatePickerFieldShell({
               <CalendarIconSvg />
             </span>
           </FieldTrigger>
-        </div>
-
-        {modal ? (
-          renderModal(open, close)
-        ) : (
-          <BasePopover.Portal container={portalContainer}>
-            <BasePopover.Positioner
-              side="bottom"
-              align="start"
-              sideOffset={6}
-              className="m3e-popover__positioner"
-            >
-              <BasePopover.Popup
-                initialFocus={(openType) => openType === "keyboard"}
-                className="m3e-date-picker-field__popup"
-              >
-                {renderPopover(close)}
-              </BasePopover.Popup>
-            </BasePopover.Positioner>
-          </BasePopover.Portal>
         )}
-      </FieldRoot>
+      </PickerFieldFrame>
 
-      {description && !(invalid && errorMessage) ? (
-        <p id={descId} className="m3e-field__description">
-          {description}
-        </p>
-      ) : null}
-      {invalid && errorMessage ? (
-        <div id={errId} role="alert" className="m3e-field__error">
-          <FieldErrorIconSvg />
-          <span>{errorMessage}</span>
-        </div>
-      ) : null}
-    </div>
+      {modal ? (
+        renderModal(open, close)
+      ) : (
+        <BasePopover.Portal container={portalContainer}>
+          <BasePopover.Positioner
+            side="bottom"
+            align="start"
+            sideOffset={6}
+            className="m3e-popover__positioner"
+          >
+            <BasePopover.Popup
+              aria-label={popupAriaLabel}
+              initialFocus={(openType) => openType === "keyboard"}
+              className="m3e-date-picker-field__popup"
+            >
+              {renderPopover(close)}
+            </BasePopover.Popup>
+          </BasePopover.Positioner>
+        </BasePopover.Portal>
+      )}
+    </FieldRoot>
   );
 }
 
@@ -460,28 +488,43 @@ function SingleDatePickerField({
   isDateDisabled,
   ...shellProps
 }: M3EDatePickerFieldSingleProps): React.JSX.Element {
-  const { locale } = useM3ERuntime();
+  const { locale, t } = useM3ERuntime();
   const today = React.useMemo(() => getTodayPlainDate(), []);
-  const [uncontrolledIso, setUncontrolledIso] = React.useState<string>(
-    () => defaultValue ?? formatPlainDate(today),
+  const [defaultIso] = React.useState<string>(() =>
+    defaultValue !== undefined ? defaultValue : formatPlainDate(today),
   );
+  const [uncontrolledIso, setUncontrolledIso] = React.useState<string>(defaultIso);
+  const triggerRef = React.useRef<HTMLButtonElement | null>(null);
+  useFormReset(
+    triggerRef,
+    () => setUncontrolledIso(defaultIso),
+    controlledValue === undefined,
+  );
+
   const currentIso = controlledValue ?? uncontrolledIso;
   const commit = (next: string) => {
     if (controlledValue === undefined) setUncontrolledIso(next);
     onValueChange?.(next);
   };
   const parsed = parsePlainDate(currentIso);
+  const popupAriaLabel =
+    typeof shellProps.label === "string" && shellProps.label.trim().length > 0
+      ? shellProps.label
+      : t("datePicker.title");
 
   return (
     <DatePickerFieldShell
       {...shellProps}
-      hiddenValue={currentIso}
-      displayText={parsed ? formatLocalizedFullDate(locale, parsed) : currentIso}
+      triggerRef={triggerRef}
+      hasValue={parsed !== null}
+      hiddenValue={parsed ? currentIso : ""}
+      displayText={parsed ? formatLocalizedFullDate(locale, parsed) : ""}
+      popupAriaLabel={popupAriaLabel}
       renderModal={(open, close) => (
         <ModalDatePickerPopup
           open={open}
           onClose={close}
-          value={currentIso}
+          value={parsed ? currentIso : ""}
           onValueCommit={commit}
           minDate={minDate}
           maxDate={maxDate}
@@ -490,7 +533,7 @@ function SingleDatePickerField({
       )}
       renderPopover={(close) => (
         <SingleDatePicker
-          value={currentIso}
+          value={parsed ? currentIso : ""}
           minDate={minDate}
           maxDate={maxDate}
           isDateDisabled={isDateDisabled}
@@ -513,23 +556,54 @@ function RangeDatePickerField({
   isDateDisabled,
   ...shellProps
 }: Omit<M3EDatePickerFieldRangeProps, "mode">): React.JSX.Element {
-  const { locale } = useM3ERuntime();
-  const today = React.useMemo(() => getTodayPlainDate(), []);
+  const { locale, t } = useM3ERuntime();
+  const [defaultRange] = React.useState<PlainDateRange>(
+    () => defaultValue ?? getDefaultRange(),
+  );
   const [uncontrolledRange, setUncontrolledRange] =
-    React.useState<PlainDateRange>(() => defaultValue ?? getDefaultRange());
+    React.useState<PlainDateRange>(defaultRange);
+  const triggerRef = React.useRef<HTMLButtonElement | null>(null);
+  useFormReset(
+    triggerRef,
+    () => setUncontrolledRange(defaultRange),
+    controlledRange === undefined,
+  );
+
   const activeRange = controlledRange ?? uncontrolledRange;
   const commit = (next: PlainDateRange) => {
     if (controlledRange === undefined) setUncontrolledRange(next);
     onValueChange?.(next);
   };
-  const startParsed = parsePlainDate(activeRange.start) ?? today;
-  const endParsed = parsePlainDate(activeRange.end) ?? startParsed;
+  const startParsed = parsePlainDate(activeRange.start);
+  const endParsed = parsePlainDate(activeRange.end);
+  const isEmpty = startParsed === null && endParsed === null;
+  const isComplete =
+    startParsed !== null &&
+    endParsed !== null &&
+    comparePlainDates(activeRange.start, activeRange.end) <= 0;
+  const isPartial = !isEmpty && !isComplete;
+  const displayText = isComplete
+    ? formatLocalizedDateRange(locale, startParsed, endParsed)
+    : isEmpty
+      ? ""
+      : `${startParsed ? formatLocalizedFullDate(locale, startParsed) : "…"} – ${endParsed ? formatLocalizedFullDate(locale, endParsed) : "…"}`;
+  const popupAriaLabel =
+    typeof shellProps.label === "string" && shellProps.label.trim().length > 0
+      ? shellProps.label
+      : t("datePicker.rangeTitle");
 
   return (
     <DatePickerFieldShell
       {...shellProps}
-      hiddenValue={`${activeRange.start}/${activeRange.end}`}
-      displayText={formatLocalizedDateRange(locale, startParsed, endParsed)}
+      triggerRef={triggerRef}
+      hasValue={!isEmpty}
+      hiddenValue={isEmpty ? "" : `${activeRange.start}/${activeRange.end}`}
+      hiddenPattern={
+        isPartial ? "^\\d{4}-\\d{2}-\\d{2}/\\d{4}-\\d{2}-\\d{2}$" : undefined
+      }
+      validate={() => (isPartial ? t("textField.defaultInvalid") : null)}
+      displayText={displayText}
+      popupAriaLabel={popupAriaLabel}
       renderModal={(open, close) => (
         <ModalDatePickerPopup
           open={open}
@@ -632,10 +706,12 @@ function ModalDatePickerPopup({
   const headlineText = isRangeMode
     ? parsedRangeStart && parsedRangeEnd
       ? formatLocalizedDateRange(locale, parsedRangeStart, parsedRangeEnd)
-      : `${draftRange.start} – ${draftRange.end}`
+      : draftRange.start || draftRange.end
+        ? `${draftRange.start || "…"} – ${draftRange.end || "…"}`
+        : "—"
     : parsedDraft
       ? formatLocalizedFullDate(locale, parsedDraft)
-      : draftIso;
+      : draftIso || "—";
 
   return (
     <BaseDialog.Portal container={portalContainer}>

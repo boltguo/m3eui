@@ -10,6 +10,7 @@ import {
 } from "../../tokens/topology.js";
 import { isToggleProps } from "../../internal/toggleProps.js";
 import { SpinnerIcon } from "../../internal/icons.js";
+import { LinkActionElement, isLinkRenderTarget } from "../../internal/link.js";
 import { useM3ERuntime } from "../../context/M3EContext.js";
 import { useM3ECornerSpringRef, usePressHoldState } from "../../hooks/useM3ESpring.js";
 import type { ButtonIntent } from "../Button/Button.js";
@@ -125,15 +126,59 @@ const ActionIconButton = React.forwardRef<HTMLElement, M3EIconButtonActionProps>
     const { ref: mergedRef, borderRadiusCss } =
       useM3ECornerSpringRef<HTMLElement>(geo.corners, "defaultEffects", ref);
 
-    const resolvedRender =
-      render ??
-      (href ? <a href={href} target={target} rel={rel} /> : undefined);
-    const isCustomElement = Boolean(resolvedRender);
+    const isLink = isLinkRenderTarget(href, render);
 
     const mergedProps = mergeProps<"button">(
       pressHandlers as unknown as React.ComponentPropsWithRef<"button">,
       restProps as unknown as React.ComponentPropsWithRef<"button">,
     );
+
+    const content = (
+      <IconButtonContent
+        geo={geo}
+        glyph={
+          loading ? (
+            <SpinnerIcon size={geo.iconSize} className="m3e-button__spinner" />
+          ) : (
+            icon
+          )
+        }
+      />
+    );
+
+    if (isLink) {
+      return (
+        <LinkActionElement
+          {...(mergedProps as Record<string, unknown>)}
+          ref={mergedRef}
+          href={href}
+          target={target}
+          rel={rel}
+          render={render}
+          disabled={isDisabled}
+          focusableWhenDisabled={loading && !disabled}
+          aria-busy={loading ? true : undefined}
+          aria-label={ariaLabel}
+          onClick={onClick as React.MouseEventHandler<HTMLElement> | undefined}
+          className={
+            className ? `m3e-icon-button ${className}` : "m3e-icon-button"
+          }
+          style={iconButtonStyle(geo, borderRadiusCss, style)}
+          data-variant={variant}
+          data-intent={intent !== "default" ? intent : undefined}
+          data-size={size}
+          data-width={widthVariant}
+          data-shape={shape}
+          data-loading={loading ? "" : undefined}
+          data-explicit-disabled={disabled ? "" : undefined}
+          data-pressed={isPressed ? "" : undefined}
+        >
+          {content}
+        </LinkActionElement>
+      );
+    }
+
+    const isCustomElement = Boolean(render);
 
     return (
       <BaseButton
@@ -141,7 +186,7 @@ const ActionIconButton = React.forwardRef<HTMLElement, M3EIconButtonActionProps>
         ref={mergedRef}
         type={isCustomElement ? undefined : type}
         nativeButton={!isCustomElement}
-        render={resolvedRender}
+        render={render}
         disabled={isDisabled}
         focusableWhenDisabled={loading && !disabled}
         aria-busy={loading ? true : undefined}
@@ -160,16 +205,7 @@ const ActionIconButton = React.forwardRef<HTMLElement, M3EIconButtonActionProps>
         data-explicit-disabled={disabled ? "" : undefined}
         data-pressed={isPressed ? "" : undefined}
       >
-        <IconButtonContent
-          geo={geo}
-          glyph={
-            loading ? (
-              <SpinnerIcon size={geo.iconSize} className="m3e-button__spinner" />
-            ) : (
-              icon
-            )
-          }
-        />
+        {content}
       </BaseButton>
     );
   },

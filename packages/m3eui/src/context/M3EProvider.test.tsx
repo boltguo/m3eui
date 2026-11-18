@@ -12,7 +12,9 @@ import {
 import { M3EProvider, useM3E } from "./M3EProvider.js";
 import { M3EPortal } from "./M3EPortal.js";
 import { Dialog } from "../components/Dialog/Dialog.js";
+import { Popover } from "../components/Popover/Popover.js";
 import { SearchBar } from "../components/SearchBar/SearchBar.js";
+import { Tooltip } from "../components/Tooltip/Tooltip.js";
 import { useM3EToast } from "../components/Toast/Toast.js";
 
 describe("M3EProvider & M3EPortal", () => {
@@ -271,5 +273,54 @@ describe("M3EProvider & M3EPortal", () => {
     } finally {
       window.matchMedia = originalMatchMedia;
     }
+  });
+
+  it("propagates lang, dir, dark theme, and CSS tokens into custom M3EPortal containers without mutating the caller container", () => {
+    const externalHost = document.createElement("div");
+    externalHost.id = "custom-external-portal";
+    dom.container.appendChild(externalHost);
+
+    act(() => {
+      dom.root.render(
+        <M3EProvider
+          syncDocumentRoot={false}
+          locale="ar-SA"
+          initialDirection="rtl"
+          initialColorMode="dark"
+          initialSeedHex="#0B6B58"
+          themeEngine={generateM3EThemeTokens}
+        >
+          <M3EPortal container={externalHost}>
+            <Dialog open onOpenChange={() => {}} title="RTL Portal Dialog">
+              <p>Custom container content</p>
+            </Dialog>
+            <Popover trigger={<button type="button">Open Popover</button>} open>
+              <span data-testid="scoped-popover-body">Popover body</span>
+            </Popover>
+            <Tooltip content="Helpful tooltip">
+              <button type="button" id="scoped-tooltip-trigger">
+                Hover
+              </button>
+            </Tooltip>
+          </M3EPortal>
+        </M3EProvider>,
+      );
+    });
+
+    expect(externalHost.getAttribute("dir")).toBeNull();
+    expect(externalHost.getAttribute("data-theme")).toBeNull();
+
+    const scopedPortal = externalHost.querySelector<HTMLElement>(
+      ".m3e-scope[data-m3e-portal]",
+    )!;
+    expect(scopedPortal).not.toBeNull();
+    expect(scopedPortal.getAttribute("dir")).toBe("rtl");
+    expect(scopedPortal.getAttribute("lang")).toBe("ar-SA");
+    expect(scopedPortal.getAttribute("data-theme")).toBe("dark");
+    expect(scopedPortal.style.getPropertyValue("--m3e-color-primary")).toContain(
+      "light-dark(",
+    );
+    expect(scopedPortal.textContent).toContain("RTL Portal Dialog");
+    expect(scopedPortal.textContent).toContain("Popover body");
   });
 });

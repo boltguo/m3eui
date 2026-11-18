@@ -17,6 +17,7 @@ import {
   useControllableOpen,
   type NavigationDestination,
 } from "../../internal/navList.js";
+import { isModifiedLinkClick } from "../../internal/link.js";
 
 export type { NavigationDestination };
 
@@ -123,7 +124,10 @@ function NavItemButton<Value extends string>({
         data-active={active ? "" : undefined}
         data-pressed={isPressed ? "" : undefined}
         data-layout={itemLayout}
-        onClick={() => onSelect(item.value)}
+        onClick={(e) => {
+          if (isModifiedLinkClick(e)) return;
+          onSelect(item.value);
+        }}
         {...pressHandlers}
       >
         {inner}

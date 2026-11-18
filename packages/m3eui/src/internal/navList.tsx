@@ -5,6 +5,7 @@ import { useM3EPortalContainer } from "../context/M3EPortal.js";
 import { useM3EScalarSpring, usePressHoldState } from "../hooks/useM3ESpring.js";
 import { formatLocalizedInteger } from "../i18n/index.js";
 import { useIsoLayoutEffect } from "./useIsoLayoutEffect.js";
+import { isModifiedLinkClick } from "./link.js";
 
 export interface NavigationDestination<Value extends string = string> {
   readonly value: Value;
@@ -84,6 +85,11 @@ function NavListItem<Value extends string>({
     ...pressHandlers,
   };
 
+  const handleAnchorClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (isModifiedLinkClick(e)) return;
+    onSelect(item.value);
+  };
+
   if (item.href && !item.disabled) {
     const ariaCurrent = active
       ? item.href.startsWith("#")
@@ -91,7 +97,12 @@ function NavListItem<Value extends string>({
         : "page"
       : undefined;
     return (
-      <a href={item.href} aria-current={ariaCurrent} {...shared}>
+      <a
+        href={item.href}
+        aria-current={ariaCurrent}
+        {...shared}
+        onClick={handleAnchorClick}
+      >
         {content}
       </a>
     );

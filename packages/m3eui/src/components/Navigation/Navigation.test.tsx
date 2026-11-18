@@ -1,5 +1,5 @@
 import { act } from "react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { PausedWrapper, setupDomTest } from "../../__tests__/domHarness.js";
 import { M3EProvider } from "../../context/M3EProvider.js";
 import { SearchBar } from "../SearchBar/SearchBar.js";
@@ -130,5 +130,63 @@ describe("Navigation", () => {
     expect(
       dom.container.querySelector(".m3e-nav-list__item[aria-current='page']"),
     ).not.toBeNull();
+  });
+
+  it("ignores modifier-key and middle-button clicks on Navigation anchor links", () => {
+    const onBarChange = vi.fn();
+    const onRailChange = vi.fn();
+
+    act(() => {
+      dom.root.render(
+        <M3EProvider syncDocumentRoot={false}>
+          <NavigationBar
+            value="home"
+            onValueChange={onBarChange}
+            items={[
+              { value: "home", label: "Home", href: "#home" },
+              { value: "docs", label: "Docs", href: "#docs" },
+            ]}
+          />
+          <NavigationRail
+            expanded
+            value="a"
+            onValueChange={onRailChange}
+            items={[
+              { value: "a", label: "Overview", href: "#overview" },
+              { value: "b", label: "API", href: "#api" },
+            ]}
+          />
+        </M3EProvider>,
+      );
+    });
+
+    const barLink = dom.container.querySelector<HTMLAnchorElement>(
+      '.m3e-nav-bar a[href="#docs"]',
+    )!;
+    const railLink = dom.container.querySelector<HTMLAnchorElement>(
+      '.m3e-nav-rail a[href="#api"]',
+    )!;
+
+    for (const init of [
+      { metaKey: true, button: 0 },
+      { ctrlKey: true, button: 0 },
+      { shiftKey: true, button: 0 },
+      { altKey: true, button: 0 },
+      { button: 1 },
+    ]) {
+      act(() => {
+        barLink.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, ...init }));
+        railLink.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, ...init }));
+      });
+    }
+    expect(onBarChange).not.toHaveBeenCalled();
+    expect(onRailChange).not.toHaveBeenCalled();
+
+    act(() => {
+      barLink.click();
+      railLink.click();
+    });
+    expect(onBarChange).toHaveBeenCalledWith("docs");
+    expect(onRailChange).toHaveBeenCalledWith("b");
   });
 });

@@ -21,6 +21,7 @@ import {
 } from "../../hooks/useM3ESpring.js";
 import { useIsoLayoutEffect } from "../../internal/useIsoLayoutEffect.js";
 import { INERT_TRUE } from "../../internal/inert.js";
+import { LinkActionElement, isLinkRenderTarget } from "../../internal/link.js";
 export type FabElevation = "default" | "lowered" | "none";
 
 const EXTENDED_FAB_TYPESCALE_MAP: Record<ExtendedFabSize, string> = {
@@ -92,10 +93,8 @@ const IconFAB = React.forwardRef<HTMLElement, M3EIconFABProps>(function IconFAB(
   const visibilityScale = useM3EScalarSpring(visible ? 1 : 0.2, "fastSpatial");
   const visibilityOpacity = useM3EScalarSpring(visible ? 1 : 0, "fastEffects");
 
-  const resolvedRender =
-    render ??
-    (href ? <a href={href} target={target} rel={rel} /> : undefined);
-  const isCustomElement = Boolean(resolvedRender);
+  const isLink = isLinkRenderTarget(href, render);
+  const isCustomElement = Boolean(render);
 
   const mergedProps = mergeProps<"button">(
     pressHandlers as unknown as React.ComponentPropsWithRef<"button">,
@@ -107,40 +106,22 @@ const IconFAB = React.forwardRef<HTMLElement, M3EIconFABProps>(function IconFAB(
     Math.abs(visibilityScale - 1) > 0.005 ||
     Math.abs(visibilityOpacity - 1) > 0.005;
 
-  return (
-    <BaseButton
-      {...mergedProps}
-      ref={mergedRef}
-      type={isCustomElement ? undefined : type}
-      nativeButton={!isCustomElement}
-      render={resolvedRender}
-      disabled={disabled}
-      tabIndex={!visible ? -1 : restProps.tabIndex}
-      aria-hidden={!visible ? true : restProps["aria-hidden"]}
-      aria-label={ariaLabel}
-      onClick={!visible ? undefined : onClick}
-      className={className ? `m3e-fab ${className}` : "m3e-fab"}
-      data-size={size}
-      data-variant={variant}
-      data-elevation={
-        resolvedElevation !== "default" ? resolvedElevation : undefined
-      }
-      data-hidden={!visible ? "" : undefined}
-      data-pressed={isPressed ? "" : undefined}
-      style={{
-        width: `${geo.containerSize}px`,
-        height: `${geo.containerSize}px`,
-        borderRadius: borderRadiusCss,
-        ...(isAnimatingVisibility
-          ? {
-              scale: `${Math.max(0, visibilityScale).toFixed(3)}`,
-              opacity: Math.max(0, Math.min(1, visibilityOpacity)),
-              pointerEvents: !visible ? "none" : undefined,
-            }
-          : null),
-        ...style,
-      }}
-    >
+  const fabStyle: React.CSSProperties = {
+    width: `${geo.containerSize}px`,
+    height: `${geo.containerSize}px`,
+    borderRadius: borderRadiusCss,
+    ...(isAnimatingVisibility
+      ? {
+          scale: `${Math.max(0, visibilityScale).toFixed(3)}`,
+          opacity: Math.max(0, Math.min(1, visibilityOpacity)),
+          pointerEvents: !visible ? "none" : undefined,
+        }
+      : null),
+    ...style,
+  };
+
+  const fabContent = (
+    <>
       <span
         className="m3e-fab__icon"
         style={{
@@ -156,6 +137,61 @@ const IconFAB = React.forwardRef<HTMLElement, M3EIconFABProps>(function IconFAB(
           {geo.containerSize} r:{geo.cornerRadius.toFixed(0)}
         </span>
       ) : null}
+    </>
+  );
+
+  if (isLink) {
+    return (
+      <LinkActionElement
+        {...(mergedProps as Record<string, unknown>)}
+        ref={mergedRef}
+        href={href}
+        target={target}
+        rel={rel}
+        render={render}
+        disabled={disabled}
+        tabIndex={!visible ? -1 : restProps.tabIndex}
+        aria-hidden={!visible ? true : restProps["aria-hidden"]}
+        aria-label={ariaLabel}
+        onClick={!visible ? undefined : (onClick as React.MouseEventHandler<HTMLElement> | undefined)}
+        className={className ? `m3e-fab ${className}` : "m3e-fab"}
+        data-size={size}
+        data-variant={variant}
+        data-elevation={
+          resolvedElevation !== "default" ? resolvedElevation : undefined
+        }
+        data-hidden={!visible ? "" : undefined}
+        data-pressed={isPressed ? "" : undefined}
+        style={fabStyle}
+      >
+        {fabContent}
+      </LinkActionElement>
+    );
+  }
+
+  return (
+    <BaseButton
+      {...mergedProps}
+      ref={mergedRef}
+      type={isCustomElement ? undefined : type}
+      nativeButton={!isCustomElement}
+      render={render}
+      disabled={disabled}
+      tabIndex={!visible ? -1 : restProps.tabIndex}
+      aria-hidden={!visible ? true : restProps["aria-hidden"]}
+      aria-label={ariaLabel}
+      onClick={!visible ? undefined : onClick}
+      className={className ? `m3e-fab ${className}` : "m3e-fab"}
+      data-size={size}
+      data-variant={variant}
+      data-elevation={
+        resolvedElevation !== "default" ? resolvedElevation : undefined
+      }
+      data-hidden={!visible ? "" : undefined}
+      data-pressed={isPressed ? "" : undefined}
+      style={fabStyle}
+    >
+      {fabContent}
     </BaseButton>
   );
 });
@@ -289,10 +325,8 @@ const ExtendedFAB = React.forwardRef<HTMLElement, M3EExtendedFABProps>(
     const needsFallbackLabelledBy =
       !expanded && !resolvedAriaLabel && !ariaLabelledBy;
 
-    const resolvedRender =
-      render ??
-      (href ? <a href={href} target={target} rel={rel} /> : undefined);
-    const isCustomElement = Boolean(resolvedRender);
+    const isLink = isLinkRenderTarget(href, render);
+    const isCustomElement = Boolean(render);
 
     const scaleKey = EXTENDED_FAB_TYPESCALE_MAP[size];
     const fallbackLineHeight = size === "lg" ? 32 : size === "md" ? 28 : 24;
@@ -306,52 +340,28 @@ const ExtendedFAB = React.forwardRef<HTMLElement, M3EExtendedFABProps>(
       Math.abs(visibilityScale - 1) > 0.005 ||
       Math.abs(visibilityOpacity - 1) > 0.005;
 
-    return (
-      <BaseButton
-        {...mergedProps}
-        ref={ref}
-        type={isCustomElement ? undefined : type}
-        nativeButton={!isCustomElement}
-        render={resolvedRender}
-        disabled={disabled}
-        tabIndex={!visible ? -1 : restProps.tabIndex}
-        aria-hidden={!visible ? true : restProps["aria-hidden"]}
-        aria-label={resolvedAriaLabel}
-        aria-labelledby={
-          ariaLabelledBy ?? (needsFallbackLabelledBy ? labelId : undefined)
-        }
-        onClick={!visible ? undefined : onClick}
-        className={
-          className ? `m3e-extended-fab ${className}` : "m3e-extended-fab"
-        }
-        data-size={size}
-        data-variant={variant}
-        data-elevation={
-          resolvedElevation !== "default" ? resolvedElevation : undefined
-        }
-        data-hidden={!visible ? "" : undefined}
-        data-expanded={expanded ? "" : undefined}
-        data-pressed={isPressed ? "" : undefined}
-        style={{
-          width: `${Math.max(collapsedWidth, animatedWidth).toFixed(1)}px`,
-          height: `${spec.height}px`,
-          borderRadius: `${Math.max(6, animatedRadius).toFixed(1)}px`,
-          paddingInlineStart: `${animatedInlinePadding.toFixed(2)}px`,
-          fontFamily: `var(--m3e-typescale-${scaleKey}-font, inherit)`,
-          fontSize: `var(--m3e-typescale-${scaleKey}-size, ${spec.fontSize}px)`,
-          lineHeight: `var(--m3e-typescale-${scaleKey}-line-height, ${fallbackLineHeight}px)`,
-          fontWeight: `var(--m3e-typescale-${scaleKey}-weight, 500)` as React.CSSProperties["fontWeight"],
-          letterSpacing: `var(--m3e-typescale-${scaleKey}-tracking, normal)`,
-          ...(isAnimatingVisibility
-            ? {
-                scale: `${Math.max(0, visibilityScale).toFixed(3)}`,
-                opacity: Math.max(0, Math.min(1, visibilityOpacity)),
-                pointerEvents: !visible ? "none" : undefined,
-              }
-            : null),
-          ...style,
-        }}
-      >
+    const efabStyle: React.CSSProperties = {
+      width: `${Math.max(collapsedWidth, animatedWidth).toFixed(1)}px`,
+      height: `${spec.height}px`,
+      borderRadius: `${Math.max(6, animatedRadius).toFixed(1)}px`,
+      paddingInlineStart: `${animatedInlinePadding.toFixed(2)}px`,
+      fontFamily: `var(--m3e-typescale-${scaleKey}-font, inherit)`,
+      fontSize: `var(--m3e-typescale-${scaleKey}-size, ${spec.fontSize}px)`,
+      lineHeight: `var(--m3e-typescale-${scaleKey}-line-height, ${fallbackLineHeight}px)`,
+      fontWeight: `var(--m3e-typescale-${scaleKey}-weight, 500)` as React.CSSProperties["fontWeight"],
+      letterSpacing: `var(--m3e-typescale-${scaleKey}-tracking, normal)`,
+      ...(isAnimatingVisibility
+        ? {
+            scale: `${Math.max(0, visibilityScale).toFixed(3)}`,
+            opacity: Math.max(0, Math.min(1, visibilityOpacity)),
+            pointerEvents: !visible ? "none" : undefined,
+          }
+        : null),
+      ...style,
+    };
+
+    const efabContent = (
+      <>
         <span
           className="m3e-extended-fab__icon"
           style={{ width: `${spec.iconSize}px`, height: `${spec.iconSize}px` }}
@@ -376,6 +386,73 @@ const ExtendedFAB = React.forwardRef<HTMLElement, M3EExtendedFABProps>(
             w:{Math.round(animatedWidth)} r:{animatedRadius.toFixed(0)}
           </span>
         ) : null}
+      </>
+    );
+
+    if (isLink) {
+      return (
+        <LinkActionElement
+          {...(mergedProps as Record<string, unknown>)}
+          ref={ref}
+          href={href}
+          target={target}
+          rel={rel}
+          render={render}
+          disabled={disabled}
+          tabIndex={!visible ? -1 : restProps.tabIndex}
+          aria-hidden={!visible ? true : restProps["aria-hidden"]}
+          aria-label={resolvedAriaLabel}
+          aria-labelledby={
+            ariaLabelledBy ?? (needsFallbackLabelledBy ? labelId : undefined)
+          }
+          onClick={!visible ? undefined : (onClick as React.MouseEventHandler<HTMLElement> | undefined)}
+          className={
+            className ? `m3e-extended-fab ${className}` : "m3e-extended-fab"
+          }
+          data-size={size}
+          data-variant={variant}
+          data-elevation={
+            resolvedElevation !== "default" ? resolvedElevation : undefined
+          }
+          data-hidden={!visible ? "" : undefined}
+          data-expanded={expanded ? "" : undefined}
+          data-pressed={isPressed ? "" : undefined}
+          style={efabStyle}
+        >
+          {efabContent}
+        </LinkActionElement>
+      );
+    }
+
+    return (
+      <BaseButton
+        {...mergedProps}
+        ref={ref}
+        type={isCustomElement ? undefined : type}
+        nativeButton={!isCustomElement}
+        render={render}
+        disabled={disabled}
+        tabIndex={!visible ? -1 : restProps.tabIndex}
+        aria-hidden={!visible ? true : restProps["aria-hidden"]}
+        aria-label={resolvedAriaLabel}
+        aria-labelledby={
+          ariaLabelledBy ?? (needsFallbackLabelledBy ? labelId : undefined)
+        }
+        onClick={!visible ? undefined : onClick}
+        className={
+          className ? `m3e-extended-fab ${className}` : "m3e-extended-fab"
+        }
+        data-size={size}
+        data-variant={variant}
+        data-elevation={
+          resolvedElevation !== "default" ? resolvedElevation : undefined
+        }
+        data-hidden={!visible ? "" : undefined}
+        data-expanded={expanded ? "" : undefined}
+        data-pressed={isPressed ? "" : undefined}
+        style={efabStyle}
+      >
+        {efabContent}
       </BaseButton>
     );
   },

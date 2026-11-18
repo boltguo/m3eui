@@ -16,17 +16,14 @@ import {
 } from "../../tokens/topology.js";
 import { useM3ERuntime } from "../../context/M3EContext.js";
 import { useM3EPortalContainer } from "../../context/M3EPortal.js";
-import {
-  FieldErrorIconSvg,
-  FieldNotchedOutline,
-  useFieldsetDisabled,
-} from "../../internal/fieldOutline.js";
+import { useFieldsetDisabled } from "../../internal/fieldOutline.js";
 import {
   useM3EScalarSpringEffect,
   usePressHoldState,
 } from "../../hooks/useM3ESpring.js";
 import { formatLocalizedInteger } from "../../i18n/index.js";
-import { FormHiddenValue } from "../../internal/formField.js";
+import { useFormReset } from "../../internal/formField.js";
+import { PickerFieldFrame } from "../../internal/pickerField.js";
 import { ChevronDownIcon } from "../../internal/icons.js";
 
 const DEFAULT_SWATCHES: readonly string[] = [
@@ -463,7 +460,7 @@ export interface M3EColorPickerFieldProps {
 }
 
 export function ColorPickerField({
-  id: idProp,
+  id,
   name,
   label,
   labelPosition = "floating",
@@ -481,14 +478,20 @@ export function ColorPickerField({
   className,
   style,
 }: M3EColorPickerFieldProps): React.JSX.Element {
+  const { t } = useM3ERuntime();
   const portalContainer = useM3EPortalContainer();
   const isDisabled = useFieldsetDisabled(disabled);
-  const generatedId = React.useId();
-  const triggerId = idProp ?? generatedId;
-  const descId = React.useId();
-  const errId = React.useId();
+  const triggerRef = React.useRef<HTMLButtonElement | null>(null);
   const [uncontrolledHex, setUncontrolledHex] = React.useState<string>(() =>
-    normalizeHex(defaultValue),
+    defaultValue.trim() === "" ? "" : normalizeHex(defaultValue),
+  );
+  useFormReset(
+    triggerRef,
+    () =>
+      setUncontrolledHex(
+        defaultValue.trim() === "" ? "" : normalizeHex(defaultValue),
+      ),
+    controlledValue === undefined,
   );
   const [open, setOpen] = React.useState(false);
   React.useEffect(() => {
@@ -500,82 +503,52 @@ export function ColorPickerField({
       chevronRef.current.style.rotate = `${deg.toFixed(1)}deg`;
     }
   });
-  const currentHex = normalizeHex(controlledValue ?? uncontrolledHex);
+  const rawHex = controlledValue ?? uncontrolledHex;
+  const isEmpty = rawHex.trim() === "";
+  const currentHex = isEmpty ? "" : normalizeHex(rawHex);
+  const isLabelFloated = !isEmpty || open;
   const isFloatingLabel = labelPosition === "floating" && Boolean(label);
   const height = isFloatingLabel ? SELECT_TOKENS.outlinedHeight : 48;
   const radius = isFloatingLabel
     ? SELECT_TOKENS.outlinedRadius
     : SELECT_TOKENS.outsideLabelRadius;
-  const labelNode = label ? (
-    <>
-      {label}
-      {required ? (
-        <span className="m3e-field__required" aria-hidden="true">
-          {" *"}
-        </span>
-      ) : null}
-    </>
-  ) : null;
+  const popupAriaLabel =
+    typeof label === "string" && label.trim().length > 0
+      ? label
+      : t("colorPicker.ariaLabel");
 
   return (
-    <div
-      className={
-        className
-          ? `m3e-color-picker-field ${className}`
-          : "m3e-color-picker-field"
-      }
-      data-label-position={labelPosition}
-      data-disabled={isDisabled ? "" : undefined}
-      data-invalid={invalid ? "" : undefined}
-      style={style}
-    >
-      {labelNode && !isFloatingLabel ? (
-        <label htmlFor={triggerId} className="m3e-field__label">
-          {labelNode}
-        </label>
-      ) : null}
-
-      <FormHiddenValue
+    <BasePopover.Root open={open} onOpenChange={setOpen}>
+      <PickerFieldFrame
+        id={id}
         name={name}
-        value={currentHex}
-        disabled={isDisabled}
+        label={label}
+        labelPosition={labelPosition}
+        description={description}
+        errorMessage={errorMessage}
+        invalid={invalid}
         required={required}
-      />
-
-      <BasePopover.Root open={open} onOpenChange={setOpen}>
-        <div
-          className="m3e-select__shell"
-          data-variant="outlined"
-          data-label-position={labelPosition}
-          data-floating=""
-          data-popup-open={open ? "" : undefined}
-          data-disabled={isDisabled ? "" : undefined}
-          data-invalid={invalid ? "" : undefined}
-          style={{ borderRadius: `${radius}px` }}
-        >
-          {isFloatingLabel ? (
-            <FieldNotchedOutline label={labelNode} floating />
-          ) : null}
-          {isFloatingLabel ? (
-            <label
-              htmlFor={triggerId}
-              className="m3e-field__floating-label m3e-select__floating-label"
-              data-floating=""
-            >
-              {labelNode}
-            </label>
-          ) : null}
+        disabled={isDisabled}
+        floating={isLabelFloated}
+        popupOpen={open}
+        hiddenValue={currentHex}
+        triggerRef={triggerRef}
+        className={
+          className
+            ? `m3e-field m3e-color-picker-field ${className}`
+            : "m3e-field m3e-color-picker-field"
+        }
+        style={style}
+      >
+        {({ triggerAriaProps }) => (
           <BasePopover.Trigger
-            id={triggerId}
+            ref={triggerRef}
+            {...triggerAriaProps}
             disabled={isDisabled}
-            aria-invalid={invalid ? true : undefined}
-            aria-describedby={
-              invalid && errorMessage ? errId : description ? descId : undefined
-            }
             className="m3e-select__trigger m3e-color-picker-field__trigger"
             data-variant="outlined"
             data-label-position={labelPosition}
-            data-floating=""
+            data-floating={isLabelFloated ? "" : undefined}
             style={{
               minHeight: `${height}px`,
               borderRadius: `${radius}px`,
@@ -583,12 +556,16 @@ export function ColorPickerField({
             }}
           >
             <span className="m3e-color-picker-field__value">
-              <span
-                className="m3e-color-picker-field__dot"
-                style={{ backgroundColor: currentHex }}
-                aria-hidden="true"
-              />
-              <span className="m3e-color-picker-field__hex">{currentHex}</span>
+              {!isEmpty ? (
+                <>
+                  <span
+                    className="m3e-color-picker-field__dot"
+                    style={{ backgroundColor: currentHex }}
+                    aria-hidden="true"
+                  />
+                  <span className="m3e-color-picker-field__hex">{currentHex}</span>
+                </>
+              ) : null}
             </span>
             <span
               ref={chevronRef}
@@ -599,47 +576,36 @@ export function ColorPickerField({
               <ChevronDownIcon strokeWidth={2.2} />
             </span>
           </BasePopover.Trigger>
-        </div>
+        )}
+      </PickerFieldFrame>
 
-        <BasePopover.Portal container={portalContainer}>
-          <BasePopover.Positioner
-            side="bottom"
-            align="start"
-            sideOffset={6}
-            className="m3e-popover__positioner"
+      <BasePopover.Portal container={portalContainer}>
+        <BasePopover.Positioner
+          side="bottom"
+          align="start"
+          sideOffset={6}
+          className="m3e-popover__positioner"
+        >
+          <BasePopover.Popup
+            aria-label={popupAriaLabel}
+            initialFocus={(openType) => openType === "keyboard"}
+            className="m3e-color-picker-field__popup"
           >
-            <BasePopover.Popup
-              initialFocus={(openType) => openType === "keyboard"}
-              className="m3e-color-picker-field__popup"
-            >
-              <ColorPicker
-                value={currentHex}
-                swatches={swatches}
-                showTonalRamp={showTonalRamp}
-                onValueChange={(next) => {
-                  if (controlledValue === undefined) {
-                    setUncontrolledHex(next);
-                  }
-                  onValueChange?.(next);
-                }}
-                onValueCommitted={onValueCommitted}
-              />
-            </BasePopover.Popup>
-          </BasePopover.Positioner>
-        </BasePopover.Portal>
-      </BasePopover.Root>
-
-      {description && !(invalid && errorMessage) ? (
-        <p id={descId} className="m3e-field__description">
-          {description}
-        </p>
-      ) : null}
-      {invalid && errorMessage ? (
-        <div id={errId} role="alert" className="m3e-field__error">
-          <FieldErrorIconSvg />
-          <span>{errorMessage}</span>
-        </div>
-      ) : null}
-    </div>
+            <ColorPicker
+              value={isEmpty ? "#6750A4" : currentHex}
+              swatches={swatches}
+              showTonalRamp={showTonalRamp}
+              onValueChange={(next) => {
+                if (controlledValue === undefined) {
+                  setUncontrolledHex(next);
+                }
+                onValueChange?.(next);
+              }}
+              onValueCommitted={onValueCommitted}
+            />
+          </BasePopover.Popup>
+        </BasePopover.Positioner>
+      </BasePopover.Portal>
+    </BasePopover.Root>
   );
 }

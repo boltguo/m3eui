@@ -14,6 +14,7 @@ import { useM3ERuntime } from "../../context/M3EContext.js";
 import { useM3ECornerSpringRef, usePressHoldState } from "../../hooks/useM3ESpring.js";
 import { ButtonGroupItemContext } from "../../internal/buttonGroupContext.js";
 import { CheckIcon, SpinnerIcon } from "../../internal/icons.js";
+import { LinkActionElement, isLinkRenderTarget } from "../../internal/link.js";
 
 export type ButtonVariant = "filled" | "tonal" | "elevated" | "outlined" | "text";
 export type ButtonShape = "round" | "square";
@@ -165,39 +166,15 @@ const ActionButton = React.forwardRef<HTMLElement, M3EButtonActionProps>(functio
     borderRadiusCss,
   } = useM3ECornerSpringRef<HTMLElement>(targetCorners, "defaultEffects", ref);
 
-  const resolvedRender =
-    render ??
-    (href ? <a href={href} target={target} rel={rel} /> : undefined);
-  const isCustomElement = Boolean(resolvedRender);
+  const isLink = isLinkRenderTarget(href, render);
 
   const mergedProps = mergeProps<"button">(
     pressHandlers as unknown as React.ComponentPropsWithRef<"button">,
     restProps as unknown as React.ComponentPropsWithRef<"button">,
   );
 
-  return (
-    <BaseButton
-      {...mergedProps}
-      ref={mergedRef}
-      type={isCustomElement ? undefined : type}
-      nativeButton={!isCustomElement}
-      render={resolvedRender}
-      disabled={isDisabled}
-      focusableWhenDisabled={loading && !disabled}
-      aria-busy={loading ? true : undefined}
-      aria-label={ariaLabel}
-      onClick={onClick}
-      className={className ? `m3e-button ${className}` : "m3e-button"}
-      style={buttonStyle(size, variant, borderRadiusCss, style)}
-      data-variant={variant}
-      data-intent={intent !== "default" ? intent : undefined}
-      data-size={size}
-      data-shape={shape}
-      data-loading={loading ? "" : undefined}
-      data-explicit-disabled={disabled ? "" : undefined}
-      data-full-width={fullWidth ? "" : undefined}
-      data-pressed={isPressed ? "" : undefined}
-    >
+  const buttonBody = (
+    <>
       {leadingIcon ? (
         <ButtonIcon size={spec.iconSize} hidden={loading}>
           {leadingIcon}
@@ -231,6 +208,65 @@ const ActionButton = React.forwardRef<HTMLElement, M3EButtonActionProps>(functio
         </span>
       ) : null}
       <CornerDebugBadge corners={targetCorners} />
+    </>
+  );
+
+  if (isLink) {
+    return (
+      <LinkActionElement
+        {...(mergedProps as Record<string, unknown>)}
+        ref={mergedRef}
+        href={href}
+        target={target}
+        rel={rel}
+        render={render}
+        disabled={isDisabled}
+        focusableWhenDisabled={loading && !disabled}
+        aria-busy={loading ? true : undefined}
+        aria-label={ariaLabel}
+        onClick={onClick as React.MouseEventHandler<HTMLElement> | undefined}
+        className={className ? `m3e-button ${className}` : "m3e-button"}
+        style={buttonStyle(size, variant, borderRadiusCss, style)}
+        data-variant={variant}
+        data-intent={intent !== "default" ? intent : undefined}
+        data-size={size}
+        data-shape={shape}
+        data-loading={loading ? "" : undefined}
+        data-explicit-disabled={disabled ? "" : undefined}
+        data-full-width={fullWidth ? "" : undefined}
+        data-pressed={isPressed ? "" : undefined}
+      >
+        {buttonBody}
+      </LinkActionElement>
+    );
+  }
+
+  const isCustomElement = Boolean(render);
+
+  return (
+    <BaseButton
+      {...mergedProps}
+      ref={mergedRef}
+      type={isCustomElement ? undefined : type}
+      nativeButton={!isCustomElement}
+      render={render}
+      disabled={isDisabled}
+      focusableWhenDisabled={loading && !disabled}
+      aria-busy={loading ? true : undefined}
+      aria-label={ariaLabel}
+      onClick={onClick}
+      className={className ? `m3e-button ${className}` : "m3e-button"}
+      style={buttonStyle(size, variant, borderRadiusCss, style)}
+      data-variant={variant}
+      data-intent={intent !== "default" ? intent : undefined}
+      data-size={size}
+      data-shape={shape}
+      data-loading={loading ? "" : undefined}
+      data-explicit-disabled={disabled ? "" : undefined}
+      data-full-width={fullWidth ? "" : undefined}
+      data-pressed={isPressed ? "" : undefined}
+    >
+      {buttonBody}
     </BaseButton>
   );
 });

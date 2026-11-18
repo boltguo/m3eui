@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { act } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { PausedWrapper, setupDomTest } from "../../__tests__/domHarness.js";
@@ -103,5 +104,124 @@ describe("Form & Fieldset", () => {
     expect(
       dom.container.querySelector(".m3e-fieldset .m3e-switch")?.hasAttribute("data-disabled"),
     ).toBe(true);
+  });
+
+  it("blocks Form submission on empty required DatePickerField, TimePickerField, ColorPickerField and partial DatePickerField range, focuses trigger, and recovers after selection", async () => {
+    const onFormSubmit = vi.fn();
+
+    function RequiredPickersHarness() {
+      const [dateVal, setDateVal] = useState("");
+      const [rangeVal, setRangeVal] = useState({ start: "", end: "" });
+      const [timeVal, setTimeVal] = useState("");
+      const [colorVal, setColorVal] = useState("");
+      return (
+        <M3EProvider syncDocumentRoot={false} locale="en-US">
+          <button
+            type="button"
+            id="fill-required-pickers"
+            onClick={() => {
+              setDateVal("2026-11-18");
+              setRangeVal({ start: "2026-11-18", end: "2026-11-20" });
+              setTimeVal("10:15");
+              setColorVal("#0B6B58");
+            }}
+          >
+            Fill
+          </button>
+          <button
+            type="button"
+            id="set-partial-range"
+            onClick={() => {
+              setDateVal("2026-11-18");
+              setRangeVal({ start: "2026-11-18", end: "" });
+              setTimeVal("10:15");
+              setColorVal("#0B6B58");
+            }}
+          >
+            Partial
+          </button>
+          <Form onFormSubmit={onFormSubmit}>
+            <DatePickerField
+              id="req-date"
+              label="Launch Date"
+              name="launchDate"
+              required
+              value={dateVal}
+              onValueChange={setDateVal}
+            />
+            <DatePickerField
+              id="req-range"
+              mode="range"
+              label="Release Window"
+              name="releaseWindow"
+              required
+              value={rangeVal}
+              onValueChange={setRangeVal}
+            />
+            <TimePickerField
+              id="req-time"
+              label="Launch Time"
+              name="launchTime"
+              required
+              value={timeVal}
+              onValueChange={setTimeVal}
+            />
+            <ColorPickerField
+              id="req-color"
+              label="Brand Color"
+              name="brandColor"
+              required
+              value={colorVal}
+              onValueChange={setColorVal}
+            />
+            <button type="submit">Submit</button>
+          </Form>
+        </M3EProvider>
+      );
+    }
+
+    await act(async () => {
+      dom.root.render(<RequiredPickersHarness />);
+    });
+
+    await act(async () => {
+      dom.container.querySelector<HTMLButtonElement>('button[type="submit"]')?.click();
+    });
+
+    expect(onFormSubmit).not.toHaveBeenCalled();
+
+    const dateTrigger = dom.container.querySelector<HTMLButtonElement>("#req-date")!;
+    expect(dateTrigger.getAttribute("aria-required")).toBe("true");
+    expect(dateTrigger.getAttribute("aria-invalid")).toBe("true");
+    expect(dateTrigger.getAttribute("aria-describedby")).toBeTruthy();
+    expect(document.activeElement).toBe(dateTrigger);
+    expect(dom.container.querySelectorAll('[role="alert"].m3e-field__error').length).toBe(4);
+
+    // Partial date range alone must still block submit
+    await act(async () => {
+      dom.container.querySelector<HTMLButtonElement>("#set-partial-range")!.click();
+    });
+    await act(async () => {
+      dom.container.querySelector<HTMLButtonElement>('button[type="submit"]')?.click();
+    });
+    expect(onFormSubmit).not.toHaveBeenCalled();
+    expect(
+      dom.container.querySelector("#req-range")?.getAttribute("aria-invalid"),
+    ).toBe("true");
+
+    // Populate all 4 pickers cleanly -> error clears & submit succeeds
+    await act(async () => {
+      dom.container.querySelector<HTMLButtonElement>("#fill-required-pickers")!.click();
+    });
+    await act(async () => {
+      dom.container.querySelector<HTMLButtonElement>('button[type="submit"]')?.click();
+    });
+    expect(onFormSubmit).toHaveBeenCalledTimes(1);
+    expect(onFormSubmit.mock.calls[0]?.[0]).toEqual({
+      launchDate: "2026-11-18",
+      releaseWindow: "2026-11-18/2026-11-20",
+      launchTime: "10:15",
+      brandColor: "#0B6B58",
+    });
   });
 });

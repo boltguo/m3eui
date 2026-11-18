@@ -6,6 +6,7 @@ import {
   CARD_TOKENS,
 } from "../../tokens/topology.js";
 import { usePressHoldState } from "../../hooks/useM3ESpring.js";
+import { LinkActionElement, isLinkRenderTarget } from "../../internal/link.js";
 
 export type CardVariant = "elevated" | "filled" | "outlined";
 
@@ -78,9 +79,7 @@ export const Card = React.forwardRef<HTMLElement, M3ECardProps>(function Card(
   );
 
   if (isInteractive && actions) {
-    const overlayRender =
-      render ??
-      (href && !disabled ? <a href={href} target={target} rel={rel} /> : undefined);
+    const isLink = isLinkRenderTarget(href, render);
     const resolvedOverlayLabel =
       ariaLabel ?? (typeof title === "string" ? title : undefined);
 
@@ -101,81 +100,118 @@ export const Card = React.forwardRef<HTMLElement, M3ECardProps>(function Card(
           ...style,
         }}
       >
-        <BaseButton
-          type={!overlayRender ? "button" : undefined}
-          nativeButton={!overlayRender}
-          render={overlayRender}
-          disabled={disabled}
-          aria-label={resolvedOverlayLabel}
-          onClick={onClick}
-          onPointerDown={pressHandlers.onPointerDown}
-          onPointerUp={pressHandlers.onPointerUp}
-          onPointerLeave={pressHandlers.onPointerLeave}
-          onPointerCancel={pressHandlers.onPointerCancel}
-          onKeyDown={pressHandlers.onKeyDown}
-          onKeyUp={pressHandlers.onKeyUp}
-          onBlur={pressHandlers.onBlur}
-          className="m3e-card__overlay-action"
-        />
+        {isLink ? (
+          <LinkActionElement
+            href={href}
+            target={target}
+            rel={rel}
+            render={render}
+            disabled={disabled}
+            aria-label={resolvedOverlayLabel}
+            onClick={onClick}
+            {...pressHandlers}
+            className="m3e-card__overlay-action"
+          />
+        ) : (
+          <BaseButton
+            type={!render ? "button" : undefined}
+            nativeButton={!render}
+            render={render}
+            disabled={disabled}
+            aria-label={resolvedOverlayLabel}
+            onClick={onClick}
+            onPointerDown={pressHandlers.onPointerDown}
+            onPointerUp={pressHandlers.onPointerUp}
+            onPointerLeave={pressHandlers.onPointerLeave}
+            onPointerCancel={pressHandlers.onPointerCancel}
+            onKeyDown={pressHandlers.onKeyDown}
+            onKeyUp={pressHandlers.onKeyUp}
+            onBlur={pressHandlers.onBlur}
+            className="m3e-card__overlay-action"
+          />
+        )}
         {inner}
       </article>
     );
   }
 
   if (isInteractive) {
-    const cardRender =
-      render ??
-      (href && !disabled ? <a href={href} target={target} rel={rel} /> : <div />);
+    const isLink = isLinkRenderTarget(href, render);
+    const cardEventHandlers = {
+      onClick,
+      onPointerLeave: (e: React.PointerEvent<HTMLElement>) => {
+        pressHandlers.onPointerLeave();
+        restProps.onPointerLeave?.(e);
+      },
+      onPointerDown: (e: React.PointerEvent<HTMLElement>) => {
+        pressHandlers.onPointerDown(e);
+        restProps.onPointerDown?.(e);
+      },
+      onPointerUp: (e: React.PointerEvent<HTMLElement>) => {
+        pressHandlers.onPointerUp();
+        restProps.onPointerUp?.(e);
+      },
+      onPointerCancel: (e: React.PointerEvent<HTMLElement>) => {
+        pressHandlers.onPointerCancel();
+        restProps.onPointerCancel?.(e);
+      },
+      onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => {
+        pressHandlers.onKeyDown(e);
+        restProps.onKeyDown?.(e);
+      },
+      onKeyUp: (e: React.KeyboardEvent<HTMLElement>) => {
+        pressHandlers.onKeyUp(e);
+        restProps.onKeyUp?.(e);
+      },
+      onBlur: (e: React.FocusEvent<HTMLElement>) => {
+        pressHandlers.onBlur();
+        restProps.onBlur?.(e);
+      },
+    };
+    const cardClassName = className
+      ? `m3e-card m3e-card--interactive ${className}`
+      : "m3e-card m3e-card--interactive";
+    const cardStyle = {
+      borderRadius: restRadiusCss,
+      ...style,
+    };
+
+    if (isLink) {
+      return (
+        <LinkActionElement
+          {...(restProps as Record<string, unknown>)}
+          {...cardEventHandlers}
+          ref={ref}
+          href={href}
+          target={target}
+          rel={rel}
+          render={render}
+          disabled={disabled}
+          aria-label={ariaLabel}
+          className={cardClassName}
+          data-variant={variant}
+          data-pressed={isPressed ? "" : undefined}
+          style={cardStyle}
+        >
+          {inner}
+        </LinkActionElement>
+      );
+    }
 
     return (
       <BaseButton
         ref={ref}
         nativeButton={false}
-        render={cardRender}
+        render={render ?? <div />}
         disabled={disabled}
         aria-label={ariaLabel}
         {...restProps}
-        onClick={onClick}
-        onPointerLeave={(e) => {
-          pressHandlers.onPointerLeave();
-          restProps.onPointerLeave?.(e);
-        }}
-        onPointerDown={(e) => {
-          pressHandlers.onPointerDown(e);
-          restProps.onPointerDown?.(e);
-        }}
-        onPointerUp={(e) => {
-          pressHandlers.onPointerUp();
-          restProps.onPointerUp?.(e);
-        }}
-        onPointerCancel={(e) => {
-          pressHandlers.onPointerCancel();
-          restProps.onPointerCancel?.(e);
-        }}
-        onKeyDown={(e) => {
-          pressHandlers.onKeyDown(e);
-          restProps.onKeyDown?.(e);
-        }}
-        onKeyUp={(e) => {
-          pressHandlers.onKeyUp(e);
-          restProps.onKeyUp?.(e);
-        }}
-        onBlur={(e) => {
-          pressHandlers.onBlur();
-          restProps.onBlur?.(e);
-        }}
-        className={
-          className
-            ? `m3e-card m3e-card--interactive ${className}`
-            : "m3e-card m3e-card--interactive"
-        }
+        {...cardEventHandlers}
+        className={cardClassName}
         data-variant={variant}
         data-pressed={isPressed ? "" : undefined}
         data-disabled={disabled ? "" : undefined}
-        style={{
-          borderRadius: restRadiusCss,
-          ...style,
-        }}
+        style={cardStyle}
       >
         {inner}
       </BaseButton>

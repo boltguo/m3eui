@@ -42,6 +42,7 @@ describe("IconButton", () => {
     expect(link?.getAttribute("target")).toBe("_blank");
     expect(link?.getAttribute("rel")).toBe("noopener noreferrer");
     expect(link?.getAttribute("aria-label")).toBe("GitHub");
+    expect(link?.getAttribute("role")).toBeNull();
     expect(link?.getAttribute("type")).toBeNull();
   });
 });

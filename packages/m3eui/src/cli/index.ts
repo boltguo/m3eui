@@ -334,12 +334,6 @@ export function initM3EProject(options: InitProjectOptions): {
   readonly cssPath: string;
 } {
   const configPath = resolve(options.cwd, "m3e.json");
-  if (existsSync(configPath) && !options.force) {
-    throw new Error(
-      `m3e.json already exists at ${configPath}. Pass --force to overwrite.`,
-    );
-  }
-
   const seedHex = options.seedHex ?? "#6750A4";
   if (!HEX_SEED_RE.test(seedHex)) {
     throw new Error(
@@ -364,6 +358,25 @@ export function initM3EProject(options: InitProjectOptions): {
   const cssOutput = options.cssOutput ?? "src/styles/m3e-theme.css";
   if (typeof cssOutput !== "string" || cssOutput.trim().length === 0) {
     throw new Error(`Invalid --output (expected non-empty file path).`);
+  }
+
+  const targetCssPath = resolve(dirname(configPath), cssOutput);
+  if (targetCssPath === configPath) {
+    throw new Error(
+      `--output "${cssOutput}" conflicts with m3e.json at ${configPath}.`,
+    );
+  }
+  if (!options.force) {
+    if (existsSync(configPath)) {
+      throw new Error(
+        `m3e.json already exists at ${configPath}. Pass --force to overwrite.`,
+      );
+    }
+    if (existsSync(targetCssPath)) {
+      throw new Error(
+        `CSS output file already exists at ${targetCssPath}. Pass --force to overwrite.`,
+      );
+    }
   }
 
   const jsonContent = serializeM3EConfig({
@@ -412,6 +425,7 @@ export function scaffoldM3ELocalePack(
   cwd: string,
   localeCode: string,
   outputRelPath?: string,
+  options?: { readonly force?: boolean },
 ): string {
   if (!isValidBcp47Tag(localeCode)) {
     throw new Error(
@@ -423,6 +437,11 @@ export function scaffoldM3ELocalePack(
   }
   const targetRel = outputRelPath ?? `src/i18n/${localeCode}.ts`;
   const targetAbs = resolve(cwd, targetRel);
+  if (existsSync(targetAbs) && !options?.force) {
+    throw new Error(
+      `Locale file already exists at ${targetAbs}. Pass --force to overwrite.`,
+    );
+  }
   const safeIdent =
     localeCode.replace(/[^a-zA-Z0-9]+(.)/g, (_, c: string) => c.toUpperCase()) +
     "Messages";
@@ -886,12 +905,19 @@ export function runM3ECli(
     if (cmd === "locale") {
       const parsed = parseCliArgs(rest, {
         valueFlags: ["--out"],
-        booleanFlags: ["--list"],
+        booleanFlags: ["--list", "--force"],
         maxPositionals: 1,
       });
+      const force = parsed.booleans.has("--force");
       if (parsed.booleans.has("--list")) {
-        if (parsed.positionals.length > 0 || parsed.values["--out"] !== undefined) {
-          throw new Error(`"--list" cannot be combined with a locale tag or "--out".`);
+        if (
+          parsed.positionals.length > 0 ||
+          parsed.values["--out"] !== undefined ||
+          force
+        ) {
+          throw new Error(
+            `"--list" cannot be combined with a locale tag, "--out", or "--force".`,
+          );
         }
         log(
           `[m3e] Built-in locales: ${Object.keys(M3E_BUILT_IN_LOCALES).join(", ")} (${Object.keys(enUSMessages).length} keys each)`,
@@ -900,15 +926,17 @@ export function runM3ECli(
       }
       const code = parsed.positionals[0];
       if (!code) {
-        if (parsed.values["--out"] !== undefined) {
-          throw new Error(`Missing locale tag for "--out".`);
+        if (parsed.values["--out"] !== undefined || force) {
+          throw new Error(`Missing locale tag.`);
         }
         log(
           `[m3e] Built-in locales: ${Object.keys(M3E_BUILT_IN_LOCALES).join(", ")} (${Object.keys(enUSMessages).length} keys each)`,
         );
         return 0;
       }
-      const filePath = scaffoldM3ELocalePack(cwd, code, parsed.values["--out"]);
+      const filePath = scaffoldM3ELocalePack(cwd, code, parsed.values["--out"], {
+        force,
+      });
       log(`[m3e] Scaffolded locale pack "${code}" -> ${filePath}`);
       return 0;
     }
@@ -933,7 +961,7 @@ export function runM3ECli(
           "Usage:",
           "  npx m3eui init [--seed #6750A4] [--variant expressive] [--locale zh-CN] [--output src/styles/m3e-theme.css] [--force]",
           "  npx m3eui sync [--config m3e.json]",
-          "  npx m3eui locale --list | npx m3eui locale <bcp47-tag> [--out src/i18n/<tag>.ts]",
+          "  npx m3eui locale --list | npx m3eui locale <bcp47-tag> [--out src/i18n/<tag>.ts] [--force]",
           "  npx m3eui doctor [--config m3e.json]",
         ].join("\n"),
       );

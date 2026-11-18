@@ -113,9 +113,12 @@ const RTL_GLYPH_STYLE: React.CSSProperties = {
 };
 
 export function DateCalendar({
+  containerRef,
   range = false,
   header,
   initialDate,
+  anchorIso,
+  resetCount = 0,
   selection,
   minDate,
   maxDate,
@@ -127,9 +130,12 @@ export function DateCalendar({
   className,
   style,
 }: {
+  readonly containerRef?: React.Ref<HTMLDivElement>;
   readonly range?: boolean;
   readonly header: React.ReactNode;
   readonly initialDate: ParsedPlainDate;
+  readonly anchorIso?: string;
+  readonly resetCount?: number;
   readonly selection: PlainDateRange;
   readonly minDate?: PlainDateString;
   readonly maxDate?: PlainDateString;
@@ -156,20 +162,54 @@ export function DateCalendar({
   const [yearPageStart, setYearPageStart] = React.useState<number>(
     () => initialDate.year - 6,
   );
+  const [focusedYear, setFocusedYear] = React.useState<number>(initialDate.year);
 
   const minParsed = React.useMemo(() => parsePlainDate(minDate), [minDate]);
   const maxParsed = React.useMemo(() => parsePlainDate(maxDate), [maxDate]);
+
+  const prevAnchorIsoRef = React.useRef<string | undefined>(anchorIso);
+  const prevResetCountRef = React.useRef<number>(resetCount);
+  React.useEffect(() => {
+    const anchorChanged = anchorIso !== prevAnchorIsoRef.current;
+    const resetChanged = resetCount !== prevResetCountRef.current;
+    if (!anchorChanged && !resetChanged) return;
+    prevAnchorIsoRef.current = anchorIso;
+    prevResetCountRef.current = resetCount;
+    const nextTarget = clampPlainDateToBounds(
+      parsePlainDate(anchorIso) ?? initialDate,
+      minDate,
+      maxDate,
+    );
+    setViewYear(nextTarget.year);
+    setViewMonth(nextTarget.month);
+    setFocusedDay(nextTarget.day);
+    setYearPageStart(nextTarget.year - 6);
+    setFocusedYear(nextTarget.year);
+    if (resetChanged) {
+      setYearMode(false);
+    }
+  }, [anchorIso, resetCount, initialDate, minDate, maxDate]);
 
   const dayButtonRefs = React.useRef<Record<number, HTMLButtonElement | null>>(
     {},
   );
   const pendingFocusDayRef = React.useRef<number | null>(null);
+  const yearToggleRef = React.useRef<HTMLButtonElement | null>(null);
+  const yearButtonRefs = React.useRef<Record<number, HTMLButtonElement | null>>(
+    {},
+  );
+  const pendingFocusYearRef = React.useRef<number | null>(null);
 
   useIsoLayoutEffect(() => {
     if (pendingFocusDayRef.current !== null) {
       const d = pendingFocusDayRef.current;
       pendingFocusDayRef.current = null;
       dayButtonRefs.current[d]?.focus();
+    }
+    if (pendingFocusYearRef.current !== null) {
+      const yr = pendingFocusYearRef.current;
+      pendingFocusYearRef.current = null;
+      yearButtonRefs.current[yr]?.focus();
     }
   });
 
@@ -283,6 +323,70 @@ export function DateCalendar({
     () => Array.from({ length: 15 }, (_, i) => yearPageStart + i),
     [yearPageStart],
   );
+  const isYearDisabled = React.useCallback(
+    (yr: number) =>
+      (minParsed !== null && yr < minParsed.year) ||
+      (maxParsed !== null && yr > maxParsed.year),
+    [minParsed, maxParsed],
+  );
+  const activeFocusYear = React.useMemo(() => {
+    if (years.includes(focusedYear) && !isYearDisabled(focusedYear)) {
+      return focusedYear;
+    }
+    if (years.includes(viewYear) && !isYearDisabled(viewYear)) {
+      return viewYear;
+    }
+    return years.find((yr) => !isYearDisabled(yr)) ?? years[0]!;
+  }, [years, focusedYear, viewYear, isYearDisabled]);
+
+  const moveYearFocusTo = (rawYear: number) => {
+    const minY = minParsed ? minParsed.year : -Infinity;
+    const maxY = maxParsed ? maxParsed.year : Infinity;
+    const clamped = Math.max(minY, Math.min(maxY, rawYear));
+    if (clamped < yearPageStart || clamped >= yearPageStart + 15) {
+      const pageOffset = Math.floor((clamped - yearPageStart) / 15) * 15;
+      setYearPageStart((s) => s + pageOffset);
+    }
+    setFocusedYear(clamped);
+    pendingFocusYearRef.current = clamped;
+  };
+
+  const handleYearGridKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const rtlSign = direction === "rtl" ? -1 : 1;
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      moveYearFocusTo(activeFocusYear - rtlSign);
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      moveYearFocusTo(activeFocusYear + rtlSign);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      moveYearFocusTo(activeFocusYear - 3);
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      moveYearFocusTo(activeFocusYear + 3);
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      const firstEnabled = years.find((yr) => !isYearDisabled(yr));
+      if (firstEnabled !== undefined) moveYearFocusTo(firstEnabled);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      const lastEnabled = [...years].reverse().find((yr) => !isYearDisabled(yr));
+      if (lastEnabled !== undefined) moveYearFocusTo(lastEnabled);
+    } else if (e.key === "PageUp") {
+      e.preventDefault();
+      moveYearFocusTo(activeFocusYear - 15);
+    } else if (e.key === "PageDown") {
+      e.preventDefault();
+      moveYearFocusTo(activeFocusYear + 15);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      setYearMode(false);
+      queueMicrotask(() => yearToggleRef.current?.focus());
+    }
+  };
+
   const canStepPrev = yearMode
     ? minParsed
       ? yearPageStart > minParsed.year
@@ -301,6 +405,7 @@ export function DateCalendar({
 
   return (
     <div
+      ref={containerRef}
       className={className ? `${rootClassName} ${className}` : rootClassName}
       style={{
         borderRadius: `${DATE_PICKER_TOKENS.containerRadius}px`,
@@ -313,13 +418,18 @@ export function DateCalendar({
 
       <div className="m3e-date-picker__toolbar">
         <button
+          ref={yearToggleRef}
           type="button"
           className="m3e-date-picker__year-toggle"
           aria-expanded={yearMode}
           onClick={() => {
             setYearMode((prev) => {
               const next = !prev;
-              if (next) setYearPageStart(viewYear - 6);
+              if (next) {
+                setYearPageStart(viewYear - 6);
+                setFocusedYear(viewYear);
+                pendingFocusYearRef.current = viewYear;
+              }
               return next;
             });
           }}
@@ -381,20 +491,24 @@ export function DateCalendar({
           role="listbox"
           aria-label={t("datePicker.selectYear")}
           className="m3e-date-picker__year-grid"
+          onKeyDown={handleYearGridKeyDown}
         >
           {years.map((yr) => {
-            const yrDisabled =
-              (minParsed !== null && yr < minParsed.year) ||
-              (maxParsed !== null && yr > maxParsed.year);
+            const yrDisabled = isYearDisabled(yr);
             return (
               <button
                 key={yr}
+                ref={(el) => {
+                  yearButtonRefs.current[yr] = el;
+                }}
                 type="button"
                 role="option"
                 disabled={yrDisabled}
+                tabIndex={yr === activeFocusYear && !yrDisabled ? 0 : -1}
                 aria-selected={yr === viewYear}
                 className="m3e-date-picker__year-pill"
                 data-selected={yr === viewYear ? "" : undefined}
+                onFocus={() => setFocusedYear(yr)}
                 onClick={() => {
                   if (yrDisabled) return;
                   let nextM = viewMonth;
@@ -414,7 +528,9 @@ export function DateCalendar({
                   }
                   setViewYear(yr);
                   setViewMonth(nextM);
+                  setFocusedYear(yr);
                   setYearMode(false);
+                  queueMicrotask(() => yearToggleRef.current?.focus());
                 }}
               >
                 {formatLocalizedNumber(locale, yr, {
@@ -470,10 +586,11 @@ export function DateCalendar({
                 }
                 const date = { year: viewYear, month: viewMonth, day: d };
                 const iso = formatPlainDate(date);
-                const isStart = iso === selection.start;
-                const isEnd = iso === selection.end;
+                const isStart = Boolean(selection.start) && iso === selection.start;
+                const isEnd = Boolean(selection.end) && iso === selection.end;
                 const isSelected = isStart || isEnd;
                 const isInRange =
+                  Boolean(selection.start && selection.end) &&
                   comparePlainDates(iso, selection.start) >= 0 &&
                   comparePlainDates(iso, selection.end) <= 0 &&
                   selection.start !== selection.end;

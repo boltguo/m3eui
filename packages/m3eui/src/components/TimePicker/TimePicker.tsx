@@ -15,14 +15,14 @@ import {
   usePressHoldState,
 } from "../../hooks/useM3ESpring.js";
 import { Button } from "../Button/Button.js";
-import {
-  FieldErrorIconSvg,
-  FieldNotchedOutline,
-  useFieldsetDisabled,
-} from "../../internal/fieldOutline.js";
+import { useFieldsetDisabled } from "../../internal/fieldOutline.js";
 import { formatLocalizedWallTime, getLocaleUses24Hour } from "../../i18n/index.js";
-import { FieldRoot, FieldTrigger } from "../../internal/pickerField.js";
-import { FormHiddenValue } from "../../internal/formField.js";
+import {
+  FieldRoot,
+  FieldTrigger,
+  PickerFieldFrame,
+} from "../../internal/pickerField.js";
+import { useFormReset } from "../../internal/formField.js";
 import { ClockIcon } from "../../internal/icons.js";
 
 export type PlainTimeString = `${string}:${string}` | string;
@@ -163,6 +163,12 @@ export function TimePicker({
   const resolvedTitle = title ?? t("timePicker.title");
   const [uncontrolledTime, setUncontrolledTime] =
     React.useState<string>(defaultValue);
+  const rootRef = React.useRef<HTMLDivElement | null>(null);
+  useFormReset(
+    rootRef,
+    () => setUncontrolledTime(defaultValue),
+    controlledValue === undefined,
+  );
   const currentStr = controlledValue ?? uncontrolledTime;
   const { hour24, minute } = parsePlainTime(currentStr);
 
@@ -298,6 +304,7 @@ export function TimePicker({
 
   return (
     <div
+      ref={rootRef}
       className={className ? `m3e-time-picker ${className}` : "m3e-time-picker"}
       data-variant={variant !== "standard" ? variant : undefined}
       style={{
@@ -892,7 +899,7 @@ export interface M3ETimePickerFieldProps {
 }
 
 export function TimePickerField({
-  id: idProp,
+  id,
   name,
   label,
   labelPosition = "floating",
@@ -910,16 +917,18 @@ export function TimePickerField({
   className,
   style,
 }: M3ETimePickerFieldProps): React.JSX.Element {
-  const { locale } = useM3EI18n();
+  const { locale, t } = useM3EI18n();
   const portalContainer = useM3EPortalContainer();
   const isDisabled = useFieldsetDisabled(disabled);
-  const generatedId = React.useId();
-  const triggerId = idProp ?? generatedId;
-  const descId = React.useId();
-  const errId = React.useId();
+  const triggerRef = React.useRef<HTMLButtonElement | null>(null);
   const use24Hour = use24HourProp ?? getLocaleUses24Hour(locale);
   const [uncontrolledTime, setUncontrolledTime] =
     React.useState<string>(defaultValue);
+  useFormReset(
+    triggerRef,
+    () => setUncontrolledTime(defaultValue),
+    controlledValue === undefined,
+  );
   const [open, setOpen] = React.useState(false);
   React.useEffect(() => {
     if ((isDisabled || readOnly) && open) setOpen(false);
@@ -940,79 +949,47 @@ export function TimePickerField({
   const radius = isFloatingLabel
     ? SELECT_TOKENS.outlinedRadius
     : SELECT_TOKENS.outsideLabelRadius;
-  const labelNode = label ? (
-    <>
-      {label}
-      {required ? (
-        <span className="m3e-field__required" aria-hidden="true">
-          {" *"}
-        </span>
-      ) : null}
-    </>
-  ) : null;
+  const popupAriaLabel =
+    typeof label === "string" && label.trim().length > 0
+      ? label
+      : t("timePicker.title");
 
   return (
-    <div
-      className={
-        className
-          ? `m3e-date-picker-field m3e-time-picker-field ${className}`
-          : "m3e-date-picker-field m3e-time-picker-field"
-      }
-      data-label-position={labelPosition}
-      data-disabled={isDisabled ? "" : undefined}
-      data-readonly={readOnly ? "" : undefined}
-      data-invalid={invalid ? "" : undefined}
-      style={style}
+    <FieldRoot
+      modal={modal}
+      open={readOnly ? false : open}
+      onOpenChange={(next) => {
+        if (!readOnly && !isDisabled) setOpen(next);
+      }}
     >
-      {labelNode && !isFloatingLabel ? (
-        <label htmlFor={triggerId} className="m3e-field__label">
-          {labelNode}
-        </label>
-      ) : null}
-      <FormHiddenValue
+      <PickerFieldFrame
+        id={id}
         name={name}
-        value={isEmpty ? "" : formatPlainTime(hour24, minute)}
-        disabled={isDisabled}
+        label={label}
+        labelPosition={labelPosition}
+        description={description}
+        errorMessage={errorMessage}
+        invalid={invalid}
         required={required}
-      />
-      <FieldRoot
-        modal={modal}
-        open={readOnly ? false : open}
-        onOpenChange={(next) => {
-          if (!readOnly && !isDisabled) setOpen(next);
-        }}
+        disabled={isDisabled}
+        readOnly={readOnly}
+        floating={isLabelFloated}
+        popupOpen={!readOnly && open}
+        hiddenValue={isEmpty ? "" : formatPlainTime(hour24, minute)}
+        triggerRef={triggerRef}
+        className={
+          className
+            ? `m3e-date-picker-field m3e-time-picker-field ${className}`
+            : "m3e-date-picker-field m3e-time-picker-field"
+        }
+        style={style}
       >
-        <div
-          className="m3e-select__shell"
-          data-variant="outlined"
-          data-label-position={labelPosition}
-          data-floating={isLabelFloated ? "" : undefined}
-          data-popup-open={!readOnly && open ? "" : undefined}
-          data-disabled={isDisabled ? "" : undefined}
-          data-readonly={readOnly ? "" : undefined}
-          data-invalid={invalid ? "" : undefined}
-          style={{ borderRadius: `${radius}px` }}
-        >
-          {isFloatingLabel ? (
-            <FieldNotchedOutline label={labelNode} floating={isLabelFloated} />
-          ) : null}
-          {isFloatingLabel ? (
-            <label
-              htmlFor={triggerId}
-              className="m3e-field__floating-label m3e-select__floating-label"
-              data-floating={isLabelFloated ? "" : undefined}
-            >
-              {labelNode}
-            </label>
-          ) : null}
+        {({ triggerAriaProps }) => (
           <FieldTrigger
             modal={modal}
-            id={triggerId}
+            ref={triggerRef}
+            {...triggerAriaProps}
             disabled={isDisabled}
-            aria-invalid={invalid ? true : undefined}
-            aria-describedby={
-              invalid && errorMessage ? errId : description ? descId : undefined
-            }
             className="m3e-select__trigger m3e-date-picker-field__trigger"
             data-variant="outlined"
             data-label-position={labelPosition}
@@ -1029,51 +1006,40 @@ export function TimePickerField({
               <ClockIcon size={18} strokeWidth={2} />
             </span>
           </FieldTrigger>
-        </div>
-
-        {modal ? (
-          <ModalTimePickerPopup
-            open={open}
-            onClose={() => setOpen(false)}
-            value={current}
-            onValueCommit={commit}
-            use24Hour={use24Hour}
-          />
-        ) : (
-          <BasePopover.Portal container={portalContainer}>
-            <BasePopover.Positioner
-              side="bottom"
-              align="start"
-              sideOffset={6}
-              className="m3e-popover__positioner"
-            >
-              <BasePopover.Popup
-                initialFocus={(openType) => openType === "keyboard"}
-                className="m3e-date-picker-field__popup"
-              >
-                <TimePicker
-                  value={current}
-                  use24Hour={use24Hour}
-                  onValueChange={commit}
-                />
-              </BasePopover.Popup>
-            </BasePopover.Positioner>
-          </BasePopover.Portal>
         )}
-      </FieldRoot>
+      </PickerFieldFrame>
 
-      {description && !(invalid && errorMessage) ? (
-        <p id={descId} className="m3e-field__description">
-          {description}
-        </p>
-      ) : null}
-      {invalid && errorMessage ? (
-        <div id={errId} role="alert" className="m3e-field__error">
-          <FieldErrorIconSvg />
-          <span>{errorMessage}</span>
-        </div>
-      ) : null}
-    </div>
+      {modal ? (
+        <ModalTimePickerPopup
+          open={open}
+          onClose={() => setOpen(false)}
+          value={current}
+          onValueCommit={commit}
+          use24Hour={use24Hour}
+        />
+      ) : (
+        <BasePopover.Portal container={portalContainer}>
+          <BasePopover.Positioner
+            side="bottom"
+            align="start"
+            sideOffset={6}
+            className="m3e-popover__positioner"
+          >
+            <BasePopover.Popup
+              aria-label={popupAriaLabel}
+              initialFocus={(openType) => openType === "keyboard"}
+              className="m3e-date-picker-field__popup"
+            >
+              <TimePicker
+                value={current}
+                use24Hour={use24Hour}
+                onValueChange={commit}
+              />
+            </BasePopover.Popup>
+          </BasePopover.Positioner>
+        </BasePopover.Portal>
+      )}
+    </FieldRoot>
   );
 }
 

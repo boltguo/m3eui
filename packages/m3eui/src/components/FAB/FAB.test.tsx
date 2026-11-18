@@ -145,4 +145,26 @@ describe("FAB & FABMenu", () => {
       efabMorph.querySelector<HTMLElement>(".m3e-extended-fab__icon")?.style.width,
     ).toBe("32px");
   });
+
+  it("renders native anchor links without button role when href is passed to FAB", () => {
+    act(() => {
+      dom.root.render(
+        <M3EProvider syncDocumentRoot={false}>
+          <FAB id="fab-link" href="/create" aria-label="New" icon="+" />
+          <FAB id="efab-link" href="/compose" icon="✎">
+            Compose
+          </FAB>
+        </M3EProvider>,
+      );
+    });
+
+    const fabLink = dom.container.querySelector<HTMLAnchorElement>("a#fab-link");
+    const efabLink = dom.container.querySelector<HTMLAnchorElement>("a#efab-link");
+    expect(fabLink?.getAttribute("href")).toBe("/create");
+    expect(fabLink?.getAttribute("role")).toBeNull();
+    expect(fabLink?.getAttribute("type")).toBeNull();
+    expect(efabLink?.getAttribute("href")).toBe("/compose");
+    expect(efabLink?.getAttribute("role")).toBeNull();
+    expect(efabLink?.getAttribute("type")).toBeNull();
+  });
 });

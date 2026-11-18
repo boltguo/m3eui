@@ -35,7 +35,12 @@ import {
   useM3E,
   useM3EI18n,
 } from "./M3EContext.js";
-import { M3EPortalContext } from "./M3EPortal.js";
+import {
+  M3EPortalContext,
+  type M3EPortalScope,
+  M3EPortalScopeContext,
+  useScopedPortalHost,
+} from "./M3EPortal.js";
 import {
   M3E_COLOR_SCHEME_STORAGE_KEY,
   type M3EConfigInput,
@@ -55,7 +60,7 @@ import {
 import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
 
 export type { ColorMode, M3EContextValue, TextDirection };
-export { CSPProvider, useM3E, useM3EI18n };
+export { useM3E, useM3EI18n };
 
 
 export interface M3EProviderProps {
@@ -125,8 +130,6 @@ export function M3EProvider({
   const fallbackColorMode = initialColorMode ?? resolvedCfg.colorMode;
   const [colorMode, setColorMode] = React.useState<ColorMode>(fallbackColorMode);
   const storageHydratedRef = React.useRef(false);
-  const [portalContainer, setPortalContainer] =
-    React.useState<HTMLElement | null>(null);
   const [toastManager] = React.useState(createM3EToastManager);
 
   const [uncontrolledLocale, setUncontrolledLocale] = React.useState<M3ELocale>(
@@ -325,51 +328,38 @@ export function M3EProvider({
     };
   }, [syncDocumentRoot]);
 
-  useIsoLayoutEffect(() => {
-    if (
-      explicitPortalContainer !== undefined ||
-      syncDocumentRoot ||
-      typeof document === "undefined"
-    ) {
-      setPortalContainer(null);
-      return;
-    }
-    const host = document.createElement("div");
-    host.className = "m3e-scope";
-    host.dataset.m3ePortal = "";
-    document.body.appendChild(host);
-    setPortalContainer(host);
-    return () => {
-      host.remove();
-      setPortalContainer(null);
-    };
-  }, [explicitPortalContainer, syncDocumentRoot]);
+  const portalScope = React.useMemo<M3EPortalScope>(
+    () => ({
+      lang: canonicalLocale,
+      dir: direction,
+      colorMode,
+      resolvedColorMode,
+      motionSchemeName,
+      debugGeometry,
+      cssVars,
+    }),
+    [
+      canonicalLocale,
+      direction,
+      colorMode,
+      resolvedColorMode,
+      motionSchemeName,
+      debugGeometry,
+      cssVars,
+    ],
+  );
 
-  useIsoLayoutEffect(() => {
-    if (!portalContainer) return;
-    portalContainer.lang = canonicalLocale;
-    portalContainer.dir = direction;
-    portalContainer.dataset.colorMode = colorMode;
-    portalContainer.dataset.motionScheme = motionSchemeName;
-    if (debugGeometry) {
-      portalContainer.dataset.debugGeometry = "";
-    } else {
-      delete portalContainer.dataset.debugGeometry;
-    }
-    portalContainer.style.colorScheme =
-      colorMode === "system" ? "light dark" : colorMode;
-    for (const [k, v] of Object.entries(cssVars)) {
-      portalContainer.style.setProperty(k, v);
-    }
-  }, [
-    portalContainer,
-    canonicalLocale,
-    direction,
-    colorMode,
-    motionSchemeName,
-    debugGeometry,
-    cssVars,
-  ]);
+  const portalParent =
+    explicitPortalContainer !== undefined
+      ? explicitPortalContainer
+      : !syncDocumentRoot && typeof document !== "undefined"
+        ? document.body
+        : undefined;
+
+  const effectivePortalContainer = useScopedPortalHost(
+    portalParent,
+    portalScope,
+  );
 
   const exportConfigJson = React.useCallback(
     () =>
@@ -489,15 +479,9 @@ export function M3EProvider({
   const effectiveDisableStyles =
     cspDisableStyleElements ?? resolvedCfg.cspDisableStyleElements;
 
-  const effectivePortalContainer =
-    explicitPortalContainer !== undefined
-      ? explicitPortalContainer
-      : syncDocumentRoot
-        ? undefined
-        : portalContainer;
-
   const content = (
-    <M3EPortalContext.Provider value={effectivePortalContainer}>
+    <M3EPortalScopeContext.Provider value={portalScope}>
+      <M3EPortalContext.Provider value={effectivePortalContainer}>
       <DirectionProvider direction={direction}>
         <BaseTooltip.Provider delay={280} timeout={400}>
           <BaseToast.Provider
@@ -530,6 +514,7 @@ export function M3EProvider({
         </BaseTooltip.Provider>
       </DirectionProvider>
     </M3EPortalContext.Provider>
+    </M3EPortalScopeContext.Provider>
   );
 
   return (

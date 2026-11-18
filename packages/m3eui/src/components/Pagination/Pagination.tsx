@@ -8,6 +8,7 @@ import {
 } from "../../hooks/useM3ESpring.js";
 import { formatLocalizedInteger } from "../../i18n/index.js";
 import { ChevronLeftIcon, ChevronRightIcon } from "../../internal/icons.js";
+import { isModifiedLinkClick } from "../../internal/link.js";
 
 export type PaginationSize = "sm" | "md";
 
@@ -111,7 +112,7 @@ function PageNumberButton({
           borderRadius: borderRadiusCss,
         }}
         onClick={(e) => {
-          if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
+          if (isModifiedLinkClick(e)) {
             return;
           }
           onSelect(pageNumber);
@@ -270,7 +271,7 @@ export function Pagination({
           ref={spring.ref as React.Ref<HTMLAnchorElement>}
           href={href}
           onClick={(e) => {
-            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
+            if (isModifiedLinkClick(e)) {
               return;
             }
             commitPage(targetPage);

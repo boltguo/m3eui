@@ -9,6 +9,7 @@ import {
   formatLocalizedPercent,
   formatLocalizedWallTime,
   formatM3EMessage,
+  getLocaleFirstDayOfWeek,
   getLocaleUses24Hour,
   getLocalizedMondayWeekdays,
   isRtlLocale,
@@ -45,6 +46,13 @@ describe("m3eui/i18n — Locale Packs, BCP 47 & CLDR Formatting", () => {
     expect(getLocaleUses24Hour("ja-JP")).toBe(true);
     expect(getLocaleUses24Hour("en-US-u-hc-h23")).toBe(true);
     expect(getLocaleUses24Hour("zh-CN-u-hc-h12")).toBe(false);
+
+    expect(getLocaleFirstDayOfWeek("en-US")).toBe(0);
+    expect(getLocaleFirstDayOfWeek("ar-SA")).toBe(6);
+    expect(getLocaleFirstDayOfWeek("en-US-u-fw-mon")).toBe(1);
+    expect(getLocaleFirstDayOfWeek("en-US-u-fw-sat")).toBe(6);
+    expect(getLocaleFirstDayOfWeek("ar-SA-u-fw-sun")).toBe(0);
+    expect(getLocaleFirstDayOfWeek("en-u-fw-mon")).toBe(1);
 
     const weekdaysZh = getLocalizedMondayWeekdays("zh-CN");
     const weekdaysEn = getLocalizedMondayWeekdays("en-US");

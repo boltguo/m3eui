@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { act } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { PausedWrapper, setupDomTest } from "../../__tests__/domHarness.js";
@@ -242,5 +243,131 @@ describe("DatePicker & DatePickerField", () => {
       start: "2026-11-10",
       end: "2026-11-16",
     });
+  });
+
+  it("restores DatePicker & DatePickerField on form.reset(), syncs controlled month transitions without breaking browsing, renders empty/partial range safely, supports year listbox keyboard nav, and names non-modal dialog", async () => {
+    act(() => {
+      dom.root.render(
+        <M3EProvider syncDocumentRoot={false} locale="en-US">
+          <form id="dp-reset-form">
+            <DatePicker defaultValue="2026-11-10" />
+            <DatePickerField name="releaseDate" label="Release Date" defaultValue="2026-11-10" />
+          </form>
+        </M3EProvider>,
+      );
+    });
+
+    const form = dom.container.querySelector<HTMLFormElement>("#dp-reset-form")!;
+    const dayButtons = form.querySelectorAll<HTMLButtonElement>(".m3e-date-picker__day");
+    act(() => {
+      dayButtons[19]!.click(); // Nov 20
+    });
+    expect(form.querySelector(".m3e-date-picker__headline")?.textContent).toContain("Nov 20");
+    await act(async () => {
+      form.reset();
+    });
+    expect(form.querySelector(".m3e-date-picker__headline")?.textContent).toContain("Nov 10");
+    expect(form.querySelector<HTMLInputElement>('input[name="releaseDate"]')?.value).toBe("2026-11-10");
+
+    // Controlled value sync vs manual month browsing
+    function ControlledMonthHarness() {
+      const [val, setVal] = useState("2026-11-10");
+      const [tick, setTick] = useState(0);
+      return (
+        <M3EProvider syncDocumentRoot={false} locale="en-US">
+          <span data-testid="tick">{tick}</span>
+          <button type="button" id="rerender-same" onClick={() => setTick((t) => t + 1)}>
+            Rerender
+          </button>
+          <button type="button" id="jump-april" onClick={() => setVal("2027-04-15")}>
+            Jump
+          </button>
+          <DatePicker value={val} onValueChange={setVal} />
+        </M3EProvider>
+      );
+    }
+
+    act(() => {
+      dom.root.render(<ControlledMonthHarness />);
+    });
+    const nextMonthBtn = dom.container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Next month"]',
+    )!;
+    act(() => {
+      nextMonthBtn.click();
+    });
+    expect(dom.container.querySelector(".m3e-date-picker__year-toggle")?.textContent).toContain(
+      "December",
+    );
+    act(() => {
+      dom.container.querySelector<HTMLButtonElement>("#rerender-same")!.click();
+    });
+    expect(dom.container.querySelector(".m3e-date-picker__year-toggle")?.textContent).toContain(
+      "December",
+    );
+    act(() => {
+      dom.container.querySelector<HTMLButtonElement>("#jump-april")!.click();
+    });
+    expect(dom.container.querySelector(".m3e-date-picker__year-toggle")?.textContent).toContain(
+      "April 2027",
+    );
+
+    // Year listbox roving tabindex, ArrowRight / ArrowDown (+3), Escape focus return
+    const yearToggle = dom.container.querySelector<HTMLButtonElement>(
+      ".m3e-date-picker__year-toggle",
+    )!;
+    act(() => {
+      yearToggle.click();
+    });
+    const listbox = dom.container.querySelector<HTMLElement>('[role="listbox"]')!;
+    expect(listbox.querySelectorAll('[role="option"][tabindex="0"]').length).toBe(1);
+    const initialYrBtn = listbox.querySelector<HTMLButtonElement>(
+      '[role="option"][tabindex="0"]',
+    )!;
+    const initialYr = Number(initialYrBtn.textContent);
+    act(() => {
+      initialYrBtn.focus();
+      listbox.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+    });
+    expect(document.activeElement?.textContent).toBe(String(initialYr + 1));
+    act(() => {
+      listbox.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
+    });
+    expect(document.activeElement?.textContent).toBe(String(initialYr + 4));
+    await act(async () => {
+      listbox.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    });
+    expect(dom.container.querySelector('[role="listbox"]')).toBeNull();
+    expect(document.activeElement).toBe(yearToggle);
+
+    // Empty range & partial range + non-modal dialog accessible name
+    act(() => {
+      dom.root.render(
+        <M3EProvider syncDocumentRoot={false} locale="en-US">
+          <DatePicker mode="range" defaultValue={{ start: "", end: "" }} />
+          <DatePicker mode="range" defaultValue={{ start: "2026-11-10", end: "" }} />
+          <DatePickerField
+            id="empty-range-field"
+            mode="range"
+            name="emptyRange"
+            label="Trip Dates"
+            defaultValue={{ start: "", end: "" }}
+          />
+        </M3EProvider>,
+      );
+    });
+
+    const headlines = dom.container.querySelectorAll(".m3e-date-range-picker__headline");
+    expect(headlines[0]?.textContent).toBe("—");
+    expect(headlines[1]?.textContent).toContain("…");
+    expect(dom.container.querySelector<HTMLInputElement>('input[name="emptyRange"]')?.value).toBe("");
+    const rangeTrigger = dom.container.querySelector<HTMLButtonElement>("#empty-range-field")!;
+    expect(rangeTrigger.querySelector(".m3e-select__value")?.textContent).toBe("");
+
+    act(() => {
+      rangeTrigger.click();
+    });
+    const nonModalDialog = document.body.querySelector<HTMLElement>('.m3e-date-picker-field__popup[role="dialog"]');
+    expect(nonModalDialog?.getAttribute("aria-label")).toBe("Trip Dates");
   });
 });

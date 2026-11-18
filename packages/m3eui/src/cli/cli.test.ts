@@ -233,4 +233,66 @@ describe("m3eui CLI — Declarative m3e.json & Theme Sync CLI Suite", () => {
     expect(check?.passed).toBe(false);
     expect(check?.detail).toContain("Button");
   });
+
+  it("refuses to overwrite existing --output CSS or locale files unless --force is passed", () => {
+    const existingCssRel = "src/app.css";
+    const existingCssAbs = resolve(tempDir, existingCssRel);
+    mkdirSync(resolve(tempDir, "src"), { recursive: true });
+    const sentinelCss = "/* user custom styles */\nbody { margin: 0; }\n";
+    writeFileSync(existingCssAbs, sentinelCss, "utf8");
+
+    const initErrors: string[] = [];
+    const initBlocked = runM3ECli(["init", "--output", existingCssRel], {
+      cwd: tempDir,
+      log: () => {},
+      error: (e) => initErrors.push(e),
+    });
+    expect(initBlocked).toBe(1);
+    expect(initErrors[0]).toContain("--force");
+    expect(readFileSync(existingCssAbs, "utf8")).toBe(sentinelCss);
+    expect(existsSync(resolve(tempDir, "m3e.json"))).toBe(false);
+
+    expect(
+      runM3ECli(["init", "--output", existingCssRel, "--force"], {
+        cwd: tempDir,
+        log: () => {},
+        error: () => {},
+      }),
+    ).toBe(0);
+    expect(existsSync(resolve(tempDir, "m3e.json"))).toBe(true);
+    expect(readFileSync(existingCssAbs, "utf8")).not.toBe(sentinelCss);
+
+    expect(
+      runM3ECli(["locale", "fr-FR"], {
+        cwd: tempDir,
+        log: () => {},
+        error: () => {},
+      }),
+    ).toBe(0);
+    const localePath = resolve(tempDir, "src/i18n/fr-FR.ts");
+    const editedLocale = readFileSync(localePath, "utf8").replace(
+      '"Close dialog"',
+      '"Fermer"',
+    );
+    writeFileSync(localePath, editedLocale, "utf8");
+
+    const localeErrors: string[] = [];
+    const localeBlocked = runM3ECli(["locale", "fr-FR"], {
+      cwd: tempDir,
+      log: () => {},
+      error: (e) => localeErrors.push(e),
+    });
+    expect(localeBlocked).toBe(1);
+    expect(localeErrors[0]).toContain("--force");
+    expect(readFileSync(localePath, "utf8")).toBe(editedLocale);
+
+    expect(
+      runM3ECli(["locale", "fr-FR", "--force"], {
+        cwd: tempDir,
+        log: () => {},
+        error: () => {},
+      }),
+    ).toBe(0);
+    expect(readFileSync(localePath, "utf8")).toContain('"Close dialog"');
+  });
 });

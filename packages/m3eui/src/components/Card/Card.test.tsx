@@ -51,4 +51,40 @@ describe("Card", () => {
     expect(onCardAction).toHaveBeenCalledTimes(1);
     expect(onCardMain).not.toHaveBeenCalled();
   });
+
+  it("renders href cards as native links without role='button' while non-link interactive cards keep role='button'", () => {
+    act(() => {
+      dom.root.render(
+        <M3EProvider syncDocumentRoot={false}>
+          <Card id="card-link" href="/docs">
+            Docs link
+          </Card>
+          <Card
+            id="card-compound-link"
+            href="/releases"
+            title="Release Notes"
+            actions={<button type="button">Star</button>}
+          >
+            Details
+          </Card>
+          <Card id="card-action" onClick={() => {}}>
+            Action card
+          </Card>
+        </M3EProvider>,
+      );
+    });
+
+    const linkCard = dom.container.querySelector<HTMLAnchorElement>("a#card-link");
+    expect(linkCard?.getAttribute("href")).toBe("/docs");
+    expect(linkCard?.getAttribute("role")).toBeNull();
+
+    const overlayLink = dom.container.querySelector<HTMLAnchorElement>(
+      "#card-compound-link a.m3e-card__overlay-action",
+    );
+    expect(overlayLink?.getAttribute("href")).toBe("/releases");
+    expect(overlayLink?.getAttribute("role")).toBeNull();
+
+    const actionCard = dom.container.querySelector<HTMLElement>("#card-action");
+    expect(actionCard?.getAttribute("role")).toBe("button");
+  });
 });

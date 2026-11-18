@@ -271,16 +271,35 @@ const MONDAY_FIRST_REGIONS = new Set([
   "VN",
 ]);
 
+const FIRST_DAY_OF_WEEK_MAP: Readonly<Record<string, number>> = {
+  sun: 0,
+  mon: 1,
+  tue: 2,
+  wed: 3,
+  thu: 4,
+  fri: 5,
+  sat: 6,
+};
+
 /**
  * Resolves the canonical CLDR first day of the week (`0 = Sunday .. 6 = Saturday`)
  * for a given BCP 47 locale tag, matching AOSP `CalendarModel.firstDayOfWeek`.
  */
 export function getLocaleFirstDayOfWeek(locale: string): number {
-  const parts = locale.trim().replace(/_/g, "-").split("-");
+  const cleaned = locale.trim().replace(/_/g, "-");
+  const fwMatch = /-u-(?:[a-z0-9]+-)*fw-(sun|mon|tue|wed|thu|fri|sat)\b/i.exec(
+    cleaned,
+  );
+  if (fwMatch) {
+    return FIRST_DAY_OF_WEEK_MAP[(fwMatch[1] ?? "").toLowerCase()] ?? 0;
+  }
+
+  const parts = cleaned.split("-");
   const lang = (parts[0] ?? "").toLowerCase();
   let region = "";
   for (let i = 1; i < parts.length; i++) {
     const subtag = parts[i] ?? "";
+    if (subtag.length === 1) break;
     if (/^[A-Za-z]{2}$/.test(subtag) || /^\d{3}$/.test(subtag)) {
       region = subtag.toUpperCase();
       break;

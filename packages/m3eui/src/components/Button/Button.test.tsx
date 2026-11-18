@@ -56,6 +56,9 @@ describe("Button", () => {
           <Button href="https://example.com/docs" variant="outlined">
             外链按钮
           </Button>
+          <Button id="disabled-link-btn" href="https://example.com/disabled" disabled>
+            禁用外链
+          </Button>
         </PausedWrapper>,
       );
     });
@@ -77,6 +80,14 @@ describe("Button", () => {
       'a.m3e-button[href="https://example.com/docs"]',
     );
     expect(linkBtn).not.toBeNull();
+    expect(linkBtn?.getAttribute("role")).toBeNull();
+    expect(linkBtn?.getAttribute("type")).toBeNull();
+
+    const disabledLinkBtn = dom.container.querySelector<HTMLAnchorElement>("#disabled-link-btn");
+    expect(disabledLinkBtn?.tagName.toLowerCase()).toBe("a");
+    expect(disabledLinkBtn?.getAttribute("href")).toBeNull();
+    expect(disabledLinkBtn?.getAttribute("aria-disabled")).toBe("true");
+    expect(disabledLinkBtn?.getAttribute("role")).toBeNull();
   });
 
   it("holds touch tap press morph across synthetic touch pointerleave and cancels immediately on pointercancel", () => {
