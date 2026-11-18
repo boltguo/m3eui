@@ -16,12 +16,12 @@ export const LOADING_INDICATOR_SHAPE_SEQUENCE: readonly M3EShapeName[] = [
   "oval",
 ] as const;
 
-export const LOADING_INDICATOR_DETERMINATE_SHAPE_SEQUENCE: readonly M3EShapeName[] = [
+const LOADING_INDICATOR_DETERMINATE_SHAPE_SEQUENCE: readonly M3EShapeName[] = [
   "circle",
   "softBurst",
 ] as const;
 
-export function calculateIndicatorScaleFactor(
+function calculateIndicatorScaleFactor(
   shapeNames: readonly M3EShapeName[] = LOADING_INDICATOR_SHAPE_SEQUENCE,
 ): number {
   let scaleFactor = 1;

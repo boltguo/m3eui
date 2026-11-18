@@ -294,7 +294,7 @@ export const M3E_TYPOGRAPHY_TOKENS: Record<M3ETypeScaleKey, TypeScaleSpec> = {
   },
 } as const;
 
-export function typeScaleKeyToKebab(key: M3ETypeScaleKey): string {
+function typeScaleKeyToKebab(key: M3ETypeScaleKey): string {
   return key.replace(/[A-Z]/g, (ch) => `-${ch.toLowerCase()}`);
 }
 

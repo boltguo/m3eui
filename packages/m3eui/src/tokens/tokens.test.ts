@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { M3E_DEFAULT_THEME } from "../context/M3EContext.js";
 import {
   generateM3EThemeTokens,
 } from "./color.js";
@@ -37,6 +38,11 @@ import {
   getMaterialShape,
 } from "./shapes.js";
 import {
+  resolveCarouselItemFrame,
+  resolveCarouselKeylineStrategy,
+  resolveCarouselSnapOffset,
+} from "./carousel.js";
+import {
   BUTTON_GROUP_TOKENS,
   BUTTON_SIZE_SPECS,
   FLOATING_TOOLBAR_TOKENS,
@@ -44,10 +50,6 @@ import {
   computeButtonGroupWidths,
   flipCornersHorizontal,
   resolveAccordionItemCorners,
-  resolveCarouselItemFrame,
-  resolveCarouselKeylineStrategy,
-  resolveCarouselLayout,
-  resolveCarouselSnapOffset,
   resolveCircularProgressArcs,
   resolveClockHandGeometry,
   resolveConnectedGroupCorners,
@@ -481,33 +483,6 @@ describe("m3eui/tokens — Switch, Slider & Accordion Geometry", () => {
 });
 
 describe("m3eui/tokens — Carousel, FAB, OTPField, TopAppBar & Progress", () => {
-  it("preserves exact zero-sum container width in Carousel across fractional spring focal positions", () => {
-    const containerWidth = 720;
-    const gap = 8;
-    const count = 5;
-    for (const focal of [0, 0.37, 1.85, 2.0, 4.12]) {
-      const items = resolveCarouselLayout({
-        count,
-        containerWidth,
-        focalPosition: focal,
-        variant: "multi-browse",
-        gap,
-      });
-      const totalWidth = items.reduce((acc, item) => acc + item.width, 0) + (count - 1) * gap;
-      expect(Math.abs(totalWidth - containerWidth)).toBeLessThan(1e-6);
-    }
-    const settled = resolveCarouselLayout({
-      count,
-      containerWidth,
-      focalPosition: 2,
-      variant: "hero",
-      gap,
-    });
-    expect(settled[2]?.cornerRadius).toBeCloseTo(28, 3);
-    expect(settled[2]!.width).toBeGreaterThan(settled[1]!.width);
-    expect(settled[1]!.width).toBeGreaterThan(settled[0]!.width);
-  });
-
   it("resolves multi-segment SegmentedMenu & OTPField slot corners cleanly", () => {
     expect(
       resolveSegmentedMenuItemCorners({
@@ -892,5 +867,15 @@ describe("m3eui/tokens — AOSP Compose Material 3 Expressive 1.5.0 Parity", () 
       blockSize: 12,
       cornerRadius: 12,
     });
+  });
+
+  it("keeps M3E_DEFAULT_THEME synchronized with generateM3EThemeTokens", () => {
+    const expected = generateM3EThemeTokens({
+      seedHex: "#6750A4",
+      variant: "expressive",
+    });
+    expect(M3E_DEFAULT_THEME.light).toEqual(expected.light);
+    expect(M3E_DEFAULT_THEME.dark).toEqual(expected.dark);
+    expect(M3E_DEFAULT_THEME.cssLightDarkVars).toEqual(expected.cssLightDarkVars);
   });
 });

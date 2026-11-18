@@ -89,7 +89,7 @@ export function resolveLinearIndeterminateFractions(elapsedMs: number): {
   };
 }
 
-export function buildSinusoidSvgPath(params: {
+function buildSinusoidSvgPath(params: {
   readonly xStart: number;
   readonly xEnd: number;
   readonly centerY: number;
@@ -318,7 +318,7 @@ export const CIRCULAR_WAVY_TOKENS = {
   indeterminateCycleMs: 2400,
 } as const;
 
-export function resolveCircularWaveLobes(
+function resolveCircularWaveLobes(
   baseRadius: number,
   targetWavelength: number = CIRCULAR_WAVY_TOKENS.targetWavelength,
 ): number {
@@ -326,7 +326,7 @@ export function resolveCircularWaveLobes(
   return Math.max(4, Math.round(circumference / Math.max(4, targetWavelength)));
 }
 
-export function buildPolarWavyArcSvgPath(params: {
+function buildPolarWavyArcSvgPath(params: {
   readonly cx: number;
   readonly cy: number;
   readonly baseRadius: number;

@@ -7,7 +7,7 @@ import {
   resolveCarouselItemFrame,
   resolveCarouselKeylineStrategy,
   resolveCarouselSnapOffset,
-} from "../tokens/topology.js";
+} from "../tokens/carousel.js";
 import { useM3ERuntime } from "../context/M3EContext.js";
 import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
 

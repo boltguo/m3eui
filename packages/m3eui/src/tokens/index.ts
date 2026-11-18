@@ -33,7 +33,6 @@ export {
   parseShortcutKeys,
   type AvatarSize,
   type ButtonSize,
-  type CarouselVariant,
   type CornerTuple,
   type ExtendedFabSize,
   type FabColorVariant,
@@ -45,3 +44,4 @@ export {
   type ToggleFabSize,
   type TopAppBarVariant,
 } from "./topology.js";
+export { type CarouselVariant } from "./carousel.js";

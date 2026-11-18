@@ -276,7 +276,7 @@ export function evaluateSpringDisplacement(
   return 1 - (r2 * Math.exp(r1 * timeSec) - r1 * Math.exp(r2 * timeSec)) / (r2 - r1);
 }
 
-export function estimateSpringSettleMs(
+function estimateSpringSettleMs(
   spec: Pick<SpringPhysicsSpec, "dampingRatio" | "stiffness">,
   epsilon = 0.001,
 ): number {
