@@ -13,6 +13,7 @@ import { isToggleProps } from "../internal/toggleProps.js";
 import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3ECornerSpringRef, usePressHoldState } from "../hooks/useM3ESpring.js";
 import { ButtonGroupItemContext } from "../internal/buttonGroupContext.js";
+import { CheckIcon, SpinnerIcon } from "../internal/icons.js";
 
 export type ButtonVariant = "filled" | "tonal" | "elevated" | "outlined" | "text";
 export type ButtonShape = "round" | "square";
@@ -55,42 +56,71 @@ export interface M3EButtonActionProps
   readonly "aria-label"?: string;
 }
 
-function formatCornerBadge(c: CornerTuple): string {
+function CornerDebugBadge({ corners: c }: { readonly corners: CornerTuple }) {
+  const { debugGeometry } = useM3ERuntime();
+  if (!debugGeometry) return null;
   const r0 = Math.round(c[0]);
   const r1 = Math.round(c[1]);
   const r2 = Math.round(c[2]);
   const r3 = Math.round(c[3]);
-  if (r0 === r1 && r1 === r2 && r2 === r3) {
-    return `r:${c[0].toFixed(1)}`;
-  }
-  return `r:${r0}/${r1}/${r2}/${r3}`;
+  return (
+    <span className="m3e-debug-badge" aria-hidden="true">
+      {r0 === r1 && r1 === r2 && r2 === r3
+        ? `r:${c[0].toFixed(1)}`
+        : `r:${r0}/${r1}/${r2}/${r3}`}
+    </span>
+  );
 }
 
-function ButtonSpinnerSvg({ size }: { readonly size: number }) {
+function useGroupItemCorners(isPressed: boolean, radius: number): CornerTuple {
+  const groupItemCtx = React.useContext(ButtonGroupItemContext);
+  const onGroupPressChange = groupItemCtx?.onPressChange;
+  React.useEffect(() => {
+    onGroupPressChange?.(isPressed);
+  }, [isPressed, onGroupPressChange]);
+  return groupItemCtx?.cornerOverride ?? [radius, radius, radius, radius];
+}
+
+function buttonStyle(
+  size: ButtonSize,
+  variant: ButtonVariant,
+  borderRadius: string,
+  style: React.CSSProperties | undefined,
+): React.CSSProperties {
+  const spec = BUTTON_SIZE_SPECS[size];
+  const scaleKey = BUTTON_TYPESCALE_MAP[size];
+  return {
+    height: `${spec.height}px`,
+    paddingInline: `${spec.paddingHorizontal}px`,
+    gap: `${spec.iconGap}px`,
+    fontFamily: `var(--m3e-typescale-${scaleKey}-font, inherit)`,
+    fontSize: `var(--m3e-typescale-${scaleKey}-size, ${spec.fontSize}px)`,
+    lineHeight: `var(--m3e-typescale-${scaleKey}-line-height, ${spec.lineHeight}px)`,
+    fontWeight: `var(--m3e-typescale-${scaleKey}-weight, ${spec.fontWeight})` as React.CSSProperties["fontWeight"],
+    letterSpacing: `var(--m3e-typescale-${scaleKey}-tracking, normal)`,
+    borderWidth: variant === "outlined" ? `${spec.outlineWidth}px` : undefined,
+    borderRadius,
+    ...style,
+  };
+}
+
+function ButtonIcon({
+  size,
+  hidden,
+  children,
+}: {
+  readonly size: number;
+  readonly hidden?: boolean;
+  readonly children: React.ReactNode;
+}) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      className="m3e-button__spinner"
+    <span
+      className="m3e-button__icon"
+      style={{ width: size, height: size, opacity: hidden ? 0 : undefined }}
       aria-hidden="true"
     >
-      <circle
-        cx="12"
-        cy="12"
-        r="9"
-        stroke="currentColor"
-        strokeWidth="2.6"
-        strokeOpacity="0.26"
-      />
-      <path
-        d="M21 12a9 9 0 0 0-9-9"
-        stroke="currentColor"
-        strokeWidth="2.6"
-        strokeLinecap="round"
-      />
-    </svg>
+      {children}
+    </span>
   );
 }
 
@@ -119,47 +149,21 @@ const ActionButton = React.forwardRef<HTMLElement, M3EButtonActionProps>(functio
   },
   ref,
 ) {
-  const { debugGeometry } = useM3ERuntime();
-  const groupItemCtx = React.useContext(ButtonGroupItemContext);
   const spec = BUTTON_SIZE_SPECS[size];
   const isDisabled = disabled || loading;
   const { isPressed, pressHandlers } = usePressHoldState(isDisabled);
 
-  const onGroupPressChange = groupItemCtx?.onPressChange;
-  React.useEffect(() => {
-    onGroupPressChange?.(isPressed);
-  }, [isPressed, onGroupPressChange]);
-
   const restRadius =
     shape === "square" ? spec.squareCornerRadius : spec.restCornerRadius;
-  const scalarRadius = isPressed ? spec.pressedCornerRadius : restRadius;
-  const targetCorners: CornerTuple =
-    groupItemCtx?.cornerOverride ?? [
-      scalarRadius,
-      scalarRadius,
-      scalarRadius,
-      scalarRadius,
-    ];
+  const targetCorners = useGroupItemCorners(
+    isPressed,
+    isPressed ? spec.pressedCornerRadius : restRadius,
+  );
 
   const {
     ref: mergedRef,
     borderRadiusCss,
   } = useM3ECornerSpringRef<HTMLElement>(targetCorners, "defaultEffects", ref);
-
-  const scaleKey = BUTTON_TYPESCALE_MAP[size];
-  const mergedStyle: React.CSSProperties = {
-    height: `${spec.height}px`,
-    paddingInline: `${spec.paddingHorizontal}px`,
-    gap: `${spec.iconGap}px`,
-    fontFamily: `var(--m3e-typescale-${scaleKey}-font, inherit)`,
-    fontSize: `var(--m3e-typescale-${scaleKey}-size, ${spec.fontSize}px)`,
-    lineHeight: `var(--m3e-typescale-${scaleKey}-line-height, ${spec.lineHeight}px)`,
-    fontWeight: `var(--m3e-typescale-${scaleKey}-weight, ${spec.fontWeight})` as React.CSSProperties["fontWeight"],
-    letterSpacing: `var(--m3e-typescale-${scaleKey}-tracking, normal)`,
-    borderWidth: variant === "outlined" ? `${spec.outlineWidth}px` : undefined,
-    borderRadius: borderRadiusCss,
-    ...style,
-  };
 
   const resolvedRender =
     render ??
@@ -184,7 +188,7 @@ const ActionButton = React.forwardRef<HTMLElement, M3EButtonActionProps>(functio
       aria-label={ariaLabel}
       onClick={onClick}
       className={className ? `m3e-button ${className}` : "m3e-button"}
-      style={mergedStyle}
+      style={buttonStyle(size, variant, borderRadiusCss, style)}
       data-variant={variant}
       data-intent={intent !== "default" ? intent : undefined}
       data-size={size}
@@ -195,17 +199,9 @@ const ActionButton = React.forwardRef<HTMLElement, M3EButtonActionProps>(functio
       data-pressed={isPressed ? "" : undefined}
     >
       {leadingIcon ? (
-        <span
-          className="m3e-button__icon"
-          style={{
-            width: spec.iconSize,
-            height: spec.iconSize,
-            opacity: loading ? 0 : undefined,
-          }}
-          aria-hidden="true"
-        >
+        <ButtonIcon size={spec.iconSize} hidden={loading}>
           {leadingIcon}
-        </span>
+        </ButtonIcon>
       ) : null}
       <span
         className="m3e-button__label"
@@ -214,17 +210,9 @@ const ActionButton = React.forwardRef<HTMLElement, M3EButtonActionProps>(functio
         {children}
       </span>
       {trailingIcon ? (
-        <span
-          className="m3e-button__icon"
-          style={{
-            width: spec.iconSize,
-            height: spec.iconSize,
-            opacity: loading ? 0 : undefined,
-          }}
-          aria-hidden="true"
-        >
+        <ButtonIcon size={spec.iconSize} hidden={loading}>
           {trailingIcon}
-        </span>
+        </ButtonIcon>
       ) : null}
       {loading ? (
         <span
@@ -239,14 +227,10 @@ const ActionButton = React.forwardRef<HTMLElement, M3EButtonActionProps>(functio
           }}
           aria-hidden="true"
         >
-          <ButtonSpinnerSvg size={spec.iconSize} />
+          <SpinnerIcon size={spec.iconSize} className="m3e-button__spinner" />
         </span>
       ) : null}
-      {debugGeometry ? (
-        <span className="m3e-debug-badge" aria-hidden="true">
-          {formatCornerBadge(targetCorners)}
-        </span>
-      ) : null}
+      <CornerDebugBadge corners={targetCorners} />
     </BaseButton>
   );
 });
@@ -272,24 +256,6 @@ export interface M3EButtonToggleProps
   readonly "aria-label"?: string;
 }
 
-function CheckmarkSvg({ size }: { readonly size: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
-
 const ToggleButton = React.forwardRef<HTMLButtonElement, M3EButtonToggleProps>(
   function ToggleButton(
     {
@@ -311,8 +277,6 @@ const ToggleButton = React.forwardRef<HTMLButtonElement, M3EButtonToggleProps>(
     },
     ref,
   ) {
-    const { debugGeometry } = useM3ERuntime();
-    const groupItemCtx = React.useContext(ButtonGroupItemContext);
     const [uncontrolledPressed, setUncontrolledPressed] =
       React.useState<boolean>(defaultPressed);
     const isSelected = controlledPressed ?? uncontrolledPressed;
@@ -320,28 +284,18 @@ const ToggleButton = React.forwardRef<HTMLButtonElement, M3EButtonToggleProps>(
     const spec = BUTTON_SIZE_SPECS[size];
     const { isPressed: isPointerPressed, pressHandlers } = usePressHoldState(disabled);
 
-    const onGroupPressChange = groupItemCtx?.onPressChange;
-    React.useEffect(() => {
-      onGroupPressChange?.(isPointerPressed);
-    }, [isPointerPressed, onGroupPressChange]);
-
     const unselectedRadius =
       shape === "square" ? spec.squareCornerRadius : spec.restCornerRadius;
     const selectedRadius =
       shape === "square" ? spec.restCornerRadius : spec.selectedCornerRadius;
-    const scalarRadius = isPointerPressed
-      ? spec.pressedCornerRadius
-      : isSelected
-        ? selectedRadius
-        : unselectedRadius;
-
-    const targetCorners: CornerTuple =
-      groupItemCtx?.cornerOverride ?? [
-        scalarRadius,
-        scalarRadius,
-        scalarRadius,
-        scalarRadius,
-      ];
+    const targetCorners = useGroupItemCorners(
+      isPointerPressed,
+      isPointerPressed
+        ? spec.pressedCornerRadius
+        : isSelected
+          ? selectedRadius
+          : unselectedRadius,
+    );
 
     const {
       ref: mergedRef,
@@ -352,24 +306,9 @@ const ToggleButton = React.forwardRef<HTMLButtonElement, M3EButtonToggleProps>(
       ref,
     );
 
-    const scaleKey = BUTTON_TYPESCALE_MAP[size];
-    const mergedStyle: React.CSSProperties = {
-      height: `${spec.height}px`,
-      paddingInline: `${spec.paddingHorizontal}px`,
-      gap: `${spec.iconGap}px`,
-      fontFamily: `var(--m3e-typescale-${scaleKey}-font, inherit)`,
-      fontSize: `var(--m3e-typescale-${scaleKey}-size, ${spec.fontSize}px)`,
-      lineHeight: `var(--m3e-typescale-${scaleKey}-line-height, ${spec.lineHeight}px)`,
-      fontWeight: `var(--m3e-typescale-${scaleKey}-weight, ${spec.fontWeight})` as React.CSSProperties["fontWeight"],
-      letterSpacing: `var(--m3e-typescale-${scaleKey}-tracking, normal)`,
-      borderWidth: variant === "outlined" ? `${spec.outlineWidth}px` : undefined,
-      borderRadius: borderRadiusCss,
-      ...style,
-    };
-
     const resolvedIcon =
       isSelected && showCheckIcon ? (
-        <CheckmarkSvg size={spec.iconSize} />
+        <CheckIcon size={spec.iconSize} strokeWidth={2.5} />
       ) : (
         leadingIcon
       );
@@ -395,7 +334,7 @@ const ToggleButton = React.forwardRef<HTMLButtonElement, M3EButtonToggleProps>(
           onPressedChange?.(next);
         }}
         className={className ? `m3e-button ${className}` : "m3e-button"}
-        style={mergedStyle}
+        style={buttonStyle(size, variant, borderRadiusCss, style)}
         data-toggle=""
         data-variant={variant}
         data-size={size}
@@ -404,20 +343,10 @@ const ToggleButton = React.forwardRef<HTMLButtonElement, M3EButtonToggleProps>(
         data-selected={isSelected ? "" : undefined}
       >
         {resolvedIcon ? (
-          <span
-            className="m3e-button__icon"
-            style={{ width: spec.iconSize, height: spec.iconSize }}
-            aria-hidden="true"
-          >
-            {resolvedIcon}
-          </span>
+          <ButtonIcon size={spec.iconSize}>{resolvedIcon}</ButtonIcon>
         ) : null}
         <span className="m3e-button__label">{children}</span>
-        {debugGeometry ? (
-          <span className="m3e-debug-badge" aria-hidden="true">
-            {formatCornerBadge(targetCorners)}
-          </span>
-        ) : null}
+        <CornerDebugBadge corners={targetCorners} />
       </BaseToggle>
     );
   },

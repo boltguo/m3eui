@@ -9,9 +9,12 @@ import {
   resolveIconButtonGeometry,
 } from "../tokens/topology.js";
 import { isToggleProps } from "../internal/toggleProps.js";
+import { SpinnerIcon } from "../internal/icons.js";
 import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3ECornerSpringRef, usePressHoldState } from "../hooks/useM3ESpring.js";
 import type { ButtonIntent } from "./Button.js";
+
+type IconButtonGeometry = ReturnType<typeof resolveIconButtonGeometry>;
 
 export interface M3EIconButtonActionProps
   extends Omit<
@@ -41,31 +44,46 @@ export interface M3EIconButtonActionProps
   readonly style?: React.CSSProperties;
 }
 
-function IconSpinnerSvg({ size }: { readonly size: number }) {
+function iconButtonStyle(
+  geo: IconButtonGeometry,
+  borderRadius: string,
+  style: React.CSSProperties | undefined,
+): React.CSSProperties {
+  return {
+    width: `${geo.width}px`,
+    height: `${geo.height}px`,
+    minInlineSize: `${Math.max(24, geo.width)}px`,
+    minBlockSize: `${Math.max(24, geo.height)}px`,
+    paddingInline: `${geo.paddingInline}px`,
+    borderWidth: `${geo.outlineWidth}px`,
+    borderRadius,
+    ...style,
+  };
+}
+
+function IconButtonContent({
+  geo,
+  glyph,
+}: {
+  readonly geo: IconButtonGeometry;
+  readonly glyph: React.ReactNode;
+}) {
+  const { debugGeometry } = useM3ERuntime();
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      className="m3e-button__spinner"
-      aria-hidden="true"
-    >
-      <circle
-        cx="12"
-        cy="12"
-        r="9"
-        stroke="currentColor"
-        strokeWidth="2.6"
-        strokeOpacity="0.26"
-      />
-      <path
-        d="M21 12a9 9 0 0 0-9-9"
-        stroke="currentColor"
-        strokeWidth="2.6"
-        strokeLinecap="round"
-      />
-    </svg>
+    <>
+      <span
+        className="m3e-icon-button__glyph"
+        style={{ width: geo.iconSize, height: geo.iconSize }}
+        aria-hidden="true"
+      >
+        {glyph}
+      </span>
+      {debugGeometry ? (
+        <span className="m3e-debug-badge" aria-hidden="true">
+          {geo.width}×{geo.height} r:{geo.corners[0].toFixed(0)}
+        </span>
+      ) : null}
+    </>
   );
 }
 
@@ -93,7 +111,6 @@ const ActionIconButton = React.forwardRef<HTMLElement, M3EIconButtonActionProps>
     },
     ref,
   ) {
-    const { debugGeometry } = useM3ERuntime();
     const isDisabled = disabled || loading;
     const { isPressed, pressHandlers } = usePressHoldState(isDisabled);
 
@@ -107,17 +124,6 @@ const ActionIconButton = React.forwardRef<HTMLElement, M3EIconButtonActionProps>
 
     const { ref: mergedRef, borderRadiusCss } =
       useM3ECornerSpringRef<HTMLElement>(geo.corners, "defaultEffects", ref);
-
-    const mergedStyle: React.CSSProperties = {
-      width: `${geo.width}px`,
-      height: `${geo.height}px`,
-      minInlineSize: `${Math.max(24, geo.width)}px`,
-      minBlockSize: `${Math.max(24, geo.height)}px`,
-      paddingInline: `${geo.paddingInline}px`,
-      borderWidth: `${geo.outlineWidth}px`,
-      borderRadius: borderRadiusCss,
-      ...style,
-    };
 
     const resolvedRender =
       render ??
@@ -144,7 +150,7 @@ const ActionIconButton = React.forwardRef<HTMLElement, M3EIconButtonActionProps>
         className={
           className ? `m3e-icon-button ${className}` : "m3e-icon-button"
         }
-        style={mergedStyle}
+        style={iconButtonStyle(geo, borderRadiusCss, style)}
         data-variant={variant}
         data-intent={intent !== "default" ? intent : undefined}
         data-size={size}
@@ -154,18 +160,16 @@ const ActionIconButton = React.forwardRef<HTMLElement, M3EIconButtonActionProps>
         data-explicit-disabled={disabled ? "" : undefined}
         data-pressed={isPressed ? "" : undefined}
       >
-        <span
-          className="m3e-icon-button__glyph"
-          style={{ width: geo.iconSize, height: geo.iconSize }}
-          aria-hidden="true"
-        >
-          {loading ? <IconSpinnerSvg size={geo.iconSize} /> : icon}
-        </span>
-        {debugGeometry ? (
-          <span className="m3e-debug-badge" aria-hidden="true">
-            {geo.width}×{geo.height} r:{geo.corners[0].toFixed(0)}
-          </span>
-        ) : null}
+        <IconButtonContent
+          geo={geo}
+          glyph={
+            loading ? (
+              <SpinnerIcon size={geo.iconSize} className="m3e-button__spinner" />
+            ) : (
+              icon
+            )
+          }
+        />
       </BaseButton>
     );
   },
@@ -215,7 +219,6 @@ const ToggleIconButton = React.forwardRef<
   },
   ref,
 ) {
-  const { debugGeometry } = useM3ERuntime();
   const [uncontrolledPressed, setUncontrolledPressed] =
     React.useState<boolean>(defaultPressed);
   const isSelected = controlledPressed ?? uncontrolledPressed;
@@ -232,17 +235,6 @@ const ToggleIconButton = React.forwardRef<
 
   const { ref: mergedRef, borderRadiusCss } =
     useM3ECornerSpringRef<HTMLButtonElement>(geo.corners, "defaultEffects", ref);
-
-  const mergedStyle: React.CSSProperties = {
-    width: `${geo.width}px`,
-    height: `${geo.height}px`,
-    minInlineSize: `${Math.max(24, geo.width)}px`,
-    minBlockSize: `${Math.max(24, geo.height)}px`,
-    paddingInline: `${geo.paddingInline}px`,
-    borderWidth: `${geo.outlineWidth}px`,
-    borderRadius: borderRadiusCss,
-    ...style,
-  };
 
   const mergedProps = mergeProps<"button">(
     pressHandlers as unknown as React.ComponentPropsWithRef<"button">,
@@ -267,7 +259,7 @@ const ToggleIconButton = React.forwardRef<
       className={
         className ? `m3e-icon-button ${className}` : "m3e-icon-button"
       }
-      style={mergedStyle}
+      style={iconButtonStyle(geo, borderRadiusCss, style)}
       data-toggle=""
       data-variant={variant}
       data-size={size}
@@ -276,18 +268,10 @@ const ToggleIconButton = React.forwardRef<
       data-pressed={isPointerPressed ? "" : undefined}
       data-selected={isSelected ? "" : undefined}
     >
-      <span
-        className="m3e-icon-button__glyph"
-        style={{ width: geo.iconSize, height: geo.iconSize }}
-        aria-hidden="true"
-      >
-        {isSelected && checkedIcon ? checkedIcon : icon}
-      </span>
-      {debugGeometry ? (
-        <span className="m3e-debug-badge" aria-hidden="true">
-          {geo.width}×{geo.height} r:{geo.corners[0].toFixed(0)}
-        </span>
-      ) : null}
+      <IconButtonContent
+        geo={geo}
+        glyph={isSelected && checkedIcon ? checkedIcon : icon}
+      />
     </BaseToggle>
   );
 });

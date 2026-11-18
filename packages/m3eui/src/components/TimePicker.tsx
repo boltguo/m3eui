@@ -23,6 +23,7 @@ import {
 import { formatLocalizedWallTime, getLocaleUses24Hour } from "../i18n/index.js";
 import { FieldRoot, FieldTrigger } from "../internal/pickerField.js";
 import { FormHiddenValue } from "../internal/formField.js";
+import { ClockIcon } from "../internal/icons.js";
 
 export type PlainTimeString = `${string}:${string}` | string;
 
@@ -117,25 +118,6 @@ function PeriodSegmentButton({
     >
       {label}
     </button>
-  );
-}
-
-function ClockIconSvg() {
-  return (
-    <svg
-      width={18}
-      height={18}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="9" />
-      <polyline points="12 7 12 12 15.5 14" />
-    </svg>
   );
 }
 
@@ -339,7 +321,7 @@ export function TimePicker({
               setInputMode(inputMode === "dial" ? "keyboard" : "dial")
             }
           >
-            {inputMode === "dial" ? <KeyboardIconSvg /> : <ClockIconSvg />}
+            {inputMode === "dial" ? <KeyboardIconSvg /> : <ClockIcon size={18} strokeWidth={2} />}
           </button>
         ) : null}
       </div>
@@ -1044,7 +1026,7 @@ export function TimePickerField({
           >
             <span className="m3e-select__value">{formattedLabel}</span>
             <span className="m3e-select__chevron" aria-hidden="true">
-              <ClockIconSvg />
+              <ClockIcon size={18} strokeWidth={2} />
             </span>
           </FieldTrigger>
         </div>
@@ -1156,7 +1138,7 @@ function ModalTimePickerPopup({
                 setInputMode((m) => (m === "dial" ? "keyboard" : "dial"))
               }
             >
-              {inputMode === "dial" ? <KeyboardIconSvg /> : <ClockIconSvg />}
+              {inputMode === "dial" ? <KeyboardIconSvg /> : <ClockIcon size={18} strokeWidth={2} />}
             </button>
 
             <div className="m3e-time-picker-dialog__actions">

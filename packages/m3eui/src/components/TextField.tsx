@@ -11,6 +11,8 @@ import {
   FieldNotchedOutline,
   useFieldsetDisabled,
 } from "../internal/fieldOutline.js";
+import { assignRef } from "../internal/assignRef.js";
+import { CloseIcon } from "../internal/icons.js";
 
 export type TextFieldVariant = "outlined" | "filled";
 export type FieldLabelPosition = "floating" | "outside";
@@ -62,24 +64,6 @@ export type M3ETextFieldProps =
   | M3ETextFieldSingleLineProps
   | M3ETextFieldMultilineProps;
 
-function ClearGlyph() {
-  return (
-    <svg
-      width={15}
-      height={15}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.3"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
-}
-
 function EyeGlyph({ shown }: { readonly shown: boolean }) {
   return shown ? (
     <svg
@@ -115,342 +99,12 @@ function EyeGlyph({ shown }: { readonly shown: boolean }) {
   );
 }
 
-function assignRef<T>(ref: React.ForwardedRef<T>, value: T | null): void {
-  if (typeof ref === "function") {
-    ref(value);
-  } else if (ref) {
-    ref.current = value;
-  }
-}
-
-const SingleLineField = React.forwardRef<HTMLInputElement, M3ETextFieldSingleLineProps>(
-  function SingleLineField(
-    {
-      label,
-      value: controlledValue,
-      defaultValue = "",
-      onValueChange,
-      variant = "outlined",
-      labelPosition = "floating",
-      type = "text",
-      name,
-      id,
-      placeholder,
-      description,
-      errorMessage,
-      invalid,
-      validate,
-      required = false,
-      disabled,
-      readOnly = false,
-      autoComplete,
-      inputMode,
-      enterKeyHint,
-      pattern,
-      minLength,
-      maxLength,
-      showCharacterCount = false,
-      clearable = false,
-      prefixText,
-      suffixText,
-      leadingIcon,
-      trailingIcon,
-      className,
-      style,
-    },
-    ref,
-  ) {
-    const { t } = useM3EI18n();
-    const isDisabled = useFieldsetDisabled(disabled);
-    const inputRef = React.useRef<HTMLInputElement | null>(null);
-    const defaultValRef = React.useRef(defaultValue);
-    defaultValRef.current = defaultValue;
-
-    const [uncontrolledValue, setUncontrolledValue] =
-      React.useState<string>(defaultValue);
-    const [showPassword, setShowPassword] = React.useState(false);
-    const [isFocused, setIsFocused] = React.useState(false);
-
-    useFormReset(
-      inputRef,
-      () => setUncontrolledValue(defaultValRef.current),
-      controlledValue === undefined,
-    );
-
-    const currentVal = controlledValue ?? uncontrolledValue;
-    const isPopulated = currentVal.length > 0;
-    const isFloatingLabel = labelPosition === "floating" && Boolean(label);
-    const isLabelFloated =
-      isFocused || isPopulated || Boolean(prefixText) || Boolean(suffixText);
-
-    const isPassword = type === "password";
-    const effectiveType = isPassword && showPassword ? "text" : type;
-
-    const isIdentifierField =
-      type === "email" || type === "url" || type === "search" || isPassword;
-
-    const height = isFloatingLabel
-      ? variant === "filled"
-        ? TEXT_FIELD_TOKENS.filledHeight
-        : TEXT_FIELD_TOKENS.outlinedHeight
-      : 48;
-
-    const baseRadius = isFloatingLabel
-      ? variant === "filled"
-        ? TEXT_FIELD_TOKENS.filledTopRadius
-        : TEXT_FIELD_TOKENS.outlinedRadius
-      : TEXT_FIELD_TOKENS.outsideLabelRadius;
-
-    const containerRadius =
-      variant === "filled"
-        ? `${baseRadius}px ${baseRadius}px ${TEXT_FIELD_TOKENS.filledBottomRadius}px ${TEXT_FIELD_TOKENS.filledBottomRadius}px`
-        : `${baseRadius}px`;
-
-    const handleChange = (next: string) => {
-      if (controlledValue === undefined) {
-        setUncontrolledValue(next);
-      }
-      onValueChange?.(next);
-    };
-
-    const hasCounter = Boolean(showCharacterCount && maxLength);
-
-    return (
-      <BaseField.Root
-        name={name}
-        disabled={isDisabled || undefined}
-        invalid={errorMessage ? true : invalid}
-        validate={validate}
-        className={className ? `m3e-field ${className}` : "m3e-field"}
-        data-label-position={labelPosition}
-        data-readonly={readOnly ? "" : undefined}
-        style={style}
-      >
-        {!isFloatingLabel ? (
-          <>
-            <div className="m3e-field__label-row">
-              <BaseField.Label className="m3e-field__label">
-                {label}
-                {required ? (
-                  <span className="m3e-field__required" aria-hidden="true">
-                    {" "}*
-                  </span>
-                ) : null}
-              </BaseField.Label>
-              {hasCounter ? (
-                <span className="m3e-field__counter" aria-live="off">
-                  {currentVal.length}/{maxLength}
-                </span>
-              ) : null}
-            </div>
-            {description ? (
-              <BaseField.Description className="m3e-field__description">
-                {description}
-              </BaseField.Description>
-            ) : null}
-          </>
-        ) : null}
-
-        <div
-          className="m3e-text-field__shell"
-          data-variant={variant}
-          data-label-position={labelPosition}
-          data-floating={isLabelFloated ? "" : undefined}
-          data-populated={isPopulated ? "" : undefined}
-          data-has-leading={leadingIcon ? "" : undefined}
-          data-invalid={invalid || Boolean(errorMessage) ? "" : undefined}
-          data-disabled={isDisabled ? "" : undefined}
-          data-readonly={readOnly ? "" : undefined}
-          style={{
-            minHeight: `${height}px`,
-            paddingInline: `${TEXT_FIELD_TOKENS.paddingInline}px`,
-            borderRadius: containerRadius,
-          }}
-        >
-          {isFloatingLabel && variant === "outlined" ? (
-            <FieldNotchedOutline
-              label={label}
-              required={required}
-              floating={isLabelFloated}
-            />
-          ) : null}
-
-          {leadingIcon ? (
-            <span className="m3e-text-field__affix" aria-hidden="true">
-              {leadingIcon}
-            </span>
-          ) : null}
-
-          <div className="m3e-text-field__control-stack">
-            {isFloatingLabel ? (
-              <BaseField.Label
-                className="m3e-field__floating-label"
-                data-floating={isLabelFloated ? "" : undefined}
-              >
-                {label}
-                {required ? (
-                  <span className="m3e-field__required" aria-hidden="true">
-                    {" "}*
-                  </span>
-                ) : null}
-              </BaseField.Label>
-            ) : null}
-
-            <div className="m3e-text-field__input-line">
-              {prefixText ? (
-                <span className="m3e-text-field__text-affix" aria-hidden="true">
-                  {prefixText}
-                </span>
-              ) : null}
-
-              <BaseInput
-                ref={(node) => {
-                  const inputNode =
-                    node instanceof HTMLInputElement ? node : null;
-                  inputRef.current = inputNode;
-                  assignRef(ref, inputNode);
-                }}
-                id={id}
-                type={effectiveType}
-                value={currentVal}
-                onValueChange={handleChange}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-                placeholder={placeholder}
-                required={required}
-                readOnly={readOnly}
-                autoComplete={autoComplete}
-                inputMode={inputMode}
-                enterKeyHint={enterKeyHint}
-                pattern={pattern}
-                minLength={minLength}
-                maxLength={maxLength}
-                autoCorrect={isIdentifierField ? "off" : undefined}
-                autoCapitalize={isIdentifierField ? "none" : undefined}
-                spellCheck={isIdentifierField ? false : undefined}
-                className="m3e-text-field__input"
-              />
-
-              {suffixText ? (
-                <span className="m3e-text-field__text-affix" aria-hidden="true">
-                  {suffixText}
-                </span>
-              ) : null}
-            </div>
-          </div>
-
-          {clearable && currentVal.length > 0 && !isDisabled && !readOnly ? (
-            <button
-              type="button"
-              aria-label={t("textField.clear")}
-              className="m3e-text-field__icon-btn"
-              onClick={() => {
-                handleChange("");
-                inputRef.current?.focus();
-              }}
-            >
-              <ClearGlyph />
-            </button>
-          ) : null}
-
-          {isPassword ? (
-            <button
-              type="button"
-              disabled={isDisabled}
-              aria-pressed={showPassword}
-              aria-label={
-                showPassword
-                  ? t("textField.hidePassword")
-                  : t("textField.showPassword")
-              }
-              className="m3e-text-field__icon-btn"
-              onClick={() => setShowPassword((s) => !s)}
-            >
-              <EyeGlyph shown={showPassword} />
-            </button>
-          ) : null}
-
-          {trailingIcon ? (
-            <span className="m3e-text-field__affix" aria-hidden="true">
-              {trailingIcon}
-            </span>
-          ) : null}
-        </div>
-
-        {isFloatingLabel && (description || hasCounter) ? (
-          <div className="m3e-field__supporting-row">
-            {description ? (
-              <BaseField.Description className="m3e-field__description">
-                {description}
-              </BaseField.Description>
-            ) : (
-              <span />
-            )}
-            {hasCounter ? (
-              <span className="m3e-field__counter" aria-live="off">
-                {currentVal.length}/{maxLength}
-              </span>
-            ) : null}
-          </div>
-        ) : null}
-
-        {!isDisabled ? (
-          <BaseField.Error
-            match={invalid || Boolean(errorMessage) ? true : undefined}
-            className="m3e-field__error"
-            render={(errorProps) => {
-              const baseError =
-                errorProps.children !== "" ? errorProps.children : undefined;
-              const resolvedMessage =
-                errorMessage ??
-                baseError ??
-                (invalid ? t("textField.defaultInvalid") : null);
-              return (
-                <div {...errorProps}>
-                  <FieldErrorIconSvg label={t("textField.errorIcon")} />
-                  <span>{resolvedMessage}</span>
-                </div>
-              );
-            }}
-          />
-        ) : null}
-      </BaseField.Root>
-    );
-  },
-);
-
-const MultilineField = React.forwardRef<
-  HTMLTextAreaElement,
-  M3ETextFieldMultilineProps
->(function MultilineField(
-  {
-    label,
-    value: controlledValue,
-    defaultValue = "",
-    onValueChange,
-    variant = "outlined",
-    labelPosition = "floating",
-    rows = 3,
-    name,
-    id,
-    placeholder,
-    description,
-    errorMessage,
-    invalid,
-    validate,
-    required = false,
-    disabled,
-    readOnly = false,
-    maxLength,
-    showCharacterCount = false,
-    className,
-    style,
-  },
-  ref,
+function useFieldValue<T extends HTMLElement>(
+  controlledValue: string | undefined,
+  defaultValue: string,
+  onValueChange: ((value: string) => void) | undefined,
 ) {
-  const { t } = useM3EI18n();
-  const isDisabled = useFieldsetDisabled(disabled);
-  const textareaRef = React.useRef<HTMLTextAreaElement | null>(null);
+  const controlRef = React.useRef<T | null>(null);
   const defaultValRef = React.useRef(defaultValue);
   defaultValRef.current = defaultValue;
 
@@ -459,15 +113,87 @@ const MultilineField = React.forwardRef<
   const [isFocused, setIsFocused] = React.useState(false);
 
   useFormReset(
-    textareaRef,
+    controlRef,
     () => setUncontrolledValue(defaultValRef.current),
     controlledValue === undefined,
   );
 
-  const currentVal = controlledValue ?? uncontrolledValue;
-  const isPopulated = currentVal.length > 0;
+  const setValue = (next: string) => {
+    if (controlledValue === undefined) {
+      setUncontrolledValue(next);
+    }
+    onValueChange?.(next);
+  };
+
+  return {
+    controlRef,
+    value: controlledValue ?? uncontrolledValue,
+    setValue,
+    isFocused,
+    setIsFocused,
+  };
+}
+
+interface FieldFrameProps
+  extends Pick<
+    TextFieldBaseProps,
+    | "label"
+    | "name"
+    | "description"
+    | "errorMessage"
+    | "invalid"
+    | "validate"
+    | "maxLength"
+    | "className"
+    | "style"
+  > {
+  readonly variant: TextFieldVariant;
+  readonly labelPosition: FieldLabelPosition;
+  readonly required: boolean;
+  readonly readOnly: boolean;
+  readonly isDisabled: boolean;
+  readonly floated: boolean;
+  readonly valueLength: number;
+  readonly showCharacterCount: boolean;
+  readonly textarea?: boolean;
+  readonly leading?: React.ReactNode;
+  readonly trailing?: React.ReactNode;
+  readonly children: React.ReactNode;
+}
+
+function FieldFrame({
+  label,
+  name,
+  description,
+  errorMessage,
+  invalid,
+  validate,
+  maxLength,
+  className,
+  style,
+  variant,
+  labelPosition,
+  required,
+  readOnly,
+  isDisabled,
+  floated,
+  valueLength,
+  showCharacterCount,
+  textarea = false,
+  leading,
+  trailing,
+  children,
+}: FieldFrameProps) {
+  const { t } = useM3EI18n();
   const isFloatingLabel = labelPosition === "floating" && Boolean(label);
-  const isLabelFloated = isFocused || isPopulated;
+  const hasCounter = Boolean(showCharacterCount && maxLength);
+  const hasError = invalid || Boolean(errorMessage);
+
+  const height = isFloatingLabel
+    ? variant === "filled"
+      ? TEXT_FIELD_TOKENS.filledHeight
+      : TEXT_FIELD_TOKENS.outlinedHeight
+    : 48;
 
   const baseRadius = isFloatingLabel
     ? variant === "filled"
@@ -480,7 +206,31 @@ const MultilineField = React.forwardRef<
       ? `${baseRadius}px ${baseRadius}px ${TEXT_FIELD_TOKENS.filledBottomRadius}px ${TEXT_FIELD_TOKENS.filledBottomRadius}px`
       : `${baseRadius}px`;
 
-  const hasCounter = Boolean(showCharacterCount && maxLength);
+  const labelContent = (
+    <>
+      {label}
+      {required ? (
+        <span className="m3e-field__required" aria-hidden="true">
+          {" "}*
+        </span>
+      ) : null}
+    </>
+  );
+
+  const counter = hasCounter ? (
+    <span className="m3e-field__counter" aria-live="off">
+      {valueLength}/{maxLength}
+    </span>
+  ) : null;
+
+  const descriptionNode = description ? (
+    <BaseField.Description className="m3e-field__description">
+      {description}
+    </BaseField.Description>
+  ) : null;
+
+  const textareaMod = (base: string) =>
+    textarea ? `${base} ${base}--textarea` : base;
 
   return (
     <BaseField.Root
@@ -497,37 +247,26 @@ const MultilineField = React.forwardRef<
         <>
           <div className="m3e-field__label-row">
             <BaseField.Label className="m3e-field__label">
-              {label}
-              {required ? (
-                <span className="m3e-field__required" aria-hidden="true">
-                  {" "}*
-                </span>
-              ) : null}
+              {labelContent}
             </BaseField.Label>
-            {hasCounter ? (
-              <span className="m3e-field__counter" aria-live="off">
-                {currentVal.length}/{maxLength}
-              </span>
-            ) : null}
+            {counter}
           </div>
-          {description ? (
-            <BaseField.Description className="m3e-field__description">
-              {description}
-            </BaseField.Description>
-          ) : null}
+          {descriptionNode}
         </>
       ) : null}
 
       <div
-        className="m3e-text-field__shell m3e-text-field__shell--textarea"
+        className={textareaMod("m3e-text-field__shell")}
         data-variant={variant}
         data-label-position={labelPosition}
-        data-floating={isLabelFloated ? "" : undefined}
-        data-populated={isPopulated ? "" : undefined}
-        data-invalid={invalid || Boolean(errorMessage) ? "" : undefined}
+        data-floating={floated ? "" : undefined}
+        data-populated={valueLength > 0 ? "" : undefined}
+        data-has-leading={leading ? "" : undefined}
+        data-invalid={hasError ? "" : undefined}
         data-disabled={isDisabled ? "" : undefined}
         data-readonly={readOnly ? "" : undefined}
         style={{
+          minHeight: textarea ? undefined : `${height}px`,
           paddingInline: `${TEXT_FIELD_TOKENS.paddingInline}px`,
           borderRadius: containerRadius,
         }}
@@ -536,87 +275,41 @@ const MultilineField = React.forwardRef<
           <FieldNotchedOutline
             label={label}
             required={required}
-            floating={isLabelFloated}
+            floating={floated}
           />
         ) : null}
 
-        <div className="m3e-text-field__control-stack m3e-text-field__control-stack--textarea">
+        {leading ? (
+          <span className="m3e-text-field__affix" aria-hidden="true">
+            {leading}
+          </span>
+        ) : null}
+
+        <div className={textareaMod("m3e-text-field__control-stack")}>
           {isFloatingLabel ? (
             <BaseField.Label
-              className="m3e-field__floating-label m3e-field__floating-label--textarea"
-              data-floating={isLabelFloated ? "" : undefined}
+              className={textareaMod("m3e-field__floating-label")}
+              data-floating={floated ? "" : undefined}
             >
-              {label}
-              {required ? (
-                <span className="m3e-field__required" aria-hidden="true">
-                  {" "}*
-                </span>
-              ) : null}
+              {labelContent}
             </BaseField.Label>
           ) : null}
-
-          <BaseField.Control
-            id={id}
-            required={required}
-            readOnly={readOnly}
-            render={(props) => (
-              <textarea
-                {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
-                ref={(node) => {
-                  textareaRef.current = node;
-                  const baseRef = (props as { ref?: React.Ref<HTMLTextAreaElement> }).ref;
-                  if (typeof baseRef === "function") baseRef(node);
-                  else if (baseRef && "current" in baseRef) {
-                    (baseRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = node;
-                  }
-                  assignRef(ref, node);
-                }}
-                rows={rows}
-                placeholder={placeholder}
-                maxLength={maxLength}
-                value={currentVal}
-                onFocus={(e) => {
-                  setIsFocused(true);
-                  (props as React.TextareaHTMLAttributes<HTMLTextAreaElement>).onFocus?.(e);
-                }}
-                onBlur={(e) => {
-                  setIsFocused(false);
-                  (props as React.TextareaHTMLAttributes<HTMLTextAreaElement>).onBlur?.(e);
-                }}
-                onChange={(e) => {
-                  if (controlledValue === undefined) {
-                    setUncontrolledValue(e.target.value);
-                  }
-                  onValueChange?.(e.target.value);
-                  (props as React.TextareaHTMLAttributes<HTMLTextAreaElement>).onChange?.(e);
-                }}
-                className="m3e-text-field__textarea"
-              />
-            )}
-          />
+          {children}
         </div>
+
+        {trailing}
       </div>
 
       {isFloatingLabel && (description || hasCounter) ? (
         <div className="m3e-field__supporting-row">
-          {description ? (
-            <BaseField.Description className="m3e-field__description">
-              {description}
-            </BaseField.Description>
-          ) : (
-            <span />
-          )}
-          {hasCounter ? (
-            <span className="m3e-field__counter" aria-live="off">
-              {currentVal.length}/{maxLength}
-            </span>
-          ) : null}
+          {descriptionNode ?? <span />}
+          {counter}
         </div>
       ) : null}
 
       {!isDisabled ? (
         <BaseField.Error
-          match={invalid || Boolean(errorMessage) ? true : undefined}
+          match={hasError ? true : undefined}
           className="m3e-field__error"
           render={(errorProps) => {
             const baseError =
@@ -624,7 +317,13 @@ const MultilineField = React.forwardRef<
             const resolvedMessage =
               errorMessage ??
               baseError ??
-              (invalid ? t("textField.textareaDefaultInvalid") : null);
+              (invalid
+                ? t(
+                    textarea
+                      ? "textField.textareaDefaultInvalid"
+                      : "textField.defaultInvalid",
+                  )
+                : null);
             return (
               <div {...errorProps}>
                 <FieldErrorIconSvg label={t("textField.errorIcon")} />
@@ -635,6 +334,244 @@ const MultilineField = React.forwardRef<
         />
       ) : null}
     </BaseField.Root>
+  );
+}
+
+const SingleLineField = React.forwardRef<HTMLInputElement, M3ETextFieldSingleLineProps>(
+  function SingleLineField(
+    {
+      value: controlledValue,
+      defaultValue = "",
+      onValueChange,
+      variant = "outlined",
+      labelPosition = "floating",
+      type = "text",
+      id,
+      placeholder,
+      required = false,
+      disabled,
+      readOnly = false,
+      autoComplete,
+      inputMode,
+      enterKeyHint,
+      pattern,
+      minLength,
+      maxLength,
+      showCharacterCount = false,
+      clearable = false,
+      prefixText,
+      suffixText,
+      leadingIcon,
+      trailingIcon,
+      ...frameProps
+    },
+    ref,
+  ) {
+    const { t } = useM3EI18n();
+    const isDisabled = useFieldsetDisabled(disabled);
+    const {
+      controlRef: inputRef,
+      value: currentVal,
+      setValue: handleChange,
+      isFocused,
+      setIsFocused,
+    } = useFieldValue<HTMLInputElement>(controlledValue, defaultValue, onValueChange);
+    const [showPassword, setShowPassword] = React.useState(false);
+
+    const isPassword = type === "password";
+    const effectiveType = isPassword && showPassword ? "text" : type;
+
+    const isIdentifierField =
+      type === "email" || type === "url" || type === "search" || isPassword;
+
+    return (
+      <FieldFrame
+        {...frameProps}
+        variant={variant}
+        labelPosition={labelPosition}
+        required={required}
+        readOnly={readOnly}
+        isDisabled={isDisabled}
+        floated={
+          isFocused ||
+          currentVal.length > 0 ||
+          Boolean(prefixText) ||
+          Boolean(suffixText)
+        }
+        valueLength={currentVal.length}
+        maxLength={maxLength}
+        showCharacterCount={showCharacterCount}
+        leading={leadingIcon}
+        trailing={
+          <>
+            {clearable && currentVal.length > 0 && !isDisabled && !readOnly ? (
+              <button
+                type="button"
+                aria-label={t("textField.clear")}
+                className="m3e-text-field__icon-btn"
+                onClick={() => {
+                  handleChange("");
+                  inputRef.current?.focus();
+                }}
+              >
+                <CloseIcon size={15} strokeWidth="2.3" />
+              </button>
+            ) : null}
+
+            {isPassword ? (
+              <button
+                type="button"
+                disabled={isDisabled}
+                aria-pressed={showPassword}
+                aria-label={
+                  showPassword
+                    ? t("textField.hidePassword")
+                    : t("textField.showPassword")
+                }
+                className="m3e-text-field__icon-btn"
+                onClick={() => setShowPassword((s) => !s)}
+              >
+                <EyeGlyph shown={showPassword} />
+              </button>
+            ) : null}
+
+            {trailingIcon ? (
+              <span className="m3e-text-field__affix" aria-hidden="true">
+                {trailingIcon}
+              </span>
+            ) : null}
+          </>
+        }
+      >
+        <div className="m3e-text-field__input-line">
+          {prefixText ? (
+            <span className="m3e-text-field__text-affix" aria-hidden="true">
+              {prefixText}
+            </span>
+          ) : null}
+
+          <BaseInput
+            ref={(node) => {
+              const inputNode =
+                node instanceof HTMLInputElement ? node : null;
+              inputRef.current = inputNode;
+              assignRef(ref, inputNode);
+            }}
+            id={id}
+            type={effectiveType}
+            value={currentVal}
+            onValueChange={handleChange}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            placeholder={placeholder}
+            required={required}
+            readOnly={readOnly}
+            autoComplete={autoComplete}
+            inputMode={inputMode}
+            enterKeyHint={enterKeyHint}
+            pattern={pattern}
+            minLength={minLength}
+            maxLength={maxLength}
+            autoCorrect={isIdentifierField ? "off" : undefined}
+            autoCapitalize={isIdentifierField ? "none" : undefined}
+            spellCheck={isIdentifierField ? false : undefined}
+            className="m3e-text-field__input"
+          />
+
+          {suffixText ? (
+            <span className="m3e-text-field__text-affix" aria-hidden="true">
+              {suffixText}
+            </span>
+          ) : null}
+        </div>
+      </FieldFrame>
+    );
+  },
+);
+
+const MultilineField = React.forwardRef<
+  HTMLTextAreaElement,
+  M3ETextFieldMultilineProps
+>(function MultilineField(
+  {
+    value: controlledValue,
+    defaultValue = "",
+    onValueChange,
+    variant = "outlined",
+    labelPosition = "floating",
+    rows = 3,
+    id,
+    placeholder,
+    required = false,
+    disabled,
+    readOnly = false,
+    maxLength,
+    showCharacterCount = false,
+    ...frameProps
+  },
+  ref,
+) {
+  const isDisabled = useFieldsetDisabled(disabled);
+  const {
+    controlRef: textareaRef,
+    value: currentVal,
+    setValue,
+    isFocused,
+    setIsFocused,
+  } = useFieldValue<HTMLTextAreaElement>(controlledValue, defaultValue, onValueChange);
+
+  return (
+    <FieldFrame
+      {...frameProps}
+      variant={variant}
+      labelPosition={labelPosition}
+      required={required}
+      readOnly={readOnly}
+      isDisabled={isDisabled}
+      floated={isFocused || currentVal.length > 0}
+      valueLength={currentVal.length}
+      maxLength={maxLength}
+      showCharacterCount={showCharacterCount}
+      textarea
+    >
+      <BaseField.Control
+        id={id}
+        required={required}
+        readOnly={readOnly}
+        render={(props) => {
+          const baseProps = props as React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
+            ref?: React.Ref<HTMLTextAreaElement>;
+          };
+          return (
+            <textarea
+              {...baseProps}
+              ref={(node) => {
+                textareaRef.current = node;
+                assignRef(baseProps.ref, node);
+                assignRef(ref, node);
+              }}
+              rows={rows}
+              placeholder={placeholder}
+              maxLength={maxLength}
+              value={currentVal}
+              onFocus={(e) => {
+                setIsFocused(true);
+                baseProps.onFocus?.(e);
+              }}
+              onBlur={(e) => {
+                setIsFocused(false);
+                baseProps.onBlur?.(e);
+              }}
+              onChange={(e) => {
+                setValue(e.target.value);
+                baseProps.onChange?.(e);
+              }}
+              className="m3e-text-field__textarea"
+            />
+          );
+        }}
+      />
+    </FieldFrame>
   );
 });
 

@@ -15,6 +15,7 @@ import {
   FieldErrorIconSvg,
   useFieldsetDisabled,
 } from "../internal/fieldOutline.js";
+import { assignRef } from "../internal/assignRef.js";
 
 export interface M3ENumberFieldProps {
   readonly label?: React.ReactNode;
@@ -36,14 +37,6 @@ export interface M3ENumberFieldProps {
   readonly "aria-label"?: string;
   readonly className?: string;
   readonly style?: React.CSSProperties;
-}
-
-function assignRef<T>(ref: React.ForwardedRef<T>, value: T | null): void {
-  if (typeof ref === "function") {
-    ref(value);
-  } else if (ref) {
-    ref.current = value;
-  }
 }
 
 function MinusGlyph() {
