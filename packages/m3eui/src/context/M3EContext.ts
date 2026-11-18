@@ -25,7 +25,7 @@ import {
   type MotionScheme,
   type MotionSchemeName,
 } from "../tokens/motion.js";
-import { M3E_PACKAGE_VERSION } from "../version.js";
+import { serializeM3EConfig } from "../config.js";
 
 export type ColorMode = M3EColorModeSetting;
 
@@ -213,37 +213,6 @@ export const M3E_DEFAULT_THEME: M3EThemeTokens = /* @__PURE__ */ (() => {
 const DEFAULT_TRANSLATOR: M3ETranslateFn = (key, params) =>
   formatM3EMessage(enUSMessages[key], params);
 
-function buildDefaultConfigJson(): string {
-  return `${JSON.stringify(
-    {
-      $schema: `https://unpkg.com/m3eui@${M3E_PACKAGE_VERSION}/m3e.schema.json`,
-      style: "expressive",
-      theme: {
-        seed: "#6750A4",
-        schemeVariant: "expressive",
-        platform: "phone",
-        colorMode: "system",
-        contrastLevel: 0,
-        motionScheme: "expressive",
-      },
-      i18n: {
-        locale: "en-US",
-        direction: "auto",
-      },
-      css: {
-        output: "src/styles/m3e-theme.css",
-      },
-      aliases: {
-        components: "@/components/ui",
-        tokens: "m3eui/tokens",
-        i18n: "@/i18n",
-      },
-    },
-    null,
-    2,
-  )}\n`;
-}
-
 export const M3EContext = React.createContext<M3EContextValue>({
   seedHex: "#6750A4",
   setSeedHex: () => {},
@@ -275,7 +244,7 @@ export const M3EContext = React.createContext<M3EContextValue>({
   setDebugGeometry: () => {},
   prefersReducedMotion: false,
   themeTokens: M3E_DEFAULT_THEME,
-  exportConfigJson: buildDefaultConfigJson,
+  exportConfigJson: () => serializeM3EConfig({}),
 });
 
 export function useM3E(): M3EContextValue {
