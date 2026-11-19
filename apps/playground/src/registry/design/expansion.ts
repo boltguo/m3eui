@@ -227,7 +227,7 @@ export const EXPANSION_DESIGN_SPECS: Readonly<
     inspirationAndRationale: [
       {
         title: "Press & Drag Bar Expansion",
-        body: "At rest the indicator renders as a subtle 4×48px pill (outlineVariant); pressing or dragging expands it to 12×52px with 12px corners via fastSpatial spring.",
+        body: "At rest the indicator renders as a subtle 4×48px pill (outline); pressing or dragging expands it to 12×52px with 12px corners via fastSpatial spring.",
       },
     ],
     geometryAndMotionTables: [

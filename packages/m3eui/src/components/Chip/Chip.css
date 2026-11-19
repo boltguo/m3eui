@@ -1,12 +1,15 @@
 .m3e-chip {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   box-sizing: border-box;
-  font: inherit;
-  font-size: 13.5px;
-  font-weight: 500;
+  font-family: var(--m3e-typescale-label-large-font, var(--m3e-font-plain, sans-serif));
+  font-size: var(--m3e-typescale-label-large-size, 0.875rem);
+  line-height: var(--m3e-typescale-label-large-line-height, 1.25rem);
+  font-weight: var(--m3e-typescale-label-large-weight, 500);
+  letter-spacing: var(--m3e-typescale-label-large-tracking, 0.00625em);
   white-space: nowrap;
   user-select: none;
   border: 1px solid var(--m3e-color-outline-variant);
@@ -27,64 +30,35 @@
 .m3e-chip--assist[data-elevated],
 .m3e-chip--filter[data-elevated] {
   background-color: var(--m3e-color-surface-container-low);
-  border-color: transparent;
+  border-width: 0;
   box-shadow: var(--m3e-elevation-level1);
 }
 
 @media (hover: hover) {
-  .m3e-chip--assist[data-elevated]:hover:where(:not(:disabled, [data-disabled], [data-pressed])),
-  .m3e-chip--filter[data-elevated]:hover:where(:not(:disabled, [data-disabled], [data-selected], [data-pressed])) {
-    background-color: var(--m3e-color-surface-container);
-    box-shadow: var(--m3e-elevation-level2);
+  :is(.m3e-chip--assist, .m3e-chip--filter):hover:where(:not(:disabled, [data-disabled])) > .m3e-ripple::before,
+  .m3e-chip--input[data-compound]:where(:not([data-disabled])):has(> .m3e-chip__action:hover) > .m3e-ripple::before {
+    opacity: var(--m3e-state-hover-opacity, 0.08);
   }
-
-  .m3e-chip--assist:hover:where(:not(:disabled, [data-disabled], [data-elevated], [data-pressed])),
-  .m3e-chip--filter:hover:where(:not(:disabled, [data-disabled], [data-selected], [data-elevated], [data-pressed])) {
-    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 8%, transparent);
-  }
-}
-
-.m3e-chip--assist[data-elevated][data-pressed]:where(:not(:disabled, [data-disabled])),
-.m3e-chip--filter[data-elevated][data-pressed]:where(:not(:disabled, [data-disabled], [data-selected])) {
-  background-color: var(--m3e-color-surface-container-high);
-  box-shadow: var(--m3e-elevation-level1);
-}
-
-.m3e-chip--assist[data-pressed]:where(:not(:disabled, [data-disabled], [data-elevated])),
-.m3e-chip--filter[data-pressed]:where(:not(:disabled, [data-disabled], [data-selected], [data-elevated])) {
-  background-color: color-mix(in srgb, var(--m3e-color-on-surface) 10%, transparent);
 }
 
 .m3e-chip--filter[data-selected] {
   background-color: var(--m3e-color-secondary-container);
   color: var(--m3e-color-on-secondary-container);
-  border-color: transparent;
-}
-
-@media (hover: hover) {
-  .m3e-chip--filter[data-selected]:hover:where(:not(:disabled, [data-disabled], [data-pressed])) {
-    background-color: color-mix(in srgb, var(--m3e-color-secondary-container) 92%, var(--m3e-color-on-secondary-container));
-    color: var(--m3e-color-on-secondary-container);
-  }
-
-  .m3e-chip--filter[data-elevated][data-selected]:hover:where(:not(:disabled, [data-disabled], [data-pressed])) {
-    box-shadow: var(--m3e-elevation-level2);
-  }
-}
-
-.m3e-chip--filter[data-selected][data-pressed]:where(:not(:disabled, [data-disabled])) {
-  background-color: color-mix(in srgb, var(--m3e-color-secondary-container) 90%, var(--m3e-color-on-secondary-container));
+  border-width: 0;
 }
 
 .m3e-chip--input {
   padding-inline: 10px 6px;
-  background-color: var(--m3e-color-surface-container-low);
+}
+
+.m3e-chip--input:not([data-elevated]):not([data-selected]) {
+  background-color: transparent;
 }
 
 .m3e-chip--input[data-selected] {
   background-color: var(--m3e-color-secondary-container);
   color: var(--m3e-color-on-secondary-container);
-  border-color: transparent;
+  border-width: 0;
 }
 
 .m3e-chip--input[data-compound] {
@@ -93,6 +67,8 @@
 }
 
 .m3e-chip__action {
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -108,12 +84,12 @@
 }
 
 .m3e-chip__action:focus-visible {
-  outline: 2.5px solid var(--m3e-color-primary);
-  outline-offset: 2px;
+  outline: 3px solid var(--m3e-color-secondary);
+  outline-offset: -2px;
 }
 
 .m3e-chip:focus-visible {
-  outline: 2.5px solid var(--m3e-color-primary);
+  outline: 3px solid var(--m3e-color-secondary);
   outline-offset: 2px;
 }
 
@@ -143,6 +119,7 @@
 
 .m3e-chip__remove {
   position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -178,13 +155,21 @@
 
 @media (hover: hover) {
   .m3e-chip__remove:hover:not(:disabled) {
-    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 12%, transparent);
     color: var(--m3e-color-on-surface);
+  }
+
+  .m3e-chip__remove:hover:not(:disabled) > .m3e-ripple::before {
+    opacity: var(--m3e-state-hover-opacity, 0.08);
   }
 }
 
 .m3e-chip__remove:focus-visible {
-  outline: 2px solid var(--m3e-color-primary);
+  outline: 3px solid var(--m3e-color-secondary);
+  outline-offset: 2px;
+}
+
+.m3e-chip__remove:focus-visible > .m3e-ripple::before {
+  opacity: var(--m3e-state-focus-opacity, 0.1);
 }
 
 .m3e-chip-status {
@@ -199,7 +184,7 @@
   block-size: 26px;
   padding-inline: 10px;
   border-radius: 9999px;
-  border: 1px solid transparent;
+  border: 0;
   background-color: var(--m3e-chip-status-bg);
   color: var(--m3e-chip-status-fg);
   font-family: inherit;
@@ -260,7 +245,7 @@
 
 .m3e-chip-status[data-variant="outlined"] {
   background-color: transparent;
-  border-color: var(--m3e-chip-status-border);
+  border: 1px solid var(--m3e-chip-status-border);
 }
 
 .m3e-chip-status[data-variant="solid"] {
@@ -316,12 +301,19 @@
   background-color: currentColor;
 }
 
+.m3e-chip-status[data-elevated] {
+  border-width: 0;
+  box-shadow: var(--m3e-elevation-level1);
+}
+
 .m3e-chip-status[data-interactive] {
+  position: relative;
   cursor: pointer;
   outline: none;
   transition:
     background-color 140ms ease-out,
-    border-color 140ms ease-out;
+    border-color 140ms ease-out,
+    box-shadow 140ms ease-out;
 }
 
 .m3e-chip-status[data-compound] {
@@ -330,6 +322,8 @@
 }
 
 .m3e-chip-status__action {
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   gap: inherit;
@@ -349,30 +343,19 @@
 }
 
 .m3e-chip-status__action:focus-visible {
-  outline: 2px solid var(--m3e-color-primary);
-  outline-offset: 2px;
+  outline: 3px solid var(--m3e-color-secondary);
+  outline-offset: -2px;
 }
 
 @media (hover: hover) {
-  .m3e-chip-status[data-interactive]:hover:where(:not(:disabled, [data-disabled], [data-pressed])) {
-    background-color: color-mix(in srgb, currentColor 8%, var(--m3e-chip-status-bg));
+  .m3e-chip-status[data-interactive]:hover:where(:not([data-compound], :disabled, [data-disabled])) > .m3e-ripple::before,
+  .m3e-chip-status[data-interactive][data-compound]:where(:not([data-disabled])):has(> .m3e-chip-status__action:hover) > .m3e-ripple::before {
+    opacity: var(--m3e-state-hover-opacity, 0.08);
   }
-
-  .m3e-chip-status[data-interactive][data-variant="outlined"]:hover:where(:not(:disabled, [data-disabled], [data-pressed])) {
-    background-color: color-mix(in srgb, currentColor 8%, transparent);
-  }
-}
-
-.m3e-chip-status[data-interactive][data-pressed]:where(:not(:disabled, [data-disabled])) {
-  background-color: color-mix(in srgb, currentColor 10%, var(--m3e-chip-status-bg));
-}
-
-.m3e-chip-status[data-interactive][data-variant="outlined"][data-pressed]:where(:not(:disabled, [data-disabled])) {
-  background-color: color-mix(in srgb, currentColor 10%, transparent);
 }
 
 .m3e-chip-status[data-interactive]:focus-visible {
-  outline: 2px solid var(--m3e-color-primary);
+  outline: 3px solid var(--m3e-color-secondary);
   outline-offset: 2px;
 }
 
@@ -380,6 +363,7 @@
 .m3e-chip-status:disabled {
   opacity: 0.38;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .m3e-chip-status__dot {
@@ -399,6 +383,7 @@
 
 .m3e-chip-status__remove {
   position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -425,7 +410,10 @@
 @media (hover: hover) {
   .m3e-chip-status__remove:hover:not(:disabled) {
     opacity: 1;
-    background-color: color-mix(in srgb, currentColor 15%, transparent);
+  }
+
+  .m3e-chip-status__remove:hover:not(:disabled) > .m3e-ripple::before {
+    opacity: var(--m3e-state-hover-opacity, 0.08);
   }
 }
 
@@ -433,6 +421,10 @@
   opacity: 1;
   outline: 2px solid currentColor;
   outline-offset: 1px;
+}
+
+.m3e-chip-status__remove:focus-visible > .m3e-ripple::before {
+  opacity: var(--m3e-state-focus-opacity, 0.1);
 }
 
 @media (prefers-reduced-motion: reduce) {

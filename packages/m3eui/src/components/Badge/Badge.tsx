@@ -48,6 +48,7 @@ export function Badge({
   const indicator = show ? (
     <span
       role={resolvedAriaLabel ? "status" : undefined}
+      aria-live={resolvedAriaLabel ? "off" : undefined}
       aria-label={resolvedAriaLabel}
       className={
         standalone && className

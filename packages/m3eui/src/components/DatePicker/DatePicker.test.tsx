@@ -198,6 +198,9 @@ describe("DatePicker & DatePickerField", () => {
     });
     const modalPopup = document.body.querySelector(".m3e-modal-date-picker")!;
     expect(modalPopup).not.toBeNull();
+    expect(modalPopup.querySelector(".m3e-date-picker__eyebrow")?.textContent).toBe(
+      zhCNMessages["datePicker.title"],
+    );
     const confirmBtn = Array.from(
       modalPopup.querySelectorAll<HTMLButtonElement>("button.m3e-button"),
     ).find((b) => b.textContent === zhCNMessages["datePicker.confirm"]);

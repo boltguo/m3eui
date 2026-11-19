@@ -53,10 +53,17 @@ export function AppBarRow({
   useIsoLayoutEffect(() => {
     const el = rowRef.current;
     if (!el) return;
+    const barRow = el.closest<HTMLElement>(".m3e-top-app-bar__top-row");
+    const target = barRow ?? (style?.width || style?.maxWidth ? el : null);
+    if (!target) {
+      setFitSlots(maxVisibleItems);
+      return undefined;
+    }
     const syncSlots = () => {
-      const w = el.clientWidth;
-      if (w > 0) {
-        const computed = Math.max(1, Math.floor((w + 4) / 44));
+      const rawWidth = barRow ? barRow.clientWidth : el.clientWidth;
+      if (rawWidth > 0) {
+        const available = barRow ? Math.max(44, rawWidth - 140) : rawWidth;
+        const computed = Math.max(1, Math.floor((available + 4) / 44));
         setFitSlots(Math.min(maxVisibleItems, computed));
       } else {
         setFitSlots(maxVisibleItems);
@@ -65,11 +72,11 @@ export function AppBarRow({
     syncSlots();
     if (typeof ResizeObserver !== "undefined") {
       const ro = new ResizeObserver(syncSlots);
-      ro.observe(el);
+      ro.observe(target);
       return () => ro.disconnect();
     }
     return undefined;
-  }, [maxVisibleItems]);
+  }, [maxVisibleItems, style?.width, style?.maxWidth]);
 
   const effectiveLimit = Math.max(1, Math.min(maxVisibleItems, fitSlots));
   const hasOverflow = items.length > effectiveLimit;
@@ -196,8 +203,25 @@ export function TopAppBar({
       scrollBehavior === "pinned"
         ? 0
         : Math.min(maxCollapsePx, lastY);
+    let snapTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const applyScrollState = (y: number, fraction: number) => {
+      const elevated = y > 4 || fraction > 0.08;
+      const twoRow = fraction < 0.5;
+      writeFraction(fraction);
+      setAutoState((prev) =>
+        prev.elevated === elevated && prev.twoRow === twoRow
+          ? prev
+          : { elevated, twoRow },
+      );
+    };
 
     const sync = () => {
+      if (snapTimer !== null) {
+        clearTimeout(snapTimer);
+        snapTimer = null;
+      }
+
       const y = Math.max(0, readScrollTop());
       const dy = y - lastY;
       lastY = y;
@@ -218,20 +242,34 @@ export function TopAppBar({
         scrollBehavior === "pinned"
           ? 0
           : Math.max(0, Math.min(1, collapseOffset / maxCollapsePx));
-      const elevated = y > 4 || nextFraction > 0.08;
-      const twoRow = nextFraction < 0.72;
+      applyScrollState(y, nextFraction);
 
-      writeFraction(nextFraction);
-      setAutoState((prev) =>
-        prev.elevated === elevated && prev.twoRow === twoRow
-          ? prev
-          : { elevated, twoRow },
-      );
+      if (
+        scrollBehavior !== "pinned" &&
+        collapseOffset > 0 &&
+        collapseOffset < maxCollapsePx
+      ) {
+        snapTimer = setTimeout(() => {
+          snapTimer = null;
+          collapseOffset =
+            collapseOffset >= maxCollapsePx * 0.5 ? maxCollapsePx : 0;
+          applyScrollState(
+            Math.max(0, readScrollTop()),
+            collapseOffset / maxCollapsePx,
+          );
+        }, 140);
+      }
     };
 
     sync();
     target.addEventListener("scroll", sync, { passive: true });
-    return () => target.removeEventListener("scroll", sync);
+    return () => {
+      if (snapTimer !== null) {
+        clearTimeout(snapTimer);
+        snapTimer = null;
+      }
+      target.removeEventListener("scroll", sync);
+    };
   }, [scrollBehavior, scrollTargetRef, maxCollapsePx, writeFraction]);
 
   const isControlled = controlledFraction !== undefined || !scrollBehavior;
@@ -245,7 +283,7 @@ export function TopAppBar({
   const isElevated = isControlled
     ? Boolean(controlledScrolled) || controlledT > 0.08
     : controlledScrolled ?? autoState.elevated;
-  const isTwoRow = isControlled ? controlledT < 0.72 : autoState.twoRow;
+  const isTwoRow = isControlled ? controlledT < 0.5 : autoState.twoRow;
   const T = "var(--m3e-top-app-bar-t, 0)";
   const [initialT] = React.useState(isControlled ? controlledT : 0);
 
@@ -385,7 +423,7 @@ export function TopAppBar({
           style={
             isFlexible
               ? {
-                  opacity: `clamp(0, (${T} - 0.6) / 0.24, 1)`,
+                  opacity: `clamp(0, (${T} - 0.5) / 0.5, 1)`,
                   pointerEvents: isTwoRow ? "none" : undefined,
                 }
               : undefined
@@ -446,7 +484,7 @@ export function TopAppBar({
           style={{
             maxHeight: `calc(${expandedExtraPx}px * (1 - ${T}))`,
             overflow: "hidden",
-            opacity: `clamp(0, (0.76 - ${T}) / 0.24, 1)`,
+            opacity: `clamp(0, (0.5 - ${T}) / 0.5, 1)`,
             paddingBottom: `calc(8px * (1 - ${T}))`,
             pointerEvents: !isTwoRow ? "none" : undefined,
           }}

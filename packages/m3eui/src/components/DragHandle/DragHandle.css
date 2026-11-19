@@ -20,19 +20,30 @@
 .m3e-drag-handle::before {
   content: "";
   position: absolute;
-  inset-inline: -12px;
+  inset-inline: -4px;
   inset-block: 0;
 }
 
 .m3e-drag-handle[data-orientation="horizontal"]::before {
   inset-inline: 0;
-  inset-block: -12px;
+  inset-block: -4px;
+}
+
+@media (pointer: coarse) {
+  .m3e-drag-handle::before {
+    inset-inline: -12px;
+    inset-block: 0;
+  }
+
+  .m3e-drag-handle[data-orientation="horizontal"]::before {
+    inset-inline: 0;
+    inset-block: -12px;
+  }
 }
 
 .m3e-drag-handle[data-disabled] {
   opacity: 0.38;
   cursor: not-allowed;
-  pointer-events: none;
 }
 
 .m3e-drag-handle__pill {
@@ -52,8 +63,8 @@
 }
 
 .m3e-drag-handle:focus-visible .m3e-drag-handle__pill {
-  outline: 2.5px solid var(--m3e-color-primary);
-  outline-offset: 4px;
+  outline: 3px solid var(--m3e-color-secondary);
+  outline-offset: 2px;
 }
 
 @media (forced-colors: active) {

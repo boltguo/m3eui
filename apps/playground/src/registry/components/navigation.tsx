@@ -1098,7 +1098,6 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "breadcrumb",
     title: "Breadcrumb",
-    isNew: true,
     subtitle: {
       zh: "层级路径面包屑导航，自动为末级节点标注 aria-current=\"page\"，并在超长层级下将中间祖先折叠进无障碍下拉菜单。",
       en: "Hierarchical trail navigation with automatic aria-current=\"page\" semantics and DropdownMenu overflow collapsing.",
@@ -1329,7 +1328,6 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "pagination",
     title: "Pagination",
-    isNew: true,
     subtitle: {
       zh: "具备物理弹簧圆角形变的分页导航器，支持受控/非受控页码、智能省略号窗口、CLDR 本地化数字与条目范围摘要。",
       en: "Page navigation with spring-animated corner morphing, smart ellipsis windowing, CLDR numeral formatting, and item range summaries.",
@@ -2210,7 +2208,6 @@ export const NAVIGATION_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "command-palette",
     title: "CommandPalette",
-    isNew: true,
     primitive: "@base-ui/react/dialog",
     subtitle: {
       zh: "模态命令面板与全局快速跳转启动器，内置关键词与分组检索过滤、ARIA Combobox 焦点同步与 ⌘K / Ctrl+K 快捷键开关。",

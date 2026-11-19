@@ -1,6 +1,7 @@
 .m3e-otp-field-wrap {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 6px;
 }
 
@@ -8,6 +9,10 @@
   font-size: 13.5px;
   font-weight: 600;
   color: var(--m3e-color-on-surface);
+}
+
+.m3e-otp-field-wrap[data-disabled] .m3e-otp-field__label {
+  opacity: 0.38;
 }
 
 .m3e-otp-field__hint {
@@ -27,13 +32,13 @@
   box-sizing: border-box;
   padding: 0;
   text-align: center;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--m3e-typescale-title-medium-font, var(--m3e-font-plain, sans-serif));
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   background-color: var(--m3e-color-surface-container-high);
   color: var(--m3e-color-on-surface);
   border: 0;
-  box-shadow: inset 0 0 0 1px var(--m3e-color-outline-variant);
+  box-shadow: inset 0 0 0 0 transparent;
   outline: none;
   caret-color: var(--m3e-color-primary);
   transition:
@@ -43,7 +48,7 @@
 
 @media (hover: hover) {
   .m3e-otp-field__slot:hover:where(:not(:disabled, :focus, [data-focused])) {
-    box-shadow: inset 0 0 0 1px var(--m3e-color-on-surface);
+    background-color: var(--m3e-color-surface-container-highest);
   }
 }
 
@@ -67,7 +72,6 @@
 
 .m3e-otp-field[data-complete] .m3e-otp-field__slot:not([data-focused], :focus) {
   background-color: color-mix(in srgb, var(--m3e-color-secondary-container) 55%, var(--m3e-color-surface-container-high));
-  box-shadow: inset 0 0 0 1px var(--m3e-color-primary);
 }
 
 .m3e-otp-field__separator {

@@ -6,6 +6,7 @@ import {
   POPOVER_TOKENS,
 } from "../../tokens/topology.js";
 import { useM3EPortalContainer } from "../../context/M3EPortal.js";
+import { useAdaptivePositionMethod } from "../../internal/positionMethod.js";
 
 export interface M3EPopoverProps {
   readonly open?: boolean;
@@ -61,13 +62,29 @@ export function Popover({
   style,
 }: M3EPopoverProps): React.JSX.Element {
   const portalContainer = useM3EPortalContainer();
+  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(
+    Boolean(defaultOpen),
+  );
+  const isOpen = open ?? uncontrolledOpen;
+  const triggerRef = React.useRef<HTMLElement | null>(null);
+  const assignTriggerRef = React.useCallback((node: HTMLElement | null) => {
+    triggerRef.current = node;
+  }, []);
+  const positionMethod = useAdaptivePositionMethod(triggerRef, isOpen);
+
   return (
     <BasePopover.Root
       open={open}
       defaultOpen={defaultOpen}
-      onOpenChange={(next) => onOpenChange?.(next)}
+      onOpenChange={(next) => {
+        if (open === undefined) {
+          setUncontrolledOpen(next);
+        }
+        onOpenChange?.(next);
+      }}
     >
       <BasePopover.Trigger
+        ref={assignTriggerRef}
         openOnHover={openOnHover}
         delay={delay}
         closeDelay={closeDelay}
@@ -75,6 +92,7 @@ export function Popover({
       />
       <BasePopover.Portal container={portalContainer}>
         <BasePopover.Positioner
+          positionMethod={positionMethod}
           side={side}
           align={align}
           sideOffset={sideOffset}

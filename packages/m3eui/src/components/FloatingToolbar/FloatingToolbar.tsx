@@ -8,14 +8,11 @@ import {
   type FloatingToolbarTheme,
 } from "../../tokens/topology.js";
 import { useM3ERuntime } from "../../context/M3EContext.js";
-import {
-  useM3ECornerSpringRef,
-  useM3EScalarSpring,
-  usePressHoldState,
-} from "../../hooks/useM3ESpring.js";
+import { useM3EScalarSpring } from "../../hooks/useM3ESpring.js";
 import { INERT_TRUE } from "../../internal/inert.js";
 import { FAB, type M3EFABProps } from "../FAB/FAB.js";
 import { useIsoLayoutEffect } from "../../internal/useIsoLayoutEffect.js";
+import { useM3ERipple } from "../../internal/ripple.js";
 
 export interface FloatingToolbarItemSpec {
   readonly id: string;
@@ -61,40 +58,33 @@ function FloatingToolbarActionButton({
   readonly item: FloatingToolbarItemSpec;
 }) {
   const { debugGeometry } = useM3ERuntime();
-  const { isPressed, pressHandlers } = usePressHoldState(Boolean(item.disabled));
+  const { rippleRef, rippleHandlers } = useM3ERipple(Boolean(item.disabled));
   const pill = FLOATING_TOOLBAR_TOKENS.itemSize / 2;
-  const targetRadius = isPressed ? 10 : item.selected ? 14 : pill;
-  const { ref, borderRadiusCss } = useM3ECornerSpringRef<HTMLButtonElement>(
-    [targetRadius, targetRadius, targetRadius, targetRadius],
-    item.selected ? "fastSpatial" : "defaultEffects",
-  );
 
   return (
     <Toolbar.Button
-      ref={ref}
       disabled={item.disabled}
       aria-label={item.label}
       aria-pressed={item.selected}
-      title={item.label}
       onClick={item.onClick}
       className="m3e-floating-toolbar__button"
       data-selected={item.selected ? "" : undefined}
-      data-pressed={isPressed ? "" : undefined}
       style={{
         width: `${FLOATING_TOOLBAR_TOKENS.itemSize}px`,
         height: `${FLOATING_TOOLBAR_TOKENS.itemSize}px`,
         minInlineSize: `${FLOATING_TOOLBAR_TOKENS.itemSize}px`,
         minBlockSize: `${FLOATING_TOOLBAR_TOKENS.itemSize}px`,
-        borderRadius: borderRadiusCss,
+        borderRadius: `${pill}px`,
       }}
-      {...pressHandlers}
+      {...rippleHandlers}
     >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
       <span className="m3e-floating-toolbar__icon" aria-hidden="true">
         {item.icon}
       </span>
       {debugGeometry ? (
         <span className="m3e-debug-badge" aria-hidden="true">
-          r:{targetRadius.toFixed(0)}
+          r:{pill}
         </span>
       ) : null}
     </Toolbar.Button>
@@ -305,6 +295,7 @@ export function FloatingToolbar({
           ? `m3e-floating-toolbar-layout ${className}`
           : "m3e-floating-toolbar-layout"
       }
+      data-theme={theme}
       data-orientation={orientation}
       data-collapsed={collapsed ? "" : undefined}
       data-expanded={expanded ? "" : undefined}
@@ -329,9 +320,9 @@ export function FloatingToolbar({
           opacity: Math.max(0, 1 - clampedCollapse),
           minHeight: isVertical
             ? undefined
-            : `${(FLOATING_TOOLBAR_TOKENS.containerCrossSize * (1 - clampedCollapse)).toFixed(1)}px`,
+            : `${(hasCompanion ? FLOATING_TOOLBAR_TOKENS.containerCrossSize : FLOATING_TOOLBAR_TOKENS.containerCrossSize * (1 - clampedCollapse)).toFixed(1)}px`,
           minWidth: isVertical
-            ? `${(FLOATING_TOOLBAR_TOKENS.containerCrossSize * (1 - clampedCollapse)).toFixed(1)}px`
+            ? `${(hasCompanion ? FLOATING_TOOLBAR_TOKENS.containerCrossSize : FLOATING_TOOLBAR_TOKENS.containerCrossSize * (1 - clampedCollapse)).toFixed(1)}px`
             : undefined,
         }}
       >
@@ -351,6 +342,17 @@ export function FloatingToolbar({
         <div
           ref={companionRef}
           className="m3e-floating-toolbar__companion"
+          data-default-fab={
+            fab
+              ? fab.variant === undefined
+                ? ""
+                : undefined
+              : React.isValidElement(companionFab) &&
+                  companionFab.type === FAB &&
+                  (companionFab.props as M3EFABProps).variant === undefined
+                ? ""
+                : undefined
+          }
           data-collapsed={collapsed ? "" : undefined}
         >
           {renderedCompanion}

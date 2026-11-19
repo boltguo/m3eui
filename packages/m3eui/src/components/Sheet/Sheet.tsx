@@ -8,6 +8,25 @@ import {
 import { useM3ERuntime } from "../../context/M3EContext.js";
 import { useM3EPortalContainer } from "../../context/M3EPortal.js";
 import { CloseIcon } from "../../internal/icons.js";
+import { useM3ERipple } from "../../internal/ripple.js";
+
+function SheetHeaderCloseButton({
+  ariaLabel,
+}: {
+  readonly ariaLabel: string;
+}): React.JSX.Element {
+  const { rippleRef, rippleHandlers } = useM3ERipple();
+  return (
+    <BaseDrawer.Close
+      aria-label={ariaLabel}
+      className="m3e-sheet__close-btn"
+      {...rippleHandlers}
+    >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+      <CloseIcon strokeWidth={2.2} />
+    </BaseDrawer.Close>
+  );
+}
 
 export type SheetSide = "bottom" | "start" | "end" | "right" | "left";
 export type SheetSnapPoint = number | string;
@@ -94,15 +113,17 @@ export function Sheet({
         ? "right"
         : "left";
 
+  const isNonModal = modal === false;
   const radius = SHEET_TOKENS.cornerRadius;
   const borderRadius =
-    physicalSide === "bottom"
-      ? `${radius}px ${radius}px 0px 0px`
-      : physicalSide === "right"
-        ? `${radius}px 0px 0px ${radius}px`
-        : `0px ${radius}px ${radius}px 0px`;
+    isNonModal && physicalSide !== "bottom"
+      ? "0px"
+      : physicalSide === "bottom"
+        ? `${radius}px ${radius}px 0px 0px`
+        : physicalSide === "right"
+          ? `${radius}px 0px 0px ${radius}px`
+          : `0px ${radius}px ${radius}px 0px`;
 
-  const isNonModal = modal === false;
   const resolvedSnapPoints = React.useMemo(
     () => (snapPoints ? [...snapPoints] : undefined),
     [snapPoints],
@@ -166,26 +187,23 @@ export function Sheet({
               </div>
             ) : null}
 
-            <div className="m3e-sheet__header">
-              <div className="m3e-sheet__titles">
-                {title ? (
-                  <BaseDrawer.Title className="m3e-sheet__title">
-                    {title}
-                  </BaseDrawer.Title>
-                ) : null}
-                {description ? (
-                  <BaseDrawer.Description className="m3e-sheet__description">
-                    {description}
-                  </BaseDrawer.Description>
-                ) : null}
+            {physicalSide !== "bottom" || Boolean(title) || Boolean(description) ? (
+              <div className="m3e-sheet__header">
+                <div className="m3e-sheet__titles">
+                  {title ? (
+                    <BaseDrawer.Title className="m3e-sheet__title">
+                      {title}
+                    </BaseDrawer.Title>
+                  ) : null}
+                  {description ? (
+                    <BaseDrawer.Description className="m3e-sheet__description">
+                      {description}
+                    </BaseDrawer.Description>
+                  ) : null}
+                </div>
+                <SheetHeaderCloseButton ariaLabel={t("sheet.close")} />
               </div>
-              <BaseDrawer.Close
-                aria-label={t("sheet.close")}
-                className="m3e-sheet__close-btn"
-              >
-                <CloseIcon strokeWidth={2.2} />
-              </BaseDrawer.Close>
-            </div>
+            ) : null}
 
             <BaseDrawer.Content className="m3e-sheet__content">
               {children}

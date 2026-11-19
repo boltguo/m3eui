@@ -15,6 +15,7 @@ import { useM3ECornerSpringRef, usePressHoldState } from "../../hooks/useM3ESpri
 import { ButtonGroupItemContext } from "../../internal/buttonGroupContext.js";
 import { CheckIcon, SpinnerIcon } from "../../internal/icons.js";
 import { LinkActionElement, isLinkRenderTarget } from "../../internal/link.js";
+import { useM3ERipple } from "../../internal/ripple.js";
 
 export type ButtonVariant = "filled" | "tonal" | "elevated" | "outlined" | "text";
 export type ButtonShape = "round" | "square";
@@ -85,6 +86,7 @@ function useGroupItemCorners(isPressed: boolean, radius: number): CornerTuple {
 function buttonStyle(
   size: ButtonSize,
   variant: ButtonVariant,
+  isSelected: boolean,
   borderRadius: string,
   style: React.CSSProperties | undefined,
 ): React.CSSProperties {
@@ -99,7 +101,8 @@ function buttonStyle(
     lineHeight: `var(--m3e-typescale-${scaleKey}-line-height, ${spec.lineHeight}px)`,
     fontWeight: `var(--m3e-typescale-${scaleKey}-weight, ${spec.fontWeight})` as React.CSSProperties["fontWeight"],
     letterSpacing: `var(--m3e-typescale-${scaleKey}-tracking, normal)`,
-    borderWidth: variant === "outlined" ? `${spec.outlineWidth}px` : undefined,
+    borderWidth:
+      variant === "outlined" && !isSelected ? `${spec.outlineWidth}px` : undefined,
     borderRadius,
     ...style,
   };
@@ -153,6 +156,7 @@ const ActionButton = React.forwardRef<HTMLElement, M3EButtonActionProps>(functio
   const spec = BUTTON_SIZE_SPECS[size];
   const isDisabled = disabled || loading;
   const { isPressed, pressHandlers } = usePressHoldState(isDisabled);
+  const { rippleRef, rippleHandlers } = useM3ERipple(isDisabled);
 
   const restRadius =
     shape === "square" ? spec.squareCornerRadius : spec.restCornerRadius;
@@ -170,11 +174,13 @@ const ActionButton = React.forwardRef<HTMLElement, M3EButtonActionProps>(functio
 
   const mergedProps = mergeProps<"button">(
     pressHandlers as unknown as React.ComponentPropsWithRef<"button">,
+    rippleHandlers as unknown as React.ComponentPropsWithRef<"button">,
     restProps as unknown as React.ComponentPropsWithRef<"button">,
   );
 
   const buttonBody = (
     <>
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
       {leadingIcon ? (
         <ButtonIcon size={spec.iconSize} hidden={loading}>
           {leadingIcon}
@@ -226,7 +232,7 @@ const ActionButton = React.forwardRef<HTMLElement, M3EButtonActionProps>(functio
         aria-label={ariaLabel}
         onClick={onClick as React.MouseEventHandler<HTMLElement> | undefined}
         className={className ? `m3e-button ${className}` : "m3e-button"}
-        style={buttonStyle(size, variant, borderRadiusCss, style)}
+        style={buttonStyle(size, variant, false, borderRadiusCss, style)}
         data-variant={variant}
         data-intent={intent !== "default" ? intent : undefined}
         data-size={size}
@@ -256,7 +262,7 @@ const ActionButton = React.forwardRef<HTMLElement, M3EButtonActionProps>(functio
       aria-label={ariaLabel}
       onClick={onClick}
       className={className ? `m3e-button ${className}` : "m3e-button"}
-      style={buttonStyle(size, variant, borderRadiusCss, style)}
+      style={buttonStyle(size, variant, false, borderRadiusCss, style)}
       data-variant={variant}
       data-intent={intent !== "default" ? intent : undefined}
       data-size={size}
@@ -319,6 +325,7 @@ const ToggleButton = React.forwardRef<HTMLButtonElement, M3EButtonToggleProps>(
 
     const spec = BUTTON_SIZE_SPECS[size];
     const { isPressed: isPointerPressed, pressHandlers } = usePressHoldState(disabled);
+    const { rippleRef, rippleHandlers } = useM3ERipple(disabled);
 
     const unselectedRadius =
       shape === "square" ? spec.squareCornerRadius : spec.restCornerRadius;
@@ -351,6 +358,7 @@ const ToggleButton = React.forwardRef<HTMLButtonElement, M3EButtonToggleProps>(
 
     const mergedProps = mergeProps<"button">(
       pressHandlers as unknown as React.ComponentPropsWithRef<"button">,
+      rippleHandlers as unknown as React.ComponentPropsWithRef<"button">,
       restProps as unknown as React.ComponentPropsWithRef<"button">,
     );
 
@@ -370,7 +378,7 @@ const ToggleButton = React.forwardRef<HTMLButtonElement, M3EButtonToggleProps>(
           onPressedChange?.(next);
         }}
         className={className ? `m3e-button ${className}` : "m3e-button"}
-        style={buttonStyle(size, variant, borderRadiusCss, style)}
+        style={buttonStyle(size, variant, isSelected, borderRadiusCss, style)}
         data-toggle=""
         data-variant={variant}
         data-size={size}
@@ -378,6 +386,7 @@ const ToggleButton = React.forwardRef<HTMLButtonElement, M3EButtonToggleProps>(
         data-pressed={isPointerPressed ? "" : undefined}
         data-selected={isSelected ? "" : undefined}
       >
+        <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
         {resolvedIcon ? (
           <ButtonIcon size={spec.iconSize}>{resolvedIcon}</ButtonIcon>
         ) : null}

@@ -2,14 +2,15 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  width: 316px;
+  width: min(100%, 316px);
   box-sizing: border-box;
   background-color: var(--m3e-color-surface-container-high);
   color: var(--m3e-color-on-surface);
-  border: 1px solid var(--m3e-color-outline-variant);
+  border: 0;
 }
 
 .m3e-date-picker__eyebrow {
+  margin: 0;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -32,11 +33,12 @@
 }
 
 .m3e-date-picker__year-toggle {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 6px 10px;
-  border: none;
+  border: 0;
   border-radius: 9999px;
   background: transparent;
   color: var(--m3e-color-on-surface);
@@ -48,13 +50,13 @@
 }
 
 @media (hover: hover) {
-  .m3e-date-picker__year-toggle:hover {
-    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 8%, transparent);
+  .m3e-date-picker__year-toggle:hover > .m3e-ripple::before {
+    opacity: var(--m3e-state-hover-opacity, 0.08);
   }
 }
 
 .m3e-date-picker__year-toggle:focus-visible {
-  outline: 2px solid var(--m3e-color-primary);
+  outline: 3px solid var(--m3e-color-secondary);
   outline-offset: 2px;
 }
 
@@ -74,10 +76,14 @@
 }
 
 .m3e-date-picker__nav-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   inline-size: 34px;
   block-size: 34px;
   padding: 0;
-  border: none;
+  border: 0;
   border-radius: 9999px;
   background: transparent;
   color: var(--m3e-color-on-surface-variant);
@@ -89,18 +95,21 @@
 
 @media (hover: hover) {
   .m3e-date-picker__nav-btn:hover:not(:disabled) {
-    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 9%, transparent);
     color: var(--m3e-color-on-surface);
+  }
+
+  .m3e-date-picker__nav-btn:hover:not(:disabled) > .m3e-ripple::before {
+    opacity: var(--m3e-state-hover-opacity, 0.08);
   }
 }
 
 .m3e-date-picker__nav-btn:disabled {
-  opacity: 0.34;
+  opacity: 0.38;
   cursor: not-allowed;
 }
 
 .m3e-date-picker__nav-btn:focus-visible {
-  outline: 2px solid var(--m3e-color-primary);
+  outline: 3px solid var(--m3e-color-secondary);
   outline-offset: 2px;
 }
 
@@ -131,7 +140,7 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  border: 1.5px solid transparent;
+  border: 0;
   background: transparent;
   color: var(--m3e-color-on-surface);
   font-family: inherit;
@@ -147,17 +156,13 @@
 }
 
 @media (hover: hover) {
-  .m3e-date-picker__day:hover:where(:not([data-selected], :disabled, [data-disabled])) {
-    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 9%, transparent);
+  .m3e-date-picker__day:hover:where(:not(:disabled, [data-disabled])) > .m3e-ripple::before {
+    opacity: var(--m3e-state-hover-opacity, 0.08);
   }
 }
 
-.m3e-date-picker__day[data-pressed]:where(:not([data-selected], :disabled, [data-disabled])) {
-  background-color: color-mix(in srgb, var(--m3e-color-on-surface) 12%, transparent);
-}
-
 .m3e-date-picker__day[data-today]:not([data-selected]) {
-  border-color: var(--m3e-color-primary);
+  box-shadow: inset 0 0 0 1.5px var(--m3e-color-primary);
   color: var(--m3e-color-primary);
   font-weight: 700;
 }
@@ -169,7 +174,7 @@
 }
 
 .m3e-date-picker__day:focus-visible {
-  outline: 2px solid var(--m3e-color-primary);
+  outline: 3px solid var(--m3e-color-secondary);
   outline-offset: 2px;
 }
 
@@ -181,8 +186,9 @@
 }
 
 .m3e-date-picker__year-pill {
+  position: relative;
   height: 36px;
-  border: none;
+  border: 0;
   border-radius: 9999px;
   background: transparent;
   color: var(--m3e-color-on-surface);
@@ -193,18 +199,18 @@
 }
 
 @media (hover: hover) {
-  .m3e-date-picker__year-pill:hover:where(:not([data-selected], :disabled)) {
-    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 9%, transparent);
+  .m3e-date-picker__year-pill:hover:where(:not(:disabled)) > .m3e-ripple::before {
+    opacity: var(--m3e-state-hover-opacity, 0.08);
   }
 }
 
 .m3e-date-picker__year-pill:disabled {
-  opacity: 0.34;
+  opacity: 0.38;
   cursor: not-allowed;
 }
 
 .m3e-date-picker__year-pill:focus-visible {
-  outline: 2px solid var(--m3e-color-primary);
+  outline: 3px solid var(--m3e-color-secondary);
   outline-offset: 2px;
 }
 
@@ -218,15 +224,15 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  width: 100%;
   min-width: min(220px, 100%);
   max-width: 100%;
 }
 
 .m3e-date-picker-field__popup {
   border-radius: 28px;
-  box-shadow:
-    0 14px 32px color-mix(in srgb, var(--m3e-color-shadow) 20%, transparent),
-    0 3px 8px color-mix(in srgb, var(--m3e-color-shadow) 10%, transparent);
+  max-inline-size: calc(100dvw - 24px);
+  box-shadow: var(--m3e-elevation-level3);
   outline: none;
   transform-origin: var(--transform-origin, top left);
   translate: 0px 0px;
@@ -234,8 +240,8 @@
   opacity: 1;
   transition:
     opacity var(--m3e-effects-fast-duration, 140ms) ease-out,
-    scale var(--m3e-effects-fast-duration, 140ms) ease-out,
-    translate var(--m3e-effects-fast-duration, 140ms) ease-out;
+    scale var(--m3e-spatial-fast-duration, 240ms) var(--m3e-spatial-fast-easing, ease-out),
+    translate var(--m3e-spatial-fast-duration, 240ms) var(--m3e-spatial-fast-easing, ease-out);
 }
 
 .m3e-date-picker-field__popup[data-starting-style],
@@ -270,6 +276,18 @@
   inset-inline-end: 50%;
 }
 
+.m3e-date-picker__cell[data-in-range]:not([data-range-start]):first-child::before,
+.m3e-date-picker__day-empty + .m3e-date-picker__cell[data-in-range]:not([data-range-start])::before {
+  border-start-start-radius: 9999px;
+  border-end-start-radius: 9999px;
+}
+
+.m3e-date-picker__cell[data-in-range]:not([data-range-end]):last-child::before,
+.m3e-date-picker__cell[data-in-range]:not([data-range-end]):has(+ .m3e-date-picker__day-empty)::before {
+  border-start-end-radius: 9999px;
+  border-end-end-radius: 9999px;
+}
+
 .m3e-date-picker__day[data-in-range] {
   color: var(--m3e-color-on-secondary-container);
   font-weight: 600;
@@ -291,7 +309,7 @@
 }
 
 .m3e-date-picker__day[data-disabled] {
-  opacity: 0.34;
+  opacity: 0.38;
   cursor: not-allowed;
 }
 
@@ -318,7 +336,7 @@
 }
 
 .m3e-modal-date-picker__body {
-  padding: 8px;
+  padding: 0;
 }
 
 .m3e-modal-date-picker.m3e-dialog__popup,
@@ -327,6 +345,7 @@
 }
 
 .m3e-modal-date-picker__calendar {
+  width: 100%;
   border: 0;
   box-shadow: none;
   background: transparent;
@@ -355,6 +374,10 @@
 }
 
 @media (forced-colors: active) {
+  .m3e-date-picker {
+    border: 1px solid ButtonText;
+  }
+
   .m3e-date-picker__day[data-selected] {
     outline: 2px solid Highlight;
     outline-offset: -2px;

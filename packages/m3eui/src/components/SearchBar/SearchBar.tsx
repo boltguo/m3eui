@@ -6,16 +6,100 @@ import { Dialog as BaseDialog } from "@base-ui/react/dialog";
 import {
   SEARCH_BAR_TOKENS,
   SEARCH_VIEW_TOKENS,
+  SEGMENTED_MENU_TOKENS,
 } from "../../tokens/topology.js";
 import { useM3ERuntime, useM3EI18n } from "../../context/M3EContext.js";
 import { useM3EPortalContainer } from "../../context/M3EPortal.js";
-import {
-  useM3EScalarSpring,
-  usePressHoldState,
-} from "../../hooks/useM3ESpring.js";
+import { useDropdownItemState } from "../../internal/dropdownItem.js";
 import { useIsoLayoutEffect } from "../../internal/useIsoLayoutEffect.js";
 import { ClockIcon, CloseIcon } from "../../internal/icons.js";
 import { assignRef } from "../../internal/assignRef.js";
+import { useAdaptivePositionMethod } from "../../internal/positionMethod.js";
+import { useM3ERipple } from "../../internal/ripple.js";
+
+function SearchActionButton({
+  type = "button",
+  disabled = false,
+  ariaLabel,
+  className,
+  onClick,
+  children,
+}: {
+  readonly type?: "button" | "submit";
+  readonly disabled?: boolean;
+  readonly ariaLabel?: string;
+  readonly className: string;
+  readonly onClick?: () => void;
+  readonly children: React.ReactNode;
+}): React.JSX.Element {
+  const { rippleRef, rippleHandlers } = useM3ERipple(disabled);
+  return (
+    <button
+      type={type}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      className={className}
+      onClick={onClick}
+      {...rippleHandlers}
+    >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+      {children}
+    </button>
+  );
+}
+
+function SearchClearTrigger({
+  ariaLabel,
+  disabled,
+}: {
+  readonly ariaLabel: string;
+  readonly disabled: boolean;
+}): React.JSX.Element {
+  const { rippleRef, rippleHandlers } = useM3ERipple(disabled);
+  return (
+    <BaseAutocomplete.Clear
+      aria-label={ariaLabel}
+      className="m3e-search-bar__clear"
+      {...rippleHandlers}
+    >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+      <CloseIcon size={16} strokeWidth={2.3} />
+    </BaseAutocomplete.Clear>
+  );
+}
+
+function SearchViewItemButton({
+  id,
+  highlighted,
+  onClick,
+  children,
+}: {
+  readonly id: string;
+  readonly highlighted: boolean;
+  readonly onClick: () => void;
+  readonly children: React.ReactNode;
+}): React.JSX.Element {
+  const { rippleRef, rippleHandlers } = useM3ERipple();
+  return (
+    <button
+      type="button"
+      id={id}
+      role="option"
+      tabIndex={-1}
+      aria-selected={highlighted}
+      className="m3e-search-view__item"
+      data-highlighted={highlighted ? "" : undefined}
+      style={{
+        borderRadius: `${SEARCH_VIEW_TOKENS.itemRadius}px`,
+      }}
+      onClick={onClick}
+      {...rippleHandlers}
+    >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+      {children}
+    </button>
+  );
+}
 
 export interface SearchSuggestion {
   readonly value: string;
@@ -62,36 +146,55 @@ function SearchGlassSvg() {
 
 function SearchSuggestionRow({
   item,
+  index,
   onPick,
 }: {
   readonly item: SearchSuggestion;
+  readonly index: number;
   readonly onPick: (label: string) => void;
 }) {
-  const { isPressed, pressHandlers } = usePressHoldState(false);
-  const radius = useM3EScalarSpring(
-    isPressed
-      ? SEARCH_BAR_TOKENS.itemPressedRadius
-      : SEARCH_BAR_TOKENS.itemRadius,
-    "fastSpatial",
-  );
+  const count = BaseAutocomplete.useFilteredItems().length;
+  const hasDescription = Boolean(item.description);
+  const {
+    ref,
+    rippleRef,
+    isPressed,
+    interactionHandlers,
+    itemStyle,
+  } = useDropdownItemState<HTMLDivElement>({
+    index,
+    count,
+    hasDescription,
+  });
 
   return (
     <BaseAutocomplete.Item
+      ref={ref}
       value={item}
       onClick={() => onPick(item.label)}
-      className="m3e-search-bar__item"
-      style={{
-        borderRadius: `${Math.max(6, radius).toFixed(1)}px`,
-      }}
-      {...pressHandlers}
+      data-pressed={isPressed ? "" : undefined}
+      className="m3e-dropdown-item m3e-search-bar__item"
+      style={itemStyle}
+      {...interactionHandlers}
     >
-      <span className="m3e-search-bar__item-icon" aria-hidden="true">
-        {item.icon ?? <ClockIcon size={17} />}
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+      <span
+        className="m3e-dropdown-item__icon m3e-search-bar__item-icon"
+        aria-hidden="true"
+      >
+        {item.icon ?? <ClockIcon size={18} />}
       </span>
-      <span className="m3e-search-bar__item-text">
-        <span className="m3e-search-bar__item-label">{item.label}</span>
+      <span className="m3e-dropdown-item__text m3e-search-bar__item-text">
+        <span
+          className="m3e-dropdown-item__label m3e-search-bar__item-label"
+          data-text={item.label}
+        >
+          {item.label}
+        </span>
         {item.description ? (
-          <span className="m3e-search-bar__item-desc">{item.description}</span>
+          <span className="m3e-dropdown-item__desc m3e-search-bar__item-desc">
+            {item.description}
+          </span>
         ) : null}
       </span>
       {item.category ? (
@@ -127,10 +230,13 @@ export const SearchBar = React.forwardRef<HTMLFormElement, M3ESearchBarProps>(
     const resolvedEmptyText = emptyText ?? t("searchBar.empty");
     const [uncontrolledVal, setUncontrolledVal] =
       React.useState<string>(defaultValue);
+    const [popupOpen, setPopupOpen] = React.useState(false);
     const query = controlledValue ?? uncontrolledVal;
 
     const lastCompositionEndAtRef = React.useRef<number | null>(null);
     const formRef = React.useRef<HTMLFormElement | null>(null);
+    const barRef = React.useRef<HTMLDivElement | null>(null);
+    const positionMethod = useAdaptivePositionMethod(barRef, popupOpen);
 
     const setMergedFormRef = React.useCallback(
       (node: HTMLFormElement | null) => {
@@ -183,6 +289,7 @@ export const SearchBar = React.forwardRef<HTMLFormElement, M3ESearchBarProps>(
           value={controlledValue}
           defaultValue={defaultValue}
           openOnInputClick={suggestions.length > 0}
+          onOpenChange={setPopupOpen}
           itemToStringValue={(item) => item.label}
           onValueChange={(next) => {
             if (controlledValue === undefined) {
@@ -192,6 +299,7 @@ export const SearchBar = React.forwardRef<HTMLFormElement, M3ESearchBarProps>(
           }}
         >
           <div
+            ref={barRef}
             className="m3e-search-bar"
             data-size={size}
             data-disabled={disabled ? "" : undefined}
@@ -201,14 +309,14 @@ export const SearchBar = React.forwardRef<HTMLFormElement, M3ESearchBarProps>(
               paddingInline: `${size === "sm" ? 12 : SEARCH_BAR_TOKENS.horizontalPadding}px`,
             }}
           >
-            <button
+            <SearchActionButton
               type="submit"
               disabled={disabled}
-              aria-label={t("searchBar.submit")}
+              ariaLabel={t("searchBar.submit")}
               className="m3e-search-bar__submit-icon"
             >
               <SearchGlassSvg />
-            </button>
+            </SearchActionButton>
 
             <BaseAutocomplete.Input
               disabled={disabled}
@@ -223,12 +331,10 @@ export const SearchBar = React.forwardRef<HTMLFormElement, M3ESearchBarProps>(
 
             <div className="m3e-search-bar__actions">
               {query.length > 0 ? (
-                <BaseAutocomplete.Clear
-                  aria-label={t("searchBar.clear")}
-                  className="m3e-search-bar__clear"
-                >
-                  <CloseIcon size={16} strokeWidth={2.3} />
-                </BaseAutocomplete.Clear>
+                <SearchClearTrigger
+                  ariaLabel={t("searchBar.clear")}
+                  disabled={disabled}
+                />
               ) : null}
               {trailingSlot}
             </div>
@@ -237,27 +343,32 @@ export const SearchBar = React.forwardRef<HTMLFormElement, M3ESearchBarProps>(
           {suggestions.length > 0 ? (
             <BaseAutocomplete.Portal container={portalContainer}>
               <BaseAutocomplete.Positioner
+                positionMethod={positionMethod}
+                anchor={barRef}
                 sideOffset={6}
                 align="start"
                 className="m3e-search-bar__positioner"
               >
                 <BaseAutocomplete.Popup
-                  className="m3e-search-bar__popup"
+                  className="m3e-dropdown-popup m3e-search-bar__popup"
                   style={{
-                    borderRadius: `${SEARCH_BAR_TOKENS.popupRadius}px`,
+                    borderRadius: `${SEGMENTED_MENU_TOKENS.containerRadius}px`,
                   }}
                 >
-                  <BaseAutocomplete.Empty className="m3e-search-bar__empty">
+                  <BaseAutocomplete.Empty className="m3e-dropdown-empty m3e-search-bar__empty">
                     {resolvedEmptyText}
                   </BaseAutocomplete.Empty>
                   <BaseAutocomplete.List
-                    className="m3e-search-bar__list"
-                    style={{ padding: `${SEARCH_BAR_TOKENS.popupPadding}px` }}
+                    className="m3e-dropdown-list m3e-search-bar__list"
+                    style={{
+                      padding: `${SEGMENTED_MENU_TOKENS.containerPadding}px`,
+                    }}
                   >
-                    {(item: SearchSuggestion) => (
+                    {(item: SearchSuggestion, index: number) => (
                       <SearchSuggestionRow
                         key={item.value}
                         item={item}
+                        index={index}
                         onPick={(label) => onSearchSubmit?.(label)}
                       />
                     )}
@@ -454,14 +565,13 @@ function SearchViewSurface({
           submitQuery(query);
         }}
       >
-        <button
-          type="button"
-          aria-label={t("searchView.back")}
+        <SearchActionButton
+          ariaLabel={t("searchView.back")}
           className="m3e-search-view__back"
           onClick={onClose}
         >
           <BackArrowSvg rtl={direction === "rtl"} />
-        </button>
+        </SearchActionButton>
 
         <input
           ref={inputRef}
@@ -522,9 +632,8 @@ function SearchViewSurface({
 
         <div className="m3e-search-view__actions">
           {query.length > 0 ? (
-            <button
-              type="button"
-              aria-label={t("searchBar.clear")}
+            <SearchActionButton
+              ariaLabel={t("searchBar.clear")}
               className="m3e-search-bar__clear"
               onClick={() => {
                 setQuery("");
@@ -532,7 +641,7 @@ function SearchViewSurface({
               }}
             >
               <CloseIcon size={16} strokeWidth={2.3} />
-            </button>
+            </SearchActionButton>
           ) : null}
           {trailingSlot}
         </div>
@@ -546,13 +655,12 @@ function SearchViewSurface({
                 {t("searchView.recentHeading")}
               </span>
               {onClearRecent ? (
-                <button
-                  type="button"
+                <SearchActionButton
                   className="m3e-search-view__clear-recent"
                   onClick={onClearRecent}
                 >
                   {t("searchView.clearRecent")}
-                </button>
+                </SearchActionButton>
               ) : null}
             </div>
             <ul
@@ -566,30 +674,24 @@ function SearchViewSurface({
                 const isHighlighted = activeTarget?.id === targetId;
                 return (
                   <li role="presentation" key={item}>
-                    <button
-                      type="button"
+                    <SearchViewItemButton
                       id={`${optionPrefix}-${targetId}`}
-                      role="option"
-                      tabIndex={-1}
-                      aria-selected={isHighlighted}
-                      className="m3e-search-view__item"
-                      data-highlighted={isHighlighted ? "" : undefined}
-                      style={{
-                        borderRadius: `${SEARCH_VIEW_TOKENS.itemRadius}px`,
-                      }}
+                      highlighted={isHighlighted}
                       onClick={() => {
                         setQuery(item);
                         submitQuery(item);
                       }}
                     >
                       <span
-                        className="m3e-search-bar__item-icon"
+                        className="m3e-dropdown-item__icon m3e-search-bar__item-icon"
                         aria-hidden="true"
                       >
                         <ClockIcon size={17} />
                       </span>
-                      <span className="m3e-search-bar__item-label">{item}</span>
-                    </button>
+                      <span className="m3e-dropdown-item__label m3e-search-bar__item-label">
+                        {item}
+                      </span>
+                    </SearchViewItemButton>
                   </li>
                 );
               })}
@@ -615,51 +717,45 @@ function SearchViewSurface({
                 const isHighlighted = activeTarget?.id === targetId;
                 return (
                   <li role="presentation" key={item.value}>
-                    <button
-                      type="button"
+                    <SearchViewItemButton
                       id={`${optionPrefix}-${targetId}`}
-                      role="option"
-                      tabIndex={-1}
-                      aria-selected={isHighlighted}
-                      className="m3e-search-view__item"
-                      data-highlighted={isHighlighted ? "" : undefined}
-                      style={{
-                        borderRadius: `${SEARCH_VIEW_TOKENS.itemRadius}px`,
-                      }}
+                      highlighted={isHighlighted}
                       onClick={() => {
                         setQuery(item.label);
                         submitQuery(item.label);
                       }}
                     >
                       <span
-                        className="m3e-search-bar__item-icon"
+                        className="m3e-dropdown-item__icon m3e-search-bar__item-icon"
                         aria-hidden="true"
                       >
                         {item.icon ?? <SearchGlassSvg />}
                       </span>
-                      <span className="m3e-search-bar__item-body">
-                        <span className="m3e-search-bar__item-label">
+                      <span className="m3e-dropdown-item__text m3e-search-bar__item-body">
+                        <span className="m3e-dropdown-item__label m3e-search-bar__item-label">
                           {item.label}
                         </span>
                         {item.description ? (
-                          <span className="m3e-search-bar__item-desc">
+                          <span className="m3e-dropdown-item__desc m3e-search-bar__item-desc">
                             {item.description}
                           </span>
                         ) : null}
                       </span>
                       {item.category ? (
-                        <span className="m3e-search-bar__item-category">
+                        <span className="m3e-search-bar__item-tag m3e-search-bar__item-category">
                           {item.category}
                         </span>
                       ) : null}
-                    </button>
+                    </SearchViewItemButton>
                   </li>
                 );
               })}
             </ul>
           </div>
         ) : normalizedQuery && !children ? (
-          <div className="m3e-search-bar__empty">{t("searchBar.empty")}</div>
+          <div className="m3e-dropdown-empty m3e-search-bar__empty">
+            {t("searchBar.empty")}
+          </div>
         ) : null}
 
         {children ? (

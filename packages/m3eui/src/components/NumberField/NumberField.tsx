@@ -16,6 +16,7 @@ import {
   useFieldsetDisabled,
 } from "../../internal/fieldOutline.js";
 import { assignRef } from "../../internal/assignRef.js";
+import { mergeInteractionHandlers, useM3ERipple } from "../../internal/ripple.js";
 
 export interface M3ENumberFieldProps {
   readonly label?: React.ReactNode;
@@ -126,6 +127,10 @@ export const NumberField = React.forwardRef<
     usePressHoldState(stepBlocked);
   const { isPressed: incPressed, pressHandlers: incHandlers } =
     usePressHoldState(stepBlocked);
+  const decRipple = useM3ERipple(stepBlocked);
+  const incRipple = useM3ERipple(stepBlocked);
+  const decMerged = mergeInteractionHandlers(decHandlers, decRipple.rippleHandlers);
+  const incMerged = mergeInteractionHandlers(incHandlers, incRipple.rippleHandlers);
 
   const pill = NUMBER_FIELD_TOKENS.outerRadius;
   const decInner =
@@ -181,7 +186,6 @@ export const NumberField = React.forwardRef<
             className ? `m3e-number-field ${className}` : "m3e-number-field"
           }
           data-readonly={readOnly ? "" : undefined}
-          data-invalid={hasExplicitError ? "" : undefined}
           style={style}
         />
       }
@@ -208,20 +212,21 @@ export const NumberField = React.forwardRef<
       <BaseNumberField.Group
         className="m3e-number-field__group m3e-number-field__shell"
         data-readonly={readOnly ? "" : undefined}
-        data-invalid={hasExplicitError ? "" : undefined}
         style={{ gap: `${NUMBER_FIELD_TOKENS.seamGap}px` }}
       >
         <BaseNumberField.Decrement
           ref={decSpring.ref}
           aria-label={t("numberField.decrement")}
           className="m3e-number-field__step"
+          data-pressed={!stepBlocked && decPressed ? "" : undefined}
           style={{
             width: `${NUMBER_FIELD_TOKENS.stepperWidth}px`,
             height: `${NUMBER_FIELD_TOKENS.height}px`,
             borderRadius: decSpring.borderRadiusCss,
           }}
-          {...(stepBlocked ? undefined : decHandlers)}
+          {...(stepBlocked ? undefined : decMerged)}
         >
+          <span ref={decRipple.rippleRef} className="m3e-ripple" aria-hidden="true" />
           <MinusGlyph />
         </BaseNumberField.Decrement>
 
@@ -244,13 +249,15 @@ export const NumberField = React.forwardRef<
           ref={incSpring.ref}
           aria-label={t("numberField.increment")}
           className="m3e-number-field__step"
+          data-pressed={!stepBlocked && incPressed ? "" : undefined}
           style={{
             width: `${NUMBER_FIELD_TOKENS.stepperWidth}px`,
             height: `${NUMBER_FIELD_TOKENS.height}px`,
             borderRadius: incSpring.borderRadiusCss,
           }}
-          {...(stepBlocked ? undefined : incHandlers)}
+          {...(stepBlocked ? undefined : incMerged)}
         >
+          <span ref={incRipple.rippleRef} className="m3e-ripple" aria-hidden="true" />
           <PlusGlyph />
         </BaseNumberField.Increment>
       </BaseNumberField.Group>

@@ -22,6 +22,7 @@ import {
 import { useIsoLayoutEffect } from "../../internal/useIsoLayoutEffect.js";
 import { INERT_TRUE } from "../../internal/inert.js";
 import { LinkActionElement, isLinkRenderTarget } from "../../internal/link.js";
+import { useM3ERipple } from "../../internal/ripple.js";
 export type FabElevation = "default" | "lowered" | "none";
 
 const EXTENDED_FAB_TYPESCALE_MAP: Record<ExtendedFabSize, string> = {
@@ -80,6 +81,7 @@ const IconFAB = React.forwardRef<HTMLElement, M3EIconFABProps>(function IconFAB(
   const { debugGeometry } = useM3ERuntime();
   const resolvedElevation = elevation ?? "default";
   const { isPressed, pressHandlers } = usePressHoldState(disabled || !visible);
+  const { rippleRef, rippleHandlers } = useM3ERipple(disabled || !visible);
   const geo = resolveFabGeometry({
     size,
     isPressed: morphOnPress ? isPressed : false,
@@ -98,6 +100,7 @@ const IconFAB = React.forwardRef<HTMLElement, M3EIconFABProps>(function IconFAB(
 
   const mergedProps = mergeProps<"button">(
     pressHandlers as unknown as React.ComponentPropsWithRef<"button">,
+    rippleHandlers as unknown as React.ComponentPropsWithRef<"button">,
     restProps as unknown as React.ComponentPropsWithRef<"button">,
   );
 
@@ -122,6 +125,7 @@ const IconFAB = React.forwardRef<HTMLElement, M3EIconFABProps>(function IconFAB(
 
   const fabContent = (
     <>
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
       <span
         className="m3e-fab__icon"
         style={{
@@ -252,6 +256,7 @@ const ExtendedFAB = React.forwardRef<HTMLElement, M3EExtendedFABProps>(
     const { isPressed, pressHandlers } = usePressHoldState(
       disabled || !visible,
     );
+    const { rippleRef, rippleHandlers } = useM3ERipple(disabled || !visible);
     const spec = EXTENDED_FAB_SPECS[size];
     const labelId = React.useId();
 
@@ -332,6 +337,7 @@ const ExtendedFAB = React.forwardRef<HTMLElement, M3EExtendedFABProps>(
     const fallbackLineHeight = size === "lg" ? 32 : size === "md" ? 28 : 24;
     const mergedProps = mergeProps<"button">(
       pressHandlers as unknown as React.ComponentPropsWithRef<"button">,
+      rippleHandlers as unknown as React.ComponentPropsWithRef<"button">,
       restProps as unknown as React.ComponentPropsWithRef<"button">,
     );
 
@@ -362,6 +368,7 @@ const ExtendedFAB = React.forwardRef<HTMLElement, M3EExtendedFABProps>(
 
     const efabContent = (
       <>
+        <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
         <span
           className="m3e-extended-fab__icon"
           style={{ width: `${spec.iconSize}px`, height: `${spec.iconSize}px` }}
@@ -572,16 +579,9 @@ function StaggeredFabMenuItem({
   );
   const opacityProgress = useM3EScalarSpring(itemActive ? 1 : 0, "fastEffects");
 
-  const { isPressed, pressHandlers } = usePressHoldState(
+  const { rippleRef, rippleHandlers } = useM3ERipple(
     !isOpen || Boolean(item.disabled),
   );
-  const itemCornerTarget = isPressed ? 16 : FAB_MENU_TOKENS.itemRadius;
-  const { ref: mergedRef, borderRadiusCss } =
-    useM3ECornerSpringRef<HTMLButtonElement>(
-      [itemCornerTarget, itemCornerTarget, itemCornerTarget, itemCornerTarget],
-      "defaultEffects",
-      buttonRef,
-    );
 
   const translateY = (1 - spatialProgress) * 18;
   const scale = 0.88 + 0.12 * spatialProgress;
@@ -589,7 +589,7 @@ function StaggeredFabMenuItem({
 
   return (
     <button
-      ref={mergedRef}
+      ref={buttonRef}
       type="button"
       role="menuitem"
       disabled={item.disabled}
@@ -602,19 +602,19 @@ function StaggeredFabMenuItem({
       className="m3e-fab-menu__item"
       data-open={isOpen ? "" : undefined}
       data-disabled={item.disabled ? "" : undefined}
-      data-pressed={isPressed ? "" : undefined}
       style={{
         height: `${FAB_MENU_TOKENS.itemHeight}px`,
         paddingInline: `${FAB_MENU_TOKENS.itemPaddingInline}px`,
         gap: `${FAB_MENU_TOKENS.itemIconGap}px`,
-        borderRadius: borderRadiusCss,
+        borderRadius: `${FAB_MENU_TOKENS.itemRadius}px`,
         opacity: clampedOpacity,
         translate: `0px ${translateY.toFixed(2)}px`,
         scale: `${scale.toFixed(3)}`,
         pointerEvents: isOpen ? "auto" : "none",
       }}
-      {...pressHandlers}
+      {...rippleHandlers}
     >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
       <span
         className="m3e-fab-menu__item-icon"
         style={{
@@ -709,14 +709,11 @@ export function FABMenu({
     [items],
   );
 
-  const { isPressed, pressHandlers } = usePressHoldState(false);
+  const { rippleRef: triggerRippleRef, rippleHandlers: triggerRippleHandlers } =
+    useM3ERipple(false);
   const morphProgress = useM3EScalarSpring(isOpen ? 1 : 0, "fastSpatial");
   const clampedMorph = Math.max(0, Math.min(1, morphProgress));
   const fabGeo = resolveToggleFabGeometry(size, morphProgress);
-
-  const effectiveRadius = isPressed
-    ? Math.max(10, fabGeo.cornerRadius - 6)
-    : fabGeo.cornerRadius;
 
   const hasCustomIcon = icon !== undefined;
   const customIconOpacity = Math.max(0, Math.min(1, 1 - clampedMorph * 1.4));
@@ -810,14 +807,14 @@ export function FABMenu({
         className="m3e-toggle-fab"
         data-open={isOpen ? "" : undefined}
         data-size={size}
-        data-pressed={isPressed ? "" : undefined}
         style={{
           width: `${fabGeo.containerSize.toFixed(1)}px`,
           height: `${fabGeo.containerSize.toFixed(1)}px`,
-          borderRadius: `${effectiveRadius.toFixed(1)}px`,
+          borderRadius: `${fabGeo.cornerRadius.toFixed(1)}px`,
         }}
-        {...pressHandlers}
+        {...triggerRippleHandlers}
       >
+        <span ref={triggerRippleRef} className="m3e-ripple" aria-hidden="true" />
         <span
           className="m3e-toggle-fab__icon"
           style={{
@@ -867,7 +864,7 @@ export function FABMenu({
         </span>
         {debugGeometry ? (
           <span className="m3e-debug-badge" aria-hidden="true">
-            {Math.round(fabGeo.containerSize)}px r:{effectiveRadius.toFixed(0)}
+            {Math.round(fabGeo.containerSize)}px r:{fabGeo.cornerRadius.toFixed(0)}
           </span>
         ) : null}
       </button>

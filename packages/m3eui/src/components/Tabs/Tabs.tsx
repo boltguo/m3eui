@@ -2,11 +2,13 @@
 
 import * as React from "react";
 import { Tabs as BaseTabs } from "@base-ui/react/tabs";
+import { mergeProps } from "@base-ui/react/merge-props";
 import {
   TABS_TOKENS,
 } from "../../tokens/topology.js";
 import { usePressHoldState } from "../../hooks/useM3ESpring.js";
 import { useIsoLayoutEffect } from "../../internal/useIsoLayoutEffect.js";
+import { useM3ERipple } from "../../internal/ripple.js";
 
 export type TabsVariant = "primary" | "secondary";
 
@@ -211,6 +213,11 @@ export function Tab<Value extends string | number = string>({
 }: M3ETabProps<Value>): React.JSX.Element {
   const { variant } = React.useContext(TabsContext);
   const { isPressed, pressHandlers } = usePressHoldState(disabled);
+  const { rippleRef, rippleHandlers } = useM3ERipple(disabled);
+  const mergedHandlers = mergeProps<"button">(
+    pressHandlers as unknown as React.ComponentPropsWithRef<"button">,
+    rippleHandlers as unknown as React.ComponentPropsWithRef<"button">,
+  );
   const minHeight =
     variant === "primary" && icon
       ? TABS_TOKENS.primaryWithIconHeight
@@ -231,8 +238,9 @@ export function Tab<Value extends string | number = string>({
         paddingInline: `${TABS_TOKENS.horizontalPadding}px`,
         ...style,
       }}
-      {...pressHandlers}
+      {...mergedHandlers}
     >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
       <span className="m3e-tabs__content">
         {icon ? (
           <span className="m3e-tabs__icon" aria-hidden="true">

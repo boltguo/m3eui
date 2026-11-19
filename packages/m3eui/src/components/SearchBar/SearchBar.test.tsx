@@ -143,4 +143,69 @@ describe("SearchBar & SearchView", () => {
     });
     expect(document.activeElement).toBe(searchInput);
   });
+
+  it("renders unified segmented dropdown geometry on SearchBar suggestion popups", () => {
+    act(() => {
+      dom.root.render(
+        <M3EProvider syncDocumentRoot={false}>
+          <PausedWrapper locale="en-US">
+            <SearchBar
+              suggestions={[
+                { value: "a", label: "Alert" },
+                { value: "b", label: "Button" },
+              ]}
+            />
+          </PausedWrapper>
+        </M3EProvider>,
+      );
+    });
+
+    const input = dom.container.querySelector<HTMLInputElement>(
+      ".m3e-search-bar__input",
+    )!;
+    act(() => {
+      input.dispatchEvent(
+        new MouseEvent("mousedown", { bubbles: true, button: 0 }),
+      );
+      input.click();
+    });
+
+    const popup = document.body.querySelector<HTMLElement>(
+      ".m3e-search-bar__popup.m3e-dropdown-popup",
+    );
+    expect(popup).not.toBeNull();
+    expect(popup?.style.borderRadius).toBe("16px");
+
+    const items = popup!.querySelectorAll<HTMLElement>(".m3e-dropdown-item");
+    expect(items.length).toBe(2);
+    expect(items[0]?.style.borderRadius).toBe("12px 12px 4px 4px");
+    expect(items[1]?.style.borderRadius).toBe("4px 4px 12px 12px");
+  });
+
+  it("renders shared .m3e-dropdown-item__label and __desc classes in SearchView suggestions", () => {
+    act(() => {
+      dom.root.render(
+        <PausedWrapper locale="en-US">
+          <SearchView
+            open
+            suggestions={[
+              {
+                value: "tokens",
+                label: "Color Tokens",
+                description: "HCT tonal palettes",
+              },
+            ]}
+          />
+        </PausedWrapper>,
+      );
+    });
+
+    const searchView = document.body.querySelector<HTMLElement>(".m3e-search-view")!;
+    expect(searchView.querySelector(".m3e-dropdown-item__label")?.textContent).toBe(
+      "Color Tokens",
+    );
+    expect(searchView.querySelector(".m3e-dropdown-item__desc")?.textContent).toBe(
+      "HCT tonal palettes",
+    );
+  });
 });

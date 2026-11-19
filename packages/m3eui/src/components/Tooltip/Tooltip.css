@@ -1,10 +1,10 @@
 .m3e-tooltip__positioner {
   z-index: 110;
-  pointer-events: none;
 }
 
 .m3e-tooltip {
   box-sizing: border-box;
+  outline: none;
   opacity: 1;
   scale: 1;
   translate: 0px 0px;
@@ -15,11 +15,22 @@
     translate var(--m3e-effects-fast-duration, 140ms) ease-out;
 }
 
-.m3e-tooltip[data-starting-style],
-.m3e-tooltip[data-ending-style] {
+.m3e-tooltip:is([data-starting-style], [data-ending-style]) {
   opacity: 0;
   scale: 0.94;
   translate: 0px 3px;
+}
+
+.m3e-tooltip[data-side="bottom"]:is([data-starting-style], [data-ending-style]) {
+  translate: 0px -3px;
+}
+
+.m3e-tooltip[data-side="left"]:is([data-starting-style], [data-ending-style]) {
+  translate: 3px 0px;
+}
+
+.m3e-tooltip[data-side="right"]:is([data-starting-style], [data-ending-style]) {
+  translate: -3px 0px;
 }
 
 .m3e-tooltip--plain {
@@ -28,16 +39,16 @@
   font-size: 12px;
   line-height: 16px;
   font-weight: 500;
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--m3e-color-shadow) 20%, transparent);
-  max-width: min(200px, calc(100vw - 16px));
+  box-shadow: none;
+  max-width: min(200px, calc(100dvw - 16px));
   overflow-wrap: anywhere;
 }
 
 .m3e-tooltip--rich {
-  pointer-events: auto;
   display: flex;
   flex-direction: column;
   gap: 6px;
+  max-inline-size: min(312px, calc(100dvw - 16px));
   background-color: var(--m3e-color-surface-container);
   color: var(--m3e-color-on-surface-variant);
   border: 0;
@@ -66,5 +77,11 @@
   .m3e-tooltip {
     transition-duration: 90ms;
     transition-timing-function: ease-out;
+  }
+}
+
+@media (forced-colors: active) {
+  .m3e-tooltip {
+    outline: 1px solid CanvasText;
   }
 }

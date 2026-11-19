@@ -3,7 +3,7 @@
   width: min(100%, 328px);
   background-color: var(--m3e-color-surface-container-high);
   color: var(--m3e-color-on-surface);
-  border: 1px solid var(--m3e-color-outline-variant);
+  border: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -19,6 +19,7 @@
 }
 
 .m3e-time-picker__mode-btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -34,13 +35,16 @@
 
 @media (hover: hover) {
   .m3e-time-picker__mode-btn:hover {
-    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 9%, transparent);
     color: var(--m3e-color-on-surface);
+  }
+
+  .m3e-time-picker__mode-btn:hover > .m3e-ripple::before {
+    opacity: var(--m3e-state-hover-opacity, 0.08);
   }
 }
 
 .m3e-time-picker__mode-btn:focus-visible {
-  outline: 2px solid var(--m3e-color-primary);
+  outline: 3px solid var(--m3e-color-secondary);
   outline-offset: 2px;
 }
 
@@ -53,6 +57,21 @@
   width: 100%;
 }
 
+.m3e-time-picker__keyboard-row {
+  align-items: flex-start;
+}
+
+.m3e-time-picker__keyboard-row .m3e-time-picker__digits-ltr {
+  align-items: flex-start;
+}
+
+.m3e-time-picker__keyboard-row .m3e-time-picker__colon {
+  font-size: 28px;
+  font-weight: 600;
+  height: 64px;
+  line-height: 64px;
+}
+
 .m3e-time-picker__digits-ltr {
   display: inline-flex;
   align-items: center;
@@ -60,10 +79,11 @@
 }
 
 .m3e-time-picker__field-chip {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid transparent;
+  border: 0;
   background-color: var(--m3e-color-surface-container-highest);
   color: var(--m3e-color-on-surface);
   font-family: inherit;
@@ -75,13 +95,12 @@
   cursor: pointer;
   transition:
     background-color var(--m3e-effects-fast-duration, 140ms) ease-out,
-    color var(--m3e-effects-fast-duration, 140ms) ease-out,
-    border-color var(--m3e-effects-fast-duration, 140ms) ease-out;
+    color var(--m3e-effects-fast-duration, 140ms) ease-out;
 }
 
 @media (hover: hover) {
-  .m3e-time-picker__field-chip:hover:not([data-active]) {
-    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 8%, var(--m3e-color-surface-container-highest));
+  .m3e-time-picker__field-chip:hover > .m3e-ripple::before {
+    opacity: var(--m3e-state-hover-opacity, 0.08);
   }
 }
 
@@ -91,7 +110,7 @@
 }
 
 .m3e-time-picker__field-chip:focus-visible {
-  outline: 2.5px solid var(--m3e-color-primary);
+  outline: 3px solid var(--m3e-color-secondary);
   outline-offset: 2px;
 }
 
@@ -101,7 +120,7 @@
   font-size: 57px;
   line-height: 64px;
   font-weight: 400;
-  color: var(--m3e-color-on-surface);
+  color: inherit;
   user-select: none;
 }
 
@@ -112,11 +131,13 @@
   box-sizing: border-box;
   margin-inline-start: 4px;
   overflow: clip;
-  border: 1px solid var(--m3e-color-outline);
+  border: 1px solid var(--m3e-color-outline-variant);
 }
 
 .m3e-time-picker__period-btn {
+  position: relative;
   flex: 1 1 0;
+  padding: 0;
   border: 0;
   background-color: transparent;
   color: var(--m3e-color-on-surface-variant);
@@ -130,31 +151,34 @@
     color var(--m3e-effects-fast-duration, 140ms) ease-out;
 }
 
+.m3e-time-picker__period-btn:first-child {
+  border-start-start-radius: 7px;
+  border-start-end-radius: 7px;
+}
+
+.m3e-time-picker__period-btn:last-child {
+  border-end-start-radius: 7px;
+  border-end-end-radius: 7px;
+}
+
 .m3e-time-picker__period-btn + .m3e-time-picker__period-btn {
-  border-block-start: 1px solid var(--m3e-color-outline);
+  border-block-start: 1px solid var(--m3e-color-outline-variant);
 }
 
 @media (hover: hover) {
-  .m3e-time-picker__period-btn:hover:where(:not(:disabled, [data-selected])) {
-    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 8%, transparent);
+  .m3e-time-picker__period-btn:hover:where(:not(:disabled)) > .m3e-ripple::before {
+    opacity: var(--m3e-state-hover-opacity, 0.08);
   }
 }
 
 .m3e-time-picker__period-btn[data-selected] {
-  background-color: var(--m3e-color-tertiary-container);
-  color: var(--m3e-color-on-tertiary-container);
-}
-
-@media (hover: hover) {
-  .m3e-time-picker__period-btn[data-selected]:hover:where(:not(:disabled)) {
-    background-color: color-mix(in srgb, var(--m3e-color-tertiary-container) 92%, var(--m3e-color-on-tertiary-container));
-    color: var(--m3e-color-on-tertiary-container);
-  }
+  background-color: var(--m3e-color-secondary-container);
+  color: var(--m3e-color-on-secondary-container);
 }
 
 .m3e-time-picker__period-btn:focus-visible {
-  outline: 2px solid var(--m3e-color-primary);
-  outline-offset: -2px;
+  outline: 3px solid var(--m3e-color-secondary);
+  outline-offset: -3px;
 }
 
 .m3e-time-picker__dial {
@@ -236,7 +260,7 @@
 }
 
 .m3e-time-picker__dial-num:focus-visible {
-  outline: 2px solid var(--m3e-color-primary);
+  outline: 3px solid var(--m3e-color-secondary);
   outline-offset: 2px;
 }
 
@@ -251,7 +275,7 @@
   width: 88px;
   height: 64px;
   box-sizing: border-box;
-  border: 2px solid var(--m3e-color-outline-variant);
+  border: 2px solid transparent;
   border-radius: 12px;
   background-color: var(--m3e-color-surface-container-highest);
   color: var(--m3e-color-on-surface);
@@ -260,6 +284,16 @@
   font-weight: 600;
   text-align: center;
   font-variant-numeric: tabular-nums;
+  transition:
+    background-color var(--m3e-effects-fast-duration, 140ms) ease-out,
+    border-color var(--m3e-effects-fast-duration, 140ms) ease-out,
+    color var(--m3e-effects-fast-duration, 140ms) ease-out;
+}
+
+@media (hover: hover) {
+  .m3e-time-picker__kb-input:not(:focus):hover {
+    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 8%, var(--m3e-color-surface-container-highest));
+  }
 }
 
 .m3e-time-picker__kb-input:focus {
@@ -283,7 +317,8 @@
   color: var(--m3e-color-on-tertiary-container);
 }
 
-.m3e-time-picker[data-variant="vibrant"] .m3e-time-picker__field-chip[data-active] {
+.m3e-time-picker[data-variant="vibrant"] .m3e-time-picker__field-chip[data-active],
+.m3e-time-picker[data-variant="vibrant"] .m3e-time-picker__period-btn[data-selected] {
   background-color: var(--m3e-color-tertiary);
   color: var(--m3e-color-on-tertiary);
 }
@@ -291,10 +326,9 @@
 .m3e-time-picker-dialog {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   background-color: var(--m3e-color-surface-container-high);
   color: var(--m3e-color-on-surface);
-  border: 1px solid var(--m3e-color-outline-variant);
+  border: 0;
 }
 
 .m3e-time-picker-dialog__picker {

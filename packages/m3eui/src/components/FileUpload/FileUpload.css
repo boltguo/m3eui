@@ -5,6 +5,7 @@
 }
 
 .m3e-dropzone {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -25,9 +26,14 @@
   }
 }
 
-.m3e-dropzone:is(:focus-within, [data-pressed]):not([data-disabled]) {
+.m3e-dropzone:is(:has(:focus-visible), [data-pressed]):not([data-disabled]) {
   border-color: var(--m3e-color-primary);
   background-color: var(--m3e-color-surface-container);
+}
+
+.m3e-dropzone:has(:focus-visible) {
+  outline: 3px solid var(--m3e-color-secondary);
+  outline-offset: 2px;
 }
 
 .m3e-dropzone[data-drag-over] {
@@ -37,7 +43,7 @@
 }
 
 .m3e-dropzone[data-disabled] {
-  opacity: 0.45;
+  opacity: 0.38;
   cursor: not-allowed;
 }
 
@@ -134,35 +140,21 @@
   white-space: nowrap;
 }
 
+.m3e-file-upload__errors {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .m3e-file-upload__sub {
   font-size: 12px;
   color: var(--m3e-color-on-surface-variant);
 }
 
-.m3e-file-upload__remove {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  inline-size: 30px;
-  block-size: 30px;
-  border: 0;
-  border-radius: 9999px;
-  background: transparent;
-  color: var(--m3e-color-on-surface-variant);
-  outline: none;
-  cursor: pointer;
-}
-
 @media (hover: hover) {
-  .m3e-file-upload__remove:hover {
-    background-color: color-mix(in srgb, var(--m3e-color-error) 12%, transparent);
+  .m3e-file-upload__remove:hover:not(:disabled) {
     color: var(--m3e-color-error);
   }
-}
-
-.m3e-file-upload__remove:focus-visible {
-  outline: 2px solid var(--m3e-color-primary);
-  outline-offset: 2px;
 }
 
 @media (forced-colors: active) {

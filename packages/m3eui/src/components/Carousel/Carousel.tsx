@@ -9,7 +9,100 @@ import {
   resolveCarouselSnapOffset,
 } from "../../tokens/carousel.js";
 import { useM3ERuntime } from "../../context/M3EContext.js";
+import { useM3ERipple } from "../../internal/ripple.js";
 import { useIsoLayoutEffect } from "../../internal/useIsoLayoutEffect.js";
+
+function CarouselNavButton({
+  disabled,
+  ariaLabel,
+  onClick,
+  children,
+}: {
+  readonly disabled: boolean;
+  readonly ariaLabel: string;
+  readonly onClick: () => void;
+  readonly children: React.ReactNode;
+}): React.JSX.Element {
+  const { rippleRef, rippleHandlers } = useM3ERipple(disabled);
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      aria-label={ariaLabel}
+      className="m3e-carousel__nav-btn"
+      onClick={onClick}
+      {...rippleHandlers}
+    >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+      {children}
+    </button>
+  );
+}
+
+function CarouselSlide({
+  roleDescription,
+  ariaLabel,
+  isFocal,
+  isUnmasked,
+  onSelect,
+  shouldSuppressClick,
+  isInteractiveDescendant,
+  style,
+  children,
+}: {
+  readonly roleDescription: string;
+  readonly ariaLabel: string;
+  readonly isFocal: boolean;
+  readonly isUnmasked: boolean;
+  readonly onSelect: () => void;
+  readonly shouldSuppressClick: () => boolean;
+  readonly isInteractiveDescendant: (
+    target: EventTarget | null,
+    currentTarget: HTMLElement,
+  ) => boolean;
+  readonly style: React.CSSProperties;
+  readonly children: React.ReactNode;
+}): React.JSX.Element {
+  const { rippleRef, rippleHandlers } = useM3ERipple();
+  return (
+    <div
+      role="group"
+      aria-roledescription={roleDescription}
+      aria-label={ariaLabel}
+      tabIndex={0}
+      data-focal={isFocal ? "" : undefined}
+      data-unmasked={isUnmasked ? "" : undefined}
+      className="m3e-carousel__slide"
+      style={style}
+      onPointerDown={(e) => {
+        if (isInteractiveDescendant(e.target, e.currentTarget)) return;
+        rippleHandlers.onPointerDown?.(e);
+      }}
+      onPointerUp={() => rippleHandlers.onPointerUp?.()}
+      onPointerLeave={(e) => rippleHandlers.onPointerLeave?.(e)}
+      onPointerCancel={() => rippleHandlers.onPointerCancel?.()}
+      onLostPointerCapture={() => rippleHandlers.onLostPointerCapture?.()}
+      onKeyUp={(e) => rippleHandlers.onKeyUp?.(e)}
+      onBlur={() => rippleHandlers.onBlur?.()}
+      onClick={(e) => {
+        if (shouldSuppressClick()) return;
+        if (isInteractiveDescendant(e.target, e.currentTarget)) return;
+        onSelect();
+      }}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        rippleHandlers.onKeyDown?.(e);
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+    >
+      {children}
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+    </div>
+  );
+}
 
 export interface CarouselItemSpec {
   readonly id: string;
@@ -296,10 +389,11 @@ export function Carousel({
         count,
       });
       const el = trackRef.current;
+      const currentScroll = el ? readNormalizedScrollLeft(el, isRtl) : 0;
       const useSmooth =
         !options?.instant &&
         !reducedMotion &&
-        Boolean(el && el.clientWidth > 0);
+        Boolean(el && el.clientWidth > 0 && Math.abs(targetOffset - currentScroll) > 0.5);
 
       if (useSmooth && el) {
         pendingTargetRef.current = { index: next, offset: targetOffset };
@@ -359,11 +453,22 @@ export function Carousel({
       if (el) scrollTrackToOffset(el, targetOffset, isRtl, false);
     } else if (controlledChanged) {
       announceSlide(currentIdx);
-      const useSmooth = !reducedMotion && Boolean(el && el.clientWidth > 0);
+      const currentScroll = el ? readNormalizedScrollLeft(el, isRtl) : 0;
+      const useSmooth =
+        !reducedMotion &&
+        Boolean(el && el.clientWidth > 0 && Math.abs(targetOffset - currentScroll) > 0.5);
       if (useSmooth && el) {
         pendingTargetRef.current = { index: currentIdx, offset: targetOffset };
+        if (pendingTimerRef.current !== null) {
+          window.clearTimeout(pendingTimerRef.current);
+        }
+        pendingTimerRef.current = window.setTimeout(() => {
+          clearPendingTarget();
+          setScrollOffset(targetOffset);
+        }, 620);
         scrollTrackToOffset(el, targetOffset, isRtl, true);
       } else {
+        clearPendingTarget();
         setScrollOffset(targetOffset);
         if (el) scrollTrackToOffset(el, targetOffset, isRtl, false);
       }
@@ -604,24 +709,20 @@ export function Carousel({
       {canScroll ? (
         <div className="m3e-carousel__header-bar">
           <div className="m3e-carousel__controls">
-            <button
-              type="button"
+            <CarouselNavButton
               disabled={prevTarget === null}
-              aria-label={t("carousel.prevSlide")}
-              className="m3e-carousel__nav-btn"
+              ariaLabel={t("carousel.prevSlide")}
               onClick={() => prevTarget !== null && selectIndex(prevTarget)}
             >
               <ChevronSvg direction="prev" rtl={isRtl} />
-            </button>
-            <button
-              type="button"
+            </CarouselNavButton>
+            <CarouselNavButton
               disabled={nextTarget === null}
-              aria-label={t("carousel.nextSlide")}
-              className="m3e-carousel__nav-btn"
+              ariaLabel={t("carousel.nextSlide")}
               onClick={() => nextTarget !== null && selectIndex(nextTarget)}
             >
               <ChevronSvg direction="next" rtl={isRtl} />
-            </button>
+            </CarouselNavButton>
           </div>
 
           <nav
@@ -748,37 +849,22 @@ export function Carousel({
                 inlineSize: `${slotWidth.toFixed(2)}px`,
               }}
             >
-              <div
-                role="group"
-                aria-roledescription={t("carousel.slideRoleDescription")}
-                aria-label={t("carousel.slideLabel", {
+              <CarouselSlide
+                roleDescription={t("carousel.slideRoleDescription")}
+                ariaLabel={t("carousel.slideLabel", {
                   index: idx + 1,
                   count,
                   title: item.title,
                 })}
-                tabIndex={0}
-                data-focal={idx === currentIdx ? "" : undefined}
-                data-unmasked={isFocal ? "" : undefined}
-                className="m3e-carousel__slide"
-                onClick={(e) => {
-                  if (suppressClickRef.current) {
-                    suppressClickRef.current = false;
-                    return;
-                  }
-                  if (isInteractiveSlideDescendant(e.target, e.currentTarget)) {
-                    return;
-                  }
-                  selectIndex(idx);
+                isFocal={idx === currentIdx}
+                isUnmasked={isFocal}
+                shouldSuppressClick={() => {
+                  if (!suppressClickRef.current) return false;
+                  suppressClickRef.current = false;
+                  return true;
                 }}
-                onKeyDown={(e) => {
-                  if (e.target !== e.currentTarget) {
-                    return;
-                  }
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    selectIndex(idx);
-                  }
-                }}
+                isInteractiveDescendant={isInteractiveSlideDescendant}
+                onSelect={() => selectIndex(idx)}
                 style={{
                   width: `${maskWidth.toFixed(2)}px`,
                   borderRadius: `${g.cornerRadius.toFixed(1)}px`,
@@ -820,7 +906,7 @@ export function Carousel({
                     {g.cornerRadius.toFixed(0)}
                   </span>
                 ) : null}
-              </div>
+              </CarouselSlide>
             </div>
           );
         })}

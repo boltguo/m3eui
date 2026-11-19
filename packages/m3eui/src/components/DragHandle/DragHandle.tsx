@@ -242,6 +242,11 @@ export const DragHandle = React.forwardRef<HTMLDivElement, M3EDragHandleProps>(
             endDragSession(e.currentTarget, e.pointerId);
           }
         }}
+        onLostPointerCapture={(e) => {
+          if (dragSessionRef.current.pointerId === e.pointerId) {
+            endDragSession(e.currentTarget, e.pointerId);
+          }
+        }}
         onBlur={(e) => {
           onBlur?.(e);
           if (isPressed || isDragging) {

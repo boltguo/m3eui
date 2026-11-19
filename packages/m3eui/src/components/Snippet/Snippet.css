@@ -1,4 +1,6 @@
 .m3e-copy-button {
+  box-sizing: border-box;
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -20,13 +22,14 @@
 }
 
 @media (hover: hover) {
-  .m3e-copy-button:hover:not(:disabled) {
-    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 10%, transparent);
+  .m3e-copy-button:hover:not(:disabled) > .m3e-ripple::before {
+    opacity: var(--m3e-state-hover-opacity, 0.08);
   }
 }
 
-.m3e-copy-button[data-pressed]:not(:disabled) {
-  background-color: color-mix(in srgb, var(--m3e-color-on-surface) 14%, transparent);
+.m3e-copy-button:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
 }
 
 .m3e-copy-button[data-copied] {
@@ -40,11 +43,12 @@
 }
 
 .m3e-copy-button:focus-visible {
-  outline: 2px solid var(--m3e-color-primary);
+  outline: 3px solid var(--m3e-color-secondary);
   outline-offset: 2px;
 }
 
 .m3e-snippet {
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
@@ -58,11 +62,13 @@
 }
 
 .m3e-snippet[data-variant="outlined"] {
-  background-color: var(--m3e-color-surface-container-lowest);
+  background-color: var(--m3e-color-surface);
   border: 1px solid var(--m3e-color-outline-variant);
 }
 
 .m3e-snippet__pre {
+  flex: 1 1 auto;
+  min-inline-size: 0;
   margin: 0;
   display: flex;
   flex-direction: column;

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Button as BaseButton } from "@base-ui/react/button";
+import { mergeProps } from "@base-ui/react/merge-props";
 import {
   type ButtonSize,
   type CornerTuple,
@@ -17,6 +18,7 @@ import {
 import type { ButtonVariant } from "../Button/Button.js";
 import { DropdownMenu, type M3EMenuItemSpec } from "../Menu/Menu.js";
 import { ChevronDownIcon } from "../../internal/icons.js";
+import { useM3ERipple } from "../../internal/ripple.js";
 
 export type SplitButtonVariant = Exclude<ButtonVariant, "text">;
 
@@ -77,6 +79,36 @@ export function SplitButton({
     usePressHoldState(disabled);
   const { isPressed: isTrailingPressed, pressHandlers: trailingPressHandlers } =
     usePressHoldState(disabled);
+  const { rippleRef: leadRippleRef, rippleHandlers: leadRippleHandlers } =
+    useM3ERipple(disabled);
+  const { rippleRef: trailRippleRef, rippleHandlers: trailRippleHandlers } =
+    useM3ERipple(disabled);
+
+  const leadProps = mergeProps<"button">(
+    leadingPressHandlers as unknown as React.ComponentPropsWithRef<"button">,
+    leadRippleHandlers as unknown as React.ComponentPropsWithRef<"button">,
+    {
+      onPointerEnter: (e) => {
+        if (!disabled && e.pointerType !== "touch") setIsLeadingHovered(true);
+      },
+      onPointerLeave: () => {
+        setIsLeadingHovered(false);
+      },
+    },
+  );
+
+  const trailProps = mergeProps<"button">(
+    trailingPressHandlers as unknown as React.ComponentPropsWithRef<"button">,
+    trailRippleHandlers as unknown as React.ComponentPropsWithRef<"button">,
+    {
+      onPointerEnter: (e) => {
+        if (!disabled && e.pointerType !== "touch") setIsTrailingHovered(true);
+      },
+      onPointerLeave: () => {
+        setIsTrailingHovered(false);
+      },
+    },
+  );
 
   const geo = resolveSplitButtonGeometry({
     size,
@@ -101,11 +133,11 @@ export function SplitButton({
       : geo.trailingOpticalOffsetPx;
 
   const { ref: leadRef, borderRadiusCss: leadRadiusCss } =
-    useM3ECornerSpringRef<HTMLElement>(targetLeadCorners, "defaultEffects");
+    useM3ECornerSpringRef<HTMLElement>(targetLeadCorners, "fastSpatial");
   const { ref: trailRef, borderRadiusCss: trailRadiusCss } =
     useM3ECornerSpringRef<HTMLButtonElement>(
       targetTrailCorners,
-      "defaultEffects",
+      "fastSpatial",
     );
 
   const chevronDeg = useM3EScalarSpring(geo.chevronRotationDeg, "fastSpatial");
@@ -148,15 +180,9 @@ export function SplitButton({
           borderWidth,
           borderRadius: leadRadiusCss,
         }}
-        {...leadingPressHandlers}
-        onPointerEnter={(e) => {
-          if (!disabled && e.pointerType !== "touch") setIsLeadingHovered(true);
-        }}
-        onPointerLeave={() => {
-          setIsLeadingHovered(false);
-          leadingPressHandlers.onPointerLeave();
-        }}
+        {...leadProps}
       >
+        <span ref={leadRippleRef} className="m3e-ripple" aria-hidden="true" />
         {leadingIcon ? (
           <span
             className="m3e-button__icon"
@@ -194,6 +220,7 @@ export function SplitButton({
             type="button"
             ref={trailRef}
             disabled={disabled}
+            data-disabled={disabled ? "" : undefined}
             aria-label={resolvedMenuTriggerLabel}
             className="m3e-button m3e-split-button__trailing"
             data-variant={variant}
@@ -207,15 +234,9 @@ export function SplitButton({
               borderWidth,
               borderRadius: trailRadiusCss,
             }}
-            {...trailingPressHandlers}
-            onPointerEnter={(e) => {
-              if (!disabled && e.pointerType !== "touch") setIsTrailingHovered(true);
-            }}
-            onPointerLeave={() => {
-              setIsTrailingHovered(false);
-              trailingPressHandlers.onPointerLeave();
-            }}
+            {...trailProps}
           >
+            <span ref={trailRippleRef} className="m3e-ripple" aria-hidden="true" />
             <span
               className="m3e-split-button__chevron"
               style={{

@@ -4,16 +4,12 @@ import { Select as BaseSelect } from "@base-ui/react/select";
 import {
   SEGMENTED_MENU_TOKENS,
   SELECT_TOKENS,
-  resolveSegmentedMenuItemCorners,
 } from "../../tokens/topology.js";
 import { useM3EPortalContainer } from "../../context/M3EPortal.js";
 import { useM3EI18n } from "../../context/M3EContext.js";
 import { formatLocalizedInteger } from "../../i18n/index.js";
-import {
-  useM3ECornerSpringRef,
-  useM3EScalarSpring,
-  usePressHoldState,
-} from "../../hooks/useM3ESpring.js";
+import { useM3EScalarSpring } from "../../hooks/useM3ESpring.js";
+import { useDropdownItemState } from "../../internal/dropdownItem.js";
 import {
   FieldErrorIconSvg,
   FieldNotchedOutline,
@@ -21,6 +17,8 @@ import {
 } from "../../internal/fieldOutline.js";
 import { assignRef } from "../../internal/assignRef.js";
 import { CheckIcon, ChevronDownIcon, CloseIcon } from "../../internal/icons.js";
+import { useAdaptivePositionMethod } from "../../internal/positionMethod.js";
+import { useM3ERipple } from "../../internal/ripple.js";
 
 export type SelectVariant = "outlined" | "filled";
 export type SelectLabelPosition = "floating" | "outside";
@@ -85,6 +83,7 @@ interface SelectOptionRowProps<Value extends string> {
   readonly isSelected: boolean;
   readonly index: number;
   readonly count: number;
+  readonly hasAnyIcon?: boolean;
 }
 
 function SelectOptionRow<Value extends string>({
@@ -92,50 +91,92 @@ function SelectOptionRow<Value extends string>({
   isSelected,
   index,
   count,
+  hasAnyIcon = false,
 }: SelectOptionRowProps<Value>) {
-  const { isPressed, pressHandlers } = usePressHoldState(Boolean(option.disabled));
-  const { ref, borderRadiusCss } = useM3ECornerSpringRef<HTMLDivElement>(
-    resolveSegmentedMenuItemCorners({ index, count, isSelected }),
-    "fastSpatial",
-  );
   const hasDescription = Boolean(option.description);
+  const {
+    ref,
+    rippleRef,
+    isPressed,
+    interactionHandlers,
+    itemStyle,
+  } = useDropdownItemState<HTMLDivElement>({
+    index,
+    count,
+    disabled: Boolean(option.disabled),
+    isSelected,
+    hasDescription,
+  });
 
   return (
     <BaseSelect.Item
       ref={ref}
       value={option.value}
       disabled={option.disabled}
-      className="m3e-select__item"
+      className="m3e-dropdown-item m3e-select__item"
       data-has-desc={hasDescription ? "" : undefined}
       data-pressed={isPressed ? "" : undefined}
-      style={{
-        minHeight: hasDescription ? "56px" : `${SEGMENTED_MENU_TOKENS.itemHeight}px`,
-        paddingBlock: hasDescription ? "8px" : undefined,
-        paddingInline: `${SEGMENTED_MENU_TOKENS.itemPaddingInline}px`,
-        borderRadius: borderRadiusCss,
-      }}
-      {...pressHandlers}
+      style={itemStyle}
+      {...interactionHandlers}
     >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
       {option.icon ? (
-        <span className="m3e-select__item-icon" aria-hidden="true">
+        <span className="m3e-dropdown-item__icon m3e-select__item-icon" aria-hidden="true">
           {option.icon}
         </span>
+      ) : hasAnyIcon ? (
+        <span className="m3e-dropdown-item__icon m3e-select__item-icon" aria-hidden="true" />
       ) : null}
-      <span className="m3e-select__item-text">
+      <span className="m3e-dropdown-item__text m3e-select__item-text">
         <BaseSelect.ItemText
-          className="m3e-select__item-label"
+          className="m3e-dropdown-item__label m3e-select__item-label"
           data-text={option.label}
         >
           {option.label}
         </BaseSelect.ItemText>
         {option.description ? (
-          <span className="m3e-select__item-desc">{option.description}</span>
+          <span className="m3e-dropdown-item__desc m3e-select__item-desc">
+            {option.description}
+          </span>
         ) : null}
       </span>
-      <BaseSelect.ItemIndicator keepMounted className="m3e-select__item-check">
+      <BaseSelect.ItemIndicator
+        keepMounted
+        className="m3e-dropdown-item__check m3e-select__item-check"
+      >
         <CheckIcon size={16} strokeWidth={2.6} />
       </BaseSelect.ItemIndicator>
     </BaseSelect.Item>
+  );
+}
+
+function SelectClearButton({
+  ariaLabel,
+  onClear,
+}: {
+  readonly ariaLabel: string;
+  readonly onClear: () => void;
+}): React.JSX.Element {
+  const { rippleRef, rippleHandlers } = useM3ERipple();
+  return (
+    <button
+      type="button"
+      aria-label={ariaLabel}
+      className="m3e-select__clear-btn"
+      onMouseDown={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onClear();
+      }}
+      {...rippleHandlers}
+    >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+      <CloseIcon size={14} strokeWidth={2.3} />
+    </button>
   );
 }
 
@@ -197,6 +238,7 @@ function SelectInner<Value extends string = string>(
   }, [controlledValue]);
 
   const effectiveOpen = readOnly ? false : isOpen;
+  const positionMethod = useAdaptivePositionMethod(triggerRef, effectiveOpen);
   const currentValue =
     controlledValue !== undefined ? controlledValue : uncontrolledValue;
   const selectedValues = React.useMemo<readonly Value[]>(
@@ -269,6 +311,10 @@ function SelectInner<Value extends string = string>(
   const visibleValues = selectedValues.slice(0, Math.max(1, maxVisibleTags));
   const overflowCount = Math.max(0, selectedValues.length - visibleValues.length);
   const multiClass = multiple ? " m3e-multi-select" : "";
+  const hasAnyIcon = React.useMemo(
+    () => flatOptions.some((o) => Boolean(o.icon)),
+    [flatOptions],
+  );
 
   const renderOption = (opt: SelectOption<Value>, idx: number, count: number) => (
     <SelectOptionRow
@@ -276,6 +322,7 @@ function SelectInner<Value extends string = string>(
       option={opt}
       index={idx}
       count={count}
+      hasAnyIcon={hasAnyIcon}
       isSelected={selectedSet.has(opt.value)}
     />
   );
@@ -423,28 +470,19 @@ function SelectInner<Value extends string = string>(
           </BaseSelect.Trigger>
 
           {showClearBtn ? (
-            <button
-              type="button"
-              aria-label={t("select.clear")}
-              className="m3e-select__clear-btn"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
+            <SelectClearButton
+              ariaLabel={t("select.clear")}
+              onClear={() => {
                 handleCommit(multiple ? [] : null);
                 triggerRef.current?.focus();
               }}
-            >
-              <CloseIcon size={14} strokeWidth={2.3} />
-            </button>
+            />
           ) : null}
         </div>
 
         <BaseSelect.Portal container={portalContainer}>
           <BaseSelect.Positioner
+            positionMethod={positionMethod}
             alignItemWithTrigger={false}
             side="bottom"
             align="start"
@@ -452,18 +490,20 @@ function SelectInner<Value extends string = string>(
             className="m3e-select__positioner"
           >
             <BaseSelect.Popup
-              className="m3e-select__popup"
+              className="m3e-dropdown-popup m3e-select__popup"
               style={{
                 borderRadius: `${SEGMENTED_MENU_TOKENS.containerRadius}px`,
               }}
             >
               <BaseSelect.List
-                className="m3e-select__list"
+                className="m3e-dropdown-list m3e-select__list"
                 style={{
                   padding: `${SEGMENTED_MENU_TOKENS.containerPadding}px`,
                 }}
               >
-                {groups
+                {flatOptions.length === 0 ? (
+                  <div className="m3e-dropdown-empty">{t("empty.title")}</div>
+                ) : groups
                   ? groups.map((group) => (
                       <BaseSelect.Group
                         key={group.label}

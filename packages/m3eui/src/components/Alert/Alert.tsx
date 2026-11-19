@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useM3EI18n } from "../../context/M3EContext.js";
 import { IconButton } from "../IconButton/IconButton.js";
-import { CloseIcon } from "../../internal/icons.js";
+import { CloseIcon, StatusSeverityGlyph } from "../../internal/icons.js";
 
 export type AlertSeverity = "info" | "success" | "warning" | "error";
 export type AlertVariant = "tonal" | "outlined" | "filled";
@@ -23,82 +23,6 @@ export interface M3EAlertProps {
   readonly role?: "alert" | "status" | "region";
   readonly className?: string;
   readonly style?: React.CSSProperties;
-}
-
-function DefaultAlertGlyph({ severity }: { readonly severity: AlertSeverity }) {
-  if (severity === "success") {
-    return (
-      <svg
-        width={20}
-        height={20}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <circle cx="12" cy="12" r="10" />
-        <polyline points="8.5 12.5 11 15 16 9.5" />
-      </svg>
-    );
-  }
-  if (severity === "warning") {
-    return (
-      <svg
-        width={20}
-        height={20}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-        <line x1="12" y1="9" x2="12" y2="13" />
-        <line x1="12" y1="17" x2="12.01" y2="17" />
-      </svg>
-    );
-  }
-  if (severity === "error") {
-    return (
-      <svg
-        width={20}
-        height={20}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <circle cx="12" cy="12" r="10" />
-        <line x1="15" y1="9" x2="9" y2="15" />
-        <line x1="9" y1="9" x2="15" y2="15" />
-      </svg>
-    );
-  }
-  return (
-    <svg
-      width={20}
-      height={20}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <line x1="12" y1="16" x2="12" y2="12" />
-      <line x1="12" y1="8" x2="12.01" y2="8" />
-    </svg>
-  );
 }
 
 export const Alert = React.forwardRef<HTMLDivElement, M3EAlertProps>(
@@ -145,7 +69,7 @@ export const Alert = React.forwardRef<HTMLDivElement, M3EAlertProps>(
       >
         {icon !== false ? (
           <span className="m3e-alert__icon" aria-hidden="true">
-            {icon ?? <DefaultAlertGlyph severity={severity} />}
+            {icon ?? <StatusSeverityGlyph severity={severity} />}
           </span>
         ) : null}
 

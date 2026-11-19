@@ -12,7 +12,7 @@ import {
 import { formatLocalizedInteger, formatLocalizedNumber } from "../../i18n/index.js";
 import { IconButton } from "../IconButton/IconButton.js";
 import { LinearProgressIndicator } from "../ProgressIndicator/ProgressIndicator.js";
-import { useFieldsetDisabled } from "../../internal/fieldOutline.js";
+import { FieldErrorIconSvg, useFieldsetDisabled } from "../../internal/fieldOutline.js";
 import { CloseIcon } from "../../internal/icons.js";
 
 export type FileUploadStatus = "idle" | "uploading" | "completed" | "error";
@@ -397,7 +397,8 @@ export function FileUpload({
         <div role="alert" className="m3e-file-upload__errors">
           {errors.map((err, i) => (
             <p key={i} className="m3e-field__error">
-              {err}
+              <FieldErrorIconSvg label={t("textField.errorIcon")} />
+              <span>{err}</span>
             </p>
           ))}
         </div>

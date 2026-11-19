@@ -18,13 +18,14 @@ import { useM3ERuntime } from "../../context/M3EContext.js";
 import { useM3EPortalContainer } from "../../context/M3EPortal.js";
 import { useFieldsetDisabled } from "../../internal/fieldOutline.js";
 import {
+  useM3ECornerSpringRef,
   useM3EScalarSpringEffect,
-  usePressHoldState,
 } from "../../hooks/useM3ESpring.js";
 import { formatLocalizedInteger } from "../../i18n/index.js";
 import { useFormReset } from "../../internal/formField.js";
 import { PickerFieldFrame } from "../../internal/pickerField.js";
 import { ChevronDownIcon } from "../../internal/icons.js";
+import { useAdaptivePositionMethod } from "../../internal/positionMethod.js";
 
 const DEFAULT_SWATCHES: readonly string[] = [
   "#6750A4",
@@ -75,6 +76,7 @@ export interface M3EColorSwatchProps {
   readonly colors?: readonly string[];
   readonly value?: string;
   readonly onValueChange?: (hex: string) => void;
+  readonly disabled?: boolean;
   readonly "aria-label"?: string;
   readonly className?: string;
   readonly style?: React.CSSProperties;
@@ -83,37 +85,34 @@ export interface M3EColorSwatchProps {
 function SwatchButton({
   hex,
   selected,
+  disabled = false,
 }: {
   readonly hex: string;
   readonly selected: boolean;
+  readonly disabled?: boolean;
 }) {
-  const { isPressed, pressHandlers } = usePressHoldState(false);
-  const btnRef = React.useRef<HTMLElement | null>(null);
-  const targetRadius = isPressed
-    ? 6
-    : selected
-      ? COLOR_PICKER_TOKENS.swatchSelectedRadius
-      : COLOR_PICKER_TOKENS.swatchRadius;
-  useM3EScalarSpringEffect(targetRadius, "defaultEffects", (r) => {
-    if (btnRef.current) {
-      btnRef.current.style.borderRadius = `${r.toFixed(1)}px`;
-    }
-  });
+  const targetRadius = selected
+    ? COLOR_PICKER_TOKENS.swatchSelectedRadius
+    : COLOR_PICKER_TOKENS.swatchRadius;
+  const { ref, borderRadiusCss } = useM3ECornerSpringRef<HTMLElement>(
+    [targetRadius, targetRadius, targetRadius, targetRadius],
+    "defaultEffects",
+  );
 
   return (
     <BaseRadio.Root
-      ref={btnRef}
+      ref={ref}
       value={hex}
+      disabled={disabled}
       aria-label={hex}
       className="m3e-color-swatch__item"
       data-selected={selected ? "" : undefined}
       style={{
         width: `${COLOR_PICKER_TOKENS.swatchSize}px`,
         height: `${COLOR_PICKER_TOKENS.swatchSize}px`,
-        borderRadius: `${targetRadius}px`,
+        borderRadius: borderRadiusCss,
         backgroundColor: hex,
       }}
-      {...pressHandlers}
     />
   );
 }
@@ -122,6 +121,7 @@ export function ColorSwatch({
   colors = DEFAULT_SWATCHES,
   value,
   onValueChange,
+  disabled = false,
   "aria-label": ariaLabel,
   className,
   style,
@@ -131,8 +131,11 @@ export function ColorSwatch({
 
   return (
     <BaseRadioGroup
+      disabled={disabled}
       value={normalizedCurrent}
-      onValueChange={(next) => onValueChange?.(String(next))}
+      onValueChange={(next) => {
+        if (!disabled) onValueChange?.(String(next));
+      }}
       aria-label={ariaLabel ?? t("colorPicker.swatchesLabel")}
       className={
         className ? `m3e-color-swatch ${className}` : "m3e-color-swatch"
@@ -142,7 +145,12 @@ export function ColorSwatch({
       {colors.map((c) => {
         const norm = normalizeHex(c);
         return (
-          <SwatchButton key={norm} hex={norm} selected={norm === normalizedCurrent} />
+          <SwatchButton
+            key={norm}
+            hex={norm}
+            selected={norm === normalizedCurrent}
+            disabled={disabled}
+          />
         );
       })}
     </BaseRadioGroup>
@@ -430,6 +438,7 @@ export function ColorPicker({
         <ColorSwatch
           colors={swatches}
           value={currentHex}
+          disabled={isDisabled}
           onValueChange={(hex) => {
             if (!isDisabled) commitHex(hex);
           }}
@@ -455,6 +464,7 @@ export interface M3EColorPickerFieldProps {
   readonly swatches?: readonly string[];
   readonly showTonalRamp?: boolean;
   readonly disabled?: boolean;
+  readonly readOnly?: boolean;
   readonly className?: string;
   readonly style?: React.CSSProperties;
 }
@@ -475,10 +485,11 @@ export function ColorPickerField({
   swatches,
   showTonalRamp = true,
   disabled = false,
+  readOnly = false,
   className,
   style,
 }: M3EColorPickerFieldProps): React.JSX.Element {
-  const { t } = useM3ERuntime();
+  const { t, paused, prefersReducedMotion } = useM3ERuntime();
   const portalContainer = useM3EPortalContainer();
   const isDisabled = useFieldsetDisabled(disabled);
   const triggerRef = React.useRef<HTMLButtonElement | null>(null);
@@ -494,11 +505,17 @@ export function ColorPickerField({
     controlledValue === undefined,
   );
   const [open, setOpen] = React.useState(false);
+  const positionMethod = useAdaptivePositionMethod(triggerRef, open);
   React.useEffect(() => {
-    if (isDisabled && open) setOpen(false);
-  }, [isDisabled, open]);
+    if ((isDisabled || readOnly) && open) setOpen(false);
+  }, [isDisabled, readOnly, open]);
   const chevronRef = React.useRef<HTMLSpanElement | null>(null);
+  const chevronDegRef = React.useRef<number>(open ? 180 : 0);
+  if (paused || prefersReducedMotion) {
+    chevronDegRef.current = open ? 180 : 0;
+  }
   useM3EScalarSpringEffect(open ? 180 : 0, "defaultEffects", (deg) => {
+    chevronDegRef.current = deg;
     if (chevronRef.current) {
       chevronRef.current.style.rotate = `${deg.toFixed(1)}deg`;
     }
@@ -518,7 +535,12 @@ export function ColorPickerField({
       : t("colorPicker.ariaLabel");
 
   return (
-    <BasePopover.Root open={open} onOpenChange={setOpen}>
+    <BasePopover.Root
+      open={readOnly ? false : open}
+      onOpenChange={(next) => {
+        if (!readOnly && !isDisabled) setOpen(next);
+      }}
+    >
       <PickerFieldFrame
         id={id}
         name={name}
@@ -529,8 +551,9 @@ export function ColorPickerField({
         invalid={invalid}
         required={required}
         disabled={isDisabled}
+        readOnly={readOnly}
         floating={isLabelFloated}
-        popupOpen={open}
+        popupOpen={!readOnly && open}
         hiddenValue={currentHex}
         triggerRef={triggerRef}
         className={
@@ -549,6 +572,7 @@ export function ColorPickerField({
             data-variant="outlined"
             data-label-position={labelPosition}
             data-floating={isLabelFloated ? "" : undefined}
+            data-readonly={readOnly ? "" : undefined}
             style={{
               minHeight: `${height}px`,
               borderRadius: `${radius}px`,
@@ -570,7 +594,7 @@ export function ColorPickerField({
             <span
               ref={chevronRef}
               className="m3e-select__chevron"
-              style={{ rotate: `${open ? 180 : 0}deg` }}
+              style={{ rotate: `${chevronDegRef.current.toFixed(1)}deg` }}
               aria-hidden="true"
             >
               <ChevronDownIcon strokeWidth={2.2} />
@@ -581,6 +605,7 @@ export function ColorPickerField({
 
       <BasePopover.Portal container={portalContainer}>
         <BasePopover.Positioner
+          positionMethod={positionMethod}
           side="bottom"
           align="start"
           sideOffset={6}

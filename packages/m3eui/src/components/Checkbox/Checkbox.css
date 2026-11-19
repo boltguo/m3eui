@@ -7,41 +7,30 @@
 .m3e-checkbox__halo,
 .m3e-radio__halo {
   position: absolute;
+  inset: auto;
   inset-block-start: 50%;
   inset-inline-start: 50%;
   translate: -50% -50%;
   width: 40px;
   height: 40px;
   border-radius: 9999px;
+  overflow: hidden;
   pointer-events: none;
-  transition: background-color var(--m3e-effects-fast-duration, 140ms) ease-out;
 }
 
 @media (hover: hover) {
-  .m3e-checkbox:hover:where(:not([data-disabled], [data-pressed])) .m3e-checkbox__halo {
-    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 8%, transparent);
-  }
-
-  .m3e-checkbox:is([data-checked], [data-indeterminate]):hover:where(:not([data-disabled], [data-pressed])) .m3e-checkbox__halo {
-    background-color: color-mix(in srgb, var(--m3e-color-primary) 8%, transparent);
+  .m3e-checkbox:hover:where(:not([data-disabled])) > .m3e-checkbox__halo::before,
+  .m3e-checkbox-row:hover:where(:not([data-disabled])) .m3e-checkbox:where(:not([data-disabled])) > .m3e-checkbox__halo::before {
+    opacity: var(--m3e-state-hover-opacity, 0.08);
   }
 }
 
-.m3e-checkbox:is(:focus-visible, [data-pressed]):not([data-disabled]) .m3e-checkbox__halo,
-.m3e-radio:is(:focus-visible, [data-pressed]):not([data-disabled]) .m3e-radio__halo,
-.m3e-control-row:active:not([data-disabled]) .m3e-checkbox__halo,
-.m3e-control-row:active:not([data-disabled]) .m3e-radio__halo {
-  background-color: color-mix(in srgb, var(--m3e-color-on-surface) 10%, transparent);
-}
-
-.m3e-checkbox:is([data-checked], [data-indeterminate]):is(:focus-visible, [data-pressed]):not([data-disabled]) .m3e-checkbox__halo,
-.m3e-radio[data-checked]:is(:focus-visible, [data-pressed]):not([data-disabled]) .m3e-radio__halo,
-.m3e-control-row:active:not([data-disabled]) .m3e-checkbox:is([data-checked], [data-indeterminate]) .m3e-checkbox__halo,
-.m3e-control-row:active:not([data-disabled]) .m3e-radio[data-checked] .m3e-radio__halo {
-  background-color: color-mix(in srgb, var(--m3e-color-primary) 10%, transparent);
+.m3e-checkbox:focus-visible > .m3e-checkbox__halo::before {
+  opacity: var(--m3e-state-focus-opacity, 0.1);
 }
 
 .m3e-checkbox {
+  --m3e-ripple-color: var(--m3e-color-on-surface);
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -60,23 +49,29 @@
 .m3e-checkbox:not(.m3e-control-row *)::after {
   content: "";
   position: absolute;
-  inset: -15px;
+  inset: -3px;
+}
+
+@media (pointer: coarse) {
+  .m3e-checkbox:not(.m3e-control-row *)::after {
+    inset: -15px;
+  }
 }
 
 .m3e-checkbox[data-checked],
 .m3e-checkbox[data-indeterminate] {
+  --m3e-ripple-color: var(--m3e-color-primary);
   background-color: var(--m3e-color-primary);
   border-color: var(--m3e-color-primary);
 }
 
 .m3e-checkbox:focus-visible {
-  outline: 2.5px solid var(--m3e-color-primary);
-  outline-offset: 3px;
+  outline: 3px solid var(--m3e-color-secondary);
+  outline-offset: 2px;
 }
 
 .m3e-checkbox[data-disabled] {
   cursor: not-allowed;
-  pointer-events: none;
   border-color: color-mix(in srgb, var(--m3e-color-on-surface) 38%, transparent);
 }
 
@@ -93,16 +88,12 @@
   align-items: center;
   justify-content: center;
   opacity: 0;
-  scale: 0.5;
-  transition:
-    opacity var(--m3e-effects-fast-duration, 140ms) ease-out,
-    scale var(--m3e-spatial-fast-duration, 240ms) var(--m3e-spatial-fast-easing, ease-out);
+  transition: opacity 100ms linear;
 }
 
 .m3e-checkbox[data-checked] .m3e-checkbox__indicator,
 .m3e-checkbox[data-indeterminate] .m3e-checkbox__indicator {
   opacity: 1;
-  scale: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -21,7 +21,7 @@
 }
 
 .m3e-field[data-disabled] .m3e-field__label {
-  opacity: 0.48;
+  opacity: 0.38;
 }
 
 .m3e-field__required {
@@ -152,6 +152,10 @@
   line-height: 17px;
   font-weight: 500;
   color: var(--m3e-color-error);
+}
+
+.m3e-field[data-label-position="floating"]:has(.m3e-field__floating-label) .m3e-field__error {
+  padding-inline: 16px;
 }
 
 @media (prefers-reduced-motion: reduce) {

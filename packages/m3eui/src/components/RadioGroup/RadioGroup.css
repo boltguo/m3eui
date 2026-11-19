@@ -1,11 +1,12 @@
 @media (hover: hover) {
-  .m3e-radio:hover:where(:not([data-disabled], [data-pressed])) .m3e-radio__halo {
-    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 8%, transparent);
+  .m3e-radio:hover:where(:not([data-disabled])) > .m3e-radio__halo::before,
+  .m3e-radio-row:hover:where(:not([data-disabled])) .m3e-radio:where(:not([data-disabled])) > .m3e-radio__halo::before {
+    opacity: var(--m3e-state-hover-opacity, 0.08);
   }
+}
 
-  .m3e-radio[data-checked]:hover:where(:not([data-disabled], [data-pressed])) .m3e-radio__halo {
-    background-color: color-mix(in srgb, var(--m3e-color-primary) 8%, transparent);
-  }
+.m3e-radio:focus-visible > .m3e-radio__halo::before {
+  opacity: var(--m3e-state-focus-opacity, 0.1);
 }
 
 .m3e-radio-group {
@@ -21,6 +22,7 @@
 }
 
 .m3e-radio {
+  --m3e-ripple-color: var(--m3e-color-on-surface);
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -39,21 +41,27 @@
 .m3e-radio:not(.m3e-control-row *)::after {
   content: "";
   position: absolute;
-  inset: -14px;
+  inset: -2px;
+}
+
+@media (pointer: coarse) {
+  .m3e-radio:not(.m3e-control-row *)::after {
+    inset: -14px;
+  }
 }
 
 .m3e-radio[data-checked] {
+  --m3e-ripple-color: var(--m3e-color-primary);
   border-color: var(--m3e-color-primary);
 }
 
 .m3e-radio:focus-visible {
-  outline: 2.5px solid var(--m3e-color-primary);
-  outline-offset: 3px;
+  outline: 3px solid var(--m3e-color-secondary);
+  outline-offset: 2px;
 }
 
 .m3e-radio[data-disabled] {
   cursor: not-allowed;
-  pointer-events: none;
   border-color: color-mix(in srgb, var(--m3e-color-on-surface) 38%, transparent);
 }
 

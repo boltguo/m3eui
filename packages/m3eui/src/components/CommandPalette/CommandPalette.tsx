@@ -10,6 +10,52 @@ import {
 } from "../../tokens/topology.js";
 import { Empty } from "../Empty/Empty.js";
 import { Kbd } from "../Kbd/Kbd.js";
+import { useM3ERipple } from "../../internal/ripple.js";
+
+function CommandPaletteRow({
+  entry,
+  onSelect,
+}: {
+  readonly entry: CommandEntry;
+  readonly onSelect: (item: CommandPaletteItem) => void;
+}): React.JSX.Element {
+  const { item } = entry;
+  const { rippleRef, rippleHandlers } = useM3ERipple(Boolean(item.disabled));
+
+  return (
+    <BaseAutocomplete.Item
+      value={entry}
+      disabled={item.disabled}
+      className="m3e-command-palette__item"
+      onClick={() => onSelect(item)}
+      {...rippleHandlers}
+    >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+      {item.icon ? (
+        <span className="m3e-command-palette__item-icon" aria-hidden="true">
+          {item.icon}
+        </span>
+      ) : null}
+      <span className="m3e-command-palette__item-copy">
+        <span className="m3e-command-palette__item-label">{item.label}</span>
+        {item.description ? (
+          <span className="m3e-command-palette__item-desc">
+            {item.description}
+          </span>
+        ) : null}
+      </span>
+      {item.shortcut ? (
+        <Kbd
+          size="sm"
+          className="m3e-command-palette__kbd"
+          keys={parseShortcutKeys(item.shortcut)}
+        >
+          {item.shortcut}
+        </Kbd>
+      ) : null}
+    </BaseAutocomplete.Item>
+  );
+}
 
 export interface CommandPaletteItem {
   readonly id: string;
@@ -211,46 +257,13 @@ function CommandPaletteBody({
               </BaseAutocomplete.GroupLabel>
             ) : null}
             <BaseAutocomplete.Collection>
-              {(entry: CommandEntry) => {
-                const { item } = entry;
-                return (
-                  <BaseAutocomplete.Item
-                    key={item.id}
-                    value={entry}
-                    disabled={item.disabled}
-                    className="m3e-command-palette__item"
-                    onClick={() => runItem(item)}
-                  >
-                    {item.icon ? (
-                      <span
-                        className="m3e-command-palette__item-icon"
-                        aria-hidden="true"
-                      >
-                        {item.icon}
-                      </span>
-                    ) : null}
-                    <span className="m3e-command-palette__item-copy">
-                      <span className="m3e-command-palette__item-label">
-                        {item.label}
-                      </span>
-                      {item.description ? (
-                        <span className="m3e-command-palette__item-desc">
-                          {item.description}
-                        </span>
-                      ) : null}
-                    </span>
-                    {item.shortcut ? (
-                      <Kbd
-                        size="sm"
-                        className="m3e-command-palette__kbd"
-                        keys={parseShortcutKeys(item.shortcut)}
-                      >
-                        {item.shortcut}
-                      </Kbd>
-                    ) : null}
-                  </BaseAutocomplete.Item>
-                );
-              }}
+              {(entry: CommandEntry) => (
+                <CommandPaletteRow
+                  key={entry.item.id}
+                  entry={entry}
+                  onSelect={runItem}
+                />
+              )}
             </BaseAutocomplete.Collection>
           </BaseAutocomplete.Group>
         )}

@@ -16,9 +16,15 @@ import {
   type ColorSchemeVariant,
 } from "../tokens/color-variants.js";
 import {
+  generateM3ESystemCssVars,
+} from "../tokens/elevation.js";
+import {
   MOTION_SCHEMES,
   type MotionSchemeName,
 } from "../tokens/motion.js";
+import {
+  generateM3ETypographyCssVars,
+} from "../tokens/typography.js";
 import { M3EToastViewportHost } from "../components/Toast/Toast.js";
 import {
   M3EToastManagerContext,
@@ -57,6 +63,11 @@ import {
   isRtlLocale,
   resolveM3EMessages,
 } from "../i18n/index.js";
+
+const STATIC_SCOPE_CSS_VARS: Record<string, string> = {
+  ...generateM3ESystemCssVars(),
+  ...generateM3ETypographyCssVars(),
+};
 import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
 
 export type { ColorMode, M3EContextValue, TextDirection };
@@ -243,6 +254,7 @@ export function M3EProvider({
 
   const cssVars = React.useMemo(() => {
     return {
+      ...STATIC_SCOPE_CSS_VARS,
       ...(themeEngine ? themeTokens.cssLightDarkVars : undefined),
       ...generateM3EMotionCssVars(motionScheme, playbackRate),
     } as Record<string, string>;

@@ -6,6 +6,62 @@ import { useM3EI18n } from "../../context/M3EContext.js";
 import { SkeletonBase } from "../../internal/skeletonBase.js";
 import { Checkbox } from "../Checkbox/Checkbox.js";
 import { useIsoLayoutEffect } from "../../internal/useIsoLayoutEffect.js";
+import { useM3ERipple } from "../../internal/ripple.js";
+
+function TableSortButton({
+  disabled,
+  active,
+  onClick,
+  children,
+}: {
+  readonly disabled: boolean;
+  readonly active: boolean;
+  readonly onClick: () => void;
+  readonly children: React.ReactNode;
+}): React.JSX.Element {
+  const { rippleRef, rippleHandlers } = useM3ERipple(disabled);
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      className="m3e-data-table__sort-btn"
+      data-active={active ? "" : undefined}
+      onClick={onClick}
+      {...rippleHandlers}
+    >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+      {children}
+    </button>
+  );
+}
+
+function TableExpandButton({
+  expanded,
+  controlsId,
+  ariaLabel,
+  onClick,
+}: {
+  readonly expanded: boolean;
+  readonly controlsId: string;
+  readonly ariaLabel: string;
+  readonly onClick: () => void;
+}): React.JSX.Element {
+  const { rippleRef, rippleHandlers } = useM3ERipple();
+  return (
+    <button
+      type="button"
+      aria-expanded={expanded}
+      aria-controls={controlsId}
+      aria-label={ariaLabel}
+      className="m3e-data-table__expand-btn"
+      onClick={onClick}
+      {...rippleHandlers}
+    >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+      <ExpandChevronSvg expanded={expanded} />
+    </button>
+  );
+}
 
 export type SortDirection = "ascending" | "descending";
 
@@ -443,7 +499,6 @@ export function DataTable<Row>({
                     data-sticky={col.sticky}
                     style={{
                       height: `${DATA_TABLE_TOKENS.headerHeight}px`,
-                      paddingInline: `${DATA_TABLE_TOKENS.cellPaddingInline}px`,
                       width:
                         typeof col.width === "number"
                           ? `${col.width}px`
@@ -452,11 +507,9 @@ export function DataTable<Row>({
                     }}
                   >
                     {col.sortable ? (
-                      <button
-                        type="button"
+                      <TableSortButton
                         disabled={loading}
-                        className="m3e-data-table__sort-btn"
-                        data-active={isSorted ? "" : undefined}
+                        active={isSorted}
                         onClick={() => handleSortClick(col)}
                       >
                         <span
@@ -470,7 +523,7 @@ export function DataTable<Row>({
                           {col.header}
                         </span>
                         <SortArrowSvg active={isSorted} direction={dir} />
-                      </button>
+                      </TableSortButton>
                     ) : (
                       <span className="m3e-data-table__th-text">
                         {col.header}
@@ -523,7 +576,6 @@ export function DataTable<Row>({
                       data-sticky={col.sticky}
                       style={{
                         height: `${rowHeight}px`,
-                        paddingInline: `${DATA_TABLE_TOKENS.cellPaddingInline}px`,
                         ...getStickyStyle(col.id, col.sticky),
                       }}
                     >
@@ -573,17 +625,15 @@ export function DataTable<Row>({
                             ),
                           }}
                         >
-                          <button
-                            type="button"
-                            aria-expanded={isExpanded}
-                            aria-controls={expandRowId}
-                            aria-label={t(
+                          <TableExpandButton
+                            expanded={isExpanded}
+                            controlsId={expandRowId}
+                            ariaLabel={t(
                               isExpanded
                                 ? "dataTable.collapseRow"
                                 : "dataTable.expandRow",
                               { index: rowIndex + 1 },
                             )}
-                            className="m3e-data-table__expand-btn"
                             onClick={() => {
                               if (isExpanded) {
                                 commitExpandedKeys(
@@ -593,9 +643,7 @@ export function DataTable<Row>({
                                 commitExpandedKeys([...expandedKeys, key]);
                               }
                             }}
-                          >
-                            <ExpandChevronSvg expanded={isExpanded} />
-                          </button>
+                          />
                         </td>
                       ) : null}
 
@@ -643,7 +691,6 @@ export function DataTable<Row>({
                             data-sticky={col.sticky}
                             style={{
                               height: `${rowHeight}px`,
-                              paddingInline: `${DATA_TABLE_TOKENS.cellPaddingInline}px`,
                               width:
                                 typeof col.width === "number"
                                   ? `${col.width}px`

@@ -7,6 +7,7 @@ import {
 import { useM3EI18n } from "../../context/M3EContext.js";
 import { useM3EScalarSpring, usePressHoldState } from "../../hooks/useM3ESpring.js";
 import { CheckIcon } from "../../internal/icons.js";
+import { mergeInteractionHandlers, useM3ERipple } from "../../internal/ripple.js";
 
 export interface M3ECopyButtonProps {
   readonly value: string;
@@ -80,6 +81,11 @@ export function CopyButton({
   const failed = status === "error";
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const { isPressed, pressHandlers } = usePressHoldState(disabled);
+  const { rippleRef, rippleHandlers } = useM3ERipple(disabled);
+  const mergedHandlers = mergeInteractionHandlers(
+    pressHandlers,
+    rippleHandlers,
+  );
 
   const radius = useM3EScalarSpring(
     isPressed
@@ -139,8 +145,9 @@ export function CopyButton({
         borderRadius: `${radius.toFixed(1)}px`,
         ...style,
       }}
-      {...pressHandlers}
+      {...mergedHandlers}
     >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
       {copied ? (
         <CheckIcon size={16} strokeWidth={2.5} />
       ) : failed ? (

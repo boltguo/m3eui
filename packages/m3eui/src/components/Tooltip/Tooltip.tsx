@@ -7,6 +7,7 @@ import {
   TOOLTIP_TOKENS,
 } from "../../tokens/topology.js";
 import { useM3EPortalContainer } from "../../context/M3EPortal.js";
+import { useAdaptivePositionMethod } from "../../internal/positionMethod.js";
 
 export interface M3ETooltipProps {
   readonly children: React.ReactElement;
@@ -36,11 +37,18 @@ function PlainTooltip({
   disabled = false,
 }: M3ETooltipProps): React.JSX.Element {
   const portalContainer = useM3EPortalContainer();
+  const [open, setOpen] = React.useState(false);
+  const triggerRef = React.useRef<HTMLElement | null>(null);
+  const assignTriggerRef = React.useCallback((node: HTMLElement | null) => {
+    triggerRef.current = node;
+  }, []);
+  const positionMethod = useAdaptivePositionMethod(triggerRef, open);
   return (
-    <BaseTooltip.Root disabled={disabled}>
-      <BaseTooltip.Trigger delay={delay} render={children} />
+    <BaseTooltip.Root disabled={disabled} onOpenChange={setOpen}>
+      <BaseTooltip.Trigger ref={assignTriggerRef} delay={delay} render={children} />
       <BaseTooltip.Portal container={portalContainer}>
         <BaseTooltip.Positioner
+          positionMethod={positionMethod}
           side={side}
           sideOffset={sideOffset}
           className="m3e-tooltip__positioner"
@@ -73,6 +81,11 @@ function RichTooltip({
 }: M3ETooltipProps): React.JSX.Element {
   const portalContainer = useM3EPortalContainer();
   const [open, setOpen] = React.useState(false);
+  const triggerRef = React.useRef<HTMLElement | null>(null);
+  const assignTriggerRef = React.useCallback((node: HTMLElement | null) => {
+    triggerRef.current = node;
+  }, []);
+  const positionMethod = useAdaptivePositionMethod(triggerRef, open);
   const pointerTypeRef = React.useRef("");
   const popupStyle: React.CSSProperties = {
     borderRadius: `${TOOLTIP_TOKENS.richRadius}px`,
@@ -89,6 +102,7 @@ function RichTooltip({
         onOpenChange={setOpen}
       >
         <BasePopover.Trigger
+          ref={assignTriggerRef}
           onPointerDown={(e) => {
             pointerTypeRef.current = e.pointerType;
           }}
@@ -110,6 +124,7 @@ function RichTooltip({
         />
         <BasePopover.Portal container={portalContainer}>
           <BasePopover.Positioner
+            positionMethod={positionMethod}
             side={side}
             sideOffset={sideOffset}
             className="m3e-tooltip__positioner"
@@ -136,10 +151,16 @@ function RichTooltip({
   }
 
   return (
-    <BaseTooltip.Root disabled={disabled}>
-      <BaseTooltip.Trigger delay={delay} closeDelay={140} render={children} />
+    <BaseTooltip.Root disabled={disabled} onOpenChange={setOpen}>
+      <BaseTooltip.Trigger
+        ref={assignTriggerRef}
+        delay={delay}
+        closeDelay={140}
+        render={children}
+      />
       <BaseTooltip.Portal container={portalContainer}>
         <BaseTooltip.Positioner
+          positionMethod={positionMethod}
           side={side}
           sideOffset={sideOffset}
           className="m3e-tooltip__positioner"

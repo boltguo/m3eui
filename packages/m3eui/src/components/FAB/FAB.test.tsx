@@ -167,4 +167,42 @@ describe("FAB & FABMenu", () => {
     expect(efabLink?.getAttribute("role")).toBeNull();
     expect(efabLink?.getAttribute("type")).toBeNull();
   });
+
+  it("keeps FABMenu trigger corner radius steady on press and morphs directly between rest and open states", () => {
+    act(() => {
+      dom.root.render(
+        <PausedWrapper locale="en-US">
+          <FABMenu
+            size="md"
+            triggerLabel="Create"
+            items={[{ id: "doc", label: "Document", icon: <span>D</span> }]}
+          />
+        </PausedWrapper>,
+      );
+    });
+
+    const toggleFab = dom.container.querySelector<HTMLButtonElement>(".m3e-toggle-fab")!;
+    expect(toggleFab.style.borderRadius).toBe("20px");
+
+    act(() => {
+      toggleFab.dispatchEvent(
+        new PointerEvent("pointerdown", { button: 0, bubbles: true }),
+      );
+    });
+    expect(toggleFab.style.borderRadius).toBe("20px");
+
+    act(() => {
+      window.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
+      toggleFab.click();
+    });
+    expect(toggleFab.getAttribute("aria-expanded")).toBe("true");
+    expect(toggleFab.style.borderRadius).toBe("28px");
+
+    act(() => {
+      toggleFab.dispatchEvent(
+        new PointerEvent("pointerdown", { button: 0, bubbles: true }),
+      );
+    });
+    expect(toggleFab.style.borderRadius).toBe("28px");
+  });
 });

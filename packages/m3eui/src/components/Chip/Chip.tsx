@@ -7,11 +7,44 @@ import {
   CHIP_TOKENS,
 } from "../../tokens/topology.js";
 import { useM3EI18n } from "../../context/M3EContext.js";
-import {
-  useM3EScalarSpring,
-  usePressHoldState,
-} from "../../hooks/useM3ESpring.js";
+import { useM3EScalarSpring, usePressHoldState } from "../../hooks/useM3ESpring.js";
 import { CheckIcon, CloseIcon } from "../../internal/icons.js";
+import { mergeInteractionHandlers, useM3ERipple } from "../../internal/ripple.js";
+
+function ChipRemoveButton({
+  disabled,
+  ariaLabel,
+  className,
+  onClick,
+  onKeyDown,
+  children,
+}: {
+  readonly disabled: boolean;
+  readonly ariaLabel: string;
+  readonly className: string;
+  readonly onClick: React.MouseEventHandler<HTMLButtonElement>;
+  readonly onKeyDown?: (e: React.KeyboardEvent<HTMLElement>) => void;
+  readonly children: React.ReactNode;
+}): React.JSX.Element {
+  const { rippleRef, rippleHandlers } = useM3ERipple(disabled);
+  const mergedHandlers = mergeInteractionHandlers(
+    rippleHandlers,
+    onKeyDown ? { onKeyDown } : undefined,
+  );
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      aria-label={ariaLabel}
+      className={className}
+      onClick={onClick}
+      {...mergedHandlers}
+    >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+      {children}
+    </button>
+  );
+}
 
 export type ChipTone =
   | "neutral"
@@ -100,6 +133,11 @@ function LabelChip({
   const { isPressed, pressHandlers } = usePressHoldState(
     disabled || !hasAction,
   );
+  const { rippleRef, rippleHandlers } = useM3ERipple(disabled || !hasAction);
+  const mergedActionHandlers = mergeInteractionHandlers(
+    pressHandlers,
+    rippleHandlers,
+  );
   const restRadius = size === "sm" ? 11 : 13;
   const r = useM3EScalarSpring(
     hasAction && isPressed ? 6 : restRadius,
@@ -140,8 +178,9 @@ function LabelChip({
           borderRadius: `${Math.max(4, r).toFixed(1)}px`,
           ...style,
         }}
-        {...pressHandlers}
+        {...mergedActionHandlers}
       >
+        <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
         {innerContent}
       </BaseButton>
     );
@@ -164,24 +203,24 @@ function LabelChip({
           ...style,
         }}
       >
+        <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
         <BaseButton
           type="button"
           disabled={disabled}
           onClick={onClick}
           className="m3e-chip-status__action"
-          {...pressHandlers}
+          {...mergedActionHandlers}
         >
           {innerContent}
         </BaseButton>
-        <button
-          type="button"
+        <ChipRemoveButton
           disabled={disabled}
-          aria-label={removeLabel ?? t("chip.remove")}
+          ariaLabel={removeLabel ?? t("chip.remove")}
           className="m3e-chip-status__remove"
           onClick={onRemove}
         >
           <CloseIcon size={12} strokeWidth={2.5} />
-        </button>
+        </ChipRemoveButton>
       </span>
     );
   }
@@ -198,15 +237,14 @@ function LabelChip({
     >
       {innerContent}
       {onRemove ? (
-        <button
-          type="button"
+        <ChipRemoveButton
           disabled={disabled}
-          aria-label={removeLabel ?? t("chip.remove")}
+          ariaLabel={removeLabel ?? t("chip.remove")}
           className="m3e-chip-status__remove"
           onClick={onRemove}
         >
           <CloseIcon size={12} strokeWidth={2.5} />
-        </button>
+        </ChipRemoveButton>
       ) : null}
     </span>
   );
@@ -221,11 +259,7 @@ function AssistChip({
   className,
   style,
 }: M3EChipAssistProps): React.JSX.Element {
-  const { isPressed, pressHandlers } = usePressHoldState(disabled);
-  const r = useM3EScalarSpring(
-    isPressed ? CHIP_TOKENS.pressedRadius : CHIP_TOKENS.restRadius,
-    "fastSpatial",
-  );
+  const { rippleRef, rippleHandlers } = useM3ERipple(disabled);
   const hasLeading = Boolean(icon);
 
   return (
@@ -239,17 +273,17 @@ function AssistChip({
           : "m3e-chip m3e-chip--assist"
       }
       data-elevated={elevated ? "" : undefined}
-      data-pressed={isPressed ? "" : undefined}
       style={{
         height: `${CHIP_TOKENS.height}px`,
         paddingInlineStart: `${hasLeading ? CHIP_TOKENS.iconPaddingInline : CHIP_TOKENS.paddingInline}px`,
         paddingInlineEnd: `${CHIP_TOKENS.paddingInline}px`,
         gap: `${CHIP_TOKENS.gap}px`,
-        borderRadius: `${Math.max(2, r).toFixed(1)}px`,
+        borderRadius: `${CHIP_TOKENS.restRadius}px`,
         ...style,
       }}
-      {...pressHandlers}
+      {...rippleHandlers}
     >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
       {icon ? (
         <span className="m3e-chip__icon" aria-hidden="true">
           {icon}
@@ -274,15 +308,8 @@ function FilterChip({
   const [uncontrolledSelected, setUncontrolledSelected] =
     React.useState<boolean>(defaultSelected);
   const isSelected = controlledSelected ?? uncontrolledSelected;
-  const { isPressed, pressHandlers } = usePressHoldState(disabled);
+  const { rippleRef, rippleHandlers } = useM3ERipple(disabled);
 
-  const targetRadius = isPressed
-    ? CHIP_TOKENS.pressedRadius
-    : isSelected
-      ? CHIP_TOKENS.selectedRadius
-      : CHIP_TOKENS.restRadius;
-
-  const r = useM3EScalarSpring(targetRadius, "fastSpatial");
   const hasLeading = isSelected || Boolean(icon);
 
   return (
@@ -303,17 +330,17 @@ function FilterChip({
       }
       data-selected={isSelected ? "" : undefined}
       data-elevated={elevated ? "" : undefined}
-      data-pressed={isPressed ? "" : undefined}
       style={{
         height: `${CHIP_TOKENS.height}px`,
         paddingInlineStart: `${hasLeading ? CHIP_TOKENS.iconPaddingInline : CHIP_TOKENS.paddingInline}px`,
         paddingInlineEnd: `${CHIP_TOKENS.paddingInline}px`,
         gap: `${CHIP_TOKENS.gap}px`,
-        borderRadius: `${Math.max(2, r).toFixed(1)}px`,
+        borderRadius: `${CHIP_TOKENS.restRadius}px`,
         ...style,
       }}
-      {...pressHandlers}
+      {...rippleHandlers}
     >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
       {isSelected ? (
         <span className="m3e-chip__icon" aria-hidden="true">
           <CheckIcon size={15} strokeWidth={2.6} />
@@ -345,12 +372,7 @@ function InputChip({
   const { isPressed, pressHandlers } = usePressHoldState(
     disabled || !hasAction,
   );
-  const targetRadius = isPressed
-    ? CHIP_TOKENS.pressedRadius
-    : selected
-      ? CHIP_TOKENS.selectedRadius
-      : CHIP_TOKENS.restRadius;
-  const r = useM3EScalarSpring(targetRadius, "fastSpatial");
+  const { rippleRef, rippleHandlers } = useM3ERipple(disabled || !hasAction);
 
   const hasLeading = Boolean(avatar);
   const hasTrailing = Boolean(onRemove);
@@ -361,6 +383,12 @@ function InputChip({
       onRemove();
     }
   };
+
+  const mergedActionHandlers = mergeInteractionHandlers(
+    pressHandlers,
+    rippleHandlers,
+    { onKeyDown: handleRemoveKey },
+  );
 
   return (
     <span
@@ -384,10 +412,11 @@ function InputChip({
             : "0px"
           : `${hasTrailing ? CHIP_TOKENS.iconPaddingInline : CHIP_TOKENS.paddingInline}px`,
         gap: hasAction ? "0px" : `${CHIP_TOKENS.gap}px`,
-        borderRadius: `${Math.max(2, r).toFixed(1)}px`,
+        borderRadius: `${CHIP_TOKENS.restRadius}px`,
         ...style,
       }}
     >
+      {hasAction ? <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" /> : null}
       {hasAction ? (
         <BaseButton
           type="button"
@@ -400,11 +429,7 @@ function InputChip({
             paddingInlineEnd: `${hasTrailing ? CHIP_TOKENS.gap : CHIP_TOKENS.paddingInline}px`,
             gap: `${CHIP_TOKENS.gap}px`,
           }}
-          {...pressHandlers}
-          onKeyDown={(e) => {
-            pressHandlers.onKeyDown(e);
-            handleRemoveKey(e);
-          }}
+          {...mergedActionHandlers}
         >
           {avatar ? <span className="m3e-chip__avatar">{avatar}</span> : null}
           <span className="m3e-chip__label">{children}</span>
@@ -416,16 +441,15 @@ function InputChip({
         </>
       )}
       {onRemove ? (
-        <button
-          type="button"
+        <ChipRemoveButton
           disabled={disabled}
-          aria-label={resolvedRemoveLabel}
+          ariaLabel={resolvedRemoveLabel}
           className="m3e-chip__remove"
           onClick={onRemove}
           onKeyDown={handleRemoveKey}
         >
           <CloseIcon size={14} strokeWidth={2.4} />
-        </button>
+        </ChipRemoveButton>
       ) : null}
     </span>
   );

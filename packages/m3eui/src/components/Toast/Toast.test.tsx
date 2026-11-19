@@ -26,5 +26,40 @@ describe("Toast", () => {
       fireToast?.();
     });
     expect(document.body.textContent).toContain("Saved!");
+    expect(
+      document.body.querySelector('.m3e-snackbar[data-type="default"] .m3e-snackbar__icon'),
+    ).toBeNull();
+  });
+
+  it("renders status severity glyph on semantic toast types such as success", () => {
+    let fireSuccessToast: (() => void) | undefined;
+    function SuccessToastTrigger() {
+      const { toast } = useM3EToast();
+      fireSuccessToast = () =>
+        toast({
+          type: "success",
+          title: "Palette synced",
+          description: "Ready",
+        });
+      return null;
+    }
+
+    act(() => {
+      dom.root.render(
+        <PausedWrapper locale="en-US">
+          <SuccessToastTrigger />
+        </PausedWrapper>,
+      );
+    });
+
+    act(() => {
+      fireSuccessToast?.();
+    });
+
+    const successToast = document.body.querySelector<HTMLElement>(
+      '.m3e-snackbar[data-type="success"]',
+    )!;
+    expect(successToast).not.toBeNull();
+    expect(successToast.querySelector(".m3e-snackbar__icon svg")).not.toBeNull();
   });
 });

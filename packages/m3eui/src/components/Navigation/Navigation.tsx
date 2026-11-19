@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { mergeProps } from "@base-ui/react/merge-props";
 import {
   NAVIGATION_RAIL_TOKENS,
   NAVIGATION_TOKENS,
@@ -18,6 +19,7 @@ import {
   type NavigationDestination,
 } from "../../internal/navList.js";
 import { isModifiedLinkClick } from "../../internal/link.js";
+import { useM3ERipple } from "../../internal/ripple.js";
 
 export type { NavigationDestination };
 
@@ -44,6 +46,11 @@ function NavItemButton<Value extends string>({
   readonly onSelect: (v: Value) => void;
 }) {
   const { isPressed, pressHandlers } = usePressHoldState(Boolean(item.disabled));
+  const { rippleRef, rippleHandlers } = useM3ERipple(Boolean(item.disabled));
+  const mergedHandlers = mergeProps<"button">(
+    pressHandlers as unknown as React.ComponentPropsWithRef<"button">,
+    rippleHandlers as unknown as React.ComponentPropsWithRef<"button">,
+  );
   const pillScale = useM3EScalarSpring(active ? 1 : 0.35, "fastSpatial");
   const pillOpacity = active ? 1 : 0;
   const isHorizontal = itemLayout === "horizontal";
@@ -66,7 +73,8 @@ function NavItemButton<Value extends string>({
         aria-hidden="true"
       />
       <span
-        className="m3e-nav-item__state"
+        ref={rippleRef}
+        className="m3e-nav-item__state m3e-ripple"
         style={{ borderRadius: `${NAVIGATION_TOKENS.horizontalIndicatorHeight / 2}px` }}
         aria-hidden="true"
       />
@@ -96,7 +104,8 @@ function NavItemButton<Value extends string>({
           aria-hidden="true"
         />
         <span
-          className="m3e-nav-item__state"
+          ref={rippleRef}
+          className="m3e-nav-item__state m3e-ripple"
           style={{ borderRadius: `${NAVIGATION_TOKENS.indicatorRadius}px` }}
           aria-hidden="true"
         />
@@ -124,11 +133,11 @@ function NavItemButton<Value extends string>({
         data-active={active ? "" : undefined}
         data-pressed={isPressed ? "" : undefined}
         data-layout={itemLayout}
+        {...(mergedHandlers as Record<string, unknown>)}
         onClick={(e) => {
           if (isModifiedLinkClick(e)) return;
           onSelect(item.value);
         }}
-        {...pressHandlers}
       >
         {inner}
       </a>
@@ -144,8 +153,8 @@ function NavItemButton<Value extends string>({
       data-active={active ? "" : undefined}
       data-pressed={isPressed ? "" : undefined}
       data-layout={itemLayout}
+      {...mergedHandlers}
       onClick={() => onSelect(item.value)}
-      {...pressHandlers}
     >
       {inner}
     </button>
@@ -320,6 +329,8 @@ export function NavigationRail<Value extends string = string>({
     isExpanded ? expandedWidth : NAVIGATION_RAIL_TOKENS.collapsedWidth,
     "defaultSpatial",
   );
+  const { rippleRef: toggleRippleRef, rippleHandlers: toggleRippleHandlers } =
+    useM3ERipple(false);
   const paddingVar = { "--m3e-nav-rail-padding": `${padding}px` } as React.CSSProperties;
   const cx = (base: string) =>
     [base, compact ? "m3e-nav-rail--compact" : "", className ?? ""].filter(Boolean).join(" ");
@@ -382,7 +393,9 @@ export function NavigationRail<Value extends string = string>({
                 }
                 className="m3e-nav-rail__toggle"
                 onClick={() => setExpanded(!isExpanded)}
+                {...toggleRippleHandlers}
               >
+                <span ref={toggleRippleRef} className="m3e-ripple" aria-hidden="true" />
                 <MenuToggleSvg expanded={isExpanded} rtl={direction === "rtl"} />
               </button>
             ) : null}

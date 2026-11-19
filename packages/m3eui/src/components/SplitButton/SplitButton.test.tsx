@@ -43,4 +43,38 @@ describe("SplitButton", () => {
     expect(xlSplitButtons[0]?.style.height).toBe("136px");
     expect(xlSplitButtons[1]?.getAttribute("aria-expanded")).toBe("true");
   });
+
+  it("forwards data-disabled to trailing button and omits data-selected when open", () => {
+    act(() => {
+      dom.root.render(
+        <PausedWrapper locale="en-US">
+          <div id="split-disabled">
+            <SplitButton
+              label="Locked"
+              disabled
+              menuItems={[{ id: "a", label: "One" }]}
+            />
+          </div>
+          <div id="split-open">
+            <SplitButton
+              label="Expanded"
+              open
+              menuItems={[{ id: "b", label: "Two" }]}
+            />
+          </div>
+        </PausedWrapper>,
+      );
+    });
+
+    const disabledTrailing = dom.container
+      .querySelector("#split-disabled .m3e-split-button")!
+      .querySelectorAll<HTMLButtonElement>("button")[1]!;
+    expect(disabledTrailing.hasAttribute("data-disabled")).toBe(true);
+
+    const openTrailing = dom.container
+      .querySelector("#split-open .m3e-split-button")!
+      .querySelectorAll<HTMLButtonElement>("button")[1]!;
+    expect(openTrailing.getAttribute("aria-expanded")).toBe("true");
+    expect(openTrailing.hasAttribute("data-selected")).toBe(false);
+  });
 });

@@ -15,6 +15,7 @@
 }
 
 .m3e-tabs__tab {
+  --m3e-ripple-color: var(--m3e-color-primary);
   position: relative;
   flex: 1 1 0;
   min-inline-size: 0;
@@ -33,9 +34,15 @@
   white-space: nowrap;
   cursor: pointer;
   user-select: none;
-  transition:
-    color var(--m3e-effects-fast-duration, 140ms) ease-out,
-    background-color var(--m3e-effects-fast-duration, 140ms) ease-out;
+  transition: color var(--m3e-effects-fast-duration, 140ms) ease-out;
+}
+
+.m3e-tabs__list[data-scrollable] {
+  padding-inline-start: 52px;
+}
+
+.m3e-tabs__tab:not([aria-selected="true"]) {
+  --m3e-ripple-color: var(--m3e-color-on-surface);
 }
 
 .m3e-tabs__list[data-scrollable] .m3e-tabs__tab {
@@ -44,6 +51,7 @@
 }
 
 .m3e-tabs__tab[data-variant="secondary"] {
+  --m3e-ripple-color: var(--m3e-color-on-surface);
   flex-direction: row;
   gap: 8px;
 }
@@ -57,14 +65,13 @@
 }
 
 @media (hover: hover) {
-  .m3e-tabs__tab:hover:where(:not([data-disabled], [data-pressed])) {
-    background-color: color-mix(in srgb, var(--m3e-color-primary) 8%, transparent);
+  .m3e-tabs__tab:hover:where(:not([data-disabled])) > .m3e-ripple::before {
+    opacity: var(--m3e-state-hover-opacity, 0.08);
+  }
+
+  .m3e-tabs__tab:hover:where(:not([data-disabled], [aria-selected="true"])) {
     color: var(--m3e-color-on-surface);
   }
-}
-
-.m3e-tabs__tab[data-pressed]:not([data-disabled]) {
-  background-color: color-mix(in srgb, var(--m3e-color-primary) 12%, transparent);
 }
 
 .m3e-tabs__tab[aria-selected="true"] {
@@ -76,12 +83,13 @@
 }
 
 .m3e-tabs__tab:focus-visible {
-  outline: 2px solid var(--m3e-color-primary);
-  outline-offset: -2px;
+  outline: 3px solid var(--m3e-color-secondary);
+  outline-offset: -4px;
+  border-radius: 12px;
 }
 
 .m3e-tabs__tab[data-disabled] {
-  opacity: 0.4;
+  opacity: 0.38;
   cursor: not-allowed;
 }
 
@@ -148,8 +156,9 @@
 }
 
 .m3e-tabs__panel:focus-visible {
-  outline: 2px solid var(--m3e-color-primary);
-  outline-offset: 2px;
+  outline: 3px solid var(--m3e-color-secondary);
+  outline-offset: -2px;
+  border-radius: 12px;
 }
 
 .m3e-tabs__panel-content {
@@ -165,6 +174,6 @@
 
 @media (forced-colors: active) {
   .m3e-tabs__indicator {
-    background-color: Highlight;
+    border-block-end-color: Highlight;
   }
 }

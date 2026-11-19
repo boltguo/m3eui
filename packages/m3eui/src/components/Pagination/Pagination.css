@@ -27,11 +27,12 @@
 }
 
 .m3e-pagination__btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding-inline: 10px;
-  border: 1px solid transparent;
+  border: 0;
   background-color: transparent;
   color: var(--m3e-color-on-surface);
   font: inherit;
@@ -44,18 +45,14 @@
 }
 
 .m3e-pagination__btn--step {
-  border-color: var(--m3e-color-outline-variant);
+  border: 1px solid var(--m3e-color-outline-variant);
   padding-inline: 0;
 }
 
 @media (hover: hover) {
-  .m3e-pagination__btn:hover:not(:disabled):not([data-disabled]):not([data-active]) {
-    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 8%, transparent);
+  .m3e-pagination__btn:hover:not(:disabled, [data-disabled]) > .m3e-ripple::before {
+    opacity: var(--m3e-state-hover-opacity, 0.08);
   }
-}
-
-.m3e-pagination__btn[data-pressed]:not(:disabled):not([data-disabled]):not([data-active]) {
-  background-color: color-mix(in srgb, var(--m3e-color-on-surface) 12%, transparent);
 }
 
 .m3e-pagination__label {
@@ -84,12 +81,13 @@
 }
 
 .m3e-pagination__btn:disabled {
-  opacity: 0.36;
+  opacity: 0.38;
   cursor: not-allowed;
 }
 
 .m3e-pagination__btn:focus-visible {
-  outline: 2.5px solid var(--m3e-color-primary);
+  z-index: 1;
+  outline: 3px solid var(--m3e-color-secondary);
   outline-offset: 2px;
 }
 

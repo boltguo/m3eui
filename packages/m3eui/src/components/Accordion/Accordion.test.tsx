@@ -1,6 +1,7 @@
 import { act } from "react";
 import { describe, expect, it } from "vitest";
 import { PausedWrapper, setupDomTest } from "../../__tests__/domHarness.js";
+import { M3EProvider } from "../../context/M3EProvider.js";
 import { Accordion } from "./Accordion.js";
 
 describe("Accordion", () => {
@@ -74,5 +75,29 @@ describe("Accordion", () => {
     });
     expect(expandBtn!.getAttribute("aria-expanded")).toBe("false");
     expect(expandBtn!.textContent).toBe("Expand all");
+  });
+
+  it("does not synchronously snap Accordion marginBlock to target before spring frames advance", () => {
+    act(() => {
+      dom.root.render(
+        <M3EProvider syncDocumentRoot={false}>
+          <Accordion
+            items={[
+              { value: "one", title: "Item 1", content: "Body 1" },
+              { value: "two", title: "Item 2", content: "Body 2" },
+            ]}
+          />
+        </M3EProvider>,
+      );
+    });
+
+    const firstItem = dom.container.querySelector<HTMLElement>(".m3e-accordion__item")!;
+    const trigger = firstItem.querySelector<HTMLButtonElement>(".m3e-accordion__trigger")!;
+    expect(parseFloat(firstItem.style.marginBlock)).toBe(0);
+
+    act(() => {
+      trigger.click();
+    });
+    expect(parseFloat(firstItem.style.marginBlock)).toBe(0);
   });
 });

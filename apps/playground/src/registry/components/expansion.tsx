@@ -271,7 +271,6 @@ export const EXPANSION_INPUTS_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "file-upload",
     title: "FileUpload",
-    isNew: true,
     subtitle: {
       zh: "支持弹簧圆角拖拽热区与波浪进度条的文件上传器。",
       en: "Drag-and-drop file uploader with spring-morphing dropzone corners and wavy upload progress indicators.",
@@ -335,7 +334,6 @@ export const EXPANSION_INPUTS_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "color-picker",
     title: "ColorPicker",
-    isNew: true,
     subtitle: {
       zh: "基于内置 Google Monet HCT 感知均匀色彩空间引擎的取色面板、表单选择框与预设色板。",
       en: "Perceptual HCT (Hue, Chroma, Tone) color picker, popover field, and spring-animated swatch radio group.",
@@ -402,7 +400,6 @@ export const EXPANSION_DISPLAY_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "kbd",
     title: "Kbd",
-    isNew: true,
     subtitle: {
       zh: "语义化键帽，按平台把 mod / shift / alt / enter 映射为对应符号。",
       en: "Semantic keycaps mapping mod, shift, alt, and enter to platform glyphs.",
@@ -448,7 +445,6 @@ import { parseShortcutKeys } from "m3eui/tokens";
   {
     slug: "snippet",
     title: "Snippet",
-    isNew: true,
     subtitle: {
       zh: "可复制的命令行片段与独立的 CopyButton，复制状态通过 aria-live 播报。",
       en: "Copyable CLI snippet and standalone CopyButton with aria-live copy status.",
@@ -602,7 +598,6 @@ import { parseShortcutKeys } from "m3eui/tokens";
   {
     slug: "drag-handle",
     title: "DragHandle",
-    isNew: true,
     subtitle: {
       zh: "调整相邻窗格尺寸的把手（AOSP VerticalDragHandle）。弹层抓手用 Sheet。",
       en: "Resizes adjacent panes (AOSP VerticalDragHandle). For a sheet grabber, use Sheet.",

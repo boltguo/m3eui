@@ -40,13 +40,7 @@
 }
 
 @media (hover: hover) {
-  .m3e-control-row:hover:not([data-disabled]) .m3e-checkbox:not([data-pressed]) .m3e-checkbox__halo,
-  .m3e-control-row:hover:not([data-disabled]) .m3e-radio:not([data-pressed]) .m3e-radio__halo {
-    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 8%, transparent);
-  }
-
-  .m3e-control-row:hover:not([data-disabled]) .m3e-checkbox:is([data-checked], [data-indeterminate]):not([data-pressed]) .m3e-checkbox__halo,
-  .m3e-control-row:hover:not([data-disabled]) .m3e-radio[data-checked]:not([data-pressed]) .m3e-radio__halo {
-    background-color: color-mix(in srgb, var(--m3e-color-primary) 8%, transparent);
+  .m3e-control-row:hover:not([data-disabled]) :is(.m3e-checkbox, .m3e-radio, .m3e-switch):not([data-disabled]) :is(.m3e-checkbox__halo, .m3e-radio__halo, .m3e-switch__halo)::before {
+    opacity: var(--m3e-state-hover-opacity, 0.08);
   }
 }

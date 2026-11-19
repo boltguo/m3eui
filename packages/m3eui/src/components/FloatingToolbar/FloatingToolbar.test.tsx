@@ -61,4 +61,40 @@ describe("FloatingToolbar", () => {
     });
     expect(collapsedState).toBe(false);
   });
+
+  it("keeps action buttons as concentric 24px circles across unselected, selected, and pressed states", () => {
+    act(() => {
+      dom.root.render(
+        <M3EProvider syncDocumentRoot={false}>
+          <PausedWrapper locale="en-US">
+            <FloatingToolbar
+              items={[
+                { id: "edit", label: "Edit", icon: <span>E</span>, selected: true },
+                { id: "copy", label: "Copy", icon: <span>C</span> },
+              ]}
+            />
+          </PausedWrapper>
+        </M3EProvider>,
+      );
+    });
+
+    const buttons = dom.container.querySelectorAll<HTMLButtonElement>(
+      ".m3e-floating-toolbar__button",
+    );
+    expect(buttons.length).toBe(2);
+    expect(buttons[0]!.style.borderRadius).toBe("24px");
+    expect(buttons[1]!.style.borderRadius).toBe("24px");
+
+    for (const btn of buttons) {
+      act(() => {
+        btn.dispatchEvent(
+          new PointerEvent("pointerdown", { button: 0, bubbles: true }),
+        );
+      });
+      expect(btn.style.borderRadius).toBe("24px");
+      act(() => {
+        window.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
+      });
+    }
+  });
 });

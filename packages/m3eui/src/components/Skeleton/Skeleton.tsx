@@ -31,14 +31,14 @@ export function Skeleton({
     const resolvedWidth =
       width !== undefined
         ? toCssSize(width)
-        : typeof height === "number"
-          ? `${height}px`
+        : height !== undefined
+          ? toCssSize(height)
           : "56px";
     const resolvedHeight =
       height !== undefined
         ? toCssSize(height)
-        : typeof width === "number"
-          ? `${width}px`
+        : width !== undefined
+          ? toCssSize(width)
           : "56px";
     const preserveAspectRatio =
       width !== undefined && height !== undefined && width !== height

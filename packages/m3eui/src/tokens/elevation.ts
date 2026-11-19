@@ -21,27 +21,27 @@ export const M3E_ELEVATION_TOKENS: Record<ElevationLevelKey, ElevationLevelSpec>
   level1: {
     dp: 1,
     shadowCss:
-      "0 1px 2px 0 color-mix(in srgb, var(--m3e-color-shadow) 30%, transparent), 0 1px 3px 1px color-mix(in srgb, var(--m3e-color-shadow) 15%, transparent)",
+      "0 1px 3px 0 color-mix(in srgb, var(--m3e-color-shadow) 8%, transparent), 0 1px 2px 0 color-mix(in srgb, var(--m3e-color-shadow) 4%, transparent)",
   },
   level2: {
     dp: 3,
     shadowCss:
-      "0 1px 2px 0 color-mix(in srgb, var(--m3e-color-shadow) 30%, transparent), 0 2px 6px 2px color-mix(in srgb, var(--m3e-color-shadow) 15%, transparent)",
+      "0 3px 10px 0 color-mix(in srgb, var(--m3e-color-shadow) 9%, transparent), 0 1px 3px 0 color-mix(in srgb, var(--m3e-color-shadow) 4%, transparent)",
   },
   level3: {
     dp: 6,
     shadowCss:
-      "0 1px 3px 0 color-mix(in srgb, var(--m3e-color-shadow) 30%, transparent), 0 4px 8px 3px color-mix(in srgb, var(--m3e-color-shadow) 15%, transparent)",
+      "0 6px 18px 0 color-mix(in srgb, var(--m3e-color-shadow) 11%, transparent), 0 2px 5px 0 color-mix(in srgb, var(--m3e-color-shadow) 5%, transparent)",
   },
   level4: {
     dp: 8,
     shadowCss:
-      "0 2px 3px 0 color-mix(in srgb, var(--m3e-color-shadow) 30%, transparent), 0 6px 10px 4px color-mix(in srgb, var(--m3e-color-shadow) 15%, transparent)",
+      "0 8px 24px 0 color-mix(in srgb, var(--m3e-color-shadow) 12%, transparent), 0 3px 6px 0 color-mix(in srgb, var(--m3e-color-shadow) 5%, transparent)",
   },
   level5: {
     dp: 12,
     shadowCss:
-      "0 4px 4px 0 color-mix(in srgb, var(--m3e-color-shadow) 30%, transparent), 0 8px 12px 6px color-mix(in srgb, var(--m3e-color-shadow) 15%, transparent)",
+      "0 12px 32px 0 color-mix(in srgb, var(--m3e-color-shadow) 14%, transparent), 0 4px 8px 0 color-mix(in srgb, var(--m3e-color-shadow) 6%, transparent)",
   },
 } as const;
 

@@ -76,6 +76,7 @@ interface SliderThumbBarProps {
   readonly index: number;
   readonly rawValue: number;
   readonly locale: string;
+  readonly isRtl: boolean;
   readonly orientation: "horizontal" | "vertical";
   readonly thumbHeight: number;
   readonly isPressed: boolean;
@@ -94,6 +95,7 @@ function SliderThumbBar({
   index,
   rawValue,
   locale,
+  isRtl,
   orientation,
   thumbHeight,
   isPressed,
@@ -107,15 +109,26 @@ function SliderThumbBar({
   onThumbFocus,
   onThumbBlur,
 }: SliderThumbBarProps) {
+  const { paused, prefersReducedMotion } = useM3ERuntime();
   const isVertical = orientation === "vertical";
+  const verticalDirSign = isRtl ? -1 : 1;
   const geo = resolveSliderThumbGeometry(isPressed);
   const handleBarRef = React.useRef<HTMLSpanElement | null>(null);
   const bubbleRef = React.useRef<HTMLSpanElement | null>(null);
+  const thumbWidthRef = React.useRef<number>(geo.thumbWidth);
+  const bubblePRef = React.useRef<number>(isBubbleShown ? 1 : 0);
+
+  if (paused || prefersReducedMotion) {
+    thumbWidthRef.current = geo.thumbWidth;
+    bubblePRef.current = isBubbleShown ? 1 : 0;
+  }
 
   useM3EScalarSpringEffect(geo.thumbWidth, "fastSpatial", (val) => {
+    const next = Math.max(1.5, val);
+    thumbWidthRef.current = next;
     const el = handleBarRef.current;
     if (!el) return;
-    const clamped = `${Math.max(1.5, val).toFixed(2)}px`;
+    const clamped = `${next.toFixed(2)}px`;
     if (isVertical) {
       el.style.height = clamped;
     } else {
@@ -124,13 +137,14 @@ function SliderThumbBar({
   });
 
   useM3EScalarSpringEffect(isBubbleShown ? 1 : 0, "fastSpatial", (val) => {
+    const p = Math.max(0, Math.min(1, val));
+    bubblePRef.current = p;
     const el = bubbleRef.current;
     if (!el) return;
-    const p = Math.max(0, Math.min(1, val));
     el.style.opacity = String(p);
     el.style.scale = (0.72 + 0.28 * p).toFixed(3);
     el.style.translate = isVertical
-      ? `${((1 - p) * 6).toFixed(2)}px -50%`
+      ? `${((1 - p) * 6 * verticalDirSign).toFixed(2)}px -50%`
       : `-50% ${((1 - p) * 6).toFixed(2)}px`;
   });
 
@@ -138,7 +152,7 @@ function SliderThumbBar({
     ? formatValue(rawValue)
     : formatLocalizedNumber(locale, Math.round(rawValue * 100) / 100);
 
-  const initBubbleP = isBubbleShown ? 1 : 0;
+  const renderBubbleP = bubblePRef.current;
 
   return (
     <BaseSlider.Thumb
@@ -174,11 +188,11 @@ function SliderThumbBar({
           isVertical
             ? {
                 width: `${thumbHeight}px`,
-                height: `${geo.thumbWidth.toFixed(2)}px`,
+                height: `${thumbWidthRef.current.toFixed(2)}px`,
                 borderRadius: `${SLIDER_TOKENS.thumbRadius}px`,
               }
             : {
-                width: `${geo.thumbWidth.toFixed(2)}px`,
+                width: `${thumbWidthRef.current.toFixed(2)}px`,
                 height: `${thumbHeight}px`,
                 borderRadius: `${SLIDER_TOKENS.thumbRadius}px`,
               }
@@ -192,11 +206,11 @@ function SliderThumbBar({
           data-orientation={orientation}
           data-visible={isBubbleShown ? "" : undefined}
           style={{
-            opacity: initBubbleP,
-            scale: `${(0.72 + 0.28 * initBubbleP).toFixed(3)}`,
+            opacity: renderBubbleP,
+            scale: `${(0.72 + 0.28 * renderBubbleP).toFixed(3)}`,
             translate: isVertical
-              ? `${((1 - initBubbleP) * 6).toFixed(2)}px -50%`
-              : `-50% ${((1 - initBubbleP) * 6).toFixed(2)}px`,
+              ? `${((1 - renderBubbleP) * 6 * verticalDirSign).toFixed(2)}px -50%`
+              : `-50% ${((1 - renderBubbleP) * 6).toFixed(2)}px`,
           }}
           aria-hidden="true"
         >
@@ -905,9 +919,10 @@ export function Slider<Value extends SliderValue = number>({
             index={idx}
             rawValue={v}
             locale={locale}
+            isRtl={direction === "rtl"}
             orientation={orientation}
             thumbHeight={spec.thumbHeight}
-            isPressed={pressedThumbIdx === idx}
+            isPressed={pressedThumbIdx === idx || focusedThumbIdx === idx}
             isBubbleShown={pressedThumbIdx === idx || keyBubbleIdx === idx}
             showValueBubble={showValueBubble}
             formatValue={formatValue}

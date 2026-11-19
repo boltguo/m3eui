@@ -9,6 +9,7 @@ import {
 import { usePressHoldState } from "../../hooks/useM3ESpring.js";
 import { FieldsetDisabledContext, useFieldsetDisabled } from "../../internal/fieldOutline.js";
 import { FormFieldScope } from "../../internal/formField.js";
+import { mergeInteractionHandlers, useM3ERipple } from "../../internal/ripple.js";
 
 export interface M3ERadioGroupProps<Value extends string = string> {
   readonly children: React.ReactNode;
@@ -92,6 +93,13 @@ export function Radio<Value extends string = string>({
 }: M3ERadioProps<Value>): React.JSX.Element {
   const isDisabled = useFieldsetDisabled(disabled);
   const { isPressed, pressHandlers } = usePressHoldState(isDisabled || readOnly);
+    const { rippleRef, rippleHandlers } = useM3ERipple(isDisabled || readOnly, {
+      unbounded: true,
+    });
+    const mergedInteractionHandlers = mergeInteractionHandlers(
+      pressHandlers,
+      rippleHandlers,
+    );
 
   const radioNode = (
     <BaseRadio.Root
@@ -112,9 +120,9 @@ export function Radio<Value extends string = string>({
         height: `${RADIO_TOKENS.ringSize}px`,
         ...(!label ? style : undefined),
       }}
-      {...pressHandlers}
+      {...(!label ? mergedInteractionHandlers : undefined)}
     >
-      <span className="m3e-radio__halo" aria-hidden="true" />
+      <span ref={rippleRef} className="m3e-radio__halo m3e-ripple" aria-hidden="true" />
       <BaseRadio.Indicator
         keepMounted
         className="m3e-radio__dot"
@@ -142,6 +150,7 @@ export function Radio<Value extends string = string>({
         minBlockSize: `${RADIO_TOKENS.minTouchTarget}px`,
         ...style,
       }}
+      {...(mergedInteractionHandlers as unknown as React.LabelHTMLAttributes<HTMLLabelElement>)}
     >
       {radioNode}
       <span className="m3e-control-row__text">

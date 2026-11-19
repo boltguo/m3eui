@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import { Button as BaseButton } from "@base-ui/react/button";
+import { mergeProps } from "@base-ui/react/merge-props";
 import {
   CARD_TOKENS,
 } from "../../tokens/topology.js";
-import { usePressHoldState } from "../../hooks/useM3ESpring.js";
 import { LinkActionElement, isLinkRenderTarget } from "../../internal/link.js";
+import { useM3ERipple } from "../../internal/ripple.js";
 
 export type CardVariant = "elevated" | "filled" | "outlined";
 
@@ -52,7 +53,7 @@ export const Card = React.forwardRef<HTMLElement, M3ECardProps>(function Card(
   ref,
 ) {
   const isInteractive = Boolean(interactive || onClick || href || render);
-  const { isPressed, pressHandlers } = usePressHoldState(
+  const { rippleRef, rippleHandlers } = useM3ERipple(
     !isInteractive || disabled,
   );
   const restRadiusCss = `${CARD_TOKENS.restRadius}px`;
@@ -93,7 +94,6 @@ export const Card = React.forwardRef<HTMLElement, M3ECardProps>(function Card(
             : "m3e-card m3e-card--interactive m3e-card--compound"
         }
         data-variant={variant}
-        data-pressed={isPressed ? "" : undefined}
         data-disabled={disabled ? "" : undefined}
         style={{
           borderRadius: restRadiusCss,
@@ -109,26 +109,24 @@ export const Card = React.forwardRef<HTMLElement, M3ECardProps>(function Card(
             disabled={disabled}
             aria-label={resolvedOverlayLabel}
             onClick={onClick}
-            {...pressHandlers}
+            {...(rippleHandlers as Record<string, unknown>)}
             className="m3e-card__overlay-action"
-          />
+          >
+            <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+          </LinkActionElement>
         ) : (
           <BaseButton
+            {...(rippleHandlers as unknown as React.ComponentPropsWithRef<"button">)}
             type={!render ? "button" : undefined}
             nativeButton={!render}
             render={render}
             disabled={disabled}
             aria-label={resolvedOverlayLabel}
             onClick={onClick}
-            onPointerDown={pressHandlers.onPointerDown}
-            onPointerUp={pressHandlers.onPointerUp}
-            onPointerLeave={pressHandlers.onPointerLeave}
-            onPointerCancel={pressHandlers.onPointerCancel}
-            onKeyDown={pressHandlers.onKeyDown}
-            onKeyUp={pressHandlers.onKeyUp}
-            onBlur={pressHandlers.onBlur}
             className="m3e-card__overlay-action"
-          />
+          >
+            <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+          </BaseButton>
         )}
         {inner}
       </article>
@@ -137,37 +135,10 @@ export const Card = React.forwardRef<HTMLElement, M3ECardProps>(function Card(
 
   if (isInteractive) {
     const isLink = isLinkRenderTarget(href, render);
-    const cardEventHandlers = {
-      onClick,
-      onPointerLeave: (e: React.PointerEvent<HTMLElement>) => {
-        pressHandlers.onPointerLeave();
-        restProps.onPointerLeave?.(e);
-      },
-      onPointerDown: (e: React.PointerEvent<HTMLElement>) => {
-        pressHandlers.onPointerDown(e);
-        restProps.onPointerDown?.(e);
-      },
-      onPointerUp: (e: React.PointerEvent<HTMLElement>) => {
-        pressHandlers.onPointerUp();
-        restProps.onPointerUp?.(e);
-      },
-      onPointerCancel: (e: React.PointerEvent<HTMLElement>) => {
-        pressHandlers.onPointerCancel();
-        restProps.onPointerCancel?.(e);
-      },
-      onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => {
-        pressHandlers.onKeyDown(e);
-        restProps.onKeyDown?.(e);
-      },
-      onKeyUp: (e: React.KeyboardEvent<HTMLElement>) => {
-        pressHandlers.onKeyUp(e);
-        restProps.onKeyUp?.(e);
-      },
-      onBlur: (e: React.FocusEvent<HTMLElement>) => {
-        pressHandlers.onBlur();
-        restProps.onBlur?.(e);
-      },
-    };
+    const mergedCardProps = mergeProps<"button">(
+      rippleHandlers as unknown as React.ComponentPropsWithRef<"button">,
+      restProps as unknown as React.ComponentPropsWithRef<"button">,
+    );
     const cardClassName = className
       ? `m3e-card m3e-card--interactive ${className}`
       : "m3e-card m3e-card--interactive";
@@ -179,8 +150,7 @@ export const Card = React.forwardRef<HTMLElement, M3ECardProps>(function Card(
     if (isLink) {
       return (
         <LinkActionElement
-          {...(restProps as Record<string, unknown>)}
-          {...cardEventHandlers}
+          {...(mergedCardProps as Record<string, unknown>)}
           ref={ref}
           href={href}
           target={target}
@@ -188,32 +158,33 @@ export const Card = React.forwardRef<HTMLElement, M3ECardProps>(function Card(
           render={render}
           disabled={disabled}
           aria-label={ariaLabel}
+          onClick={onClick}
           className={cardClassName}
           data-variant={variant}
-          data-pressed={isPressed ? "" : undefined}
           style={cardStyle}
         >
           {inner}
+          <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
         </LinkActionElement>
       );
     }
 
     return (
       <BaseButton
+        {...(mergedCardProps as Record<string, unknown>)}
         ref={ref}
         nativeButton={false}
         render={render ?? <div />}
         disabled={disabled}
         aria-label={ariaLabel}
-        {...restProps}
-        {...cardEventHandlers}
+        onClick={onClick}
         className={cardClassName}
         data-variant={variant}
-        data-pressed={isPressed ? "" : undefined}
         data-disabled={disabled ? "" : undefined}
         style={cardStyle}
       >
         {inner}
+        <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
       </BaseButton>
     );
   }

@@ -1,11 +1,13 @@
 import * as React from "react";
 import { Drawer as BaseDrawer } from "@base-ui/react/drawer";
+import { mergeProps } from "@base-ui/react/merge-props";
 import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3EPortalContainer } from "../context/M3EPortal.js";
 import { useM3EScalarSpring, usePressHoldState } from "../hooks/useM3ESpring.js";
 import { formatLocalizedInteger } from "../i18n/index.js";
 import { useIsoLayoutEffect } from "./useIsoLayoutEffect.js";
 import { isModifiedLinkClick } from "./link.js";
+import { useM3ERipple } from "./ripple.js";
 
 export interface NavigationDestination<Value extends string = string> {
   readonly value: Value;
@@ -39,6 +41,11 @@ function NavListItem<Value extends string>({
 }) {
   const { locale, t } = useM3ERuntime();
   const { isPressed, pressHandlers } = usePressHoldState(Boolean(item.disabled));
+  const { rippleRef, rippleHandlers } = useM3ERipple(Boolean(item.disabled));
+  const mergedHandlers = mergeProps<"button">(
+    pressHandlers as unknown as React.ComponentPropsWithRef<"button">,
+    rippleHandlers as unknown as React.ComponentPropsWithRef<"button">,
+  );
   const radius = useM3EScalarSpring(
     isPressed ? metrics.itemPressedRadius : metrics.itemRadius,
     "fastSpatial",
@@ -47,6 +54,7 @@ function NavListItem<Value extends string>({
 
   const content = (
     <>
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
       {icon ? (
         <span className="m3e-nav-list__icon" aria-hidden="true">
           {icon}
@@ -81,8 +89,7 @@ function NavListItem<Value extends string>({
       minHeight: `${metrics.itemHeight}px`,
       borderRadius: `${Math.max(4, radius).toFixed(1)}px`,
     },
-    onClick: () => onSelect(item.value),
-    ...pressHandlers,
+    ...(mergedHandlers as Record<string, unknown>),
   };
 
   const handleAnchorClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -114,6 +121,7 @@ function NavListItem<Value extends string>({
       disabled={item.disabled}
       aria-current={active ? "page" : undefined}
       {...shared}
+      onClick={() => onSelect(item.value)}
     >
       {content}
     </button>

@@ -6,7 +6,46 @@ import {
 import { useM3EPortalContainer } from "../../context/M3EPortal.js";
 import { useM3ERuntime, useM3EI18n } from "../../context/M3EContext.js";
 import { M3EToastManagerContext } from "../../internal/toastManager.js";
-import { CloseIcon } from "../../internal/icons.js";
+import { CloseIcon, StatusSeverityGlyph } from "../../internal/icons.js";
+import { useM3ERipple } from "../../internal/ripple.js";
+
+function SnackbarActionButton({
+  label,
+  onClick,
+}: {
+  readonly label: string;
+  readonly onClick: () => void;
+}): React.JSX.Element {
+  const { rippleRef, rippleHandlers } = useM3ERipple();
+  return (
+    <BaseToast.Action
+      className="m3e-snackbar__action"
+      onClick={onClick}
+      {...rippleHandlers}
+    >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+      {label}
+    </BaseToast.Action>
+  );
+}
+
+function SnackbarCloseButton({
+  ariaLabel,
+}: {
+  readonly ariaLabel: string;
+}): React.JSX.Element {
+  const { rippleRef, rippleHandlers } = useM3ERipple();
+  return (
+    <BaseToast.Close
+      aria-label={ariaLabel}
+      className="m3e-snackbar__close"
+      {...rippleHandlers}
+    >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+      <CloseIcon size={16} strokeWidth={2.2} />
+    </BaseToast.Close>
+  );
+}
 
 export type M3EToastType =
   | "default"
@@ -65,6 +104,14 @@ export function M3EToastViewportHost(): React.JSX.Element {
               }}
             >
               <BaseToast.Content className="m3e-snackbar__content">
+                {toast.type === "info" ||
+                toast.type === "success" ||
+                toast.type === "warning" ||
+                toast.type === "error" ? (
+                  <span className="m3e-snackbar__icon" aria-hidden="true">
+                    <StatusSeverityGlyph severity={toast.type} size={18} />
+                  </span>
+                ) : null}
                 <div className="m3e-snackbar__text">
                   {toast.title ? (
                     <BaseToast.Title className="m3e-snackbar__title">
@@ -79,23 +126,16 @@ export function M3EToastViewportHost(): React.JSX.Element {
                 </div>
                 <div className="m3e-snackbar__actions">
                   {data?.actionLabel ? (
-                    <BaseToast.Action
-                      className="m3e-snackbar__action"
+                    <SnackbarActionButton
+                      label={data.actionLabel}
                       onClick={() => {
                         data.onAction?.();
                         close(toast.id);
                       }}
-                    >
-                      {data.actionLabel}
-                    </BaseToast.Action>
+                    />
                   ) : null}
                   {data?.showClose !== false ? (
-                    <BaseToast.Close
-                      aria-label={t("toast.close")}
-                      className="m3e-snackbar__close"
-                    >
-                      <CloseIcon size={16} strokeWidth={2.2} />
-                    </BaseToast.Close>
+                    <SnackbarCloseButton ariaLabel={t("toast.close")} />
                   ) : null}
                 </div>
               </BaseToast.Content>

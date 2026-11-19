@@ -13,7 +13,6 @@ import {
   computeButtonGroupWidths,
   flipCornersHorizontal,
   resolveConnectedGroupCorners,
-  resolveSegmentedMenuItemCorners,
 } from "../../tokens/topology.js";
 import { useM3EPortalContainer } from "../../context/M3EPortal.js";
 import { useM3ERuntime } from "../../context/M3EContext.js";
@@ -24,7 +23,14 @@ import {
 } from "../../hooks/useM3ESpring.js";
 import { ButtonGroupItemContext } from "../../internal/buttonGroupContext.js";
 import { Button, type ButtonVariant } from "../Button/Button.js";
+import { useDropdownItemState } from "../../internal/dropdownItem.js";
+import { CheckIcon } from "../../internal/icons.js";
+import { useAdaptivePositionMethod } from "../../internal/positionMethod.js";
 import { useIsoLayoutEffect } from "../../internal/useIsoLayoutEffect.js";
+import {
+  mergeInteractionHandlers,
+  useM3ERipple,
+} from "../../internal/ripple.js";
 
 export interface ButtonGroupOption {
   readonly value: string;
@@ -102,40 +108,50 @@ function OverflowMenuSurface({
   isSelected,
 }: OverflowMenuSurfaceProps) {
   const { ref: incomingRef, style: incomingStyle, ...restItemProps } = itemProps;
-  const corners = resolveSegmentedMenuItemCorners({
+  const itemDisabled = Boolean(item.disabled);
+  const {
+    ref,
+    rippleRef,
+    isPressed,
+    interactionHandlers,
+    itemStyle,
+  } = useDropdownItemState<HTMLDivElement>({
     index,
     count,
+    disabled: itemDisabled,
     isSelected,
+    forwardedRef: incomingRef,
   });
-  const { ref, borderRadiusCss } = useM3ECornerSpringRef<HTMLDivElement>(
-    corners,
-    "fastSpatial",
-    incomingRef,
-  );
 
   return (
     <div
       {...restItemProps}
+      {...interactionHandlers}
       ref={ref}
       data-selected={isSelected ? "" : undefined}
+      data-pressed={isPressed ? "" : undefined}
       style={{
         ...incomingStyle,
-        minHeight: `${SEGMENTED_MENU_TOKENS.itemHeight}px`,
-        paddingInline: `${SEGMENTED_MENU_TOKENS.itemPaddingInline}px`,
-        borderRadius: borderRadiusCss,
+        ...itemStyle,
       }}
     >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
       {item.icon ? (
-        <span className="m3e-segmented-menu__icon" aria-hidden="true">
+        <span className="m3e-dropdown-item__icon m3e-segmented-menu__icon" aria-hidden="true">
           {item.icon}
         </span>
       ) : null}
       <span
-        className="m3e-segmented-menu__label"
+        className="m3e-dropdown-item__label m3e-segmented-menu__label"
         data-text={typeof item.label === "string" ? item.label : undefined}
       >
         {item.label}
       </span>
+      {isSelected ? (
+        <span className="m3e-dropdown-item__check" aria-hidden="true">
+          <CheckIcon size={16} strokeWidth={2.6} />
+        </span>
+      ) : null}
     </div>
   );
 }
@@ -162,7 +178,7 @@ function OverflowMenuItem({
         disabled={item.disabled}
         closeOnClick
         onClick={onSelect}
-        className="m3e-segmented-menu__item"
+        className="m3e-dropdown-item m3e-segmented-menu__item"
         render={(props) => (
           <OverflowMenuSurface
             itemProps={props as OverflowMenuSurfaceProps["itemProps"]}
@@ -183,7 +199,7 @@ function OverflowMenuItem({
         disabled={item.disabled}
         closeOnClick
         onClick={onSelect}
-        className="m3e-segmented-menu__item"
+        className="m3e-dropdown-item m3e-segmented-menu__item"
         render={(props) => (
           <OverflowMenuSurface
             itemProps={props as OverflowMenuSurfaceProps["itemProps"]}
@@ -201,7 +217,7 @@ function OverflowMenuItem({
     <Menu.Item
       disabled={item.disabled}
       onClick={onSelect}
-      className="m3e-segmented-menu__item"
+      className="m3e-dropdown-item m3e-segmented-menu__item"
       render={(props) => (
         <OverflowMenuSurface
           itemProps={props as OverflowMenuSurfaceProps["itemProps"]}
@@ -235,8 +251,13 @@ function OverflowMenuTrigger({
   readonly label: string;
 }) {
   const portalContainer = useM3EPortalContainer();
+  const [open, setOpen] = React.useState(false);
+  const btnRef = React.useRef<HTMLButtonElement | null>(null);
+  const positionMethod = useAdaptivePositionMethod(btnRef, open);
   const spec = BUTTON_SIZE_SPECS[size];
   const { isPressed, pressHandlers } = usePressHoldState(false);
+  const { rippleRef, rippleHandlers } = useM3ERipple(false);
+  const triggerHandlers = mergeInteractionHandlers(pressHandlers, rippleHandlers);
   const hasSelectedOverflow = overflowItems.some((i) =>
     selectedValues.includes(i.value),
   );
@@ -245,7 +266,8 @@ function OverflowMenuTrigger({
     cornerOverride ?? [scalarRadius, scalarRadius, scalarRadius, scalarRadius];
   const { ref, borderRadiusCss } = useM3ECornerSpringRef<HTMLButtonElement>(
     targetCorners,
-    "defaultEffects",
+    "fastSpatial",
+    btnRef,
   );
 
   const renderedItems = overflowItems.map((item, idx) => (
@@ -261,7 +283,7 @@ function OverflowMenuTrigger({
   ));
 
   return (
-    <Menu.Root modal={false}>
+    <Menu.Root modal={false} open={open} onOpenChange={setOpen}>
       <Menu.Trigger
         ref={ref}
         aria-label={label}
@@ -273,11 +295,15 @@ function OverflowMenuTrigger({
         style={{
           height: `${spec.height}px`,
           paddingInline: `${Math.max(10, Math.round(spec.paddingHorizontal * 0.75))}px`,
-          borderWidth: buttonVariant === "outlined" ? `${spec.outlineWidth}px` : undefined,
+          borderWidth:
+            buttonVariant === "outlined" && !hasSelectedOverflow
+              ? `${spec.outlineWidth}px`
+              : undefined,
           borderRadius: borderRadiusCss,
         }}
-        {...pressHandlers}
+        {...triggerHandlers}
       >
+        <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
         <span
           className="m3e-button__icon"
           style={{ width: spec.iconSize, height: spec.iconSize }}
@@ -288,13 +314,14 @@ function OverflowMenuTrigger({
       </Menu.Trigger>
       <Menu.Portal container={portalContainer}>
         <Menu.Positioner
+          positionMethod={positionMethod}
           side="bottom"
           align="end"
           sideOffset={6}
           className="m3e-segmented-menu__positioner"
         >
           <Menu.Popup
-            className="m3e-segmented-menu"
+            className="m3e-dropdown-popup m3e-segmented-menu"
             style={{
               borderRadius: `${SEGMENTED_MENU_TOKENS.containerRadius}px`,
               padding: `${SEGMENTED_MENU_TOKENS.containerPadding}px`,

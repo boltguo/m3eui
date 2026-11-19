@@ -60,15 +60,15 @@ export const ACTIONS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
     crossPlatformNotes: [
       {
         target: "Jetpack Compose",
-        guidance: "Maps directly to Button / FilledTonalButton / ToggleButton with ButtonDefaults.shapesFor(height) and spring(dampingRatio = 0.6f, stiffness = 800f).",
+        guidance: "Maps directly to Button / FilledTonalButton / ToggleButton with ButtonDefaults.shapesFor(height), using defaultEffects (1.0 / 1600) for ActionButton and fastSpatial (0.6f / 800f) for ToggleButton.",
       },
       {
         target: "SwiftUI",
-        guidance: "Drive RoundedRectangle(cornerRadius: r, style: .continuous) via withAnimation(.spring(mass: 1, stiffness: 800, damping: 33.94)) and enforce a 95ms Task.sleep minimum press latch.",
+        guidance: "Drive RoundedRectangle(cornerRadius: r, style: .continuous) via withAnimation(.spring(dampingFraction: 1.0)) on ActionButton or underdamped .spring(mass: 1, stiffness: 800, damping: 33.94) on ToggleButton with a 95ms minimum press latch.",
       },
       {
         target: "Flutter",
-        guidance: "Animate RoundedRectangleBorder(borderRadius: BorderRadius.circular(r)) with SpringSimulation(SpringDescription.withDampingRatio(mass: 1, stiffness: 800, ratio: 0.6)).",
+        guidance: "Animate RoundedRectangleBorder(borderRadius: BorderRadius.circular(r)) with defaultEffects (1.0 / 1600) on ActionButton or SpringSimulation(SpringDescription.withDampingRatio(mass: 1, stiffness: 800, ratio: 0.6)) on ToggleButton.",
       },
       {
         target: "Vue / Svelte / Web",
@@ -215,8 +215,8 @@ export const ACTIONS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
         body: "Following AOSP SingleSelectConnectedButtonGroupSample (ButtonGroupSamples.kt L158–252), connected segmented switchers (gap = 2px) default to 0% width expansion. High-frequency view switchers already express tactile feedback via inner seam corner morphing (8px → 4px press → full pill on selection); adding width expansion by default would jitter adjacent tab labels horizontally.",
       },
       {
-        title: "Bold Label Advance-Width Reservation",
-        body: "Selected segments promote typography weight without shifting container width by reserving the bold label's advance width in a zero-height hidden ::after pseudo-element (content: attr(data-text)).",
+        title: "Resting Base-Width Cache & Overflow Auto-Collapse",
+        body: "Measures each segment's resting intrinsic width into baseWidths once labels settle so ResizeObserver and horizontal expansion deltas stay deterministic without layout thrashing when items overflow into the trailing menu.",
       },
     ],
     geometryAndMotionTables: [
@@ -457,7 +457,7 @@ export const ACTIONS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
       "ToggleFAB size and radius interpolate via fastSpatial (p > 1 overshoot clamped safely on radius), while primary-container → primary color uses fastEffects (ζ = 1.0).",
       "FABMenu item entrance pairs defaultSpatial (translateY 18px → 0, scale 0.88 → 1) with critically damped fastEffects opacity so items never flicker.",
       "Pressing Escape while FABMenu is open MUST collapse the menu and restore keyboard focus to ToggleFAB.",
-      "Four tonal palettes are supported across FAB & ExtendedFAB: primaryContainer, primary, secondaryContainer, and tertiaryContainer.",
+      "Four tonal palettes are supported across FAB & ExtendedFAB: primary, secondary, tertiary, and surface.",
     ],
     crossPlatformNotes: [
       {
@@ -509,7 +509,7 @@ export const ACTIONS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
       },
       {
         title: "Standard vs Vibrant Dual-Theme Contrast",
-        body: "Standard theme uses surface-container-high for low-distraction reading flows, whereas Vibrant theme uses primary-container with high-contrast surface-container-lowest active pills to anchor creative or media canvases.",
+        body: "Standard theme uses surface-container for low-distraction reading flows, whereas Vibrant theme uses primary-container with high-contrast surface-container active pills (on-surface foreground) to anchor creative or media canvases.",
       },
     ],
     geometryAndMotionTables: [
@@ -523,8 +523,8 @@ export const ACTIONS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
           ["Outer Radius / Padding", "32px / 8px", "32px / 8px", "Full capsule (64 / 2 = 32)"],
           ["Action Item Size / Radius", "48px / 24px", "48px / 24px", "Strict concentricity: 32 − 8 = 24"],
           ["Item Gap / Companion FAB Gap", "4px / 8px", "4px / 8px", "16px minimum viewport safe-area margin"],
-          ["Container Surface", "surface-container-high", "primary-container", "level3 elevation shadow"],
-          ["Active Item Pill", "secondary-container", "surface-container-lowest", "Pressed corner tightens 24 → 12 via fastSpatial"],
+          ["Container Surface", "surface-container", "primary-container", "level3 elevation shadow"],
+          ["Active Item Pill", "secondary-container", "surface-container", "Concentric 24px circle with state-layer ripple"],
         ],
       },
     ],

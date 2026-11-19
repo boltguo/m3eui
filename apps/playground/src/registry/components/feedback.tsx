@@ -785,7 +785,6 @@ export const FEEDBACK_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
   {
     slug: "alert",
     title: "Alert",
-    isNew: true,
     subtitle: {
       zh: "内联状态横幅，涵盖四种语义严重度、三种视觉表面变体、尾部动作插槽与无障碍实时播报角色。",
       en: "Inline status and callout banner supporting four semantic severities, three surface variants, trailing actions, and automatic ARIA live roles.",

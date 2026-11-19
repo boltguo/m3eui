@@ -156,4 +156,52 @@ describe("Button", () => {
     });
     expect(btn.hasAttribute("data-pressed")).toBe(false);
   });
+
+  it("spawns and cleans up an AOSP 360-degree press ripple wave on pointer press and release", () => {
+    vi.useFakeTimers();
+
+    act(() => {
+      dom.root.render(
+        <M3EProvider syncDocumentRoot={false}>
+          <Button id="ripple-btn">Save</Button>
+        </M3EProvider>,
+      );
+    });
+
+    const btn = dom.container.querySelector<HTMLButtonElement>("#ripple-btn")!;
+    const rippleHost = btn.querySelector<HTMLSpanElement>(".m3e-ripple")!;
+    vi.spyOn(rippleHost, "getBoundingClientRect").mockReturnValue({
+      width: 120,
+      height: 40,
+      left: 0,
+      top: 0,
+      right: 120,
+      bottom: 40,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    });
+
+    act(() => {
+      btn.dispatchEvent(
+        new PointerEvent("pointerdown", {
+          bubbles: true,
+          button: 0,
+          clientX: 24,
+          clientY: 20,
+        }),
+      );
+    });
+
+    const wave = rippleHost.querySelector<HTMLSpanElement>(".m3e-ripple__wave");
+    expect(wave).not.toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(120);
+      btn.dispatchEvent(new PointerEvent("pointerup", { bubbles: true }));
+      vi.advanceTimersByTime(500);
+    });
+
+    expect(rippleHost.querySelector(".m3e-ripple__wave")).toBeNull();
+  });
 });

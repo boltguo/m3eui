@@ -195,7 +195,7 @@ export function LinearWavyProgressIndicator({
       applyGeometryToDom(computeGeometry(stateRef.current));
       return;
     }
-    if (Math.abs(targetProgress - stateRef.current.progress) <= 0.2) {
+    if (Math.abs(targetProgress - stateRef.current.progress) <= 0.001) {
       stateRef.current = {
         ...stateRef.current,
         progress: targetProgress,
@@ -215,6 +215,18 @@ export function LinearWavyProgressIndicator({
       return;
     }
 
+    if (prefersReducedMotion && isIndeterminate) {
+      applyGeometryToDom(
+        computeGeometry({
+          progress: 0,
+          amplitude: 0,
+          phasePx: stateRef.current.phasePx,
+          cycleFraction: 0.35,
+        }),
+      );
+      return;
+    }
+
     let rafId = 0;
     let running = false;
     let lastNow = performance.now();
@@ -229,12 +241,16 @@ export function LinearWavyProgressIndicator({
       const { progress: tgtProgress, amplitude: tgtAmplitude } =
         targetRef.current;
       const alpha = Math.min(1, dtMs / (140 / Math.max(0.1, rate)));
+      const alphaAmplitude = Math.min(
+        1,
+        dtMs / (WAVY_PROGRESS_TOKENS.amplitudeTransitionMs / Math.max(0.1, rate)),
+      );
 
       const nextProgress = isIndeterminate
         ? 0
         : prev.progress + (tgtProgress - prev.progress) * alpha;
       const nextAmplitude =
-        prev.amplitude + (tgtAmplitude - prev.amplitude) * alpha;
+        prev.amplitude + (tgtAmplitude - prev.amplitude) * alphaAmplitude;
       const nextPhase =
         (prev.phasePx + (dtScaledMs / 1000) * effectiveWavelength) %
         Math.max(1, effectiveWavelength);
@@ -507,7 +523,7 @@ export function CircularWavyProgressIndicator({
       applyGeometryToDom(computeGeometry(stateRef.current));
       return;
     }
-    if (Math.abs(targetProgress - stateRef.current.progress) <= 0.2) {
+    if (Math.abs(targetProgress - stateRef.current.progress) <= 0.001) {
       stateRef.current = {
         ...stateRef.current,
         progress: targetProgress,
@@ -527,6 +543,18 @@ export function CircularWavyProgressIndicator({
       return;
     }
 
+    if (prefersReducedMotion && isIndeterminate) {
+      applyGeometryToDom(
+        computeGeometry({
+          progress: 0,
+          amplitude: 0,
+          phaseRad: stateRef.current.phaseRad,
+          cycleFraction: 0.35,
+        }),
+      );
+      return;
+    }
+
     let rafId = 0;
     let running = false;
     let lastNow = performance.now();
@@ -543,12 +571,16 @@ export function CircularWavyProgressIndicator({
       const { progress: tgtProgress, amplitude: tgtAmplitude } =
         targetRef.current;
       const alpha = Math.min(1, dtMs / (140 / Math.max(0.1, rate)));
+      const alphaAmplitude = Math.min(
+        1,
+        dtMs / (WAVY_PROGRESS_TOKENS.amplitudeTransitionMs / Math.max(0.1, rate)),
+      );
 
       const nextProgress = isIndeterminate
         ? 0
         : prev.progress + (tgtProgress - prev.progress) * alpha;
       const nextAmplitude =
-        prev.amplitude + (tgtAmplitude - prev.amplitude) * alpha;
+        prev.amplitude + (tgtAmplitude - prev.amplitude) * alphaAmplitude;
       const nextPhase =
         (prev.phaseRad +
           (dtScaledMs / 1000) * CIRCULAR_WAVY_TOKENS.defaultAngularWaveSpeedRad) %

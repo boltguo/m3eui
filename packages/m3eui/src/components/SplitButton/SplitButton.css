@@ -19,6 +19,12 @@
   flex: 0 0 auto;
 }
 
+.m3e-split-button__leading:focus-visible,
+.m3e-split-button__trailing:focus-visible {
+  outline-offset: 1px;
+  z-index: 2;
+}
+
 .m3e-split-button__chevron {
   display: inline-flex;
   align-items: center;

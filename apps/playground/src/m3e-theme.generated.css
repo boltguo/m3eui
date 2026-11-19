@@ -206,11 +206,11 @@
   --m3e-shape-corner-extra-extra-large: 48px;
   --m3e-shape-corner-full: 9999px;
   --m3e-elevation-level0: none;
-  --m3e-elevation-level1: 0 1px 2px 0 color-mix(in srgb, var(--m3e-color-shadow) 30%, transparent), 0 1px 3px 1px color-mix(in srgb, var(--m3e-color-shadow) 15%, transparent);
-  --m3e-elevation-level2: 0 1px 2px 0 color-mix(in srgb, var(--m3e-color-shadow) 30%, transparent), 0 2px 6px 2px color-mix(in srgb, var(--m3e-color-shadow) 15%, transparent);
-  --m3e-elevation-level3: 0 1px 3px 0 color-mix(in srgb, var(--m3e-color-shadow) 30%, transparent), 0 4px 8px 3px color-mix(in srgb, var(--m3e-color-shadow) 15%, transparent);
-  --m3e-elevation-level4: 0 2px 3px 0 color-mix(in srgb, var(--m3e-color-shadow) 30%, transparent), 0 6px 10px 4px color-mix(in srgb, var(--m3e-color-shadow) 15%, transparent);
-  --m3e-elevation-level5: 0 4px 4px 0 color-mix(in srgb, var(--m3e-color-shadow) 30%, transparent), 0 8px 12px 6px color-mix(in srgb, var(--m3e-color-shadow) 15%, transparent);
+  --m3e-elevation-level1: 0 1px 3px 0 color-mix(in srgb, var(--m3e-color-shadow) 8%, transparent), 0 1px 2px 0 color-mix(in srgb, var(--m3e-color-shadow) 4%, transparent);
+  --m3e-elevation-level2: 0 3px 10px 0 color-mix(in srgb, var(--m3e-color-shadow) 9%, transparent), 0 1px 3px 0 color-mix(in srgb, var(--m3e-color-shadow) 4%, transparent);
+  --m3e-elevation-level3: 0 6px 18px 0 color-mix(in srgb, var(--m3e-color-shadow) 11%, transparent), 0 2px 5px 0 color-mix(in srgb, var(--m3e-color-shadow) 5%, transparent);
+  --m3e-elevation-level4: 0 8px 24px 0 color-mix(in srgb, var(--m3e-color-shadow) 12%, transparent), 0 3px 6px 0 color-mix(in srgb, var(--m3e-color-shadow) 5%, transparent);
+  --m3e-elevation-level5: 0 12px 32px 0 color-mix(in srgb, var(--m3e-color-shadow) 14%, transparent), 0 4px 8px 0 color-mix(in srgb, var(--m3e-color-shadow) 6%, transparent);
   --m3e-state-hover-opacity: 8%;
   --m3e-state-focus-opacity: 10%;
   --m3e-state-pressed-opacity: 10%;

@@ -6,13 +6,13 @@ import {
   ACCORDION_TOKENS,
   resolveAccordionItemCorners,
 } from "../../tokens/topology.js";
-import { useM3EI18n } from "../../context/M3EContext.js";
+import { useM3EI18n, useM3ERuntime } from "../../context/M3EContext.js";
 import {
   useM3ECornerSpringRef,
   useM3EScalarSpringEffect,
-  usePressHoldState,
 } from "../../hooks/useM3ESpring.js";
 import { ChevronDownIcon } from "../../internal/icons.js";
+import { useM3ERipple } from "../../internal/ripple.js";
 
 export interface AccordionItemSpec {
   readonly value: string;
@@ -57,11 +57,12 @@ function SegmentedAccordionCard({
   isOpen,
   prevOpen,
   nextOpen,
-}: SegmentedAccordionCardProps) {
+  disabled: rootDisabled = false,
+}: SegmentedAccordionCardProps & { readonly disabled?: boolean }) {
+  const { paused, prefersReducedMotion } = useM3ERuntime();
+  const itemDisabled = rootDisabled || Boolean(item.disabled);
   const itemRef = React.useRef<HTMLDivElement | null>(null);
-  const { isPressed, pressHandlers } = usePressHoldState(
-    Boolean(item.disabled),
-  );
+  const { rippleRef, rippleHandlers } = useM3ERipple(itemDisabled);
   const corners = resolveAccordionItemCorners({
     index,
     count,
@@ -75,10 +76,16 @@ function SegmentedAccordionCard({
     itemRef,
   );
   const targetMargin = isOpen ? ACCORDION_TOKENS.expandedMarginBlock : 0;
+  const marginRef = React.useRef<number>(targetMargin);
+  if (paused || prefersReducedMotion) {
+    marginRef.current = targetMargin;
+  }
 
   useM3EScalarSpringEffect(targetMargin, "fastSpatial", (val) => {
+    const next = Math.max(0, val);
+    marginRef.current = next;
     if (itemRef.current) {
-      itemRef.current.style.marginBlock = `${Math.max(0, val).toFixed(1)}px`;
+      itemRef.current.style.marginBlock = `${next.toFixed(1)}px`;
     }
   });
 
@@ -90,19 +97,19 @@ function SegmentedAccordionCard({
       className="m3e-accordion__item"
       style={{
         borderRadius: borderRadiusCss,
-        marginBlock: `${targetMargin}px`,
+        marginBlock: `${marginRef.current.toFixed(1)}px`,
       }}
     >
       <BaseAccordion.Header className="m3e-accordion__header">
         <BaseAccordion.Trigger
           className="m3e-accordion__trigger"
-          data-pressed={isPressed ? "" : undefined}
           style={{
             minHeight: `${ACCORDION_TOKENS.headerMinHeight}px`,
             paddingInline: `${ACCORDION_TOKENS.paddingInline}px`,
           }}
-          {...pressHandlers}
+          {...rippleHandlers}
         >
+          <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
           {item.leading ? (
             <span className="m3e-accordion__leading" aria-hidden="true">
               {item.leading}
@@ -146,6 +153,33 @@ function SegmentedAccordionCard({
         </div>
       </BaseAccordion.Panel>
     </BaseAccordion.Item>
+  );
+}
+
+function AccordionExpandAllButton({
+  disabled,
+  allOpen,
+  label,
+  onClick,
+}: {
+  readonly disabled: boolean;
+  readonly allOpen: boolean;
+  readonly label: string;
+  readonly onClick: () => void;
+}): React.JSX.Element {
+  const { rippleRef, rippleHandlers } = useM3ERipple(disabled);
+  return (
+    <button
+      type="button"
+      className="m3e-accordion__expand-all"
+      disabled={disabled}
+      aria-expanded={allOpen}
+      onClick={onClick}
+      {...rippleHandlers}
+    >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+      {label}
+    </button>
   );
 }
 
@@ -225,6 +259,7 @@ export function Accordion({
           isOpen={openSet.has(item.value)}
           prevOpen={idx > 0 && openSet.has(items[idx - 1].value)}
           nextOpen={idx < items.length - 1 && openSet.has(items[idx + 1].value)}
+          disabled={disabled}
         />
       ))}
     </BaseAccordion.Root>
@@ -242,17 +277,12 @@ export function Accordion({
       style={style}
     >
       <div className="m3e-accordion__toolbar">
-        <button
-          type="button"
-          className="m3e-accordion__expand-all"
+        <AccordionExpandAllButton
           disabled={disabled || enabledValues.length === 0}
-          aria-expanded={allOpen}
+          allOpen={allOpen}
+          label={allOpen ? t("accordion.collapseAll") : t("accordion.expandAll")}
           onClick={handleToggleAll}
-        >
-          {allOpen
-            ? t("accordion.collapseAll")
-            : t("accordion.expandAll")}
-        </button>
+        />
       </div>
       {accordionNode}
     </div>

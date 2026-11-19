@@ -9,7 +9,7 @@ import {
 import { useM3EScalarSpring, usePressHoldState } from "../../hooks/useM3ESpring.js";
 import { FieldsetDisabledContext, useFieldsetDisabled } from "../../internal/fieldOutline.js";
 import { FormFieldScope, useFormReset } from "../../internal/formField.js";
-import { CheckIcon } from "../../internal/icons.js";
+import { mergeInteractionHandlers, useM3ERipple } from "../../internal/ripple.js";
 
 export interface M3ECheckboxProps {
   readonly checked?: boolean;
@@ -42,24 +42,47 @@ export interface M3ECheckboxGroupProps {
   readonly style?: React.CSSProperties;
 }
 
-function CheckGlyph({ indeterminate }: { readonly indeterminate: boolean }) {
-  if (indeterminate) {
-    return (
-      <svg
-        width={13}
-        height={13}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="3.4"
-        strokeLinecap="round"
-        aria-hidden="true"
-      >
-        <line x1="5" y1="12" x2="19" y2="12" />
-      </svg>
-    );
-  }
-  return <CheckIcon size={13} strokeWidth={3.2} />;
+function CheckGlyph({
+  checked,
+  indeterminate,
+}: {
+  readonly checked: boolean;
+  readonly indeterminate: boolean;
+}) {
+  const active = checked || indeterminate;
+  const draw = useM3EScalarSpring(active ? 1 : 0, "defaultSpatial");
+  const grav = useM3EScalarSpring(indeterminate ? 1 : 0, "fastSpatial");
+  const clampedDraw = Math.max(0, Math.min(1, draw));
+  const g = Math.max(0, Math.min(1, grav));
+  const x1 = 4.5 + 0.5 * g;
+  const y1 = 12.5 - 0.5 * g;
+  const x2 = 9.5 + 2.5 * g;
+  const y2 = 17.5 - 5.5 * g;
+  const x3 = 19.5 - 0.5 * g;
+  const y3 = 6.5 + 5.5 * g;
+  const d = `M ${x1.toFixed(2)} ${y1.toFixed(2)} L ${x2.toFixed(2)} ${y2.toFixed(2)} L ${x3.toFixed(2)} ${y3.toFixed(2)}`;
+
+  return (
+    <svg
+      width={13}
+      height={13}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path
+        d={d}
+        pathLength={1}
+        strokeDasharray={1}
+        strokeDashoffset={(1 - clampedDraw).toFixed(3)}
+        style={{ opacity: clampedDraw <= 0.01 ? 0 : 1 }}
+      />
+    </svg>
+  );
 }
 
 export const Checkbox = React.forwardRef<HTMLElement, M3ECheckboxProps>(
@@ -89,6 +112,13 @@ export const Checkbox = React.forwardRef<HTMLElement, M3ECheckboxProps>(
     const inputRef = React.useRef<HTMLInputElement | null>(null);
     useFormReset(inputRef, () => setResetKey((k) => k + 1), checked === undefined);
     const { isPressed, pressHandlers } = usePressHoldState(isDisabled || readOnly);
+    const { rippleRef, rippleHandlers } = useM3ERipple(isDisabled || readOnly, {
+      unbounded: true,
+    });
+    const mergedInteractionHandlers = mergeInteractionHandlers(
+      pressHandlers,
+      rippleHandlers,
+    );
     const cornerRadius = useM3EScalarSpring(
       isPressed
         ? CHECKBOX_TOKENS.pressedCornerRadius
@@ -126,15 +156,15 @@ export const Checkbox = React.forwardRef<HTMLElement, M3ECheckboxProps>(
           borderRadius: `${Math.max(2, cornerRadius).toFixed(1)}px`,
           ...(!label ? style : undefined),
         }}
-        {...pressHandlers}
+        {...(!label ? mergedInteractionHandlers : undefined)}
       >
-        <span className="m3e-checkbox__halo" aria-hidden="true" />
+        <span ref={rippleRef} className="m3e-checkbox__halo m3e-ripple" aria-hidden="true" />
         <BaseCheckbox.Indicator
           keepMounted
           className="m3e-checkbox__indicator"
           render={(props, state) => (
             <span {...props}>
-              <CheckGlyph indeterminate={state.indeterminate} />
+              <CheckGlyph checked={state.checked} indeterminate={state.indeterminate} />
             </span>
           )}
         />
@@ -158,6 +188,7 @@ export const Checkbox = React.forwardRef<HTMLElement, M3ECheckboxProps>(
           minBlockSize: `${CHECKBOX_TOKENS.minTouchTarget}px`,
           ...style,
         }}
+        {...(mergedInteractionHandlers as unknown as React.LabelHTMLAttributes<HTMLLabelElement>)}
       >
         {boxNode}
         <span className="m3e-control-row__text">

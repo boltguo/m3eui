@@ -4,12 +4,11 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
   card: {
     provenance: "official-m3e",
     provenanceSummary:
-      "Canonical Material 3 Expressive surface container across elevated, filled, and outlined variants with spring-driven interactive corner morphing.",
+      "Canonical Material 3 Expressive surface container across elevated, filled, and outlined variants following AOSP 12px CornerMedium geometry and state-layer ripple.",
     tokenSources: [
       "CARD_TOKENS",
       "SHAPE_CORNER_TOKENS",
       "M3E_ELEVATION_TOKENS",
-      "EXPRESSIVE_MOTION_SCHEME",
     ],
     aospSources: [
       "Card.kt",
@@ -20,88 +19,84 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
     inspirationAndRationale: [
       {
         title: "Deterministic Five-Tier Surface Hierarchy over Drop Shadows",
-        body: "Material 3 Expressive replaces arbitrary opacity overlays and heavy shadow stacks with HCT surface-container temperature steps: elevated cards float on surface-container-low with subtle ambient/key shadow, filled cards sit on high-chroma surface-container-highest with zero shadow, and outlined cards anchor on surface-container-lowest (or surface) with a crisp 1px outline-variant border.",
+        body: "Material 3 Expressive replaces arbitrary opacity overlays and heavy shadow stacks with HCT surface-container temperature steps: elevated cards float on surface-container-low with subtle ambient/key shadow, filled cards sit on high-chroma surface-container-highest with zero shadow, and outlined cards anchor on surface with a crisp 1px outline-variant border.",
       },
       {
-        title: "Bidirectional Interactive Corner Morphing (16px → 20px → 12px)",
-        body: "Static cards lock at 16px corners so reading layouts stay calm. Interactive cards respond to pointer hover by expanding their silhouette from 16px to 20px (inviting touch/click) and tighten to 12px on press under the underdamped fastSpatial spring (ζ = 0.6, k = 800) with a 95ms minimum press-hold latch.",
+        title: "AOSP Static 12px CornerMedium with State-Layer Ripple",
+        body: "Aligned with AOSP CardTokens (CornerMedium = 12dp), cards keep a stable 12px corner silhouette at rest, hover, and press so card grids never jitter on scroll or pointer movement; interactive and link cards communicate affordance via state-layer highlight, bounded ripple, and keyboard focus rings.",
       },
       {
-        title: "Semantic Element Polymorphism (Article vs Action Surface)",
-        body: "Read-only cards render as semantic <article> landmarks so nested buttons or links inside actions slots never violate HTML interactive-content nesting rules, whereas whole-card interactive surfaces bind @base-ui/react/button keyboard and pointer activation.",
+        title: "Semantic Element Polymorphism (Article vs Button / Link Surface)",
+        body: "Read-only cards render as semantic <article> landmarks so nested buttons or links inside actions slots never violate HTML interactive-content nesting rules, whereas interactive cards bind @base-ui/react/button and href/render cards bind accessible link semantics.",
       },
     ],
     geometryAndMotionTables: [
       {
         id: "card-surface-and-corner-matrix",
-        title: "Card Variant Surface & Corner Physics Matrix (px = dp / pt)",
-        caption: "Surface roles, border strokes, elevation, and corner radii from CARD_TOKENS",
+        title: "Card Variant Surface & Geometry Matrix (px = dp / pt)",
+        caption: "Surface roles, border strokes, elevation, and 12px CornerMedium from CARD_TOKENS",
         columns: [
           "Variant",
           "Container Role",
           "Border / Shadow",
           "Body Padding",
-          "Rest Radius",
-          "Hover Radius (Interactive)",
-          "Pressed Radius (Interactive)",
+          "Corner Radius",
+          "Interactive States",
         ],
         rows: [
           [
             "elevated",
             "surface-container-low",
-            "1px transparent + level1/2 ambient-key shadow",
-            "20",
-            "16",
+            "0px border + level1 resting shadow",
             "20",
             "12",
+            "State-layer tint + pressed ripple (no hover shadow lift)",
           ],
           [
             "filled",
             "surface-container-highest",
-            "1px transparent, 0dp shadow",
-            "20",
-            "16",
+            "0px border, 0dp shadow",
             "20",
             "12",
+            "State-layer tint + pressed ripple",
           ],
           [
             "outlined",
-            "surface-container-lowest / surface",
+            "surface",
             "1px solid outline-variant, 0dp shadow",
             "20",
-            "16",
-            "20",
             "12",
+            "State-layer tint + pressed ripple",
           ],
         ],
       },
     ],
     invariants: [
-      "Interactive corner priority MUST follow pressed (12px) > hovered (20px) > rest (16px), driven exclusively by fastSpatial (ζ = 0.6, k = 800) with a >= 4px radius clamp against negative underdamped spikes.",
-      "Background color, border color, and hover elevation lift MUST use critically damped effects tokens (defaultEffects, ζ = 1.0, k = 1600) so shadow and color transitions never overshoot.",
-      "Non-interactive cards (interactive = false) MUST remain locked at restRadius = 16px and ignore pointer hover/press corner morphing.",
-      "Media bleed slots (.m3e-card__media) MUST clip seamlessly against the parent container's live animated border-radius via overflow: hidden.",
+      "Card corners MUST remain locked at restRadius = 12px (CornerMedium) across all variants and interaction states with zero hover or press corner morphing.",
+      "Background color and border color transitions MUST use critically damped effects tokens (defaultEffects, ζ = 1.0, k = 1600) so color transitions never overshoot.",
+      "Disabled interactive or link cards MUST suppress pointer/keyboard activation, skip ripple attachment, and apply 0.38 disabled surface treatment.",
+      "Media bleed slots (.m3e-card__media) MUST clip seamlessly against the parent container's 12px corner radius via overflow: hidden.",
     ],
     crossPlatformNotes: [
       {
         target: "Jetpack Compose",
         guidance:
-          "Use Card / ElevatedCard / OutlinedCard with CardDefaults.shape animated via animateDpAsState(targetRadius, spring(dampingRatio = 0.6f, stiffness = 800f)) driven by MutableInteractionSource hover and press states.",
+          "Use Card / ElevatedCard / OutlinedCard with CardDefaults.shape (RoundedCornerShape(12.dp)) and standard ripple indication via MutableInteractionSource.",
       },
       {
         target: "SwiftUI",
         guidance:
-          "Clip card VStack(spacing: 0) with RoundedRectangle(cornerRadius: r, style: .continuous), driving r between 16pt, 20pt (.onHover), and 12pt (ButtonStyle configuration.isPressed with 95ms latch) using Spring(mass: 1, stiffness: 800, damping: 33.94).",
+          "Clip card VStack(spacing: 0) with RoundedRectangle(cornerRadius: 12, style: .continuous) and layer a state-layer press highlight.",
       },
       {
         target: "Flutter",
         guidance:
-          "Wrap Material(color: surfaceRole, clipBehavior: Clip.antiAlias, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(r))) and step r via SpringSimulation(SpringDescription.withDampingRatio(mass: 1, stiffness: 800, ratio: 0.6)).",
+          "Wrap Material(color: surfaceRole, clipBehavior: Clip.antiAlias, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))) with InkWell ripple.",
       },
       {
         target: "Vue / Svelte / Web",
         guidance:
-          "Drive element.style.borderRadius from a requestAnimationFrame scalar spring loop while delegating box-shadow and background-color to CSS effects transitions.",
+          "Use CSS custom property transitions (defaultEffects) for container color/state-layer opacity and an imperative Web Animations API or spring-free radial ripple on pointerdown.",
       },
     ],
     references: [
@@ -159,7 +154,7 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
             "Outer Shell (.m3e-data-table-shell)",
             "100% width, r = 16",
             "0 (clips children)",
-            "surface-container-lowest + 1px outline-variant",
+            "surface + 1px outline-variant",
             "Clips sticky header and bottom footer corners cleanly",
           ],
           [
@@ -263,8 +258,8 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
         body: "Legacy lists sliced rows inside a single rigid rectangle using 1px borders. Material 3 Expressive groups related items as an articulated stack separated by a 2px physical gap, pairing 16px outer group corners with crisp 4px inner seam corners.",
       },
       {
-        title: "Desktop Pointer Hover Stabilization (Fixing AOSP Wedge Jitter)",
-        body: "AOSP ListItemDefaults.segmentedShapes left hoveredShape = 12dp from plain borderless lists, which shrinks outer 16dp corners to 12dp and opens asymmetric 12px-vs-4px wedge gaps across the 2px seam when sweeping a mouse across items. m3eui aligns hover behavior with ConnectedButtonGroup: hover shifts surface tone (surface-container-low → surface-container-high) via fastEffects while keeping inner corners locked at 4px.",
+        title: "Desktop Pointer Hover Stabilization & AOSP StateLayer / Ripple",
+        body: "AOSP ListItemDefaults.segmentedShapes left hoveredShape = 12dp from plain borderless lists, which shrinks outer 16dp corners to 12dp and opens asymmetric 12px-vs-4px wedge gaps across the 2px seam when sweeping a mouse across items. Keeping corners locked at 4px on hover avoids wedge jitter, while pointer hover renders AOSP's 15ms linear StateLayer (LocalContentColor @ 8%) and press renders RippleAnimation (60% initial diameter expanding from pointer origin to center over 225ms FastOutSlowIn, 75ms fade-in, 150ms fade-out).",
       },
       {
         title: "Full Detachment on Press & Selection + Single-Item Convergence",
@@ -305,7 +300,7 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
     ],
     invariants: [
       "When count === 1, resolveSegmentedListCorners MUST return [16, 16, 16, 16] in all states so dynamic list filtering never leaves 4px bottom corners.",
-      "Pointer hover on unselected items MUST NOT mutate corner radii; hover only transitions container color from surface-container-low to surface-container-high via fastEffects (ζ = 1.0, k = 3800).",
+      "Pointer hover on unselected items MUST NOT mutate corner radii; hover renders AOSP's 15ms linear StateLayer (currentColor @ 8%) while press expands RippleAnimation (75ms fade-in, 225ms FastOutSlowIn expansion, 150ms fade-out).",
       "Selected items MUST convey state via three simultaneous channels: secondary-container fill, [16, 16, 16, 16] corner detachment (fastSpatial), and leading checkmark icon swap.",
       "Web markup MUST render <ul role=\"list\"> wrapping <li><button type=\"button\" aria-pressed={selected}> — never <li role=\"button\"> — preserving Safari VoiceOver list item enumeration.",
     ],
@@ -363,12 +358,12 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
     ],
     inspirationAndRationale: [
       {
-        title: "Compact 32px Tactile Silhouette Morphing (8px → 4px → 16px)",
-        body: "At rest, interactive M3 chips present an 8px small-rounded rectangle that clearly distinguishes them from full-pill Primary Buttons. Pressing tightens corners to 4px via fastSpatial (ζ = 0.6, k = 800), and toggling a FilterChip selected expands its silhouette into a full 16px capsule (height / 2).",
+        title: "Compact 32px Tactile Silhouette Morphing (8px Static, FilterPill Morph)",
+        body: "At rest, AssistChip and InputChip use an 8px small-rounded rectangle matching AOSP AssistChip/InputChip tokens, while interactive Chip badges use a static pill or 8px rectangle and FilterChip expands into a full 16px capsule (height / 2) when selected under fastSpatial (ζ = 0.6, k = 800).",
       },
       {
         title: "Unified Compact Semantic Chip (Read-Only Span vs Interactive Action)",
-        body: "Dashboards and tables need compact status pills (22px sm / 26px md) across 7 HCT-harmonized tones (neutral, primary, secondary, tertiary, success, warning, error) and 3 variants (tonal, outlined, solid). Chip renders a non-focusable <span> by default so static metadata never impersonates a button, and upgrades to an accessible @base-ui/react/button with spring corner compression (13px/11px → 6px) only when onClick is supplied.",
+        body: "Dashboards and tables need compact status pills (22px sm / 26px md) across 7 HCT-harmonized tones (neutral, primary, secondary, tertiary, success, warning, error) and 3 variants (tonal, outlined, solid). Chip renders a non-focusable <span> by default so static metadata never impersonates a button, and upgrades to an accessible @base-ui/react/button with static 8px corners and state-layer ripple only when onClick is supplied.",
       },
       {
         title: "Non-Nested Accessible Removal",
@@ -386,8 +381,7 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
           "Inline Pad",
           "Icon / Close Size",
           "Rest Radius",
-          "Pressed Radius",
-          "Selected Radius",
+          "Selected / Variant Behavior",
           "Underlying Primitive",
         ],
         rows: [
@@ -396,29 +390,26 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
             "22 / 26",
             "8 / 10",
             "7 dot · 12 close",
-            "11 / 13 (pill)",
-            "6 (when onClick)",
-            "—",
+            "8",
+            "Static 8px (state-layer ripple when onClick)",
             "<span> (or @base-ui/react/button when onClick)",
           ],
           [
             "AssistChip",
             "32",
-            "12",
+            "16",
             "18",
             "8",
-            "4",
-            "— (stateless action)",
+            "Stateless action with state-layer ripple",
             "@base-ui/react/button",
           ],
           [
             "FilterChip",
             "32",
-            "12",
+            "16",
             "18 (15 check)",
             "8",
-            "4",
-            "16 (full pill)",
+            "16 (full pill) + leading checkmark",
             "@base-ui/react/toggle (aria-pressed)",
           ],
           [
@@ -427,49 +418,38 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
             "10–12",
             "Avatar + 14 close",
             "8",
-            "— (trailing button)",
-            "—",
+            "Optional selected tonal state + remove button",
             "<span> + trailing remove <button>",
-          ],
-          [
-            "SuggestionChip",
-            "32",
-            "12",
-            "18",
-            "8",
-            "4",
-            "16 (full pill)",
-            "@base-ui/react/button (aria-pressed)",
           ],
         ],
       },
     ],
     invariants: [
-      "Static Chip (without onClick) MUST render a non-interactive <span> without tabindex or role=\"button\"; passing onClick upgrades it to BaseButton with :focus-visible outline and fastSpatial corner compression.",
-      "FilterChip corner priority MUST obey pressed (4px) > selected (16px) > rest (8px) so pressing an active filter chip still produces tactile corner compression.",
-      "Corner radius animation MUST use fastSpatial (ζ = 0.6, k = 800) with a >= 2px lower clamp; container and border color transitions MUST use fastEffects (ζ = 1.0, k = 3800).",
+      "Static Chip (without onClick) MUST render a non-interactive <span> without tabindex or role=\"button\"; passing onClick upgrades it to BaseButton with :focus-visible outline and bounded state-layer ripple.",
+      "FilterChip expands from 8px rest radius to 16px full capsule when selected via fastSpatial (ζ = 0.6, k = 800) with a >= 2px lower clamp, while container and border color transitions use fastEffects (ζ = 1.0, k = 3800).",
+      "AssistChip and Chip maintain 8px static corners aligned with AOSP CHIP_TOKENS without hover/press corner morphing.",
       "InputChip and removable Chip MUST NEVER nest their trailing remove <button> inside another <button>; the remove button MUST expose a localized aria-label (t('chip.remove')).",
     ],
     crossPlatformNotes: [
       {
         target: "Jetpack Compose",
         guidance:
-          "Maps to AssistChip, FilterChip, InputChip, and SuggestionChip (32.dp) or compact Surface(shape = CircleShape) pills (22.dp / 26.dp) for semantic status Chips.",
+          "Maps to AssistChip, FilterChip, and InputChip (32.dp, 8.dp shape, 16.dp horizontal padding) or compact Surface pills (22.dp / 26.dp) for semantic status Chips.",
       },
       {
         target: "SwiftUI",
         guidance:
-          "Render HStack(spacing: 6) at frame(height: 32) clipped to RoundedRectangle(cornerRadius: r, style: .continuous) with r driven by Spring(mass: 1, stiffness: 800, damping: 33.94).",
+          "Render HStack(spacing: 6) at frame(height: 32) clipped to RoundedRectangle(cornerRadius: r, style: .continuous) with r = 8pt (or 16pt selected on FilterChip via Spring(mass: 1, stiffness: 800, damping: 33.94)).",
       },
       {
         target: "Flutter",
         guidance:
-          "Use ActionChip / FilterChip / InputChip with shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(r)) driven by a shared SpringSimulation.",
+          "Use ActionChip / FilterChip / InputChip with 16dp horizontal padding and shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(r)).",
       },
       {
         target: "Vue / Svelte / Web",
         guidance:
-          "Bind aria-pressed on FilterChip and enforce the 95ms minimum press-hold latch so quick trackpad taps visibly compress from 8px to 4px before expanding to 16px.",
+          "Bind aria-pressed on FilterChip and animate its 8px → 16px capsule transition with fastSpatial while keeping AssistChip and Chip corners locked at 8px.",
       },
     ],
     references: [
@@ -528,7 +508,7 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
     ],
     invariants: [
       "Polygon clipping MUST apply to the inner Avatar box while outer .m3e-avatar-wrap stays unclipped so anchored Badges are never sliced by the polygon clipPath.",
-      "Image load failures MUST fall back seamlessly to initials/icon content via @base-ui/react/avatar without broken-image icons.",
+      "Image load failures MUST fall back seamlessly to initials/icon content via native <img> error handling without broken-image icons.",
       "AvatarGroup overlap spacing MUST use margin-inline-start so stacking order mirrors naturally in RTL.",
     ],
     crossPlatformNotes: [
@@ -554,24 +534,19 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
         url: "https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/MaterialShapes.kt",
         kind: "aosp-source",
       },
-      {
-        label: "Base UI — Avatar Primitive",
-        url: "https://base-ui.com/react/components/avatar",
-        kind: "base-ui",
-      },
     ],
   },
 
   badge: {
     provenance: "official-m3e",
     provenanceSummary:
-      "Canonical Material 3 notification Badge providing an 8×8px unread dot and an 18px CLDR-localized numeric count capsule with 99+ overflow capping.",
+      "Canonical Material 3 notification Badge providing a 6×6px unread dot and a 16px CLDR-localized numeric count capsule with 99+ overflow capping.",
     tokenSources: ["BADGE_TOKENS"],
     aospSources: ["Badge.kt", "BadgeTokens.kt"],
     inspirationAndRationale: [
       {
-        title: "Canonical Two-Tier Notification Badge (8px Dot vs 18px Pill)",
-        body: "Aligned with AOSP BadgeTokens, unnumbered presence/unread states use a minimal 8×8px dot so UI chrome stays quiet, while numeric unread counts expand into an 18px-tall capsule (min-width 18px, 5px inline padding) formatted via locale-aware Intl.NumberFormat with automatic 99+ overflow capping.",
+        title: "Canonical Two-Tier Notification Badge (6px Dot vs 16px Pill)",
+        body: "Aligned with AOSP BadgeTokens, unnumbered presence/unread states use a minimal 6×6px dot so UI chrome stays quiet, while numeric unread counts expand into a 16px-tall capsule (min-width 16px, 4px inline padding) formatted via locale-aware Intl.NumberFormat with automatic 99+ overflow capping.",
       },
       {
         title: "Anchored Overlay or Standalone Inline Indicator",
@@ -584,8 +559,8 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
         title: "Badge Notification Indicator Geometry (BADGE_TOKENS)",
         columns: ["Mode", "Dimensions (px)", "Inline Padding", "Default Role", "Overflow Contract"],
         rows: [
-          ["dot = true", "8 × 8", "0", "error (or primary / secondary)", "Renders whenever !hidden"],
-          ["count > 0", "min 18 × 18 height", "5", "error + on-error", "count > max (99) → localized '99+'"],
+          ["dot = true", "6 × 6", "0", "error (or primary / secondary)", "Renders whenever !hidden"],
+          ["count > 0", "min 16 × 16 height", "4", "error + on-error", "count > max (99) → localized '99+'"],
         ],
       },
     ],
@@ -598,17 +573,17 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
       {
         target: "Jetpack Compose",
         guidance:
-          "Maps directly to BadgedBox(badge = { Badge { Text(count) } }) and empty Badge() for 8.dp dot indicators.",
+          "Maps directly to BadgedBox(badge = { Badge { Text(count) } }) and empty Badge() for 6.dp dot indicators.",
       },
       {
         target: "SwiftUI",
         guidance:
-          "Overlay an 8pt Circle() or 18pt Capsule() on ZStack(alignment: .topTrailing) so layout direction flips automatically in RTL.",
+          "Overlay a 6pt Circle() or 16pt Capsule() on ZStack(alignment: .topTrailing) so layout direction flips automatically in RTL.",
       },
       {
         target: "Flutter",
         guidance:
-          "Maps directly to Flutter Material 3 Badge() (small 8lp dot) and Badge.count(count: n, maxCount: 99).",
+          "Maps directly to Flutter Material 3 Badge() (small 6lp dot) and Badge.count(count: n, maxCount: 99).",
       },
     ],
     references: [
@@ -741,7 +716,7 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
       },
       {
         title: "Two Density Tiers for Full-Page vs Inline Panel Contexts",
-        body: "Standard mode frames full-section zero states with a 76px emblem and 24px dashed container corners, while compact mode scales down to a 56px emblem and 18px corners for sidebars, popovers, and card bodies.",
+        body: "Standard mode frames full-section zero states with a 76px emblem and borderless surface-container-low 24px container corners, while compact mode scales down to a 56px emblem and 18px corners for sidebars, popovers, and card bodies.",
       },
     ],
     geometryAndMotionTables: [
@@ -750,7 +725,7 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
         title: "Empty State Standard vs Compact Geometry (Logical Pixels)",
         columns: [
           "Density Mode",
-          "Container Radius & Border",
+          "Container Radius & Surface",
           "Padding (Block × Inline)",
           "Emblem / Glyph Size",
           "Copy Max Width & Vertical Gap",
@@ -758,14 +733,14 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
         rows: [
           [
             "Standard (compact = false)",
-            "24px, 1px dashed outline-variant",
+            "24px, borderless surface-container-low",
             "36 × 24",
             "76 × 76 emblem / 28 glyph",
             "420px max-width, 14px stack gap",
           ],
           [
             "Compact (compact = true)",
-            "18px, 1px dashed outline-variant",
+            "18px, borderless surface-container-low",
             "22 × 16",
             "56 × 56 emblem / 22 glyph",
             "420px max-width, 10px stack gap",
@@ -792,7 +767,7 @@ export const DISPLAY_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>>
       {
         target: "Flutter",
         guidance:
-          "Center a Column inside a dashed RRect CustomPaint container with a 76×76 Stack emblem and Wrap(spacing: 8) action bar.",
+          "Center a Column inside a tonal surface-container-low RoundedRectangle container with a 76×76 Stack emblem and Wrap(spacing: 8) action bar.",
       },
       {
         target: "Vue / Svelte / Web",

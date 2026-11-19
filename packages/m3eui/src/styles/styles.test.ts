@@ -65,25 +65,60 @@ describe("m3eui/styles — Layering, Scrollbars & Hover Contracts", () => {
     );
   });
 
-  it("prevents unselected :hover rules from overriding [data-selected] or solid backgrounds via specificity inflation", () => {
+  it("uses unified .m3e-ripple::before state layers for :hover without overriding [data-selected] or solid backgrounds", () => {
     const css = readLibraryCss();
 
     expect(css).toContain(
-      '.m3e-button[data-variant="outlined"]:hover:where(:not([data-disabled], [data-selected], [data-pressed]))',
+      ".m3e-button:hover:where(:not(:disabled, [data-disabled], [data-explicit-disabled])) > .m3e-ripple::before",
     );
     expect(css).toContain(
-      ".m3e-button[data-selected]:hover:where(:not([data-disabled], [data-pressed]))",
+      ".m3e-icon-button:hover:where(:not(:disabled, [data-disabled], [data-explicit-disabled])) > .m3e-ripple::before",
     );
-    expect(css).toContain(
-      '.m3e-icon-button[data-variant="outlined"]:hover:where(:not([data-disabled], [data-selected], [data-pressed]))',
-    );
-    expect(css).toContain(
-      ".m3e-icon-button[data-toggle][data-selected]:hover:where(:not([data-disabled], [data-pressed]))",
-    );
+    expect(css).not.toMatch(/\.m3e-button\[data-variant="outlined"\][^{]*:hover/);
+    expect(css).not.toMatch(/\.m3e-icon-button\[data-variant="outlined"\][^{]*:hover/);
     expect(css).toContain(
       '.m3e-chip-status[data-variant="solid"][data-tone="primary"]',
     );
     expect(css).toContain("--m3e-chip-status-bg: var(--m3e-color-primary);");
+  });
+
+  it("omits transparent 1px padding-box border rims on non-outlined ripple controls", () => {
+    const css = readLibraryCss();
+    for (const selector of [
+      ".m3e-floating-toolbar__button",
+      ".m3e-toggle-fab",
+      ".m3e-fab-menu__item",
+      ".m3e-snackbar",
+    ]) {
+      const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const match = css.match(new RegExp(`${escaped}\\s*\\{[^}]*\\}`, "m"));
+      expect(match?.[0]).toBeTruthy();
+      expect(match?.[0]).toContain("border: 0;");
+    }
+    expect(css).not.toMatch(/\.m3e-snackbar:is\([^)]*\)\s*\{[^}]*border:/m);
+  });
+
+  it("keeps M3 modals, popovers, pickers, and tonal surfaces borderless outside forced-colors", () => {
+    const css = readLibraryCss();
+    for (const selector of [
+      ".m3e-popover",
+      ".m3e-date-picker",
+      ".m3e-time-picker",
+      ".m3e-time-picker-dialog",
+      ".m3e-color-picker",
+      ".m3e-search-bar",
+      ".m3e-search-bar__popup",
+      ".m3e-command-palette",
+      ".m3e-nav-rail",
+      '.m3e-segmented-list[data-variant="standard"]',
+      '.m3e-fieldset[data-variant="tonal"]',
+      ".m3e-form__error-summary",
+    ]) {
+      const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const match = css.match(new RegExp(`${escaped}\\s*\\{[^}]*\\}`, "m"));
+      expect(match?.[0], `Expected CSS rule for ${selector}`).toBeTruthy();
+      expect(match?.[0], `Expected border: 0; on ${selector}`).toContain("border: 0;");
+    }
   });
 
   it("gates every :hover rule in library CSS inside @media (hover: hover)", () => {
@@ -112,5 +147,76 @@ describe("m3eui/styles — Layering, Scrollbars & Hover Contracts", () => {
     }
 
     expect(ungated).toEqual([]);
+  });
+
+  it("omits outer drop box-shadows on :hover rules so interactive state stays flat", () => {
+    const css = readLibraryCss();
+    const offenders: string[] = [];
+
+    for (const match of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      const selector = match[1]!.trim();
+      const body = match[2]!;
+      if (!selector.includes(":hover")) continue;
+      for (const shadowMatch of body.matchAll(/box-shadow\s*:\s*([^;]+);/g)) {
+        const value = shadowMatch[1]!.trim();
+        if (value !== "none" && !value.startsWith("inset")) {
+          offenders.push(`${selector} -> ${value}`);
+        }
+      }
+    }
+
+    expect(offenders).toEqual([]);
+  });
+
+  it("keeps dropdown items free of :focus-visible outline boxes outside forced-colors and keeps OTPField resting slots borderless", () => {
+    const css = readLibraryCss();
+    const lines = css.split("\n");
+    const nonForcedCssLines: string[] = [];
+    let depth = 0;
+    let forcedColorsDepth: number | null = null;
+
+    for (const line of lines) {
+      if (
+        forcedColorsDepth === null &&
+        /@media\s*\(\s*forced-colors\s*:\s*active\s*\)/.test(line)
+      ) {
+        forcedColorsDepth = depth + 1;
+      }
+      const inForcedColors =
+        forcedColorsDepth !== null && depth >= forcedColorsDepth;
+      if (!inForcedColors) {
+        nonForcedCssLines.push(line);
+      }
+      for (const ch of line) {
+        if (ch === "{") depth++;
+        else if (ch === "}") {
+          if (forcedColorsDepth !== null && depth === forcedColorsDepth) {
+            forcedColorsDepth = null;
+          }
+          depth--;
+        }
+      }
+    }
+
+    const nonForcedCss = nonForcedCssLines.join("\n");
+    const focusOffenders: string[] = [];
+    for (const match of nonForcedCss.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      const selector = match[1]!.trim();
+      const body = match[2]!;
+      if (
+        /\.(?:m3e-dropdown-item|m3e-segmented-menu__item|m3e-select__item|m3e-search-bar__item)\b/.test(
+          selector,
+        ) &&
+        selector.includes(":focus-visible") &&
+        /outline\s*:/.test(body)
+      ) {
+        focusOffenders.push(selector);
+      }
+    }
+    expect(focusOffenders).toEqual([]);
+
+    const otpSlotMatch = css.match(/\.m3e-otp-field__slot\s*\{([^}]*)\}/m);
+    expect(otpSlotMatch?.[1]).toBeTruthy();
+    expect(otpSlotMatch?.[1]).not.toContain("var(--m3e-color-outline-variant)");
   });
 });

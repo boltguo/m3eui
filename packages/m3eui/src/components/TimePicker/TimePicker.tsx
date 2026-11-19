@@ -24,6 +24,8 @@ import {
 } from "../../internal/pickerField.js";
 import { useFormReset } from "../../internal/formField.js";
 import { ClockIcon } from "../../internal/icons.js";
+import { useAdaptivePositionMethod } from "../../internal/positionMethod.js";
+import { mergeInteractionHandlers, useM3ERipple } from "../../internal/ripple.js";
 
 export type PlainTimeString = `${string}:${string}` | string;
 
@@ -56,6 +58,7 @@ export interface M3ETimePickerProps {
   readonly hideModeToggle?: boolean;
   readonly variant?: "standard" | "vibrant";
   readonly title?: React.ReactNode;
+  readonly titleId?: string;
   readonly className?: string;
   readonly style?: React.CSSProperties;
 }
@@ -72,6 +75,11 @@ function TimeSegmentChip({
   readonly onClick: () => void;
 }) {
   const { isPressed, pressHandlers } = usePressHoldState(false);
+  const { rippleRef, rippleHandlers } = useM3ERipple();
+  const mergedHandlers = mergeInteractionHandlers(
+    pressHandlers,
+    rippleHandlers,
+  );
   const radius = useM3EScalarSpring(
     isPressed
       ? TIME_PICKER_TOKENS.fieldPressedRadius
@@ -92,8 +100,9 @@ function TimeSegmentChip({
         height: `${TIME_PICKER_TOKENS.fieldHeight}px`,
         borderRadius: `${Math.max(4, radius).toFixed(1)}px`,
       }}
-      {...pressHandlers}
+      {...mergedHandlers}
     >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
       {valueText}
     </button>
   );
@@ -108,6 +117,7 @@ function PeriodSegmentButton({
   readonly selected: boolean;
   readonly onClick: () => void;
 }) {
+  const { rippleRef, rippleHandlers } = useM3ERipple();
   return (
     <button
       type="button"
@@ -115,8 +125,34 @@ function PeriodSegmentButton({
       onClick={onClick}
       className="m3e-time-picker__period-btn"
       data-selected={selected ? "" : undefined}
+      {...rippleHandlers}
     >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
       {label}
+    </button>
+  );
+}
+
+function TimeModeToggleButton({
+  inputMode,
+  ariaLabel,
+  onClick,
+}: {
+  readonly inputMode: "dial" | "keyboard";
+  readonly ariaLabel: string;
+  readonly onClick: () => void;
+}): React.JSX.Element {
+  const { rippleRef, rippleHandlers } = useM3ERipple();
+  return (
+    <button
+      type="button"
+      className="m3e-time-picker__mode-btn"
+      aria-label={ariaLabel}
+      onClick={onClick}
+      {...rippleHandlers}
+    >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+      {inputMode === "dial" ? <KeyboardIconSvg /> : <ClockIcon size={18} strokeWidth={2} />}
     </button>
   );
 }
@@ -155,6 +191,7 @@ export function TimePicker({
   hideModeToggle = false,
   variant = "standard",
   title,
+  titleId,
   className,
   style,
 }: M3ETimePickerProps): React.JSX.Element {
@@ -314,12 +351,13 @@ export function TimePicker({
       }}
     >
       <div className="m3e-time-picker__header">
-        <span className="m3e-date-picker__eyebrow">{resolvedTitle}</span>
+        <span id={titleId} className="m3e-date-picker__eyebrow">
+          {resolvedTitle}
+        </span>
         {!hideModeToggle ? (
-          <button
-            type="button"
-            className="m3e-time-picker__mode-btn"
-            aria-label={
+          <TimeModeToggleButton
+            inputMode={inputMode}
+            ariaLabel={
               inputMode === "dial"
                 ? t("timePicker.switchToKeyboard")
                 : t("timePicker.switchToDial")
@@ -327,9 +365,7 @@ export function TimePicker({
             onClick={() =>
               setInputMode(inputMode === "dial" ? "keyboard" : "dial")
             }
-          >
-            {inputMode === "dial" ? <KeyboardIconSvg /> : <ClockIcon size={18} strokeWidth={2} />}
-          </button>
+          />
         ) : null}
       </div>
 
@@ -486,7 +522,7 @@ export function TimePicker({
               aria-label={t("timePicker.periodLabel")}
               style={{
                 width: `${TIME_PICKER_TOKENS.periodWidth}px`,
-                height: `${TIME_PICKER_TOKENS.periodHeight}px`,
+                height: `${inputMode === "keyboard" ? 64 : TIME_PICKER_TOKENS.periodHeight}px`,
                 borderRadius: `${TIME_PICKER_TOKENS.periodRadius}px`,
               }}
             >
@@ -930,6 +966,7 @@ export function TimePickerField({
     controlledValue === undefined,
   );
   const [open, setOpen] = React.useState(false);
+  const positionMethod = useAdaptivePositionMethod(triggerRef, open);
   React.useEffect(() => {
     if ((isDisabled || readOnly) && open) setOpen(false);
   }, [isDisabled, readOnly, open]);
@@ -1020,6 +1057,7 @@ export function TimePickerField({
       ) : (
         <BasePopover.Portal container={portalContainer}>
           <BasePopover.Positioner
+            positionMethod={positionMethod}
             side="bottom"
             align="start"
             sideOffset={6}
@@ -1028,7 +1066,7 @@ export function TimePickerField({
             <BasePopover.Popup
               aria-label={popupAriaLabel}
               initialFocus={(openType) => openType === "keyboard"}
-              className="m3e-date-picker-field__popup"
+              className="m3e-date-picker-field__popup m3e-time-picker-field__popup"
             >
               <TimePicker
                 value={current}
@@ -1057,6 +1095,7 @@ function ModalTimePickerPopup({
   readonly use24Hour: boolean;
 }): React.JSX.Element {
   const { t } = useM3EI18n();
+  const titleId = React.useId();
   const portalContainer = useM3EPortalContainer();
   const [draftTime, setDraftTime] = React.useState<string>(value);
   const [inputMode, setInputMode] = React.useState<"dial" | "keyboard">("dial");
@@ -1070,6 +1109,7 @@ function ModalTimePickerPopup({
       <BaseDialog.Backdrop className="m3e-dialog__backdrop" />
       <BaseDialog.Viewport className="m3e-dialog__viewport">
         <BaseDialog.Popup
+          aria-labelledby={titleId}
           className="m3e-dialog__popup m3e-time-picker-dialog"
           style={{
             borderRadius: `${TIME_PICKER_TOKENS.containerRadius}px`,
@@ -1077,25 +1117,21 @@ function ModalTimePickerPopup({
             width: "auto",
           }}
         >
-          <BaseDialog.Title className="m3e-visually-hidden">
-            {t("timePicker.title")}
-          </BaseDialog.Title>
-
           <TimePicker
             value={draftTime}
             onValueChange={setDraftTime}
             use24Hour={use24Hour}
             inputMode={inputMode}
             onInputModeChange={setInputMode}
+            titleId={titleId}
             hideModeToggle
             className="m3e-time-picker-dialog__picker"
           />
 
           <div className="m3e-time-picker-dialog__footer">
-            <button
-              type="button"
-              className="m3e-time-picker__mode-btn"
-              aria-label={
+            <TimeModeToggleButton
+              inputMode={inputMode}
+              ariaLabel={
                 inputMode === "dial"
                   ? t("timePicker.switchToKeyboard")
                   : t("timePicker.switchToDial")
@@ -1103,9 +1139,7 @@ function ModalTimePickerPopup({
               onClick={() =>
                 setInputMode((m) => (m === "dial" ? "keyboard" : "dial"))
               }
-            >
-              {inputMode === "dial" ? <KeyboardIconSvg /> : <ClockIcon size={18} strokeWidth={2} />}
-            </button>
+            />
 
             <div className="m3e-time-picker-dialog__actions">
               <Button variant="text" size="sm" onClick={onClose}>

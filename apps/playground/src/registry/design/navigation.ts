@@ -431,7 +431,7 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
             "Open item (isOpen = true) or count === 1",
             "16, 16",
             "16, 16",
-            "marginBlock: 6px, surface-container + 1px outline-variant",
+            "marginBlock: 6px, surface-container",
           ],
           [
             "Collapsed first item (index = 0, next collapsed)",
@@ -525,7 +525,7 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
     inspirationAndRationale: [
       {
         title: "Grouped Menu Geometry (16px - 4px = 12px)",
-        body: "Each group is its own surface-container-low surface at elevation level 2 with no outline. Groups stack with a 2px gap: the first group keeps 16px top corners and 8px bottom corners, middle groups use 8px, and the last group mirrors the first. Inside a group, 44px items sit 4px from the edge, so boundary items take concentric 12px outer corners (16 - 4) and 4px inner corners. Items carry no resting fill; hover, focus, and press add a state layer only, and a checked item becomes a 12px tertiary-container shape.",
+        body: "Each group is its own surface-container surface at elevation level 2 with no outline. Groups stack with a 2px gap: the first group keeps 16px top corners and 8px bottom corners, middle groups use 8px, and the last group mirrors the first. Inside a group, 44px items sit 4px from the edge, so boundary items take concentric 12px outer corners (16 - 4) and 4px inner corners. Items carry no resting fill; hover, focus, and press add a state layer only, and a checked item becomes a 12px secondary-container shape (or tertiary in vibrant theme).",
       },
     ],
     geometryAndMotionTables: [
@@ -541,9 +541,9 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
         rows: [
           [
             "DropdownMenu & ContextMenu",
-            "Group r = 16 outer / 8 inner, pad = 4, group gap = 2 (surface-container-low, level 2)",
+            "Group r = 16 outer / 8 inner, pad = 4, group gap = 2 (surface-container, level 2)",
             "min-height: 44, pad-inline: 12, icon 20, icon gap 12 (8 on coarse pointers)",
-            "Outer 12 / Inner 4 → Checked [12,12,12,12] (tertiary-container)",
+            "Outer 12 / Inner 4 → Checked [12,12,12,12] (secondary-container)",
           ],
         ],
       },
@@ -635,7 +635,7 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
           [
             "Modal Popup (.m3e-command-palette)",
             "width: min(580px, 100dvw - 28px), max-height: min(72dvh, 520px), r = 24",
-            "surface-container-high + 1px outline-variant",
+            "surface-container-high, elevation-level3",
             "Entrance scale 0.95 → 1 & translateY -8px → 0 (fastSpatial); opacity (fastEffects)",
           ],
           [
@@ -823,13 +823,13 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
   "search-bar": {
     provenance: "official-m3e",
     provenanceSummary:
-      "Canonical Material 3 Expressive 56px full-pill SearchBar paired with a concentric 28px/20px suggestion popup and triple-layered CJK IME composition guard.",
-    tokenSources: ["SEARCH_BAR_TOKENS", "EXPRESSIVE_MOTION_SCHEME"],
+      "Canonical Material 3 Expressive 56px full-pill SearchBar paired with a shared segmented dropdown popup (16px container, 4px padding) anchored to the full bar and triple-layered CJK IME composition guard.",
+    tokenSources: ["SEARCH_BAR_TOKENS", "SEGMENTED_MENU_TOKENS", "EXPRESSIVE_MOTION_SCHEME"],
     aospSources: ["SearchBar.kt", "SearchBarTokens.kt", "SearchViewTokens.kt"],
     inspirationAndRationale: [
       {
-        title: "Strict Concentric Capsule Geometry (28px - 8px = 20px)",
-        body: "SearchBar pairs a 56px full-capsule input bar (28px radius, 16px inline padding) with an anchored suggestion popup sharing the exact 28px outer radius and 8px uniform padding. Each suggestion row therefore takes a concentric 20px resting corner radius (28 - 8 = 20) and tightens to 10px on press via fastSpatial (ζ = 0.6, k = 800).",
+        title: "Unified Dropdown Surface Anchored to the Full Capsule Bar",
+        body: "SearchBar renders a flat 56px full-capsule input container (28px radius, 16px inline padding, 2px primary inset focus stroke) and anchors its suggestion popup directly to the outer bar container so widths match cleanly. The suggestion popup reuses M3E segmented menu geometry: a 16px surface-container shell with 4px padding, 2px item gaps, and 12px/4px concentric item corners.",
       },
       {
         title: "Triple-Layered CJK IME Composition Guard",
@@ -839,7 +839,7 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
     geometryAndMotionTables: [
       {
         id: "search-bar-tokens-table",
-        title: "SearchBar & Concentric Suggestion Popup Geometry (SEARCH_BAR_TOKENS)",
+        title: "SearchBar & Suggestion Popup Geometry (SEARCH_BAR_TOKENS / SEGMENTED_MENU_TOKENS)",
         caption: "Units: px (= dp / pt)",
         columns: [
           "Element / Size",
@@ -865,16 +865,16 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
           ],
           [
             "Suggestion Popup",
-            "sideOffset: 6",
-            "28",
-            "8 uniform padding",
+            "sideOffset: 6 (anchored to bar)",
+            "16",
+            "4 uniform padding",
             "Portaled @base-ui/react/autocomplete popup",
           ],
           [
             "Suggestion Row",
-            "Full popup inner width",
-            "20 rest → 10 pressed",
-            "Concentric 28 - 8 = 20",
+            "Full popup inner width (min-height 44 / 56)",
+            "Outer 12 / Inner 4 → 12 pressed",
+            "Concentric 16 - 4 = 12",
             "fastSpatial (ζ = 0.6, k = 800) with 95ms press latch",
           ],
         ],
@@ -883,7 +883,7 @@ export const NAVIGATION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpe
     invariants: [
       "Outer wrapper MUST render <form role=\"search\"> so screen reader landmark navigation locates the search bar immediately.",
       "Enter keydown MUST NEVER trigger form submission when e.nativeEvent.isComposing is true, e.keyCode === 229, within 50ms of compositionend, or while aria-activedescendant points to a highlighted autocomplete suggestion.",
-      "Suggestion item rest radius MUST equal popupRadius - popupPadding (28 - 8 = 20px) to preserve optical concentricity.",
+      "Suggestion popup MUST anchor to the outer .m3e-search-bar container and share SEGMENTED_MENU_TOKENS geometry (16px container, 4px padding, 12px/4px item corners).",
       "Clear button MUST appear only when query.length > 0 and expose localized aria-label={t('searchBar.clear')}.",
     ],
     crossPlatformNotes: [

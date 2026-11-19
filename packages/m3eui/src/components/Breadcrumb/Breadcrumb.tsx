@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useM3EI18n } from "../../context/M3EContext.js";
 import { DropdownMenu } from "../Menu/Menu.js";
+import { useM3ERipple } from "../../internal/ripple.js";
 
 export type BreadcrumbSeparator = "slash" | "chevron";
 
@@ -32,6 +33,7 @@ function BreadcrumbAnchor({
   readonly item: M3EBreadcrumbItem;
   readonly isCurrent: boolean;
 }) {
+  const { rippleRef, rippleHandlers } = useM3ERipple(isCurrent);
   const linkClass = "m3e-breadcrumb__link";
   const content = (
     <>
@@ -58,8 +60,12 @@ function BreadcrumbAnchor({
           : linkClass,
         "aria-current": isCurrent ? "page" : undefined,
         onClick: item.onClick ?? item.render.props.onClick,
+        ...rippleHandlers,
       },
-      content,
+      <>
+        {content}
+        <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+      </>,
     );
   }
 
@@ -70,8 +76,10 @@ function BreadcrumbAnchor({
         aria-current={isCurrent ? "page" : undefined}
         className={linkClass}
         onClick={item.onClick}
+        {...rippleHandlers}
       >
         {content}
+        <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
       </a>
     );
   }
@@ -83,8 +91,10 @@ function BreadcrumbAnchor({
         aria-current={isCurrent ? "page" : undefined}
         className={`${linkClass} m3e-breadcrumb__btn`}
         onClick={item.onClick}
+        {...rippleHandlers}
       >
         {content}
+        <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
       </button>
     );
   }
@@ -98,6 +108,27 @@ function BreadcrumbAnchor({
     </span>
   );
 }
+
+const BreadcrumbEllipsisButton = React.forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement>
+>(function BreadcrumbEllipsisButton({ className, children, ...props }, ref) {
+  const { rippleRef, rippleHandlers } = useM3ERipple();
+  return (
+    <button
+      ref={ref}
+      type="button"
+      className={
+        className ? `m3e-breadcrumb__ellipsis ${className}` : "m3e-breadcrumb__ellipsis"
+      }
+      {...props}
+      {...rippleHandlers}
+    >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+      {children}
+    </button>
+  );
+});
 
 export function Breadcrumb({
   items,
@@ -160,13 +191,9 @@ export function Breadcrumb({
                   },
                 }))}
                 trigger={
-                  <button
-                    type="button"
-                    aria-label={t("breadcrumb.more")}
-                    className="m3e-breadcrumb__ellipsis"
-                  >
+                  <BreadcrumbEllipsisButton aria-label={t("breadcrumb.more")}>
                     …
-                  </button>
+                  </BreadcrumbEllipsisButton>
                 }
               />
             </li>

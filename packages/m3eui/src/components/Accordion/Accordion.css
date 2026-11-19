@@ -7,7 +7,7 @@
 .m3e-accordion__item {
   background-color: var(--m3e-color-surface-container-low);
   color: var(--m3e-color-on-surface);
-  border: 1px solid transparent;
+  border: 0;
   overflow: clip;
   transition:
     background-color var(--m3e-effects-default-duration, 210ms) ease-out,
@@ -17,19 +17,17 @@
 
 .m3e-accordion__item[data-open] {
   background-color: var(--m3e-color-surface-container);
-  border-color: var(--m3e-color-outline-variant);
-  box-shadow: 0 4px 14px color-mix(in srgb, var(--m3e-color-shadow) 8%, transparent);
 }
 
 .m3e-accordion[data-variant="outlined"] .m3e-accordion__item {
-  background-color: var(--m3e-color-surface-container-lowest);
-  border-color: var(--m3e-color-outline-variant);
+  background-color: var(--m3e-color-surface);
+  border: 1px solid var(--m3e-color-outline-variant);
   box-shadow: none;
 }
 
 .m3e-accordion[data-variant="plain"] .m3e-accordion__item {
   background-color: transparent;
-  border-color: transparent;
+  border: 0;
   box-shadow: none;
 }
 
@@ -51,15 +49,18 @@
 .m3e-accordion__header {
   margin: 0;
   display: flex;
+  border-radius: inherit;
 }
 
 .m3e-accordion__trigger {
+  position: relative;
   flex: 1 1 auto;
   width: 100%;
   display: flex;
   align-items: center;
   gap: 12px;
   border: 0;
+  border-radius: inherit;
   background: transparent;
   color: inherit;
   font: inherit;
@@ -69,24 +70,25 @@
   transition: background-color var(--m3e-effects-fast-duration, 140ms) ease-out;
 }
 
+.m3e-accordion__item[data-open] .m3e-accordion__trigger {
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
+}
+
 @media (hover: hover) {
-  .m3e-accordion__trigger:hover:where(:not([data-disabled], [data-pressed])) {
-    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 6%, transparent);
+  .m3e-accordion__trigger:hover:where(:not([data-disabled])) > .m3e-ripple::before {
+    opacity: var(--m3e-state-hover-opacity, 0.08);
   }
 }
 
-.m3e-accordion__trigger[data-pressed]:not([data-disabled]) {
-  background-color: color-mix(in srgb, var(--m3e-color-on-surface) 10%, transparent);
-}
-
 .m3e-accordion__trigger:focus-visible {
-  outline: 2.5px solid var(--m3e-color-primary);
+  outline: 3px solid var(--m3e-color-secondary);
   outline-offset: -3px;
   border-radius: inherit;
 }
 
 .m3e-accordion__trigger[data-disabled] {
-  opacity: 0.45;
+  opacity: 0.38;
   cursor: not-allowed;
 }
 
@@ -176,6 +178,7 @@
 }
 
 .m3e-accordion__expand-all {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -193,20 +196,18 @@
 }
 
 @media (hover: hover) {
-  .m3e-accordion__expand-all:hover:not(:disabled) {
-    background-color: var(--m3e-color-secondary-container);
-    color: var(--m3e-color-on-secondary-container);
-    border-color: transparent;
+  .m3e-accordion__expand-all:hover:not(:disabled) > .m3e-ripple::before {
+    opacity: var(--m3e-state-hover-opacity, 0.08);
   }
 }
 
 .m3e-accordion__expand-all:focus-visible {
-  outline: 2.5px solid var(--m3e-color-primary);
+  outline: 3px solid var(--m3e-color-secondary);
   outline-offset: 2px;
 }
 
 .m3e-accordion__expand-all:disabled {
-  opacity: 0.42;
+  opacity: 0.38;
   cursor: not-allowed;
 }
 

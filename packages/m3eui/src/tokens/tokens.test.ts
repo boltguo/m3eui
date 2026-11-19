@@ -740,6 +740,11 @@ describe("m3eui/tokens — AOSP Compose Material 3 Expressive 1.5.0 Parity", () 
   it("verifies dynamic shadow color-mix, em typescale tracking, lazy getMaterialShape, parseShortcutKeys, and AOSP micro-tokens", () => {
     const elevVars = generateM3ESystemCssVars();
     expect(elevVars["--m3e-elevation-level1"]).toContain("var(--m3e-color-shadow)");
+    for (const level of ["level1", "level2", "level3", "level4", "level5"] as const) {
+      const shadow = elevVars[`--m3e-elevation-${level}`]!;
+      expect(shadow).toContain("0 color-mix(");
+      expect(shadow).not.toMatch(/\b[1-9]\d*px\s+color-mix\(/);
+    }
     expect(elevVars["--m3e-state-pressed-opacity"]).toBe("10%");
     expect(elevVars["--m3e-state-press-opacity"]).toBe("var(--m3e-state-pressed-opacity)");
 

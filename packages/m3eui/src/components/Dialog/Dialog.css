@@ -29,7 +29,7 @@
   box-sizing: border-box;
   width: 100%;
   max-height: min(85dvh, 680px);
-  overflow-y: auto;
+  overflow: hidden;
   overscroll-behavior: contain;
   background-color: var(--m3e-color-surface-container-high);
   color: var(--m3e-color-on-surface);
@@ -74,13 +74,16 @@
 
 @media (hover: hover) {
   .m3e-dialog__close-btn:hover {
-    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 8%, transparent);
     color: var(--m3e-color-on-surface);
+  }
+
+  .m3e-dialog__close-btn:hover > .m3e-ripple::before {
+    opacity: var(--m3e-state-hover-opacity, 0.08);
   }
 }
 
 .m3e-dialog__close-btn:focus-visible {
-  outline: 2.5px solid var(--m3e-color-primary);
+  outline: 3px solid var(--m3e-color-secondary);
   outline-offset: 2px;
 }
 
@@ -107,7 +110,7 @@
 }
 
 .m3e-dialog__icon--alert {
-  color: var(--m3e-color-error);
+  color: var(--m3e-color-secondary);
 }
 
 .m3e-dialog__popup[data-has-icon] .m3e-dialog__title {
@@ -116,9 +119,11 @@
 
 .m3e-dialog__title {
   margin: 0;
-  font-size: 22px;
-  line-height: 28px;
-  font-weight: 600;
+  font-family: var(--m3e-typescale-headline-small-font, var(--m3e-font-brand, sans-serif));
+  font-size: var(--m3e-typescale-headline-small-size, 1.5rem);
+  line-height: var(--m3e-typescale-headline-small-line-height, 2rem);
+  font-weight: var(--m3e-typescale-headline-small-weight, 400);
+  letter-spacing: var(--m3e-typescale-headline-small-tracking, 0em);
   color: var(--m3e-color-on-surface);
 }
 
@@ -133,6 +138,12 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  flex: 1 1 auto;
+  min-block-size: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin: -6px;
+  padding: 6px;
 }
 
 .m3e-dialog__actions {
@@ -141,13 +152,6 @@
   justify-content: flex-end;
   flex-wrap: wrap;
   margin-top: 6px;
-}
-
-@media (hover: hover) {
-  .m3e-dialog__close-btn:hover {
-    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 10%, transparent);
-    color: var(--m3e-color-on-surface);
-  }
 }
 
 .m3e-dialog__backdrop:has(+ .m3e-command-palette) {

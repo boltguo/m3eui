@@ -305,7 +305,7 @@ export const INPUTS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>> 
     inspirationAndRationale: [
       {
         title: "Shared Menu Geometry",
-        body: "The popup reuses `SEGMENTED_MENU_TOKENS`: 16px container, 4px padding, 44px rows. Rows take positional corners (first 12/4, middle 4, last 4/12) and morph to a 12px `tertiary-container` shape when selected.",
+        body: "The popup reuses `SEGMENTED_MENU_TOKENS`: 16px container, 4px padding, 44px rows. Rows take positional corners (first 12/4, middle 4, last 4/12) and morph to a 12px `secondary-container` shape when selected.",
       },
       {
         title: "Zero-Jitter Bold-Width Reservation",
@@ -335,20 +335,20 @@ export const INPUTS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>> 
           ],
           [
             "Popup Container",
-            "`min-width: var(--anchor-width)`, `padding: 6px`, `sideOffset: 6px`, list `max-height: 296px`",
+            "`min-width: var(--anchor-width)`, `padding: 4px`, `sideOffset: 6px`, list `max-height: 296px`",
             "[16, 16, 16, 16]",
-            "`surface-container` + `1px outline-variant` border",
+            "`surface-container`, `elevation-level2`",
           ],
           [
             "Option Row (Rest / Highlighted)",
-            "Min height `42px` (`56px` with description), `padding: 8px 12px` (`10px 12px`), `itemGap: 2px`",
-            "[10, 10, 10, 10] (`16 - 6` concentric)",
+            "Min height `44px` (`56px` with description), `padding: 6px 12px` (`10px 12px`), `itemGap: 2px`",
+            "`[12, 12, 4, 4]` · `[4, 4, 4, 4]` · `[4, 4, 12, 12]`",
             "Transparent rest → `8% on-surface` state layer highlight (`14px / 20px w500`)",
           ],
           [
             "Option Row (Selected / Pressed)",
             "Same box metrics + `18×18px` trailing checkmark",
-            "Selected `[12, 12, 12, 12]`; Pressed `[6, 6, 6, 6]`",
+            "[12, 12, 12, 12]",
             "`secondary-container` / `on-secondary-container` (`w600`)",
           ],
         ],
@@ -577,21 +577,21 @@ export const INPUTS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>> 
             "46 × 54px (`gap: 4px`, `font: 18px`)",
             "[16, 6, 6, 16]",
             "[6, 16, 16, 6]",
-            "`surface-container-high` + `1.5px outline-variant`",
+            "`surface-container-high`, `0` border",
           ],
           [
             "Middle in Group (e.g. index `1`, `4`)",
             "46 × 54px (`gap: 4px`)",
             "[6, 6, 6, 6]",
             "[6, 6, 6, 6]",
-            "`surface-container-high` + `1.5px outline-variant`",
+            "`surface-container-high`, `0` border",
           ],
           [
             "Last in Group (e.g. index `2` before `–`, or `5`)",
             "46 × 54px (`gap: 4px`)",
             "[6, 16, 16, 6]",
             "[16, 6, 6, 16]",
-            "`surface-container-high` + `1.5px outline-variant`",
+            "`surface-container-high`, `0` border",
           ],
           [
             "Focused Slot (`isFocused`) or Single-Slot Group",
@@ -703,7 +703,7 @@ export const INPUTS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>> 
             "Picker Surface (`Docked` / Popover)",
             "Width `316px`, `padding: 20px`, stack `gap: 12px`",
             "[28, 28, 28, 28]",
-            "`surface-container-high` + `1px outline-variant` border",
+            "`surface-container-high` (`elevation-level3` in popover / modal)",
           ],
           [
             "Day Cell Button (7-column Grid)",
@@ -813,7 +813,7 @@ export const INPUTS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>> 
             "Picker Surface",
             "Width `min(100%, 316px)`, `padding: 22px`, `gap: 16px`",
             "[28, 28, 28, 28]",
-            "`surface-container-high` + `1px outline-variant` border",
+            "`surface-container-high` (`elevation-level3` in popover / modal)",
           ],
           [
             "Hour / Minute Header Chips",
@@ -950,13 +950,13 @@ export const INPUTS_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>> 
             "Error Summary (`showErrorSummary`)",
             "`padding: 12px 16px`, `gap: 6px`, list `padding-inline-start: 18px`",
             "[14, 14, 14, 14]",
-            "`error-container` / `on-error-container` + `1px` (`35% error`) border (`role=\"alert\"`)",
+            "`error-container` / `on-error-container` (`role=\"alert\"`)",
           ],
           [
             "`Fieldset` (`variant=\"tonal\"` default)",
             "`padding: 16px 18px 18px`, header `gap: 12px`, body `gap: 14px`",
             "[20, 20, 20, 20] (`largeIncreased`)",
-            "`surface-container-low` + `1px outline-variant` border",
+            "`surface-container-low`, `0` border",
           ],
           [
             "`Fieldset` (`outlined` / `plain`)",

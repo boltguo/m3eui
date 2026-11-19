@@ -1,3 +1,26 @@
+.m3e-list-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.m3e-list-group__label {
+  margin: 0;
+  padding-inline: 16px;
+  font-size: var(--m3e-typescale-label-large-size, 0.875rem);
+  line-height: var(--m3e-typescale-label-large-line-height, 1.25rem);
+  font-weight: var(--m3e-typescale-label-large-weight, 500);
+  letter-spacing: var(--m3e-typescale-label-large-tracking, 0.0071em);
+  color: var(--m3e-color-primary);
+}
+
+.m3e-list-group__label > :is(h1, h2, h3, h4, h5, h6) {
+  margin: 0;
+  font: inherit;
+  color: inherit;
+}
+
 .m3e-segmented-list {
   list-style: none;
   margin: 0;
@@ -23,15 +46,16 @@
   gap: 12px;
   padding: 10px 16px;
   min-height: 56px;
-  border: 1px solid transparent;
-  background-color: var(--m3e-color-surface-container-low);
+  border: 0;
+  background-color: var(--m3e-list-item-bg, var(--m3e-color-surface-container-low));
   color: var(--m3e-color-on-surface);
   font-family: inherit;
   text-align: start;
+  text-decoration: none;
   cursor: pointer;
-  transition-property: background-color, color, border-color;
-  transition-duration: var(--m3e-effects-fast-duration, 140ms);
-  transition-timing-function: var(--m3e-effects-fast-easing, ease-out);
+  transition-property: background-color, color;
+  transition-duration: var(--m3e-effects-default-duration, 200ms);
+  transition-timing-function: var(--m3e-effects-default-easing, ease-out);
 }
 
 .m3e-segmented-list__item[data-lines="2"] {
@@ -55,46 +79,52 @@
 }
 
 .m3e-segmented-list__item--compound {
+  cursor: default;
   padding-block: 0;
   padding-inline: 0 16px;
-  gap: 8px;
+  gap: 0;
 }
 
 .m3e-segmented-list__primary {
+  position: relative;
+  z-index: 1;
   flex: 1 1 auto;
+  align-self: stretch;
   min-width: 0;
   min-height: inherit;
   display: flex;
   align-items: inherit;
   gap: 12px;
   padding-block: 10px;
-  padding-inline: 16px 8px;
+  padding-inline: 16px 12px;
   border: 0;
-  border-radius: inherit;
+  border-start-start-radius: inherit;
+  border-end-start-radius: inherit;
+  border-start-end-radius: 4px;
+  border-end-end-radius: 4px;
   background: transparent;
   color: inherit;
   font: inherit;
   text-align: start;
+  text-decoration: none;
   cursor: pointer;
 }
 
-.m3e-segmented-list__primary:disabled {
+.m3e-segmented-list__primary:disabled,
+.m3e-segmented-list__primary[data-disabled] {
   cursor: not-allowed;
 }
 
 .m3e-segmented-list__primary:focus-visible {
-  outline: 2.5px solid var(--m3e-color-primary);
-  outline-offset: -2px;
+  outline: 3px solid var(--m3e-color-secondary);
+  outline-offset: -3px;
 }
 
 @media (hover: hover) {
-  .m3e-segmented-list__item:hover:where(:not([data-static], [data-selected], [data-disabled], [data-pressed])) {
-    background-color: var(--m3e-color-surface-container-high);
+  .m3e-segmented-list__item:hover:where(:not(.m3e-segmented-list__item--compound, [data-static], [data-disabled])) > .m3e-ripple::before,
+  .m3e-segmented-list__item--compound:where(:not([data-disabled])):has(> .m3e-segmented-list__primary:hover) > .m3e-ripple::before {
+    opacity: var(--m3e-state-hover-opacity, 0.08);
   }
-}
-
-.m3e-segmented-list__item[data-pressed]:where(:not([data-static], [data-selected], [data-disabled])) {
-  background-color: var(--m3e-color-surface-container-highest);
 }
 
 .m3e-segmented-list__item[data-selected] {
@@ -103,9 +133,13 @@
 }
 
 .m3e-segmented-list__item:focus-visible {
-  outline: 2.5px solid var(--m3e-color-primary);
+  outline: 3px solid var(--m3e-color-secondary);
   outline-offset: 2px;
   z-index: 2;
+}
+
+.m3e-segmented-list[data-variant="standard"] .m3e-segmented-list__item:focus-visible {
+  outline-offset: -3px;
 }
 
 .m3e-segmented-list__leading {
@@ -136,14 +170,16 @@
 }
 
 .m3e-segmented-list__headline {
-  font-size: 15px;
-  line-height: 22px;
-  font-weight: 500;
+  font-size: var(--m3e-typescale-body-large-size, 1rem);
+  line-height: var(--m3e-typescale-body-large-line-height, 1.5rem);
+  font-weight: var(--m3e-typescale-body-large-emphasized-weight, 500);
+  letter-spacing: var(--m3e-typescale-body-large-emphasized-tracking, 0.0094em);
 }
 
 .m3e-segmented-list__supporting {
-  font-size: 13px;
-  line-height: 18px;
+  font-size: var(--m3e-typescale-body-medium-size, 0.875rem);
+  line-height: var(--m3e-typescale-body-medium-line-height, 1.25rem);
+  letter-spacing: var(--m3e-typescale-body-medium-tracking, 0.0143em);
   color: var(--m3e-color-on-surface-variant);
 }
 
@@ -151,13 +187,36 @@
   color: color-mix(in srgb, var(--m3e-color-on-secondary-container) 82%, transparent);
 }
 
-.m3e-segmented-list__trailing {
+.m3e-segmented-list__chevron {
+  margin-inline-start: auto;
   flex-shrink: 0;
-  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--m3e-color-on-surface-variant);
+}
+
+.m3e-segmented-list__divider {
+  width: 1px;
+  height: 28px;
+  flex-shrink: 0;
+  align-self: center;
+  background-color: var(--m3e-color-outline-variant);
+}
+
+.m3e-segmented-list__trailing {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  font-size: var(--m3e-typescale-label-small-size, 0.6875rem);
   color: var(--m3e-color-on-surface-variant);
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+.m3e-segmented-list__item--compound > .m3e-segmented-list__trailing {
+  align-self: center;
+  padding-inline-start: 12px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -167,16 +226,16 @@
   }
 }
 
+.m3e-segmented-list:where([data-variant="standard"]) {
+  --m3e-list-item-bg: transparent;
+}
+
 .m3e-segmented-list[data-variant="standard"] {
   gap: 0;
   background-color: var(--m3e-color-surface-container-low);
   border-radius: var(--m3e-shape-corner-large);
   overflow: hidden;
-  border: 1px solid var(--m3e-color-outline-variant);
-}
-
-.m3e-segmented-list[data-variant="standard"] .m3e-segmented-list__item {
-  background-color: transparent;
+  border: 0;
 }
 
 .m3e-segmented-list[data-variant="standard"][data-dividers="full"]
@@ -203,7 +262,8 @@
 
 @media (forced-colors: active) {
   .m3e-segmented-list__item {
-    border: 1px solid ButtonText;
+    outline: 1px solid ButtonText;
+    outline-offset: -1px;
   }
 
   .m3e-segmented-list__item[data-selected] {

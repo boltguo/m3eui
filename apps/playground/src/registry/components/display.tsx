@@ -59,10 +59,10 @@ function CardInteractiveDemo(): React.JSX.Element {
       id: "spatial",
       variant: "filled" as const,
       title: copy({ zh: "空间物理弹簧", en: "Spatial Spring" }),
-      subtitle: "fastSpatial · ζ=0.6, k=800",
+      subtitle: "SPEC_2025 · CornerMedium (12px)",
       body: copy({
-        zh: "悬停时圆角扩展至 20px，按住时弹性收紧至 12px。",
-        en: "Corners expand to 20px on hover and compress to 12px while pressed.",
+        zh: "采用 AOSP 静态 12px 圆角与按压水波纹反馈，聚焦清晰层级。",
+        en: "Uses AOSP static 12px corners with pressed ripple state layers.",
       }),
     },
     {
@@ -81,8 +81,8 @@ function CardInteractiveDemo(): React.JSX.Element {
       title: copy({ zh: "35 种多边形形变", en: "35 Morphing Polygons" }),
       subtitle: "Cubic Bézier Normalization",
       body: copy({
-        zh: "点击卡片切换激活焦点并实时触发圆角物理回弹。",
-        en: "Click any card to switch focus and feel live corner spring physics.",
+        zh: "点击卡片切换激活焦点并观察静态 12px 圆角与状态层水波纹。",
+        en: "Click any card to switch focus and inspect static 12px corners and state-layer ripple.",
       }),
     },
   ];
@@ -138,8 +138,8 @@ function CardInteractiveDemo(): React.JSX.Element {
         <SparkleIcon size={14} />
         <span>
           {copy({
-            zh: `已触发卡片交互 ${pressCount} 次（长按卡片可观察圆角形变）`,
-            en: `Triggered ${pressCount} card activations (press and hold to inspect corner morph)`,
+            zh: `已触发卡片交互 ${pressCount} 次（点击卡片可观察按压水波纹反馈）`,
+            en: `Triggered ${pressCount} card activations (click any card to inspect pressed ripple)`,
           })}
         </span>
       </div>
@@ -257,41 +257,37 @@ function CardDisabledComparisonDemo(): React.JSX.Element {
           </span>
         }
         subtitle={copy({
-          zh: `点击或按住体验弹性圆角 · 已点击 ${clicks} 次`,
-          en: `Click or hold for spring corner morph · ${clicks} clicks`,
+          zh: `点击体验按压水波纹 · 已点击 ${clicks} 次`,
+          en: `Click to inspect pressed ripple · ${clicks} clicks`,
         })}
         onClick={() => setClicks((c) => c + 1)}
       >
         {copy({
-          zh: "具备键盘焦点环、悬停阴影抬升与按压态圆角物理收缩反馈。",
-          en: "Provides keyboard focus ring, hover elevation lift, and pressed corner spring compression.",
+          zh: "具备键盘焦点环、状态层高亮与静态 12px 圆角容器反馈。",
+          en: "Provides keyboard focus ring, state-layer highlight, and static 12px corner geometry.",
         })}
       </Card>
 
       <Card
         variant="outlined"
-        interactive={false}
+        interactive
+        disabled
         title={
           <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
             <span>{copy({ zh: "已禁用交互卡片", en: "Disabled Interactive Card" })}</span>
             <Chip size="sm" tone="neutral">
-              {copy({ zh: "只读锁定", en: "Locked" })}
+              {copy({ zh: "已禁用", en: "Disabled" })}
             </Chip>
           </span>
         }
         subtitle={copy({
-          zh: "权限受限 · 不响应指针按压与焦点激活",
-          en: "Restricted · Ignores pointer press and focus activation",
+          zh: "disabled={true} · 阻止指针按压与键盘激活",
+          en: "disabled={true} · Suppresses pointer press and keyboard activation",
         })}
-        style={{
-          opacity: 0.48,
-          cursor: "not-allowed",
-          userSelect: "none",
-        }}
       >
         {copy({
-          zh: "当归档或缺少写权限时关闭 interactive 并降级为静态容器，避免误触提交。",
-          en: "Disable interactive mode when archived or read-only so pointer and keyboard events cannot fire.",
+          zh: "通过 disabled 锁定交互卡片，自动降低不透明度并禁用点击与焦点激活。",
+          en: "Pass disabled on interactive cards to apply 0.38 disabled surface treatment and block activation.",
         })}
       </Card>
     </div>
@@ -846,13 +842,12 @@ function SegmentedListControlsDemo(): React.JSX.Element {
           })}
           onClick={() => setPushEnabled((v) => !v)}
           trailing={
-            <span onClick={(e) => e.stopPropagation()}>
-              <Switch
-                checked={pushEnabled}
-                onCheckedChange={setPushEnabled}
-                aria-label={copy({ zh: "切换实时构建推送", en: "Toggle live build push alerts" })}
-              />
-            </span>
+            <Switch
+              showIcons
+              checked={pushEnabled}
+              onCheckedChange={setPushEnabled}
+              aria-label={copy({ zh: "切换实时构建推送", en: "Toggle live build push alerts" })}
+            />
           }
         />
         <ListItem
@@ -864,13 +859,12 @@ function SegmentedListControlsDemo(): React.JSX.Element {
           })}
           onClick={() => setDigestEnabled((v) => !v)}
           trailing={
-            <span onClick={(e) => e.stopPropagation()}>
-              <Switch
-                checked={digestEnabled}
-                onCheckedChange={setDigestEnabled}
-                aria-label={copy({ zh: "切换每周性能周报", en: "Toggle weekly performance digest" })}
-              />
-            </span>
+            <Switch
+              showIcons
+              checked={digestEnabled}
+              onCheckedChange={setDigestEnabled}
+              aria-label={copy({ zh: "切换每周性能周报", en: "Toggle weekly performance digest" })}
+            />
           }
         />
         <ListItem
@@ -897,6 +891,90 @@ function SegmentedListControlsDemo(): React.JSX.Element {
           trailing={<Chip size="sm" tone="neutral">v1</Chip>}
         />
       </List>
+    </div>
+  );
+}
+
+function SegmentedListSettingsDemo(): React.JSX.Element {
+  const copy = useCopyResolver();
+  const [autoBrightness, setAutoBrightness] = React.useState(true);
+  const [alwaysOn, setAlwaysOn] = React.useState(false);
+  const [activeRow, setActiveRow] = React.useState<string>("adaptive");
+
+  const activeLabelMap: Record<string, string> = {
+    brightness: copy({ zh: "亮度 · 61%", en: "Brightness · 61%" }),
+    adaptive: copy({ zh: "自动调节亮度", en: "Adaptive brightness" }),
+    aod: copy({ zh: "熄屏显示", en: "Always show time and info" }),
+    navigation: copy({ zh: "导航模式", en: "Navigation mode" }),
+  };
+
+  return (
+    <div
+      style={
+        {
+          maxWidth: 460,
+          padding: 16,
+          borderRadius: 20,
+          backgroundColor: "var(--m3e-color-surface-container)",
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+          "--m3e-list-item-bg":
+            "light-dark(var(--m3e-color-surface-bright), var(--m3e-color-surface-container-high))",
+        } as React.CSSProperties
+      }
+    >
+      <List
+        variant="segmented"
+        label={copy({ zh: "亮度与显示", en: "Display & Brightness" })}
+      >
+        <ListItem
+          headline={copy({ zh: "亮度", en: "Brightness" })}
+          supportingText="61%"
+          onClick={() => setActiveRow("brightness")}
+        />
+        <ListItem
+          headline={copy({ zh: "自动调节亮度", en: "Adaptive brightness" })}
+          chevron
+          onClick={() => setActiveRow("adaptive")}
+          trailing={
+            <Switch
+              showIcons
+              checked={autoBrightness}
+              onCheckedChange={setAutoBrightness}
+              aria-label={copy({ zh: "自动调节亮度", en: "Adaptive brightness" })}
+            />
+          }
+        />
+        <ListItem
+          headline={copy({ zh: "熄屏显示", en: "Always show time and info" })}
+          supportingText={copy({
+            zh: "显示时间、日期等信息",
+            en: "Show time, date, and notifications",
+          })}
+          chevron
+          onClick={() => setActiveRow("aod")}
+          trailing={
+            <Switch
+              showIcons
+              checked={alwaysOn}
+              onCheckedChange={setAlwaysOn}
+              aria-label={copy({ zh: "熄屏显示", en: "Always show time and info" })}
+            />
+          }
+        />
+        <ListItem
+          headline={copy({ zh: "导航模式", en: "Navigation mode" })}
+          chevron
+          onClick={() => setActiveRow("navigation")}
+        />
+      </List>
+      <div style={{ paddingInline: 16, fontSize: 12.5, color: "var(--m3e-color-on-surface-variant)" }}>
+        {copy({
+          zh: `最近进入：${activeLabelMap[activeRow] ?? activeRow}`,
+          en: `Active target: ${activeLabelMap[activeRow] ?? activeRow}`,
+        })}
+      </div>
     </div>
   );
 }
@@ -1508,8 +1586,8 @@ export const DISPLAY_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
     slug: "card",
     title: "Card",
     subtitle: {
-      zh: "具备填充、抬升与描边三种表面层级的内容卡片容器，支持交互态弹性圆角形变。",
-      en: "Surface container in filled, elevated, and outlined variants with spring-driven interactive corner morphing.",
+      zh: "具备填充、抬升与描边三种表面层级的内容卡片容器，遵循 AOSP 12px 圆角与按压水波纹规范。",
+      en: "Surface container in filled, elevated, and outlined variants following AOSP 12px corners and state-layer ripple.",
     },
     importStatement: 'import { Card } from "m3eui";',
     primitive: "@base-ui/react/button",
@@ -1566,12 +1644,12 @@ export const DISPLAY_COMPONENT_DOCS: readonly ComponentDocSpec[] = [
       {
         id: "card-interactive",
         title: {
-          zh: "可交互按压与弹簧圆角",
-          en: "Interactive Spring Morphing",
+          zh: "可交互按压与状态层反馈",
+          en: "Interactive State-Layer Ripple",
         },
         description: {
-          zh: "开启 interactive 后渲染无障碍按钮语义，圆角在 16px（静止）、20px（悬停）与 12px（按压）间通过 fastSpatial 物理弹簧平滑过渡。",
-          en: "Setting interactive enables keyboard and pointer semantics while morphing corners between 16px rest, 20px hover, and 12px pressed states.",
+          zh: "开启 interactive 后渲染无障碍按钮语义，遵循 AOSP 规范保持 12px 静态圆角并通过状态层高亮与水波纹响应按压。",
+          en: "Setting interactive enables keyboard and pointer semantics while keeping AOSP 12px static corners with state-layer highlight and ripple feedback.",
         },
         code: `import { Card, Chip } from "m3eui";
 
@@ -1580,11 +1658,11 @@ const [selected, setSelected] = React.useState("spatial");
 <Card
   variant="filled"
   interactive
-  title="Spatial Spring"
-  subtitle="fastSpatial · ζ=0.6, k=800"
+  title="Dynamic Surface"
+  subtitle="SPEC_2025 · CornerMedium (12px)"
   onClick={() => setSelected("spatial")}
 >
-  Corners expand to 20px on hover and compress to 12px while pressed.
+  Uses AOSP static 12px corners with pressed ripple state layers.
 </Card>`,
         render: () => <CardInteractiveDemo />,
       },
@@ -1644,20 +1722,20 @@ const [selected, setSelected] = React.useState("spatial");
     variant="outlined"
     interactive
     title="Active Interactive Card"
-    subtitle="Click or hold for spring corner morph"
+    subtitle="Click to inspect pressed ripple"
     onClick={() => console.log("Activated")}
   >
-    Provides keyboard focus ring and pressed corner spring compression.
+    Provides keyboard focus ring, state-layer highlight, and static 12px corners.
   </Card>
 
   <Card
     variant="outlined"
-    interactive={false}
+    interactive
+    disabled
     title="Disabled Interactive Card"
-    subtitle="Restricted · Ignores pointer press"
-    style={{ opacity: 0.48, cursor: "not-allowed" }}
+    subtitle="disabled={true} · Suppresses press"
   >
-    Disable interactive mode when archived or read-only.
+    Pass disabled to block pointer and keyboard activation with 0.38 surface treatment.
   </Card>
 </div>`,
         render: () => <CardDisabledComparisonDemo />,
@@ -1722,8 +1800,49 @@ const [selected, setSelected] = React.useState("spatial");
             type: "boolean",
             defaultValue: "false",
             description: {
-              zh: "开启后支持键盘与指针点击，并启用悬停/按压弹簧圆角形变。",
-              en: "Enables button interaction semantics and spring corner radius morphing.",
+              zh: "开启后支持键盘与指针点击，并渲染按压水波纹与焦点环。",
+              en: "Enables button interaction semantics, pressed state-layer ripple, and focus ring.",
+            },
+          },
+          {
+            name: "disabled",
+            type: "boolean",
+            defaultValue: "false",
+            description: {
+              zh: "禁用交互态卡片或链接卡片的点击与焦点激活，并应用 0.38 不透明度。",
+              en: "Disables pointer and keyboard activation on interactive or link cards with 0.38 opacity.",
+            },
+          },
+          {
+            name: "href",
+            type: "string",
+            description: {
+              zh: "设置链接地址并将卡片渲染为无障碍锚点。",
+              en: "Destination URL turning the card into an accessible anchor surface.",
+            },
+          },
+          {
+            name: "target",
+            type: "string",
+            description: {
+              zh: "链接打开窗口目标（配合 href 使用）。",
+              en: "Browsing context target for link cards.",
+            },
+          },
+          {
+            name: "rel",
+            type: "string",
+            description: {
+              zh: "链接关系属性（外链默认补充安全属性）。",
+              en: "Anchor relationship attribute for link cards.",
+            },
+          },
+          {
+            name: "render",
+            type: "React.ReactElement",
+            description: {
+              zh: "自定义宿主元素（例如框架 Router Link）。",
+              en: "Custom element renderer (such as a router Link component).",
             },
           },
           {
@@ -2256,8 +2375,8 @@ const [loading, setLoading] = React.useState(true);
           en: "Grouped Seam Topology",
         },
         description: {
-          zh: "列表自动感知子项索引：首项顶部 16px、中间接缝 4px、末项底部 16px，悬停与按压时独立进行四元圆角物理回弹。",
-          en: "Automatically assigns 16px outer caps and 4px inner seam corners across items, animating each corner via fastSpatial springs.",
+          zh: "列表自动感知子项索引：首项顶部 16px、中间接缝 4px、末项底部 16px，仅在按压与选中时独立进行四元圆角物理回弹（悬停仅高亮状态层）。",
+          en: "Automatically assigns 16px outer caps and 4px inner seam corners across items, animating corners via fastSpatial springs on press and selection.",
         },
         code: `import { List, ListItem } from "m3eui";
 
@@ -2352,6 +2471,39 @@ const [selected, setSelected] = React.useState(["expressive"]);
         render: () => <SegmentedListControlsDemo />,
       },
       {
+        id: "segmented-list-two-target",
+        title: {
+          zh: "分组设置与双热区开关",
+          en: "Grouped Settings & Two-Target Switch",
+        },
+        description: {
+          zh: "通过 label 原生绑定主色分组标题，组合 chevron 与 trailing 独立分割开关实现 M3E 设置页双热区交互。",
+          en: "Use List label for primary-tinted group headers and combine ListItem chevron with trailing Switch for independent two-target settings rows.",
+        },
+        code: `import { List, ListItem, Switch } from "m3eui";
+
+<div
+  style={{
+    padding: 16,
+    borderRadius: 20,
+    backgroundColor: "var(--m3e-color-surface-container)",
+    "--m3e-list-item-bg": "light-dark(var(--m3e-color-surface-bright), var(--m3e-color-surface-container-high))",
+  } as React.CSSProperties}
+>
+  <List variant="segmented" label="Brightness">
+    <ListItem headline="Brightness" supportingText="61%" onClick={() => openDetail("brightness")} />
+    <ListItem
+      headline="Adaptive brightness"
+      chevron
+      onClick={() => openDetail("adaptive")}
+      trailing={<Switch showIcons checked={auto} onCheckedChange={setAuto} aria-label="Adaptive brightness" />}
+    />
+    <ListItem headline="Navigation mode" chevron onClick={() => openDetail("navigation")} />
+  </List>
+</div>`,
+        render: () => <SegmentedListSettingsDemo />,
+      },
+      {
         id: "standard-list-dividers",
         title: {
           zh: "标准连续列表与内缩分割线 (List & ListItem)",
@@ -2390,9 +2542,17 @@ const [selected, setSelected] = React.useState(["expressive"]);
         title: "List Props",
         rows: [
           {
+            name: "label",
+            type: "React.ReactNode",
+            description: {
+              zh: "可选主色分组标题，自动生成唯一 ID 并通过 aria-labelledby 关联至列表。",
+              en: "Optional primary-tinted group header linked to the list via aria-labelledby.",
+            },
+          },
+          {
             name: "variant / dividers",
             type: '"segmented" | "standard" / "none" | "full" | "inset"',
-            defaultValue: '"segmented" / "none" ("full" on List)',
+            defaultValue: '"standard" / "full" ("none" when segmented)',
             description: {
               zh: "分段圆角模式或连续列表模式，以及分割线样式。",
               en: "Segmented vs standard continuous geometry and divider mode.",
@@ -2408,19 +2568,19 @@ const [selected, setSelected] = React.useState(["expressive"]);
             },
           },
           {
-            name: "aria-label",
+            name: "aria-label / aria-labelledby",
             type: "string",
             description: {
-              zh: "列表容器的无障碍标签。",
-              en: "Accessible label applied to the underlying list element.",
+              zh: "列表容器的无障碍名称或外部关联标题 ID。",
+              en: "Accessible label or explicit labelling element ID applied to the list.",
             },
           },
           {
             name: "className",
             type: "string",
             description: {
-              zh: "附加自定义类名。",
-              en: "Additional CSS class name.",
+              zh: "附加自定义类名（设置 label 时作用于外层分组容器）。",
+              en: "Additional CSS class name (applied to the group wrapper when label is set).",
             },
           },
         ],
@@ -2462,6 +2622,15 @@ const [selected, setSelected] = React.useState(["expressive"]);
             },
           },
           {
+            name: "chevron / trailingDivider",
+            type: "boolean",
+            defaultValue: "false / auto",
+            description: {
+              zh: "在主交互区尾部渲染自动适配 RTL 的导航箭头；与 trailing 组合时默认渲染双热区竖向分割线。",
+              en: "Renders an RTL-aware navigation chevron inside the primary action; defaults trailingDivider to true when paired with trailing.",
+            },
+          },
+          {
             name: "lines",
             type: "1 | 2 | 3",
             defaultValue: "supportingText ? 2 : 1",
@@ -2489,11 +2658,19 @@ const [selected, setSelected] = React.useState(["expressive"]);
             },
           },
           {
-            name: "onClick",
-            type: "() => void",
+            name: "href / render",
+            type: "string / React.ReactElement",
             description: {
-              zh: "点击列表项时的回调。",
-              en: "Handler invoked when the list item is activated.",
+              zh: "将主操作区渲染为原生 <a> 或自定义路由链接组件。",
+              en: "Renders the primary action as a native <a> link or custom router element.",
+            },
+          },
+          {
+            name: "onClick",
+            type: "React.MouseEventHandler<HTMLElement>",
+            description: {
+              zh: "点击列表项或双热区主操作区时的回调。",
+              en: "Handler invoked when the row or compound primary region is activated.",
             },
           },
         ],
@@ -2956,7 +3133,7 @@ const [filters, setFilters] = React.useState(["spring", "a11y"]);
       en: "Polygon-clipped Avatar and overlapping AvatarGroup with +N overflow.",
     },
     importStatement: 'import { Avatar, AvatarGroup } from "m3eui";',
-    primitive: "@base-ui/react/avatar",
+    primitive: "native <img>",
     scenarios: [
       {
         id: "avatar-shapes",
@@ -3520,7 +3697,6 @@ const [filters, setFilters] = React.useState(["spring", "a11y"]);
   {
     slug: "empty",
     title: "Empty",
-    isNew: true,
     subtitle: {
       zh: "内置 Material 3 Expressive 多边形徽章底座的空状态占位组件，支持自定义恢复操作与紧凑内联布局。",
       en: "Expressive empty state placeholder featuring an AOSP polygon emblem backdrop, custom icons, recovery actions, and compact inline sizing.",

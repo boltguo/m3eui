@@ -11,6 +11,7 @@ import { useM3EScalarSpringEffect, usePressHoldState } from "../../hooks/useM3ES
 import { useFieldsetDisabled } from "../../internal/fieldOutline.js";
 import { FormFieldScope, useFormReset } from "../../internal/formField.js";
 import { CheckIcon, CloseIcon } from "../../internal/icons.js";
+import { mergeInteractionHandlers, useM3ERipple } from "../../internal/ripple.js";
 
 export interface M3ESwitchProps {
   readonly checked?: boolean;
@@ -62,6 +63,22 @@ export const Switch = React.forwardRef<HTMLElement, M3ESwitchProps>(
     useFormReset(inputRef, () => setUncontrolledChecked(defaultChecked), controlledChecked === undefined);
 
     const { isPressed, pressHandlers } = usePressHoldState(isDisabled || readOnly);
+    const { rippleRef, rippleHandlers } = useM3ERipple(isDisabled || readOnly, {
+      unbounded: true,
+    });
+    const mergedHandlers = mergeInteractionHandlers(pressHandlers, rippleHandlers);
+    const pointerHandlers = {
+      onPointerDown: mergedHandlers.onPointerDown,
+      onPointerUp: mergedHandlers.onPointerUp,
+      onPointerLeave: mergedHandlers.onPointerLeave,
+      onPointerCancel: mergedHandlers.onPointerCancel,
+      onLostPointerCapture: mergedHandlers.onLostPointerCapture,
+    };
+    const keyboardHandlers = {
+      onKeyDown: mergedHandlers.onKeyDown,
+      onKeyUp: mergedHandlers.onKeyUp,
+      onBlur: mergedHandlers.onBlur,
+    };
 
     const resolvedCheckedIcon =
       checkedIcon !== undefined
@@ -127,7 +144,7 @@ export const Switch = React.forwardRef<HTMLElement, M3ESwitchProps>(
       }
       style={!label ? style : undefined}
       data-pressed={isPressed ? "" : undefined}
-      {...pressHandlers}
+      {...(label ? keyboardHandlers : mergedHandlers)}
     >
       <BaseSwitch.Thumb
         ref={thumbRef}
@@ -138,6 +155,7 @@ export const Switch = React.forwardRef<HTMLElement, M3ESwitchProps>(
           translate: `${(rtlSign * thumbStateRef.current.offsetPx).toFixed(2)}px -50%`,
         }}
       >
+        <span ref={rippleRef} className="m3e-ripple m3e-switch__halo" aria-hidden="true" />
         {isChecked && resolvedCheckedIcon ? (
           <span
             className="m3e-switch__icon"
@@ -183,6 +201,7 @@ export const Switch = React.forwardRef<HTMLElement, M3ESwitchProps>(
           : "m3e-control-row m3e-switch-row"
       }
       data-disabled={isDisabled ? "" : undefined}
+      {...(pointerHandlers as unknown as React.LabelHTMLAttributes<HTMLLabelElement>)}
       style={{
         minBlockSize: `${SWITCH_TOKENS.minTouchTarget}px`,
         ...style,

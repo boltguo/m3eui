@@ -14,7 +14,7 @@
   border-radius: 14px;
   background-color: var(--m3e-color-error-container);
   color: var(--m3e-color-on-error-container);
-  border: 1px solid color-mix(in srgb, var(--m3e-color-error) 35%, transparent);
+  border: 0;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -44,12 +44,12 @@
 }
 
 .m3e-fieldset[data-variant="tonal"] {
-  border: 1px solid var(--m3e-color-outline-variant);
+  border: 0;
   background-color: var(--m3e-color-surface-container-low);
 }
 
 .m3e-fieldset[data-variant="outlined"] {
-  border: 1px solid var(--m3e-color-outline);
+  border: 1px solid var(--m3e-color-outline-variant);
   background-color: transparent;
 }
 
@@ -60,7 +60,7 @@
 }
 
 .m3e-fieldset[data-disabled] {
-  opacity: 0.42;
+  opacity: 0.38;
 }
 
 .m3e-fieldset__legend {

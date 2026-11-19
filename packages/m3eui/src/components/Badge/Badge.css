@@ -33,18 +33,19 @@
 
 .m3e-badge[data-anchored].m3e-badge--dot {
   position: absolute;
-  top: -1px;
-  inset-inline-end: -2px;
+  top: 2px;
+  inset-inline-end: 2px;
 }
 
 .m3e-badge[data-anchored].m3e-badge--pill {
   position: absolute;
-  top: -6px;
-  inset-inline-end: -10px;
+  top: -4px;
+  inset-inline-end: -4px;
 }
 
 @media (forced-colors: active) {
   .m3e-badge {
     background-color: Highlight;
+    color: HighlightText;
   }
 }

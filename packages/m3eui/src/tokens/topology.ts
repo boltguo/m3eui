@@ -603,10 +603,11 @@ export const SEGMENTED_MENU_TOKENS = {
   containerPadding: 4,
   groupGap: 2,
   groupInnerRadius: SHAPE_CORNER_TOKENS.small,
-  itemGap: 0,
+  itemGap: 2,
   itemOuterRadius: SHAPE_CORNER_TOKENS.medium,
   itemInnerRadius: SHAPE_CORNER_TOKENS.extraSmall,
   itemHeight: 44,
+  itemTwoLineMinHeight: 56,
   itemPaddingInline: 12,
 } as const;
 
@@ -616,6 +617,7 @@ export function resolveSegmentedMenuItemCorners(input: {
   readonly isFirstInGroup?: boolean;
   readonly isLastInGroup?: boolean;
   readonly isSelected?: boolean;
+  readonly isPressed?: boolean;
 }): CornerTuple {
   const {
     index,
@@ -623,10 +625,11 @@ export function resolveSegmentedMenuItemCorners(input: {
     isFirstInGroup = index <= 0,
     isLastInGroup = index >= count - 1,
     isSelected = false,
+    isPressed = false,
   } = input;
   const { itemOuterRadius: outer, itemInnerRadius: inner } = SEGMENTED_MENU_TOKENS;
 
-  if (count <= 1 || (isFirstInGroup && isLastInGroup) || isSelected) {
+  if (count <= 1 || (isFirstInGroup && isLastInGroup) || isSelected || isPressed) {
     return [outer, outer, outer, outer];
   }
   const topR = isFirstInGroup ? outer : inner;
@@ -1010,7 +1013,7 @@ export const BADGE_TOKENS = {
 
 export const CARD_TOKENS = {
   restRadius: SHAPE_CORNER_TOKENS.medium,
-  hoverRadius: SHAPE_CORNER_TOKENS.largeIncreased,
+  hoverRadius: SHAPE_CORNER_TOKENS.medium,
   pressedRadius: SHAPE_CORNER_TOKENS.medium,
   padding: 20,
 } as const;
@@ -1133,10 +1136,10 @@ export const EXTENDED_FAB_SPECS: Record<ExtendedFabSize, ExtendedFabSpec> = {
 export const SEARCH_BAR_TOKENS = {
   height: 56,
   radius: 28,
-  popupRadius: 28,
-  popupPadding: 8,
-  itemRadius: 20,
-  itemPressedRadius: 10,
+  popupRadius: SHAPE_CORNER_TOKENS.large,
+  popupPadding: 4,
+  itemRadius: SHAPE_CORNER_TOKENS.medium,
+  itemPressedRadius: SHAPE_CORNER_TOKENS.medium,
   horizontalPadding: 16,
   iconSize: 22,
 } as const;

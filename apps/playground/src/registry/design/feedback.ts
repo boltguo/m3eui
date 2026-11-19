@@ -196,7 +196,7 @@ export const FEEDBACK_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>
             "`min 280px`, `max 520px` (`calc(100vw - 32px)`), `max-height: min(85dvh, 680px)`",
             "`padding: 24px`, stack `gap: 14px`",
             "[28, 28, 28, 28]",
-            "`surface-container-high` + `1px outline-variant` border, `elevation-3`",
+            "`surface-container-high`, `elevation-level3`",
           ],
           [
             "Backdrop Scrim",
@@ -379,7 +379,7 @@ export const FEEDBACK_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>
             "`width: 100%`, `maxWidth: 640px`, `maxHeight: min(85dvh, 720px)`",
             "[0, 0, 28, 28]",
             "`swipeDirection=\"up\"`",
-            "`padding: 24px`, `surface-container-low` + `1px outline-variant` border",
+            "`padding: 24px`, `surface-container-low`, `elevation-level1`",
           ],
           [
             "Bottom Drag Handle (`showHandle`)",
@@ -651,7 +651,7 @@ export const FEEDBACK_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>
       },
       {
         title: "7-Shape Morphing `LoadingIndicator` & Semantic Capacity `Meter`",
-        body: "For short indeterminate waits (`< 5s`), `LoadingIndicator` (`48px` container, `38px` active glyph, anti-clipping scale `≈ 0.6605`) cycles through 7 normalized `[0..1]²` cubic-Bezier `MaterialShapes`—`softBurst → cookie9Sided → pentagon → pill → sunny → cookie4Sided → oval`—every `650ms` via an underdamped spring (`ζ = 0.6, k = 200`, `~9.5%` morph overshoot) with a `+90°` quarter-turn per step plus a continuous `4666ms` `360°` global rotation. Conversely, static capacity gauges (storage, quota, battery) use `Meter` (`role=\"meter\"`), which shares M3E `8px` disjoint-gap geometry while shifting fill color across `70%` (`tertiary` warning) and `90%` (`error` critical) thresholds.",
+        body: "For short indeterminate waits (`< 5s`), `LoadingIndicator` (`48px` container, `38px` active glyph, anti-clipping scale `≈ 0.6605`) cycles through 7 normalized `[0..1]²` cubic-Bezier `MaterialShapes`—`softBurst → cookie9Sided → pentagon → pill → sunny → cookie4Sided → oval`—every `650ms` via an underdamped spring (`ζ = 0.6, k = 200`, `~9.5%` morph overshoot) with a `+90°` quarter-turn per step plus a continuous `4666ms` `360°` global rotation. Conversely, static capacity gauges (storage, quota, battery) use `Meter` (`role=\"meter\"`), which shares M3E `8px` disjoint-gap geometry while shifting fill color across `70%` (`warning`) and `90%` (`error` critical) thresholds.",
       },
     ],
     geometryAndMotionTables: [
@@ -677,7 +677,7 @@ export const FEEDBACK_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>
           ],
           [
             "`CircularProgressIndicator` (`sm | md | lg`)",
-            "`sm`: `36px / 4px`; `md`: `48px / 4.5px`; `lg`: `64px / 6px`",
+            "`sm`: `32px / 3.5px`; `md`: `40px / 4px`; `lg`: `56px / 5px`",
             "Arc clearance `trackGap (4px) + strokeWidth` between round caps",
             "Concentric SVG arcs starting at `-90°` (`12 o'clock`)",
             "Active `primary`; rest arc `secondary-container`",
@@ -708,7 +708,7 @@ export const FEEDBACK_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>
             "Track height `8px`, full pill caps (`[9999, 9999, 9999, 9999]`)",
             "`trackGap = 4px` (`0` at `0%` or `100%`), strictly determinate",
             "Threshold fill: `< 70%` normal, `>= 70%` warning, `>= 90%` critical",
-            "`< 70%` `primary` · `70%–89%` `tertiary` · `>= 90%` `error`; track `secondary-container`",
+            "`< 70%` `primary` · `70%–89%` `warning` · `>= 90%` `error`; track `secondary-container`",
           ],
         ],
       },
@@ -733,7 +733,7 @@ export const FEEDBACK_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>
           ],
           [
             "`LinearWavy` Phase Drift & Indeterminate Dual-Line",
-            "`1 λ/s` (`40px/s` det, `20px/s` indet); `1800ms` indeterminate cycle",
+            "`1 λ/s` (`40px/s` det, `20px/s` indet); `1750ms` indeterminate cycle",
             "Line 1 (`0ms/750ms` head, `333ms/850ms` tail) + Line 2 (`1000ms/567ms` head, `1267ms/533ms` tail); `500ms` amplitude ramp",
           ],
           [
@@ -851,7 +851,7 @@ export const FEEDBACK_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>
             "`maxWidth: 312px` (`min(312px, calc(100vw - 24px))`), `sideOffset: 10px` (default `side=\"bottom\"`)",
             "`padding: 12px 16px`, stack `gap: 6px` (action `padding-top: 4px`)",
             "[16, 16, 16, 16]",
-            "`surface-container-high` + `1px outline-variant`, `elevation-3`, `pointer-events: auto`",
+            "`surface-container`, `elevation-level2`, `pointer-events: auto`",
           ],
           [
             "`RichTooltip` Typography",
@@ -892,7 +892,7 @@ export const FEEDBACK_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>
     invariants: [
       "Plain `Tooltip` MUST ONLY carry supplementary descriptive text (or mirror an icon button's `aria-label`) and keep `pointer-events: none`; interactive links or buttons belong exclusively in `RichTooltip` (`action` slot) or `Popover`.",
       "Both `Tooltip` and `RichTooltip` MUST open on keyboard focus (`focus-visible`) as well as pointer hover, and MUST dismiss immediately on `Escape` without moving focus (WCAG 2.1 SC 1.4.13).",
-      "Plain `Tooltip` uses `inverse-surface` / `inverse-on-surface`, whereas `RichTooltip` uses `surface-container-high` (`on-surface` / `on-surface-variant`) with `1px outline-variant` border so multi-line cards never create harsh inverse glare.",
+      "Plain `Tooltip` uses `inverse-surface` / `inverse-on-surface`, whereas `RichTooltip` uses `surface-container` (`on-surface` / `on-surface-variant`) with `elevation-level2` shadow so multi-line cards never create harsh inverse glare.",
       "Collision-aware positioning (`side`, `align`, `sideOffset`) flips and shifts within viewport bounds across both LTR and RTL document directions.",
     ],
     crossPlatformNotes: [
@@ -1115,7 +1115,7 @@ export const FEEDBACK_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec>
           ["Padding", "16"],
           ["Max width", "340"],
           ["Side offset", "8 (default side bottom, align center)"],
-          ["Surface", "surface-container-high, outline-variant border"],
+          ["Surface", "surface-container-high, elevation-level2"],
           ["Open delay / close delay", "280ms / 200ms (openOnHover)"],
           ["Enter", "scale 0.93 → 1 from --transform-origin + opacity"],
         ],

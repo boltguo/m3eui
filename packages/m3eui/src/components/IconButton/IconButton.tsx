@@ -11,6 +11,7 @@ import {
 import { isToggleProps } from "../../internal/toggleProps.js";
 import { SpinnerIcon } from "../../internal/icons.js";
 import { LinkActionElement, isLinkRenderTarget } from "../../internal/link.js";
+import { useM3ERipple } from "../../internal/ripple.js";
 import { useM3ERuntime } from "../../context/M3EContext.js";
 import { useM3ECornerSpringRef, usePressHoldState } from "../../hooks/useM3ESpring.js";
 import type { ButtonIntent } from "../Button/Button.js";
@@ -47,6 +48,8 @@ export interface M3EIconButtonActionProps
 
 function iconButtonStyle(
   geo: IconButtonGeometry,
+  variant: IconButtonVariant,
+  isSelected: boolean,
   borderRadius: string,
   style: React.CSSProperties | undefined,
 ): React.CSSProperties {
@@ -56,7 +59,8 @@ function iconButtonStyle(
     minInlineSize: `${Math.max(24, geo.width)}px`,
     minBlockSize: `${Math.max(24, geo.height)}px`,
     paddingInline: `${geo.paddingInline}px`,
-    borderWidth: `${geo.outlineWidth}px`,
+    borderWidth:
+      variant === "outlined" && !isSelected ? `${geo.outlineWidth}px` : undefined,
     borderRadius,
     ...style,
   };
@@ -65,13 +69,16 @@ function iconButtonStyle(
 function IconButtonContent({
   geo,
   glyph,
+  rippleRef,
 }: {
   readonly geo: IconButtonGeometry;
   readonly glyph: React.ReactNode;
+  readonly rippleRef: React.Ref<HTMLSpanElement>;
 }) {
   const { debugGeometry } = useM3ERuntime();
   return (
     <>
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
       <span
         className="m3e-icon-button__glyph"
         style={{ width: geo.iconSize, height: geo.iconSize }}
@@ -114,6 +121,7 @@ const ActionIconButton = React.forwardRef<HTMLElement, M3EIconButtonActionProps>
   ) {
     const isDisabled = disabled || loading;
     const { isPressed, pressHandlers } = usePressHoldState(isDisabled);
+    const { rippleRef, rippleHandlers } = useM3ERipple(isDisabled);
 
     const geo = resolveIconButtonGeometry({
       size,
@@ -124,18 +132,20 @@ const ActionIconButton = React.forwardRef<HTMLElement, M3EIconButtonActionProps>
     });
 
     const { ref: mergedRef, borderRadiusCss } =
-      useM3ECornerSpringRef<HTMLElement>(geo.corners, "defaultEffects", ref);
+      useM3ECornerSpringRef<HTMLElement>(geo.corners, "fastSpatial", ref);
 
     const isLink = isLinkRenderTarget(href, render);
 
     const mergedProps = mergeProps<"button">(
       pressHandlers as unknown as React.ComponentPropsWithRef<"button">,
+      rippleHandlers as unknown as React.ComponentPropsWithRef<"button">,
       restProps as unknown as React.ComponentPropsWithRef<"button">,
     );
 
     const content = (
       <IconButtonContent
         geo={geo}
+        rippleRef={rippleRef}
         glyph={
           loading ? (
             <SpinnerIcon size={geo.iconSize} className="m3e-button__spinner" />
@@ -163,7 +173,7 @@ const ActionIconButton = React.forwardRef<HTMLElement, M3EIconButtonActionProps>
           className={
             className ? `m3e-icon-button ${className}` : "m3e-icon-button"
           }
-          style={iconButtonStyle(geo, borderRadiusCss, style)}
+          style={iconButtonStyle(geo, variant, false, borderRadiusCss, style)}
           data-variant={variant}
           data-intent={intent !== "default" ? intent : undefined}
           data-size={size}
@@ -195,7 +205,7 @@ const ActionIconButton = React.forwardRef<HTMLElement, M3EIconButtonActionProps>
         className={
           className ? `m3e-icon-button ${className}` : "m3e-icon-button"
         }
-        style={iconButtonStyle(geo, borderRadiusCss, style)}
+        style={iconButtonStyle(geo, variant, false, borderRadiusCss, style)}
         data-variant={variant}
         data-intent={intent !== "default" ? intent : undefined}
         data-size={size}
@@ -260,6 +270,7 @@ const ToggleIconButton = React.forwardRef<
   const isSelected = controlledPressed ?? uncontrolledPressed;
   const { isPressed: isPointerPressed, pressHandlers } =
     usePressHoldState(disabled);
+  const { rippleRef, rippleHandlers } = useM3ERipple(disabled);
 
   const geo = resolveIconButtonGeometry({
     size,
@@ -270,10 +281,11 @@ const ToggleIconButton = React.forwardRef<
   });
 
   const { ref: mergedRef, borderRadiusCss } =
-    useM3ECornerSpringRef<HTMLButtonElement>(geo.corners, "defaultEffects", ref);
+    useM3ECornerSpringRef<HTMLButtonElement>(geo.corners, "fastSpatial", ref);
 
   const mergedProps = mergeProps<"button">(
     pressHandlers as unknown as React.ComponentPropsWithRef<"button">,
+    rippleHandlers as unknown as React.ComponentPropsWithRef<"button">,
     restProps as unknown as React.ComponentPropsWithRef<"button">,
   );
 
@@ -295,7 +307,7 @@ const ToggleIconButton = React.forwardRef<
       className={
         className ? `m3e-icon-button ${className}` : "m3e-icon-button"
       }
-      style={iconButtonStyle(geo, borderRadiusCss, style)}
+      style={iconButtonStyle(geo, variant, isSelected, borderRadiusCss, style)}
       data-toggle=""
       data-variant={variant}
       data-size={size}
@@ -306,6 +318,7 @@ const ToggleIconButton = React.forwardRef<
     >
       <IconButtonContent
         geo={geo}
+        rippleRef={rippleRef}
         glyph={isSelected && checkedIcon ? checkedIcon : icon}
       />
     </BaseToggle>

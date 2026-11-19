@@ -5,10 +5,6 @@
   transition: background-color 180ms ease-out;
 }
 
-.m3e-meter__indicator[data-tone="success"] {
-  background-color: var(--m3e-color-success);
-}
-
 .m3e-meter__indicator[data-tone="warning"] {
   background-color: var(--m3e-color-warning);
 }

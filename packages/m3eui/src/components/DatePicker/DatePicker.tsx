@@ -19,6 +19,8 @@ import {
 import { Button } from "../Button/Button.js";
 import { TextField } from "../TextField/TextField.js";
 import { useFormReset } from "../../internal/formField.js";
+import { useAdaptivePositionMethod } from "../../internal/positionMethod.js";
+import { useM3ERipple } from "../../internal/ripple.js";
 import {
   FieldRoot,
   FieldTrigger,
@@ -385,6 +387,7 @@ function DatePickerFieldShell({
   const portalContainer = useM3EPortalContainer();
   const isDisabled = useFieldsetDisabled(disabled);
   const [open, setOpen] = React.useState(false);
+  const positionMethod = useAdaptivePositionMethod(triggerRef, open);
 
   React.useEffect(() => {
     if ((isDisabled || readOnly) && open) setOpen(false);
@@ -460,6 +463,7 @@ function DatePickerFieldShell({
       ) : (
         <BasePopover.Portal container={portalContainer}>
           <BasePopover.Positioner
+            positionMethod={positionMethod}
             side="bottom"
             align="start"
             sideOffset={6}
@@ -674,6 +678,8 @@ function ModalDatePickerPopup({
 }: ModalDatePickerPopupProps): React.JSX.Element {
   const { locale, t } = useM3ERuntime();
   const portalContainer = useM3EPortalContainer();
+  const { rippleRef: modeBtnRippleRef, rippleHandlers: modeBtnRippleHandlers } =
+    useM3ERipple();
   const committedRange = range ?? EMPTY_RANGE;
   const [draftIso, setDraftIso] = React.useState<string>(committedIso);
   const [draftRange, setDraftRange] =
@@ -693,6 +699,17 @@ function ModalDatePickerPopup({
   const parsedDraft = parsePlainDate(draftIso);
   const parsedRangeStart = parsePlainDate(draftRange.start);
   const parsedRangeEnd = parsePlainDate(draftRange.end);
+
+  const startInvalid =
+    draftRange.start.length > 0 &&
+    (parsedRangeStart === null ||
+      isIsoOutOfBounds(draftRange.start, minDate, maxDate, isDateDisabled));
+  const endInvalid =
+    draftRange.end.length > 0 &&
+    (parsedRangeEnd === null ||
+      isIsoOutOfBounds(draftRange.end, minDate, maxDate, isDateDisabled) ||
+      (parsedRangeStart !== null &&
+        comparePlainDates(draftRange.start, draftRange.end) > 0));
 
   const isDraftValid = isRangeMode
     ? parsedRangeStart !== null &&
@@ -728,7 +745,7 @@ function ModalDatePickerPopup({
         >
           <div className="m3e-modal-date-picker__header">
             <div className="m3e-modal-date-picker__header-copy">
-              <BaseDialog.Title className="m3e-date-picker__overline">
+              <BaseDialog.Title className="m3e-date-picker__eyebrow">
                 {isRangeMode
                   ? t("datePicker.rangeTitle")
                   : t("datePicker.title")}
@@ -748,7 +765,9 @@ function ModalDatePickerPopup({
               onClick={() =>
                 setInputMode((m) => (m === "calendar" ? "input" : "calendar"))
               }
+              {...modeBtnRippleHandlers}
             >
+              <span ref={modeBtnRippleRef} className="m3e-ripple" aria-hidden="true" />
               {inputMode === "calendar" ? (
                 <EditModePencilSvg />
               ) : (
@@ -787,9 +806,7 @@ function ModalDatePickerPopup({
                 <TextField
                   label={t("datePicker.dateInputLabel")}
                   value={draftRange.start}
-                  invalid={
-                    draftRange.start.length > 0 && parsedRangeStart === null
-                  }
+                  invalid={startInvalid}
                   onValueChange={(v) =>
                     setDraftRange((prev) => ({ ...prev, start: v }))
                   }
@@ -798,7 +815,7 @@ function ModalDatePickerPopup({
                 <TextField
                   label={t("datePicker.dateInputLabel")}
                   value={draftRange.end}
-                  invalid={draftRange.end.length > 0 && !isDraftValid}
+                  invalid={endInvalid}
                   onValueChange={(v) =>
                     setDraftRange((prev) => ({ ...prev, end: v }))
                   }

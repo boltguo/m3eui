@@ -33,6 +33,7 @@
 }
 
 .m3e-breadcrumb__link {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -69,9 +70,12 @@
 @media (hover: hover) {
   .m3e-breadcrumb__link:hover:not([aria-current="page"]) {
     color: var(--m3e-color-on-surface);
-    background-color: color-mix(in srgb, var(--m3e-color-on-surface) 8%, transparent);
     text-decoration: underline;
     text-underline-offset: 3px;
+  }
+
+  .m3e-breadcrumb__link:hover:not([aria-current="page"]) > .m3e-ripple::before {
+    opacity: var(--m3e-state-hover-opacity, 0.08);
   }
 }
 
@@ -103,20 +107,21 @@
 .m3e-breadcrumb__ellipsis:focus-visible {
   position: relative;
   z-index: 1;
-  outline: 2.5px solid var(--m3e-color-primary);
+  outline: 3px solid var(--m3e-color-secondary);
   outline-offset: 2px;
 }
 
 .m3e-breadcrumb__ellipsis {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-inline-size: 28px;
   min-block-size: 26px;
   padding-inline: 6px;
-  border: 1px solid var(--m3e-color-outline-variant);
+  border: 0;
   border-radius: 8px;
-  background-color: var(--m3e-color-surface-container-low);
+  background-color: var(--m3e-color-surface-container);
   color: var(--m3e-color-on-surface-variant);
   font: inherit;
   font-size: 13px;
@@ -125,13 +130,16 @@
 }
 
 @media (hover: hover) {
-  .m3e-breadcrumb__ellipsis:hover {
-    background-color: var(--m3e-color-secondary-container);
-    color: var(--m3e-color-on-secondary-container);
+  .m3e-breadcrumb__ellipsis:hover > .m3e-ripple::before {
+    opacity: var(--m3e-state-hover-opacity, 0.08);
   }
 }
 
 @media (forced-colors: active) {
+  .m3e-breadcrumb__ellipsis {
+    border: 1px solid ButtonText;
+  }
+
   .m3e-breadcrumb__link[aria-current="page"] {
     text-decoration: underline;
   }

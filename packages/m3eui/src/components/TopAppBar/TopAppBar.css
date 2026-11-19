@@ -7,19 +7,11 @@
   padding-block: 8px;
   background-color: var(--m3e-color-surface);
   color: var(--m3e-color-on-surface);
-  border-bottom: 1px solid transparent;
-  transition:
-    background-color var(--m3e-effects-fast-duration, 140ms) ease-out,
-    border-color var(--m3e-effects-fast-duration, 140ms) ease-out;
+  transition: background-color var(--m3e-effects-fast-duration, 140ms) ease-out;
 }
 
 .m3e-top-app-bar[data-elevated] {
   background-color: var(--m3e-color-surface-container);
-  border-bottom-color: var(--m3e-color-outline-variant);
-}
-
-.m3e-top-app-bar:last-child {
-  border-bottom-width: 0;
 }
 
 .m3e-top-app-bar__top-row {

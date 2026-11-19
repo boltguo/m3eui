@@ -4,7 +4,7 @@
   flex-shrink: 0;
 }
 
-.m3e-divider[data-orientation="horizontal"] {
+.m3e-divider[data-orientation="horizontal"]:not(.m3e-divider--labeled) {
   width: 100%;
   height: 1px;
 }

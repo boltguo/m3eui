@@ -14,7 +14,7 @@
   max-inline-size: 960px;
   max-block-size: 960px;
   overflow: hidden;
-  border: 1px solid transparent;
+  border: 0;
   box-shadow: var(--m3e-elevation-level3);
   transition:
     background-color var(--m3e-effects-default-duration, 210ms) var(--m3e-effects-default-easing, ease-out),
@@ -30,10 +30,14 @@
 
 .m3e-floating-toolbar[data-collapsed] {
   max-inline-size: 0;
-  max-block-size: 0;
   border-width: 0;
   pointer-events: none;
   box-shadow: none;
+}
+
+.m3e-floating-toolbar[data-orientation="vertical"][data-collapsed] {
+  max-inline-size: 960px;
+  max-block-size: 0;
 }
 
 .m3e-floating-toolbar[data-theme="standard"] {
@@ -46,13 +50,23 @@
   color: var(--m3e-color-on-primary-container);
 }
 
+.m3e-floating-toolbar-layout[data-theme="vibrant"] .m3e-floating-toolbar__companion[data-default-fab] > .m3e-fab {
+  background-color: var(--m3e-color-primary);
+  color: var(--m3e-color-on-primary);
+}
+
+.m3e-floating-toolbar-layout[data-theme="standard"] .m3e-floating-toolbar__companion[data-default-fab] > .m3e-fab {
+  background-color: var(--m3e-color-surface-container-high);
+  color: var(--m3e-color-primary);
+}
+
 .m3e-floating-toolbar__button {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  border: 1px solid transparent;
+  border: 0;
   background-color: transparent;
   color: inherit;
   padding: 0;
@@ -68,17 +82,9 @@
   cursor: not-allowed;
 }
 
-.m3e-floating-toolbar__button[data-pressed]:where(:not(:disabled, [data-disabled], [aria-pressed="true"], [data-selected])) {
-  background-color: color-mix(in srgb, currentColor 10%, transparent);
-}
-
 .m3e-floating-toolbar[data-theme="standard"] .m3e-floating-toolbar__button:is([aria-pressed="true"], [data-selected]) {
   background-color: var(--m3e-color-secondary-container);
   color: var(--m3e-color-on-secondary-container);
-}
-
-.m3e-floating-toolbar[data-theme="standard"] .m3e-floating-toolbar__button:is([aria-pressed="true"], [data-selected])[data-pressed]:where(:not(:disabled, [data-disabled])) {
-  background-color: color-mix(in srgb, var(--m3e-color-secondary-container) 90%, var(--m3e-color-on-secondary-container));
 }
 
 .m3e-floating-toolbar[data-theme="vibrant"] .m3e-floating-toolbar__button:is([aria-pressed="true"], [data-selected]) {
@@ -86,26 +92,14 @@
   color: var(--m3e-color-on-surface);
 }
 
-.m3e-floating-toolbar[data-theme="vibrant"] .m3e-floating-toolbar__button:is([aria-pressed="true"], [data-selected])[data-pressed]:where(:not(:disabled, [data-disabled])) {
-  background-color: color-mix(in srgb, var(--m3e-color-surface-container) 90%, var(--m3e-color-on-surface));
-}
-
 @media (hover: hover) {
-  .m3e-floating-toolbar__button:hover:where(:not(:disabled, [data-disabled], [aria-pressed="true"], [data-selected], [data-pressed])) {
-    background-color: color-mix(in srgb, currentColor 8%, transparent);
-  }
-
-  .m3e-floating-toolbar[data-theme="standard"] .m3e-floating-toolbar__button:is([aria-pressed="true"], [data-selected]):hover:where(:not(:disabled, [data-disabled], [data-pressed])) {
-    background-color: color-mix(in srgb, var(--m3e-color-secondary-container) 92%, var(--m3e-color-on-secondary-container));
-  }
-
-  .m3e-floating-toolbar[data-theme="vibrant"] .m3e-floating-toolbar__button:is([aria-pressed="true"], [data-selected]):hover:where(:not(:disabled, [data-disabled], [data-pressed])) {
-    background-color: color-mix(in srgb, var(--m3e-color-surface-container) 92%, var(--m3e-color-on-surface));
+  .m3e-floating-toolbar__button:hover:where(:not(:disabled, [data-disabled])) > .m3e-ripple::before {
+    opacity: var(--m3e-state-hover-opacity, 0.08);
   }
 }
 
 .m3e-floating-toolbar__button:focus-visible {
-  outline: 2.5px solid var(--m3e-color-primary);
+  outline: 3px solid var(--m3e-color-secondary);
   outline-offset: 2px;
 }
 
@@ -145,11 +139,17 @@
 @media (forced-colors: active) {
   .m3e-floating-toolbar,
   .m3e-floating-toolbar__button {
-    border: 1px solid ButtonText;
+    outline: 1px solid ButtonText;
+    outline-offset: -1px;
   }
 
   .m3e-floating-toolbar__button[aria-pressed="true"] {
     outline: 2px solid Highlight;
     outline-offset: -2px;
+  }
+
+  .m3e-floating-toolbar__button:focus-visible {
+    outline: 3px solid Highlight;
+    outline-offset: 2px;
   }
 }

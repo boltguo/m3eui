@@ -7,8 +7,8 @@ import { ScrollArea } from "./ScrollArea.js";
 describe("ScrollArea", () => {
   const dom = setupDomTest();
 
-  it("renders ScrollArea with constrained height and Divider", () => {
-    act(() => {
+  it("renders ScrollArea with constrained height and Divider", async () => {
+    await act(async () => {
       dom.root.render(
         <PausedWrapper locale="en-US">
           <ScrollArea maxHeight={120}>
@@ -17,6 +17,7 @@ describe("ScrollArea", () => {
           <Divider />
         </PausedWrapper>,
       );
+      await Promise.resolve();
     });
 
     expect(dom.container.querySelector(".m3e-scroll-area")?.textContent).toContain(

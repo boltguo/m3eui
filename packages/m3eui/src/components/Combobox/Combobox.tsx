@@ -5,14 +5,10 @@ import { Field as BaseField } from "@base-ui/react/field";
 import {
   SEGMENTED_MENU_TOKENS,
   SELECT_TOKENS,
-  resolveSegmentedMenuItemCorners,
 } from "../../tokens/topology.js";
 import { useM3EPortalContainer } from "../../context/M3EPortal.js";
 import { useM3EI18n } from "../../context/M3EContext.js";
-import {
-  useM3ECornerSpringRef,
-  usePressHoldState,
-} from "../../hooks/useM3ESpring.js";
+import { useDropdownItemState } from "../../internal/dropdownItem.js";
 import {
   FieldErrorIconSvg,
   FieldNotchedOutline,
@@ -20,11 +16,14 @@ import {
 } from "../../internal/fieldOutline.js";
 import { assignRef } from "../../internal/assignRef.js";
 import { CheckIcon, ChevronDownIcon, CloseIcon } from "../../internal/icons.js";
+import { useAdaptivePositionMethod } from "../../internal/positionMethod.js";
+import { useM3ERipple } from "../../internal/ripple.js";
 
 export interface ComboboxOption {
   readonly value: string;
   readonly label: string;
   readonly description?: string;
+  readonly icon?: React.ReactNode;
   readonly disabled?: boolean;
 }
 
@@ -70,44 +69,132 @@ function ComboboxOptionRow({
   option,
   isSelected,
   index,
+  hasAnyIcon = false,
 }: {
   readonly option: ComboboxOption;
   readonly isSelected: boolean;
   readonly index: number;
+  readonly hasAnyIcon?: boolean;
 }) {
-  const { isPressed, pressHandlers } = usePressHoldState(Boolean(option.disabled));
   const count = BaseCombobox.useFilteredItems().length;
-  const { ref, borderRadiusCss } = useM3ECornerSpringRef<HTMLDivElement>(
-    resolveSegmentedMenuItemCorners({ index, count, isSelected }),
-    "fastSpatial",
-  );
   const hasDescription = Boolean(option.description);
+  const {
+    ref,
+    rippleRef,
+    isPressed,
+    interactionHandlers,
+    itemStyle,
+  } = useDropdownItemState<HTMLDivElement>({
+    index,
+    count,
+    disabled: Boolean(option.disabled),
+    isSelected,
+    hasDescription,
+  });
 
   return (
     <BaseCombobox.Item
       ref={ref}
       value={option}
       disabled={option.disabled}
-      className="m3e-select__item"
+      className="m3e-dropdown-item m3e-select__item"
       data-pressed={isPressed ? "" : undefined}
-      style={{
-        minHeight: hasDescription ? "56px" : `${SEGMENTED_MENU_TOKENS.itemHeight}px`,
-        paddingBlock: hasDescription ? "8px" : undefined,
-        paddingInline: `${SEGMENTED_MENU_TOKENS.itemPaddingInline}px`,
-        borderRadius: borderRadiusCss,
-      }}
-      {...pressHandlers}
+      style={itemStyle}
+      {...interactionHandlers}
     >
-      <span className="m3e-select__item-text">
-        <span className="m3e-select__item-label">{option.label}</span>
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+      {option.icon ? (
+        <span className="m3e-dropdown-item__icon m3e-select__item-icon" aria-hidden="true">
+          {option.icon}
+        </span>
+      ) : hasAnyIcon ? (
+        <span className="m3e-dropdown-item__icon m3e-select__item-icon" aria-hidden="true" />
+      ) : null}
+      <span className="m3e-dropdown-item__text m3e-select__item-text">
+        <span
+          className="m3e-dropdown-item__label m3e-select__item-label"
+          data-text={option.label}
+        >
+          {option.label}
+        </span>
         {option.description ? (
-          <span className="m3e-select__item-desc">{option.description}</span>
+          <span className="m3e-dropdown-item__desc m3e-select__item-desc">
+            {option.description}
+          </span>
         ) : null}
       </span>
-      <BaseCombobox.ItemIndicator className="m3e-select__item-check">
+      <BaseCombobox.ItemIndicator
+        keepMounted
+        className="m3e-dropdown-item__check m3e-select__item-check"
+      >
         <CheckIcon size={16} strokeWidth={2.6} />
       </BaseCombobox.ItemIndicator>
     </BaseCombobox.Item>
+  );
+}
+
+function ComboboxChipRemoveButton({
+  ariaLabel,
+}: {
+  readonly ariaLabel: string;
+}): React.JSX.Element {
+  const { rippleRef, rippleHandlers } = useM3ERipple();
+  return (
+    <BaseCombobox.ChipRemove
+      aria-label={ariaLabel}
+      className="m3e-multi-combobox__chip-remove"
+      {...rippleHandlers}
+    >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+      <CloseIcon size={14} strokeWidth={2.4} />
+    </BaseCombobox.ChipRemove>
+  );
+}
+
+function ComboboxClearButton({
+  keepMounted,
+  ariaLabel,
+}: {
+  readonly keepMounted?: boolean;
+  readonly ariaLabel: string;
+}): React.JSX.Element {
+  const { rippleRef, rippleHandlers } = useM3ERipple();
+  return (
+    <BaseCombobox.Clear
+      keepMounted={keepMounted}
+      aria-label={ariaLabel}
+      className="m3e-text-field__icon-btn m3e-combobox__clear"
+      {...rippleHandlers}
+    >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+      <CloseIcon size={14} strokeWidth={2.4} />
+    </BaseCombobox.Clear>
+  );
+}
+
+function ComboboxTriggerButton({
+  ariaLabel,
+  disabled,
+  open,
+}: {
+  readonly ariaLabel: string;
+  readonly disabled: boolean;
+  readonly open: boolean;
+}): React.JSX.Element {
+  const { rippleRef, rippleHandlers } = useM3ERipple(disabled);
+  return (
+    <BaseCombobox.Trigger
+      className="m3e-combobox__trigger"
+      aria-label={ariaLabel}
+      aria-labelledby={undefined}
+      tabIndex={-1}
+      disabled={disabled}
+      data-open={open ? "" : undefined}
+      {...rippleHandlers}
+    >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+      <ChevronDownIcon size={18} strokeWidth={2.2} />
+    </BaseCombobox.Trigger>
   );
 }
 
@@ -224,6 +311,7 @@ const ComboboxInner = React.forwardRef<HTMLInputElement, M3EComboboxProps>(
     );
 
     const effectiveOpen = readOnly ? false : isOpen;
+    const positionMethod = useAdaptivePositionMethod(shellRef, effectiveOpen);
     const hasExplicitError = Boolean(invalid || errorMessage);
     const resolvedLabelText =
       !multiple && resolvedSingleValue ? resolveOptionLabel(resolvedSingleValue) : "";
@@ -253,6 +341,10 @@ const ComboboxInner = React.forwardRef<HTMLInputElement, M3EComboboxProps>(
     const showClear = multiple
       ? Boolean(clearable && !isDisabled && !readOnly && resolvedMultiValues.length > 0)
       : Boolean(clearable && !isDisabled && !readOnly);
+    const hasAnyIcon = React.useMemo(
+      () => options.some((opt) => Boolean(opt.icon)),
+      [options],
+    );
 
     const rootClass = multiple
       ? "m3e-field m3e-field-root m3e-combobox m3e-multi-combobox"
@@ -421,14 +513,11 @@ const ComboboxInner = React.forwardRef<HTMLInputElement, M3EComboboxProps>(
                                 {resolvedLabel}
                               </span>
                               {!isDisabled && !readOnly ? (
-                                <BaseCombobox.ChipRemove
-                                  aria-label={t("chip.removeItem", {
+                                <ComboboxChipRemoveButton
+                                  ariaLabel={t("chip.removeItem", {
                                     label: resolvedLabel,
                                   })}
-                                  className="m3e-multi-combobox__chip-remove"
-                                >
-                                  <CloseIcon size={14} strokeWidth={2.4} />
-                                </BaseCombobox.ChipRemove>
+                                />
                               ) : null}
                             </BaseCombobox.Chip>
                           );
@@ -490,29 +579,22 @@ const ComboboxInner = React.forwardRef<HTMLInputElement, M3EComboboxProps>(
             )}
 
             {showClear ? (
-              <BaseCombobox.Clear
+              <ComboboxClearButton
                 keepMounted={multiple || undefined}
-                aria-label={t("combobox.clear")}
-                className="m3e-text-field__icon-btn m3e-combobox__clear"
-              >
-                <CloseIcon size={14} strokeWidth={2.4} />
-              </BaseCombobox.Clear>
+                ariaLabel={t("combobox.clear")}
+              />
             ) : null}
 
-            <BaseCombobox.Trigger
-              className="m3e-combobox__trigger"
-              aria-label={t("combobox.toggle")}
-              aria-labelledby={undefined}
-              tabIndex={-1}
+            <ComboboxTriggerButton
+              ariaLabel={t("combobox.toggle")}
               disabled={isDisabled || readOnly}
-              data-open={effectiveOpen ? "" : undefined}
-            >
-              <ChevronDownIcon size={18} strokeWidth={2.2} />
-            </BaseCombobox.Trigger>
+              open={effectiveOpen}
+            />
           </div>
 
           <BaseCombobox.Portal container={portalContainer}>
             <BaseCombobox.Positioner
+              positionMethod={positionMethod}
               anchor={shellRef}
               side="bottom"
               align="start"
@@ -520,16 +602,16 @@ const ComboboxInner = React.forwardRef<HTMLInputElement, M3EComboboxProps>(
               className="m3e-select__positioner"
             >
               <BaseCombobox.Popup
-                className="m3e-select__popup m3e-combobox__popup"
+                className="m3e-dropdown-popup m3e-select__popup m3e-combobox__popup"
                 style={{
                   borderRadius: `${SEGMENTED_MENU_TOKENS.containerRadius}px`,
                 }}
               >
-                <BaseCombobox.Empty className="m3e-combobox__empty">
+                <BaseCombobox.Empty className="m3e-dropdown-empty m3e-combobox__empty">
                   {resolvedEmptyMessage}
                 </BaseCombobox.Empty>
                 <BaseCombobox.List
-                  className="m3e-select__list"
+                  className="m3e-dropdown-list m3e-select__list"
                   style={{
                     padding: `${SEGMENTED_MENU_TOKENS.containerPadding}px`,
                   }}
@@ -539,6 +621,7 @@ const ComboboxInner = React.forwardRef<HTMLInputElement, M3EComboboxProps>(
                       key={option.value}
                       option={option}
                       index={index}
+                      hasAnyIcon={hasAnyIcon}
                       isSelected={
                         multiple
                           ? selectedValueSet.has(option.value)

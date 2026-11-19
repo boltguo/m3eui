@@ -13,6 +13,37 @@ import {
 } from "../../internal/fieldOutline.js";
 import { assignRef } from "../../internal/assignRef.js";
 import { CloseIcon } from "../../internal/icons.js";
+import { useM3ERipple } from "../../internal/ripple.js";
+
+function FieldActionIconButton({
+  disabled,
+  ariaLabel,
+  ariaPressed,
+  onClick,
+  children,
+}: {
+  readonly disabled?: boolean;
+  readonly ariaLabel: string;
+  readonly ariaPressed?: boolean;
+  readonly onClick: () => void;
+  readonly children: React.ReactNode;
+}): React.JSX.Element {
+  const { rippleRef, rippleHandlers } = useM3ERipple(disabled);
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      aria-pressed={ariaPressed}
+      aria-label={ariaLabel}
+      className="m3e-text-field__icon-btn"
+      onClick={onClick}
+      {...rippleHandlers}
+    >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+      {children}
+    </button>
+  );
+}
 
 export type TextFieldVariant = "outlined" | "filled";
 export type FieldLabelPosition = "floating" | "outside";
@@ -405,34 +436,30 @@ const SingleLineField = React.forwardRef<HTMLInputElement, M3ETextFieldSingleLin
         trailing={
           <>
             {clearable && currentVal.length > 0 && !isDisabled && !readOnly ? (
-              <button
-                type="button"
-                aria-label={t("textField.clear")}
-                className="m3e-text-field__icon-btn"
+              <FieldActionIconButton
+                ariaLabel={t("textField.clear")}
                 onClick={() => {
                   handleChange("");
                   inputRef.current?.focus();
                 }}
               >
                 <CloseIcon size={15} strokeWidth="2.3" />
-              </button>
+              </FieldActionIconButton>
             ) : null}
 
             {isPassword ? (
-              <button
-                type="button"
+              <FieldActionIconButton
                 disabled={isDisabled}
-                aria-pressed={showPassword}
-                aria-label={
+                ariaPressed={showPassword}
+                ariaLabel={
                   showPassword
                     ? t("textField.hidePassword")
                     : t("textField.showPassword")
                 }
-                className="m3e-text-field__icon-btn"
                 onClick={() => setShowPassword((s) => !s)}
               >
                 <EyeGlyph shown={showPassword} />
-              </button>
+              </FieldActionIconButton>
             ) : null}
 
             {trailingIcon ? (

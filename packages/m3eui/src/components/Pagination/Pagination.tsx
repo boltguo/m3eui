@@ -9,6 +9,7 @@ import {
 import { formatLocalizedInteger } from "../../i18n/index.js";
 import { ChevronLeftIcon, ChevronRightIcon } from "../../internal/icons.js";
 import { isModifiedLinkClick } from "../../internal/link.js";
+import { mergeInteractionHandlers, useM3ERipple } from "../../internal/ripple.js";
 
 export type PaginationSize = "sm" | "md";
 
@@ -86,6 +87,11 @@ function PageNumberButton({
   readonly onSelect: (p: number) => void;
 }) {
   const { isPressed, pressHandlers } = usePressHoldState(disabled);
+  const { rippleRef, rippleHandlers } = useM3ERipple(disabled);
+  const mergedHandlers = mergeInteractionHandlers(
+    pressHandlers,
+    rippleHandlers,
+  );
   const boxSize = size === "sm" ? 34 : 40;
   const restRadius = active ? 12 : boxSize / 2;
   const radius = isPressed ? 8 : restRadius;
@@ -117,8 +123,9 @@ function PageNumberButton({
           }
           onSelect(pageNumber);
         }}
-        {...pressHandlers}
+        {...mergedHandlers}
       >
+        <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
         <span className="m3e-pagination__label" data-text={displayText}>
           {displayText}
         </span>
@@ -143,11 +150,89 @@ function PageNumberButton({
         borderRadius: borderRadiusCss,
       }}
       onClick={() => onSelect(pageNumber)}
-      {...pressHandlers}
+      {...mergedHandlers}
     >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
       <span className="m3e-pagination__label" data-text={displayText}>
         {displayText}
       </span>
+    </button>
+  );
+}
+
+function PaginationStepButton({
+  dir,
+  size,
+  disabled,
+  ariaLabel,
+  href,
+  onSelect,
+}: {
+  readonly dir: "prev" | "next";
+  readonly size: PaginationSize;
+  readonly disabled: boolean;
+  readonly ariaLabel: string;
+  readonly href?: string;
+  readonly onSelect: () => void;
+}) {
+  const { isPressed, pressHandlers } = usePressHoldState(disabled);
+  const { rippleRef, rippleHandlers } = useM3ERipple(disabled);
+  const mergedHandlers = mergeInteractionHandlers(
+    pressHandlers,
+    rippleHandlers,
+  );
+  const boxSize = size === "sm" ? 34 : 40;
+  const targetRadius = isPressed && !disabled ? 8 : boxSize / 2;
+  const { ref, borderRadiusCss } = useM3ECornerSpringRef<HTMLElement>(
+    [targetRadius, targetRadius, targetRadius, targetRadius],
+    "fastSpatial",
+  );
+  const Chevron = dir === "prev" ? ChevronLeftIcon : ChevronRightIcon;
+  const body = (
+    <>
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+      <Chevron size={16} strokeWidth={2.3} className="m3e-pagination__chevron" />
+    </>
+  );
+  const shared = {
+    "aria-label": ariaLabel,
+    className: "m3e-pagination__btn m3e-pagination__btn--step",
+    "data-pressed": isPressed ? "" : undefined,
+    style: {
+      minInlineSize: `${boxSize}px`,
+      blockSize: `${boxSize}px`,
+      borderRadius: borderRadiusCss,
+    },
+    ...mergedHandlers,
+  };
+
+  if (href) {
+    return (
+      <a
+        {...shared}
+        ref={ref as React.Ref<HTMLAnchorElement>}
+        href={href}
+        onClick={(e) => {
+          if (isModifiedLinkClick(e)) {
+            return;
+          }
+          onSelect();
+        }}
+      >
+        {body}
+      </a>
+    );
+  }
+
+  return (
+    <button
+      {...shared}
+      ref={ref as React.Ref<HTMLButtonElement>}
+      type="button"
+      disabled={disabled}
+      onClick={onSelect}
+    >
+      {body}
     </button>
   );
 }
@@ -193,23 +278,6 @@ export function Pagination({
 
   const prevStepDisabled = disabled || currentPage <= 1;
   const nextStepDisabled = disabled || currentPage >= computedTotalPages;
-  const { isPressed: prevPressed, pressHandlers: prevHandlers } =
-    usePressHoldState(prevStepDisabled);
-  const { isPressed: nextPressed, pressHandlers: nextHandlers } =
-    usePressHoldState(nextStepDisabled);
-
-  const boxSize = size === "sm" ? 34 : 40;
-  const prevTargetRadius = prevPressed && !prevStepDisabled ? 8 : boxSize / 2;
-  const nextTargetRadius = nextPressed && !nextStepDisabled ? 8 : boxSize / 2;
-
-  const prevSpring = useM3ECornerSpringRef<HTMLButtonElement>(
-    [prevTargetRadius, prevTargetRadius, prevTargetRadius, prevTargetRadius],
-    "fastSpatial",
-  );
-  const nextSpring = useM3ECornerSpringRef<HTMLButtonElement>(
-    [nextTargetRadius, nextTargetRadius, nextTargetRadius, nextTargetRadius],
-    "fastSpatial",
-  );
 
   const commitPage = (next: number) => {
     const clamped = Math.min(computedTotalPages, Math.max(1, next));
@@ -245,52 +313,17 @@ export function Pagination({
 
   const renderStep = (dir: "prev" | "next") => {
     const isPrev = dir === "prev";
-    const spring = isPrev ? prevSpring : nextSpring;
     const stepDisabled = isPrev ? prevStepDisabled : nextStepDisabled;
     const targetPage = currentPage + (isPrev ? -1 : 1);
-    const href = stepDisabled ? undefined : getItemHref?.(targetPage);
-    const shared = {
-      "aria-label": t(isPrev ? "pagination.previous" : "pagination.next"),
-      className: "m3e-pagination__btn m3e-pagination__btn--step",
-      "data-pressed": (isPrev ? prevPressed : nextPressed) ? "" : undefined,
-      style: {
-        minInlineSize: `${boxSize}px`,
-        blockSize: `${boxSize}px`,
-        borderRadius: spring.borderRadiusCss,
-      },
-      ...(isPrev ? prevHandlers : nextHandlers),
-    };
-    const Chevron = dir === "prev" ? ChevronLeftIcon : ChevronRightIcon;
-    const glyph = (
-      <Chevron size={16} strokeWidth={2.3} className="m3e-pagination__chevron" />
-    );
-    if (href) {
-      return (
-        <a
-          {...shared}
-          ref={spring.ref as React.Ref<HTMLAnchorElement>}
-          href={href}
-          onClick={(e) => {
-            if (isModifiedLinkClick(e)) {
-              return;
-            }
-            commitPage(targetPage);
-          }}
-        >
-          {glyph}
-        </a>
-      );
-    }
     return (
-      <button
-        {...shared}
-        ref={spring.ref as React.Ref<HTMLButtonElement>}
-        type="button"
+      <PaginationStepButton
+        dir={dir}
+        size={size}
         disabled={stepDisabled}
-        onClick={() => commitPage(targetPage)}
-      >
-        {glyph}
-      </button>
+        ariaLabel={t(isPrev ? "pagination.previous" : "pagination.next")}
+        href={stepDisabled ? undefined : getItemHref?.(targetPage)}
+        onSelect={() => commitPage(targetPage)}
+      />
     );
   };
 

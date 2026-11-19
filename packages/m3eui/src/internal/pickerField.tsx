@@ -165,6 +165,12 @@ export function PickerFieldFrame({
                 </label>
               ) : null}
 
+              {description && !isFloatingLabel ? (
+                <p id={descId} className="m3e-field__description">
+                  {description}
+                </p>
+              ) : null}
+
               <div
                 className="m3e-select__shell"
                 data-variant="outlined"
@@ -199,10 +205,12 @@ export function PickerFieldFrame({
                 })}
               </div>
 
-              {description && !isFieldInvalid ? (
-                <p id={descId} className="m3e-field__description">
-                  {description}
-                </p>
+              {description && isFloatingLabel && !isFieldInvalid ? (
+                <div className="m3e-field__supporting-row">
+                  <p id={descId} className="m3e-field__description">
+                    {description}
+                  </p>
+                </div>
               ) : null}
               {isFieldInvalid ? (
                 <div id={errId} role="alert" className="m3e-field__error">

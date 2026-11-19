@@ -2,6 +2,7 @@ import * as React from "react";
 import { DATE_PICKER_TOKENS } from "../tokens/topology.js";
 import { useM3ERuntime } from "../context/M3EContext.js";
 import { usePressHoldState } from "../hooks/useM3ESpring.js";
+import { mergeInteractionHandlers, useM3ERipple } from "./ripple.js";
 import {
   formatLocalizedFullDate,
   formatLocalizedInteger,
@@ -63,6 +64,11 @@ function CalendarDayButton({
   readonly fullDateLabel: string;
 }) {
   const { isPressed, pressHandlers } = usePressHoldState(isDisabled);
+  const { rippleRef, rippleHandlers } = useM3ERipple(isDisabled);
+  const mergedHandlers = mergeInteractionHandlers(
+    pressHandlers,
+    rippleHandlers,
+  );
   const radius = isPressed
     ? DATE_PICKER_TOKENS.dayPressedRadius
     : DATE_PICKER_TOKENS.daySelectedRadius;
@@ -99,11 +105,111 @@ function CalendarDayButton({
           height: `${DATE_PICKER_TOKENS.dayCellSize}px`,
           borderRadius: `${radius}px`,
         }}
-        {...pressHandlers}
+        {...mergedHandlers}
       >
+        <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
         {dayText ?? day}
       </button>
     </div>
+  );
+}
+
+function CalendarYearToggleButton({
+  toggleRef,
+  expanded,
+  monthYearText,
+  onClick,
+}: {
+  readonly toggleRef: React.RefObject<HTMLButtonElement | null>;
+  readonly expanded: boolean;
+  readonly monthYearText: string;
+  readonly onClick: () => void;
+}): React.JSX.Element {
+  const { rippleRef, rippleHandlers } = useM3ERipple();
+  return (
+    <button
+      ref={toggleRef}
+      type="button"
+      className="m3e-date-picker__year-toggle"
+      aria-expanded={expanded}
+      onClick={onClick}
+      {...rippleHandlers}
+    >
+      <span>{monthYearText}</span>
+      <span
+        className="m3e-date-picker__year-caret"
+        data-open={expanded ? "" : undefined}
+        aria-hidden="true"
+      >
+        ▾
+      </span>
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+    </button>
+  );
+}
+
+function CalendarIconNavButton({
+  disabled,
+  ariaLabel,
+  onClick,
+  children,
+}: {
+  readonly disabled: boolean;
+  readonly ariaLabel: string;
+  readonly onClick: () => void;
+  readonly children: React.ReactNode;
+}): React.JSX.Element {
+  const { rippleRef, rippleHandlers } = useM3ERipple(disabled);
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      aria-label={ariaLabel}
+      className="m3e-date-picker__nav-btn"
+      onClick={onClick}
+      {...rippleHandlers}
+    >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+      {children}
+    </button>
+  );
+}
+
+function CalendarYearPillButton({
+  buttonRef,
+  disabled,
+  tabIndex,
+  selected,
+  onFocus,
+  onClick,
+  children,
+}: {
+  readonly buttonRef: (el: HTMLButtonElement | null) => void;
+  readonly disabled: boolean;
+  readonly tabIndex: number;
+  readonly selected: boolean;
+  readonly onFocus: () => void;
+  readonly onClick: () => void;
+  readonly children: React.ReactNode;
+}): React.JSX.Element {
+  const { rippleRef, rippleHandlers } = useM3ERipple(disabled);
+  return (
+    <button
+      ref={buttonRef}
+      type="button"
+      role="option"
+      disabled={disabled}
+      tabIndex={tabIndex}
+      aria-selected={selected}
+      className="m3e-date-picker__year-pill"
+      data-selected={selected ? "" : undefined}
+      onFocus={onFocus}
+      onClick={onClick}
+      {...rippleHandlers}
+    >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+      {children}
+    </button>
   );
 }
 
@@ -417,11 +523,10 @@ export function DateCalendar({
       {header}
 
       <div className="m3e-date-picker__toolbar">
-        <button
-          ref={yearToggleRef}
-          type="button"
-          className="m3e-date-picker__year-toggle"
-          aria-expanded={yearMode}
+        <CalendarYearToggleButton
+          toggleRef={yearToggleRef}
+          expanded={yearMode}
+          monthYearText={monthYearText}
           onClick={() => {
             setYearMode((prev) => {
               const next = !prev;
@@ -433,25 +538,14 @@ export function DateCalendar({
               return next;
             });
           }}
-        >
-          <span>{monthYearText}</span>
-          <span
-            className="m3e-date-picker__year-caret"
-            data-open={yearMode ? "" : undefined}
-            aria-hidden="true"
-          >
-            ▾
-          </span>
-        </button>
+        />
 
         <div className="m3e-date-picker__month-nav">
-          <button
-            type="button"
+          <CalendarIconNavButton
             disabled={!canStepPrev}
-            aria-label={
+            ariaLabel={
               yearMode ? t("datePicker.prevYears") : t("datePicker.prevMonth")
             }
-            className="m3e-date-picker__nav-btn"
             onClick={() => {
               if (yearMode) {
                 setYearPageStart((s) => s - 15);
@@ -463,14 +557,12 @@ export function DateCalendar({
             <span aria-hidden="true" style={glyphStyle}>
               ‹
             </span>
-          </button>
-          <button
-            type="button"
+          </CalendarIconNavButton>
+          <CalendarIconNavButton
             disabled={!canStepNext}
-            aria-label={
+            ariaLabel={
               yearMode ? t("datePicker.nextYears") : t("datePicker.nextMonth")
             }
-            className="m3e-date-picker__nav-btn"
             onClick={() => {
               if (yearMode) {
                 setYearPageStart((s) => s + 15);
@@ -482,7 +574,7 @@ export function DateCalendar({
             <span aria-hidden="true" style={glyphStyle}>
               ›
             </span>
-          </button>
+          </CalendarIconNavButton>
         </div>
       </div>
 
@@ -496,18 +588,14 @@ export function DateCalendar({
           {years.map((yr) => {
             const yrDisabled = isYearDisabled(yr);
             return (
-              <button
+              <CalendarYearPillButton
                 key={yr}
-                ref={(el) => {
+                buttonRef={(el) => {
                   yearButtonRefs.current[yr] = el;
                 }}
-                type="button"
-                role="option"
                 disabled={yrDisabled}
                 tabIndex={yr === activeFocusYear && !yrDisabled ? 0 : -1}
-                aria-selected={yr === viewYear}
-                className="m3e-date-picker__year-pill"
-                data-selected={yr === viewYear ? "" : undefined}
+                selected={yr === viewYear}
                 onFocus={() => setFocusedYear(yr)}
                 onClick={() => {
                   if (yrDisabled) return;
@@ -537,7 +625,7 @@ export function DateCalendar({
                   useGrouping: false,
                   maximumFractionDigits: 0,
                 })}
-              </button>
+              </CalendarYearPillButton>
             );
           })}
         </div>

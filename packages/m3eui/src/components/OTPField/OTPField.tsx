@@ -7,10 +7,7 @@ import {
   resolveOtpSlotCorners,
 } from "../../tokens/topology.js";
 import { useM3ERuntime } from "../../context/M3EContext.js";
-import {
-  useM3ECornerSpringRef,
-  usePressHoldState,
-} from "../../hooks/useM3ESpring.js";
+import { useM3ECornerSpringRef } from "../../hooks/useM3ESpring.js";
 import { FieldErrorIconSvg, useFieldsetDisabled } from "../../internal/fieldOutline.js";
 
 export interface M3EOTPFieldProps {
@@ -40,17 +37,14 @@ function OTPSlotCell({
   length,
   isFirstInGroup,
   isLastInGroup,
-  disabled,
 }: {
   readonly index: number;
   readonly length: number;
   readonly isFirstInGroup: boolean;
   readonly isLastInGroup: boolean;
-  readonly disabled: boolean;
 }) {
   const { t } = useM3ERuntime();
   const [focused, setFocused] = React.useState(false);
-  const { isPressed, pressHandlers } = usePressHoldState(disabled);
 
   const corners = resolveOtpSlotCorners({
     index,
@@ -58,7 +52,6 @@ function OTPSlotCell({
     isFirstInGroup,
     isLastInGroup,
     isFocused: focused,
-    isPressed,
   });
 
   const { ref: slotRef, borderRadiusCss } =
@@ -71,14 +64,7 @@ function OTPSlotCell({
         index === 0 ? undefined : t("otpField.digitLabel", { index: index + 1 })
       }
       onFocus={() => setFocused(true)}
-      onBlur={() => {
-        setFocused(false);
-        pressHandlers.onBlur();
-      }}
-      onPointerDown={pressHandlers.onPointerDown}
-      onPointerUp={pressHandlers.onPointerUp}
-      onPointerLeave={pressHandlers.onPointerLeave}
-      onPointerCancel={pressHandlers.onPointerCancel}
+      onBlur={() => setFocused(false)}
       className="m3e-otp-field__slot"
       data-focused={focused ? "" : undefined}
       style={{
@@ -172,12 +158,14 @@ export function OTPField({
     };
   }, [enableWebOTP, isDisabled, length, controlledValue, onValueChange, onValueComplete]);
 
+  const hasError = Boolean(invalid || errorMessage);
+
   return (
     <BaseField.Root
       ref={wrapRef}
       name={name}
       disabled={isDisabled || undefined}
-      invalid={invalid || undefined}
+      invalid={hasError || undefined}
       className={
         className ? `m3e-otp-field-wrap ${className}` : "m3e-otp-field-wrap"
       }
@@ -191,9 +179,9 @@ export function OTPField({
       </label>
 
       {helperText ? (
-        <p id={hintId} className="m3e-otp-field__hint">
+        <BaseField.Description id={hintId} className="m3e-otp-field__hint">
           {helperText}
-        </p>
+        </BaseField.Description>
       ) : null}
 
       <BaseOTPField.Root
@@ -240,7 +228,6 @@ export function OTPField({
                 length={length}
                 isFirstInGroup={isFirstInGroup}
                 isLastInGroup={isLastInGroup}
-                disabled={isDisabled}
               />
               {hasSepAfter ? (
                 <BaseOTPField.Separator className="m3e-otp-field__separator">
@@ -252,11 +239,23 @@ export function OTPField({
         })}
       </BaseOTPField.Root>
 
-      {invalid ? (
-        <div className="m3e-field__error" role="alert">
-          <FieldErrorIconSvg label={t("textField.errorIcon")} />
-          <span>{errorMessage ?? t("textField.defaultInvalid")}</span>
-        </div>
+      {!isDisabled ? (
+        <BaseField.Error
+          match={hasError ? true : undefined}
+          className="m3e-field__error"
+          render={(errorProps) => {
+            const resolvedMessage =
+              errorMessage ??
+              errorProps.children ??
+              (invalid ? t("textField.defaultInvalid") : null);
+            return (
+              <div {...errorProps}>
+                <FieldErrorIconSvg label={t("textField.errorIcon")} />
+                <span>{resolvedMessage}</span>
+              </div>
+            );
+          }}
+        />
       ) : null}
     </BaseField.Root>
   );

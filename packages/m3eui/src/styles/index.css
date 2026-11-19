@@ -8,6 +8,7 @@
 @import "../components/LoadingIndicator/LoadingIndicator.css" layer(m3e.components);
 @import "../components/ProgressIndicator/ProgressIndicator.css" layer(m3e.components);
 @import "../components/IconButton/IconButton.css" layer(m3e.components);
+@import "./dropdown.css" layer(m3e.components);
 @import "../components/Menu/Menu.css" layer(m3e.components);
 @import "../components/FloatingToolbar/FloatingToolbar.css" layer(m3e.components);
 @import "../components/FAB/FAB.css" layer(m3e.components);

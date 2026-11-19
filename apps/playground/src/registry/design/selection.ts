@@ -10,7 +10,7 @@ export const SELECTION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec
     inspirationAndRationale: [
       {
         title: "Compact 18px Visual Box Inside a 40px/48px Hit Target",
-        body: "Checkbox keeps its crisp 18×18px glyph (2px stroke, 4px resting radius softening to 6px on press) so dense data tables and filter sidebars stay clean, while an invisible centered 40px state layer (48px minimum touch target on coarse pointers) prevents mis-taps.",
+        body: "Checkbox keeps its crisp 18×18px glyph (2px stroke, 2px resting radius softening to 4px on press) so dense data tables and filter sidebars stay clean, while an invisible centered 40px state layer (48px minimum touch target on coarse pointers) prevents mis-taps.",
       },
       {
         title: "Tri-State Indeterminate Cascade",
@@ -25,7 +25,7 @@ export const SELECTION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec
         columns: ["Token", "Value", "Behavior & Role"],
         rows: [
           ["boxSize / strokeWidth", "18px / 2px", "Unchecked border uses on-surface-variant; checked fill uses primary (or error)"],
-          ["cornerRadius → pressedCornerRadius", "4px → 6px", "Animated via fastSpatial (ζ = 0.6, k = 800) with 95ms press latch"],
+          ["cornerRadius → pressedCornerRadius", "2px → 4px", "Animated via fastSpatial (ζ = 0.6, k = 800) with 95ms press latch"],
           ["stateLayerSize / minTouchTarget", "40px / 48px", "Circular hover (8%) & press (10%) halo centered on the 18px box"],
           ["Checkmark / Dash Glyph", "14×14 SVG", "Scale & stroke transition via fastSpatial; container fill via fastEffects"],
         ],
@@ -241,7 +241,7 @@ export const SELECTION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec
       },
       {
         title: "Global Pointer-Up Handle Recovery (4px → 2px → 4px)",
-        body: "While dragging, the vertical handle compresses from 4px to 2px (and track gap tightens from 6px to 5px) while surfacing a floating value badge. Attaching global window pointerup/pointercancel listeners guarantees the handle springs back to 4px the instant the pointer releases—even outside the track—without staying stuck until blur.",
+        body: "While dragging, the vertical handle compresses from 4px to 2px (preserving a constant 6px thumbTrackGap) while surfacing a floating value badge. Attaching global window pointerup/pointercancel listeners guarantees the handle springs back to 4px the instant the pointer releases—even outside the track—without staying stuck until blur.",
       },
     ],
     geometryAndMotionTables: [
@@ -259,9 +259,9 @@ export const SELECTION_DESIGN_SPECS: Readonly<Record<string, ComponentDesignSpec
           "Track Cutout Gap",
         ],
         rows: [
-          ["sm (Default)", "16px", "8px", "2px", "44px", "4px → 2px", "6px → 5px"],
-          ["md", "24px", "12px", "3px", "48px", "4px → 2px", "6px → 5px"],
-          ["lg", "40px", "16px", "4px", "56px", "4px → 2px", "6px → 5px"],
+          ["sm (Default)", "16px", "8px", "2px", "44px", "4px → 2px", "6px"],
+          ["md", "24px", "12px", "3px", "48px", "4px → 2px", "6px"],
+          ["lg", "40px", "16px", "4px", "56px", "4px → 2px", "6px"],
         ],
       },
     ],

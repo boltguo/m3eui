@@ -9,6 +9,27 @@ import {
 import { useM3EI18n } from "../../context/M3EContext.js";
 import { useM3EPortalContainer } from "../../context/M3EPortal.js";
 import { CloseIcon } from "../../internal/icons.js";
+import { useM3ERipple } from "../../internal/ripple.js";
+
+function DialogCloseIconButton({
+  CloseComponent,
+  ariaLabel,
+}: {
+  readonly CloseComponent: React.ElementType;
+  readonly ariaLabel: string;
+}): React.JSX.Element {
+  const { rippleRef, rippleHandlers } = useM3ERipple();
+  return (
+    <CloseComponent
+      aria-label={ariaLabel}
+      className="m3e-dialog__close-btn"
+      {...rippleHandlers}
+    >
+      <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+      <CloseIcon strokeWidth={2.2} />
+    </CloseComponent>
+  );
+}
 
 export interface M3EDialogProps {
   readonly open?: boolean;
@@ -95,12 +116,10 @@ export function Dialog({
             }}
           >
             {showCloseButton ? (
-              <BaseDialog.Close
-                aria-label={t("dialog.close")}
-                className="m3e-dialog__close-btn"
-              >
-                <CloseIcon strokeWidth={2.2} />
-              </BaseDialog.Close>
+              <DialogCloseIconButton
+                CloseComponent={BaseDialog.Close}
+                ariaLabel={t("dialog.close")}
+              />
             ) : null}
             <div
               className="m3e-dialog__header"
@@ -111,10 +130,7 @@ export function Dialog({
                   {icon}
                 </div>
               ) : null}
-              <BaseDialog.Title
-                className="m3e-dialog__title"
-                data-has-close={showCloseButton ? "" : undefined}
-              >
+              <BaseDialog.Title className="m3e-dialog__title">
                 {title}
               </BaseDialog.Title>
             </div>
@@ -183,12 +199,10 @@ export function AlertDialog({
             }}
           >
             {showCloseButton ? (
-              <BaseAlertDialog.Close
-                aria-label={t("dialog.close")}
-                className="m3e-dialog__close-btn"
-              >
-                <CloseIcon strokeWidth={2.2} />
-              </BaseAlertDialog.Close>
+              <DialogCloseIconButton
+                CloseComponent={BaseAlertDialog.Close}
+                ariaLabel={t("dialog.close")}
+              />
             ) : null}
             <div
               className="m3e-dialog__header"
@@ -199,10 +213,7 @@ export function AlertDialog({
                   {icon}
                 </div>
               ) : null}
-              <BaseAlertDialog.Title
-                className="m3e-dialog__title"
-                data-has-close={showCloseButton ? "" : undefined}
-              >
+              <BaseAlertDialog.Title className="m3e-dialog__title">
                 {title}
               </BaseAlertDialog.Title>
             </div>

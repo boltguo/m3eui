@@ -21,10 +21,11 @@
 }
 
 .m3e-number-field__step {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid transparent;
+  border: 0;
   background-color: var(--m3e-color-secondary-container);
   color: var(--m3e-color-on-secondary-container);
   cursor: pointer;
@@ -36,23 +37,23 @@
 }
 
 @media (hover: hover) {
-  .m3e-number-field__step:hover:where(:not(:disabled, [data-pressed])) {
-    background-color: color-mix(in srgb, var(--m3e-color-secondary-container) 92%, var(--m3e-color-on-secondary-container));
+  .m3e-number-field__step:hover:where(:not(:disabled, [data-readonly])) > .m3e-ripple::before {
+    opacity: var(--m3e-state-hover-opacity, 0.08);
   }
 }
 
-.m3e-number-field__step:is(:active, [data-pressed]):not(:disabled) {
-  background-color: var(--m3e-color-primary-container);
-  color: var(--m3e-color-on-primary-container);
+.m3e-number-field__step[data-readonly] {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .m3e-number-field__step:disabled {
-  opacity: 0.42;
+  opacity: 0.38;
   cursor: not-allowed;
 }
 
 .m3e-number-field__step:focus-visible {
-  outline: 2.5px solid var(--m3e-color-primary);
+  outline: 3px solid var(--m3e-color-secondary);
   outline-offset: 2px;
   z-index: 1;
 }
@@ -70,6 +71,7 @@
   font-variant-numeric: tabular-nums;
   text-align: center;
   outline: none;
+  caret-color: var(--m3e-color-primary);
   transition:
     box-shadow var(--m3e-effects-default-duration, 180ms) var(--m3e-effects-default-easing, cubic-bezier(0.2, 0, 0, 1)),
     background-color var(--m3e-effects-default-duration, 180ms) var(--m3e-effects-default-easing, cubic-bezier(0.2, 0, 0, 1));
@@ -91,8 +93,17 @@
   box-shadow: inset 0 0 0 2px var(--m3e-color-primary);
 }
 
+.m3e-number-field__group[data-invalid] .m3e-number-field__input {
+  box-shadow: inset 0 0 0 1.5px var(--m3e-color-error);
+  caret-color: var(--m3e-color-error);
+}
+
+.m3e-number-field__group[data-invalid] .m3e-number-field__input:focus {
+  box-shadow: inset 0 0 0 2px var(--m3e-color-error);
+}
+
 .m3e-number-field__input:disabled {
-  opacity: 0.45;
+  opacity: 0.38;
   cursor: not-allowed;
 }
 

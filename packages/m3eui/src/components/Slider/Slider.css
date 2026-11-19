@@ -7,7 +7,7 @@
 }
 
 .m3e-slider[data-disabled] {
-  opacity: 0.42;
+  opacity: 0.38;
   pointer-events: none;
 }
 
@@ -113,20 +113,12 @@
 .m3e-slider__handle-bar {
   display: block;
   background-color: var(--m3e-color-primary);
-  box-shadow: 0 1px 3px color-mix(in srgb, var(--m3e-color-shadow) 18%, transparent);
+  box-shadow: none;
 }
 
 .m3e-slider__thumb:focus-visible .m3e-slider__handle-bar {
-  outline: 2.5px solid var(--m3e-color-primary);
-  outline-offset: 4px;
-}
-
-.m3e-slider__thumb:not([data-orientation="vertical"]):focus-visible .m3e-slider__handle-bar {
-  inline-size: 2px !important;
-}
-
-.m3e-slider__thumb[data-orientation="vertical"]:focus-visible .m3e-slider__handle-bar {
-  block-size: 2px !important;
+  outline: 3px solid var(--m3e-color-secondary);
+  outline-offset: 2px;
 }
 
 .m3e-slider__bubble {
@@ -137,14 +129,15 @@
   border-radius: 9999px;
   background-color: var(--m3e-color-inverse-surface);
   color: var(--m3e-color-inverse-on-surface);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 600;
+  font-family: var(--m3e-typescale-label-medium-font, var(--m3e-font-plain, sans-serif));
+  font-size: var(--m3e-typescale-label-medium-size, 0.75rem);
+  line-height: var(--m3e-typescale-label-medium-line-height, 1rem);
+  font-weight: var(--m3e-typescale-label-medium-weight, 500);
+  letter-spacing: var(--m3e-typescale-label-medium-tracking, 0.0417em);
   white-space: nowrap;
   pointer-events: none;
   transform-origin: bottom center;
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--m3e-color-shadow) 22%, transparent);
+  box-shadow: none;
 }
 
 .m3e-slider[data-orientation="vertical"] {
@@ -191,6 +184,11 @@
   inset-inline-end: calc(100% + 10px);
   top: 50%;
   transform-origin: right center;
+}
+
+[dir="rtl"] .m3e-slider__bubble[data-orientation="vertical"],
+.m3e-slider__bubble[data-orientation="vertical"]:dir(rtl) {
+  transform-origin: left center;
 }
 
 .m3e-slider__track-icon {
@@ -261,5 +259,10 @@
   .m3e-slider__handle-bar,
   .m3e-slider__segment--active {
     background-color: Highlight;
+  }
+
+  .m3e-slider__segment--inactive {
+    outline: 1px solid ButtonText;
+    outline-offset: -1px;
   }
 }

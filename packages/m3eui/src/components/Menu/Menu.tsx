@@ -6,13 +6,17 @@ import { Menu as BaseMenu } from "@base-ui/react/menu";
 import {
   SEGMENTED_MENU_TOKENS,
   parseShortcutKeys,
-  resolveSegmentedMenuItemCorners,
 } from "../../tokens/topology.js";
 import { useM3ERuntime } from "../../context/M3EContext.js";
 import { useM3EPortalContainer } from "../../context/M3EPortal.js";
-import { useM3ECornerSpringRef, usePressHoldState } from "../../hooks/useM3ESpring.js";
+import { useM3ECornerSpringRef } from "../../hooks/useM3ESpring.js";
 import { Kbd } from "../Kbd/Kbd.js";
+import { useDropdownItemState } from "../../internal/dropdownItem.js";
 import { CheckIcon } from "../../internal/icons.js";
+import {
+  type M3EPositionMethod,
+  useAdaptivePositionMethod,
+} from "../../internal/positionMethod.js";
 
 export type M3EMenuTheme = "standard" | "vibrant";
 export type M3EMenuVariant = "segmented" | "standard";
@@ -89,65 +93,42 @@ function SubmenuChevronSvg({ rtl }: { readonly rtl: boolean }) {
   );
 }
 
-/** AOSP DropdownMenuGroup: once hovered, a group the pointer has left morphs to its inactive (small) shape. */
-function useMenuSurfaceShape<T extends HTMLElement>(
-  index: number,
-  count: number,
-  morph: boolean,
-) {
-  const [hovered, setHovered] = React.useState<boolean | null>(null);
-  const outer = SEGMENTED_MENU_TOKENS.containerRadius;
-  const inner = SEGMENTED_MENU_TOKENS.groupInnerRadius;
-  const top = morph && hovered === false ? inner : index === 0 ? outer : inner;
-  const bottom = morph && hovered === false ? inner : index === count - 1 ? outer : inner;
-  const nodeRef = React.useRef<T | null>(null);
-  const { ref: springRef, borderRadiusCss } = useM3ECornerSpringRef<T>(
-    [top, top, bottom, bottom],
-    "fastSpatial",
-  );
-  const ref = React.useCallback(
-    (node: T | null) => {
-      nodeRef.current = node;
-      springRef(node);
-    },
-    [springRef],
-  );
-  // Native listeners: React's synthetic enter/leave treat portaled submenus as descendants.
-  React.useEffect(() => {
-    const node = nodeRef.current;
-    if (!morph || !node) return;
-    const track = (next: boolean) => (event: PointerEvent) => {
-      if (event.pointerType !== "touch") setHovered(next);
-    };
-    const enter = track(true);
-    const leave = track(false);
-    node.addEventListener("pointerenter", enter);
-    node.addEventListener("pointerleave", leave);
-    return () => {
-      node.removeEventListener("pointerenter", enter);
-      node.removeEventListener("pointerleave", leave);
-    };
-  }, [morph]);
-  return { ref, borderRadius: borderRadiusCss };
-}
-
 function MenuGroupSurface({
   index,
   count,
+  inactive,
+  onHoverStart,
+  onHoverEnd,
   style,
   children,
 }: {
   readonly index: number;
   readonly count: number;
+  readonly inactive: boolean;
+  readonly onHoverStart: () => void;
+  readonly onHoverEnd: () => void;
   readonly style: React.CSSProperties;
   readonly children: React.ReactNode;
 }) {
-  const { borderRadius, ...shape } = useMenuSurfaceShape<HTMLDivElement>(index, count, true);
+  const outer = SEGMENTED_MENU_TOKENS.containerRadius;
+  const inner = SEGMENTED_MENU_TOKENS.groupInnerRadius;
+  const top = inactive ? inner : index === 0 ? outer : inner;
+  const bottom = inactive ? inner : index === count - 1 ? outer : inner;
+  const { ref, borderRadiusCss } = useM3ECornerSpringRef<HTMLDivElement>(
+    [top, top, bottom, bottom],
+    "fastSpatial",
+  );
   return (
     <BaseMenu.Group
-      {...shape}
+      ref={ref}
+      onPointerEnter={(e) => {
+        if (e.pointerType !== "touch") onHoverStart();
+      }}
+      onPointerLeave={(e) => {
+        if (e.pointerType !== "touch") onHoverEnd();
+      }}
       className="m3e-segmented-menu__group"
-      style={{ ...style, borderRadius }}
+      style={{ ...style, borderRadius: borderRadiusCss }}
     >
       {children}
     </BaseMenu.Group>
@@ -158,11 +139,13 @@ function MenuPopup({
   items,
   theme,
   variant,
+  positionMethod = "absolute",
   className,
 }: {
   readonly items: readonly M3EMenuItemSpec[];
   readonly theme: M3EMenuTheme;
   readonly variant: M3EMenuVariant;
+  readonly positionMethod?: M3EPositionMethod;
   readonly className?: string;
 }) {
   const hasAnyLeadingSlot = items.some(
@@ -170,21 +153,20 @@ function MenuPopup({
   );
   const groups = splitMenuGroups(items);
   const isDetachedGroups = variant === "segmented" && groups.length > 1;
+  const [hoveredGroupIdx, setHoveredGroupIdx] = React.useState<number | null>(null);
   const surfaceStyle: React.CSSProperties = {
     padding: `${SEGMENTED_MENU_TOKENS.containerPadding}px`,
     gap: `${SEGMENTED_MENU_TOKENS.itemGap}px`,
   };
 
-  const { borderRadius, ...surfaceShape } = useMenuSurfaceShape<HTMLDivElement>(
-    0,
-    1,
-    variant === "segmented" && !isDetachedGroups,
-  );
-
   return (
     <BaseMenu.Popup
-      {...(isDetachedGroups ? null : surfaceShape)}
-      className={className ? `m3e-segmented-menu ${className}` : "m3e-segmented-menu"}
+      onPointerLeave={isDetachedGroups ? () => setHoveredGroupIdx(null) : undefined}
+      className={
+        className
+          ? `m3e-dropdown-popup m3e-segmented-menu ${className}`
+          : "m3e-dropdown-popup m3e-segmented-menu"
+      }
       data-theme={theme !== "standard" ? theme : undefined}
       data-variant={variant}
       data-grouped={isDetachedGroups ? "" : undefined}
@@ -193,7 +175,7 @@ function MenuPopup({
           ? { gap: `${SEGMENTED_MENU_TOKENS.groupGap}px` }
           : {
               ...surfaceStyle,
-              borderRadius,
+              borderRadius: `${SEGMENTED_MENU_TOKENS.containerRadius}px`,
             }
       }
     >
@@ -203,6 +185,11 @@ function MenuPopup({
               key={groupItems[0]!.id}
               index={groupIdx}
               count={groups.length}
+              inactive={hoveredGroupIdx !== null && hoveredGroupIdx !== groupIdx}
+              onHoverStart={() => setHoveredGroupIdx(groupIdx)}
+              onHoverEnd={() =>
+                setHoveredGroupIdx((prev) => (prev === groupIdx ? null : prev))
+              }
               style={surfaceStyle}
             >
               {groupItems.map((item, idx) => (
@@ -217,6 +204,7 @@ function MenuPopup({
                   showSeparator={false}
                   theme={theme}
                   variant={variant}
+                  positionMethod={positionMethod}
                 />
               ))}
             </MenuGroupSurface>
@@ -235,6 +223,7 @@ function MenuPopup({
               showSeparator={idx > 0 && Boolean(item.separatorBefore)}
               theme={theme}
               variant={variant}
+              positionMethod={positionMethod}
             />
           ))}
     </BaseMenu.Popup>
@@ -251,6 +240,7 @@ function MenuItem({
   showSeparator,
   theme,
   variant,
+  positionMethod = "absolute",
 }: {
   readonly item: M3EMenuItemSpec;
   readonly index: number;
@@ -261,53 +251,50 @@ function MenuItem({
   readonly showSeparator: boolean;
   readonly theme: M3EMenuTheme;
   readonly variant: M3EMenuVariant;
+  readonly positionMethod?: M3EPositionMethod;
 }) {
   const { direction } = useM3ERuntime();
   const portalContainer = useM3EPortalContainer();
-  const { isPressed, pressHandlers } = usePressHoldState(Boolean(item.disabled));
-  const corners =
-    variant === "standard"
-      ? ([8, 8, 8, 8] as const)
-      : resolveSegmentedMenuItemCorners({
-          index,
-          count,
-          isFirstInGroup,
-          isLastInGroup,
-          isSelected: Boolean(item.checked),
-        });
-  const { ref: cornerRef, borderRadiusCss } = useM3ECornerSpringRef<HTMLElement>(
-    corners,
-    "fastSpatial",
-  );
+  const {
+    ref: cornerRef,
+    rippleRef,
+    isPressed,
+    interactionHandlers: mergedHandlers,
+    itemStyle,
+  } = useDropdownItemState<HTMLElement>({
+    index,
+    count,
+    disabled: Boolean(item.disabled),
+    isSelected: Boolean(item.checked),
+    isFirstInGroup,
+    isLastInGroup,
+    fixedRadius: variant === "standard" ? 8 : undefined,
+  });
 
   const itemProps = {
     ref: cornerRef as React.Ref<HTMLDivElement>,
     disabled: item.disabled,
     "data-pressed": isPressed ? "" : undefined,
-    style: {
-      minHeight: `${SEGMENTED_MENU_TOKENS.itemHeight}px`,
-      paddingInline: `${SEGMENTED_MENU_TOKENS.itemPaddingInline}px`,
-      borderRadius: borderRadiusCss,
-    },
-    ...pressHandlers,
+    style: itemStyle,
+    ...mergedHandlers,
   };
   const separator = showSeparator ? (
     <BaseMenu.Separator className="m3e-menu__separator" />
   ) : null;
   const label = (
     <span
-      className="m3e-segmented-menu__label"
+      className="m3e-dropdown-item__label m3e-segmented-menu__label"
       data-text={typeof item.label === "string" ? item.label : undefined}
     >
       {item.label}
     </span>
   );
   const leading = item.icon ? (
-    <span className="m3e-segmented-menu__icon" aria-hidden="true">
+    <span className="m3e-dropdown-item__icon m3e-segmented-menu__icon" aria-hidden="true">
       {item.icon}
     </span>
   ) : hasAnyLeadingSlot ? (
-    <span className="m3e-segmented-menu__icon" aria-hidden="true" />
+    <span className="m3e-dropdown-item__icon m3e-segmented-menu__icon" aria-hidden="true" />
   ) : null;
   const shortcut = item.shortcut ? (
     <Kbd
@@ -319,6 +306,10 @@ function MenuItem({
     </Kbd>
   ) : null;
 
+  const rippleEl = (
+    <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
+  );
+
   if (item.submenu && item.submenu.length > 0) {
     return (
       <>
@@ -326,8 +317,9 @@ function MenuItem({
         <BaseMenu.SubmenuRoot>
           <BaseMenu.SubmenuTrigger
             {...itemProps}
-            className="m3e-segmented-menu__item m3e-segmented-menu__submenu-trigger"
+            className="m3e-dropdown-item m3e-segmented-menu__item m3e-segmented-menu__submenu-trigger"
           >
+            {rippleEl}
             {leading}
             {label}
             <span
@@ -339,11 +331,17 @@ function MenuItem({
           </BaseMenu.SubmenuTrigger>
           <BaseMenu.Portal container={portalContainer}>
             <BaseMenu.Positioner
+              positionMethod={positionMethod}
               sideOffset={4}
               alignOffset={-4}
               className="m3e-segmented-menu__positioner"
             >
-              <MenuPopup items={item.submenu} theme={theme} variant={variant} />
+              <MenuPopup
+                items={item.submenu}
+                theme={theme}
+                variant={variant}
+                positionMethod={positionMethod}
+              />
             </BaseMenu.Positioner>
           </BaseMenu.Portal>
         </BaseMenu.SubmenuRoot>
@@ -363,10 +361,11 @@ function MenuItem({
             item.onCheckedChange?.(next);
             item.onSelect?.();
           }}
-          className="m3e-segmented-menu__item"
+          className="m3e-dropdown-item m3e-segmented-menu__item"
           data-selected={item.checked ? "" : undefined}
         >
-          <span className="m3e-segmented-menu__icon" aria-hidden="true">
+          {rippleEl}
+          <span className="m3e-dropdown-item__icon m3e-segmented-menu__icon" aria-hidden="true">
             <BaseMenu.CheckboxItemIndicator>
               <CheckIcon size={15} strokeWidth={2.6} />
             </BaseMenu.CheckboxItemIndicator>
@@ -378,7 +377,7 @@ function MenuItem({
     );
   }
 
-  if (item.href || item.render) {
+  if ((item.href || item.render) && !item.disabled) {
     const { disabled: _disabled, ...linkProps } = itemProps;
     return (
       <>
@@ -390,9 +389,10 @@ function MenuItem({
           render={item.render}
           closeOnClick={item.closeOnClick ?? true}
           onClick={(e) => item.onSelect?.(e)}
-          className="m3e-segmented-menu__item"
+          className="m3e-dropdown-item m3e-segmented-menu__item"
           data-danger={item.danger ? "" : undefined}
         >
+          {rippleEl}
           {leading}
           {label}
           {shortcut}
@@ -408,9 +408,10 @@ function MenuItem({
         {...itemProps}
         closeOnClick={item.closeOnClick}
         onClick={(e) => item.onSelect?.(e)}
-        className="m3e-segmented-menu__item"
+        className="m3e-dropdown-item m3e-segmented-menu__item"
         data-danger={item.danger ? "" : undefined}
       >
+        {rippleEl}
         {leading}
         {label}
         {shortcut}
@@ -431,23 +432,43 @@ export function DropdownMenu({
   align = "start",
 }: M3EDropdownMenuProps): React.JSX.Element {
   const portalContainer = useM3EPortalContainer();
+  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(
+    Boolean(defaultOpen),
+  );
+  const isOpen = open ?? uncontrolledOpen;
+  const triggerRef = React.useRef<HTMLElement | null>(null);
+  const assignTriggerRef = React.useCallback((node: HTMLElement | null) => {
+    triggerRef.current = node;
+  }, []);
+  const positionMethod = useAdaptivePositionMethod(triggerRef, isOpen);
 
   return (
     <BaseMenu.Root
       modal={false}
       open={open}
       defaultOpen={defaultOpen}
-      onOpenChange={(next) => onOpenChange?.(next)}
+      onOpenChange={(next) => {
+        if (open === undefined) {
+          setUncontrolledOpen(next);
+        }
+        onOpenChange?.(next);
+      }}
     >
-      <BaseMenu.Trigger render={trigger} />
+      <BaseMenu.Trigger ref={assignTriggerRef} render={trigger} />
       <BaseMenu.Portal container={portalContainer}>
         <BaseMenu.Positioner
+          positionMethod={positionMethod}
           side={side}
           align={align}
           sideOffset={6}
           className="m3e-segmented-menu__positioner"
         >
-          <MenuPopup items={items} theme={theme} variant={variant} />
+          <MenuPopup
+            items={items}
+            theme={theme}
+            variant={variant}
+            positionMethod={positionMethod}
+          />
         </BaseMenu.Positioner>
       </BaseMenu.Portal>
     </BaseMenu.Root>
@@ -478,7 +499,12 @@ export function ContextMenu({
       </BaseContextMenu.Trigger>
       <BaseContextMenu.Portal container={portalContainer}>
         <BaseContextMenu.Positioner className="m3e-segmented-menu__positioner">
-          <MenuPopup items={items} theme={theme} variant={variant} />
+          <MenuPopup
+            items={items}
+            theme={theme}
+            variant={variant}
+            positionMethod="fixed"
+          />
         </BaseContextMenu.Positioner>
       </BaseContextMenu.Portal>
     </BaseContextMenu.Root>
