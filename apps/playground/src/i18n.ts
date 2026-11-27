@@ -41,6 +41,9 @@ export interface PlaygroundStrings {
   readonly seedPresetsLabel: string;
   readonly seedCustom: string;
   readonly seedCustomAria: string;
+  readonly seedFromImage: string;
+  readonly seedExtractedToast: (hex: string) => string;
+  readonly seedExtractFailedToast: string;
   readonly seedPurple: string;
   readonly seedJade: string;
   readonly seedOcean: string;
@@ -153,6 +156,9 @@ const ZH_CN: PlaygroundStrings = {
   seedPresetsLabel: "HCT 种子色预设",
   seedCustom: "自定义",
   seedCustomAria: "自定义种子色",
+  seedFromImage: "从图片取色",
+  seedExtractedToast: (hex) => `已从图片提取种子色 ${hex}`,
+  seedExtractFailedToast: "无法解析所选图片",
   seedPurple: "Expressive 紫",
   seedJade: "翡翠青",
   seedOcean: "海湾蓝",
@@ -266,6 +272,9 @@ const EN_US: PlaygroundStrings = {
   seedPresetsLabel: "HCT seed presets",
   seedCustom: "Custom",
   seedCustomAria: "Custom seed color",
+  seedFromImage: "Extract from image",
+  seedExtractedToast: (hex) => `Extracted seed ${hex} from image`,
+  seedExtractFailedToast: "Could not read the selected image",
   seedPurple: "Expressive Iris",
   seedJade: "Jade Teal",
   seedOcean: "Bay Blue",
@@ -379,6 +388,9 @@ const JA_JP: PlaygroundStrings = {
   seedPresetsLabel: "HCT シードカラープリセット",
   seedCustom: "カスタム",
   seedCustomAria: "カスタムシードカラー",
+  seedFromImage: "画像から抽出",
+  seedExtractedToast: (hex) => `画像からシード色 ${hex} を抽出しました`,
+  seedExtractFailedToast: "選択した画像を読み込めませんでした",
   seedPurple: "Expressive アイリス",
   seedJade: "ジェイドティール",
   seedOcean: "ベイブルー",
@@ -492,6 +504,9 @@ const AR_SA: PlaygroundStrings = {
   seedPresetsLabel: "ألوان بذور HCT الجاهزة",
   seedCustom: "مخصص",
   seedCustomAria: "لون بذرة مخصص",
+  seedFromImage: "استخراج من صورة",
+  seedExtractedToast: (hex) => `تم استخراج لون البذرة ${hex} من الصورة`,
+  seedExtractFailedToast: "تعذرت قراءة الصورة المحددة",
   seedPurple: "أرجواني تعبيري",
   seedJade: "أخضر يشمي",
   seedOcean: "أزرق محيطي",

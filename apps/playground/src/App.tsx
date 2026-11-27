@@ -23,7 +23,7 @@ function RedirectToBlocks() {
 
 export function App(): React.JSX.Element {
   return (
-    <M3EProvider config={m3eProjectConfig} themeEngine={generateM3EThemeTokens}>
+    <M3EProvider autoContrast config={m3eProjectConfig} themeEngine={generateM3EThemeTokens}>
       <BrowserRouter>
         <Routes>
           <Route element={<SiteLayout />}>

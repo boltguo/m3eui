@@ -270,6 +270,10 @@ body {
   justify-content: flex-start;
 }
 
+.studio-seed-image-btn {
+  width: 100%;
+}
+
 .studio-seed-grid .m3e-button__label {
   min-width: 0;
   overflow: hidden;

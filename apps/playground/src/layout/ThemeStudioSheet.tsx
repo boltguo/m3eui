@@ -1,5 +1,5 @@
 import * as React from "react";
-import type { ColorSchemeVariant } from "m3eui/tokens";
+import { extractSeedHexFromImage, type ColorSchemeVariant } from "m3eui/tokens";
 import {
   Button,
   ButtonGroup,
@@ -83,7 +83,33 @@ export function ThemeStudioSheet({
   const { toast } = useM3EToast();
   const [copiedJson, setCopiedJson] = React.useState(false);
   const [seedDraft, setSeedDraft] = React.useState(seedHex);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   React.useEffect(() => setSeedDraft(seedHex), [seedHex]);
+
+  const handleImageFile = React.useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      e.target.value = "";
+      if (!file) return;
+      const objectUrl = URL.createObjectURL(file);
+      try {
+        const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const el = new Image();
+          el.onload = () => resolve(el);
+          el.onerror = () => reject(new Error("image_load_failed"));
+          el.src = objectUrl;
+        });
+        const hex = (await extractSeedHexFromImage(img)).toUpperCase();
+        setSeedHex(hex);
+        toast({ title: ui.seedExtractedToast(hex) });
+      } catch {
+        toast({ title: ui.seedExtractFailedToast });
+      } finally {
+        URL.revokeObjectURL(objectUrl);
+      }
+    },
+    [setSeedHex, toast, ui],
+  );
 
   const seedPresets = React.useMemo(
     () => [
@@ -221,6 +247,22 @@ export function ThemeStudioSheet({
                 />
               </Popover>
             </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: "none" }}
+              onChange={handleImageFile}
+            />
+            <Button
+              size="xs"
+              variant="tonal"
+              shape="square"
+              className="studio-seed-image-btn"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {ui.seedFromImage}
+            </Button>
           </div>
 
           <Select
