@@ -774,6 +774,39 @@ function ThemingDocContent() {
         <h2>{resolve({ zh: "实时调色板与 m3e.json 导出", en: "Interactive Palette & m3e.json Exporter" })}</h2>
         <LiveThemingGuideWidget />
       </section>
+      <section id="image-custom-colors" tabIndex={-1} className="doc-prose-section">
+        <h2>{resolve({ zh: "图片取色、自定义语义色与系统高对比度", en: "Image Seed Extraction, Custom Roles & autoContrast" })}</h2>
+        <p className="doc-prose-p">
+          {resolve({
+            zh: "支持直接从图片提取 HCT 种子色（extractSeedHexFromImage）、用 harmonizeHexColor 协调品牌辅色、通过 customColors 输出语义容器变量，以及开启 autoContrast 自动响应系统 prefers-contrast: more。",
+            en: "Extract dominant HCT seeds from images (extractSeedHexFromImage), harmonize brand accents (harmonizeHexColor), emit custom role tokens via customColors, and enable autoContrast on M3EProvider for OS prefers-contrast: more tracking.",
+          })}
+        </p>
+        <CodeBlock
+          lang="tsx"
+          title="src/theme.tsx"
+          showHeader
+          showCopyButton
+          code={`import { M3EProvider } from "m3eui";
+import {
+  extractSeedHexFromImage,
+  generateM3EThemeTokens,
+  harmonizeHexColor,
+} from "m3eui/tokens";
+
+const seedHex = await extractSeedHexFromImage(coverImgEl);
+const accentHex = harmonizeHexColor("#006C51", seedHex);
+const tokens = generateM3EThemeTokens({
+  seedHex,
+  customColors: { brand: "#006C51" },
+});
+// Outputs --m3e-color-brand, --m3e-color-on-brand, and container tokens.
+
+<M3EProvider autoContrast theme={{ seed: seedHex }}>
+  <App />
+</M3EProvider>;`}
+        />
+      </section>
     </div>
   );
 }
@@ -948,6 +981,29 @@ function StylingDocContent() {
 
 /* If using Tailwind CSS v4, keep m3e layers before utilities: */
 @layer theme, base, m3e.tokens, m3e.base, m3e.components, components, utilities;`}
+        />
+      </section>
+
+      <section id="tailwind-typography" tabIndex={-1} className="doc-prose-section">
+        <h2>{resolve({ zh: "Tailwind v4 主题桥接与排版工具类", en: "Tailwind v4 Bridge & Typography Utilities" })}</h2>
+        <p className="doc-prose-p">
+          {resolve({
+            zh: "引入 m3eui/tailwind.css 即可将全部 M3E 色彩、圆角、海拔阴影与字体映射为 Tailwind v4 @theme inline 工具类（如 bg-m3e-primary、rounded-m3e-large、shadow-m3e-level2）；同时 m3eui/styles.css 在 m3e.base 层内置了 .m3e-type-* 排版工具类。",
+            en: "Import m3eui/tailwind.css to map all M3E colors, corner radii, elevation shadows, and fonts into Tailwind v4 utilities via @theme inline, and use built-in .m3e-type-* typography classes bundled in m3eui/styles.css.",
+          })}
+        </p>
+        <CodeBlock
+          lang="css"
+          title="app.css"
+          showHeader
+          showCopyButton
+          code={`@import "tailwindcss";
+@import "m3eui/styles.css";
+@import "m3eui/tailwind.css";
+
+/* Ready in JSX/HTML: */
+/* <h2 className="m3e-type-headline-small-emphasized">Heading</h2> */
+/* <div className="bg-m3e-surface-container text-m3e-on-surface rounded-m3e-large shadow-m3e-level2" /> */`}
         />
       </section>
 
@@ -1187,16 +1243,24 @@ function ExportsBoundariesDocContent() {
         entry: "m3eui/styles.css",
         runtime: "CSS (@layer)",
         contents: resolve({
-          zh: "组件级联层样式表（@layer m3e.tokens, m3e.base, m3e.components + light-dark()）",
-          en: "Layered component stylesheet (@layer m3e.tokens, m3e.base, m3e.components + light-dark())",
+          zh: "组件级联层样式表（@layer m3e.tokens, m3e.base, m3e.components、.m3e-type-* 排版工具类与 light-dark()）",
+          en: "Layered component stylesheet (@layer m3e.tokens, m3e.base, m3e.components, .m3e-type-* utilities, and light-dark())",
+        }),
+      },
+      {
+        entry: "m3eui/tailwind.css",
+        runtime: "Tailwind v4",
+        contents: resolve({
+          zh: "@theme inline 语义令牌桥接（--color-m3e-*、--radius-m3e-*、--shadow-m3e-* 与字体族）",
+          en: "@theme inline token bridge (--color-m3e-*, --radius-m3e-*, --shadow-m3e-*, and font families)",
         }),
       },
       {
         entry: "m3eui/tokens",
         runtime: "Pure ESM / RSC-safe",
         contents: resolve({
-          zh: "零 React/DOM 依赖的 CAM16/HCT 色彩数学、弹簧求解器与 35 种 MaterialShapes 几何引擎",
-          en: "Zero-React/DOM CAM16/HCT color math, SpringSimulation solver, and 35 MaterialShapes",
+          zh: "零 React/DOM 依赖的 CAM16/HCT 色彩数学、图片取色/色彩协调与自定义色、弹簧求解器与 35 种 MaterialShapes",
+          en: "Zero-React/DOM CAM16/HCT color math, image seed/harmonize & custom colors, SpringSimulation, and 35 MaterialShapes",
         }),
       },
       {
@@ -1409,6 +1473,7 @@ export const DOC_GUIDES: readonly DocGuideSpec[] = [
     sections: [
       { id: "monet", heading: { zh: "Monet SPEC_2025", en: "Monet SPEC_2025" } },
       { id: "playground", heading: { zh: "实时调色与导出", en: "Interactive Exporter" } },
+      { id: "image-custom-colors", heading: { zh: "图片取色与自定义色", en: "Image Seed & Custom Colors" } },
     ],
     render: () => <ThemingDocContent />,
   },
@@ -1434,6 +1499,7 @@ export const DOC_GUIDES: readonly DocGuideSpec[] = [
     },
     sections: [
       { id: "cascade-layers", heading: { zh: "CSS @layer 优先级", en: "CSS @layer Order" } },
+      { id: "tailwind-typography", heading: { zh: "Tailwind v4 与排版类", en: "Tailwind v4 & Type Utilities" } },
       { id: "token-reference", heading: { zh: "核心令牌速查", en: "Token Reference" } },
       { id: "primitives", heading: { zh: "无头原语组合", en: "Headless Primitives" } },
     ],
