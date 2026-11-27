@@ -55,6 +55,28 @@ describe("m3eui dist build invariants", () => {
     expect(stylesCss).toContain(".m3e-type-title-medium");
     expect(stylesCss).toContain(".m3e-type-headline-small-emphasized");
 
+    const baseStylesCss = readFileSync(resolve(distRoot, "styles/base.css"), "utf8");
+    expect(baseStylesCss).toContain("@layer m3e.tokens, m3e.base, m3e.components;");
+    expect(baseStylesCss).toContain(".m3e-type-title-medium");
+
+    const srcComponentsRoot = resolve(pkgRoot, "src/components");
+    const cssComponentDirs = readdirSync(srcComponentsRoot).filter((dir) =>
+      existsSync(resolve(srcComponentsRoot, dir, `${dir}.css`)),
+    );
+    expect(cssComponentDirs.length).toBeGreaterThan(45);
+    for (const dir of cssComponentDirs) {
+      expect(
+        existsSync(resolve(distRoot, "components", dir, "styles.css")),
+        `components/${dir}/styles.css must exist`,
+      ).toBe(true);
+    }
+    expect(readFileSync(resolve(distRoot, "components/Button/styles.css"), "utf8")).toContain(
+      ".m3e-button",
+    );
+    expect(
+      readFileSync(resolve(distRoot, "components/TextField/styles.css"), "utf8"),
+    ).toContain(".m3e-field");
+
     const tailwindCss = readFileSync(resolve(distRoot, "tailwind.css"), "utf8");
     expect(tailwindCss).toContain("@theme inline");
     expect(tailwindCss).toContain("--color-m3e-primary: var(--m3e-color-primary);");

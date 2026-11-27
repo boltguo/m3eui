@@ -13,9 +13,18 @@ import { Button as DirectButton } from "m3eui/components/Button";
 
 const req = createRequire(import.meta.url);
 const stylesCssPath = req.resolve("m3eui/styles.css");
+const baseStylesCssPath = req.resolve("m3eui/styles/base.css");
+const buttonStylesCssPath = req.resolve("m3eui/components/Button/styles.css");
 const tailwindCssPath = req.resolve("m3eui/tailwind.css");
-if (!existsSync(stylesCssPath) || !existsSync(tailwindCssPath)) {
-  throw new Error("Missing built stylesheet exports (styles.css / tailwind.css)");
+if (
+  !existsSync(stylesCssPath) ||
+  !existsSync(baseStylesCssPath) ||
+  !existsSync(buttonStylesCssPath) ||
+  !existsSync(tailwindCssPath)
+) {
+  throw new Error(
+    "Missing built stylesheet exports (styles.css / styles/base.css / components/Button/styles.css / tailwind.css)",
+  );
 }
 if (
   typeof tokens.extractSeedHexFromImageBytes !== "function" ||

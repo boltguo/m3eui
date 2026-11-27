@@ -1235,16 +1235,24 @@ function ExportsBoundariesDocContent() {
         entry: "m3eui/components/*",
         runtime: "SSR + CSR",
         contents: resolve({
-          zh: "单组件模块直连入口（如 m3eui/components/Button、m3eui/components/DataTable）",
-          en: "Direct single-module component entrypoints (e.g., m3eui/components/Button)",
+          zh: "单组件模块与按需样式入口（如 m3eui/components/Button、m3eui/components/Button/styles.css）",
+          en: "Direct single-module component & CSS entrypoints (e.g., m3eui/components/Button, m3eui/components/Button/styles.css)",
         }),
       },
       {
         entry: "m3eui/styles.css",
         runtime: "CSS (@layer)",
         contents: resolve({
-          zh: "组件级联层样式表（@layer m3e.tokens, m3e.base, m3e.components、.m3e-type-* 排版工具类与 light-dark()）",
-          en: "Layered component stylesheet (@layer m3e.tokens, m3e.base, m3e.components, .m3e-type-* utilities, and light-dark())",
+          zh: "完整组件级联层样式表（@layer m3e.tokens, m3e.base, m3e.components、.m3e-type-* 排版工具类与 light-dark()）",
+          en: "Full layered component stylesheet (@layer m3e.tokens, m3e.base, m3e.components, .m3e-type-* utilities, and light-dark())",
+        }),
+      },
+      {
+        entry: "m3eui/styles/base.css",
+        runtime: "CSS (@layer)",
+        contents: resolve({
+          zh: "配合单组件 CSS 使用的基础令牌、重置规则、.m3e-type-* 工具类与滚动条层样式",
+          en: "Shared base tokens, reset, .m3e-type-* utilities, and scrollbar layer CSS for per-component CSS",
         }),
       },
       {

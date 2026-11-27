@@ -105,6 +105,56 @@ writeFileSync(
   "utf8",
 );
 
+const scrollbarCss = readFileSync(join(stylesDir, "scrollbar.css"), "utf8").trim();
+mkdirSync(join(distDir, "styles"), { recursive: true });
+writeFileSync(
+  join(distDir, "styles", "base.css"),
+  [
+    `@layer ${layerOrder.join(", ")};`,
+    `@layer m3e.tokens {\n${layerParts.get("m3e.tokens").join("\n\n").trim()}\n}`,
+    `@layer m3e.base {\n${layerParts.get("m3e.base").join("\n\n").trim()}\n}`,
+    `@layer m3e.components {\n${scrollbarCss}\n}`,
+  ].join("\n\n") + "\n",
+  "utf8",
+);
+
+const sharedCssPartials = [
+  { file: "dropdown.css", pattern: /m3e-dropdown/ },
+  { file: "control-row.css", pattern: /m3e-control-row/ },
+  { file: "field.css", pattern: /m3e-field|pickerField/ },
+  { file: "nav-list.css", pattern: /m3e-nav-list/ },
+].map(({ file, pattern }) => ({
+  pattern,
+  css: readFileSync(join(stylesDir, file), "utf8").trim(),
+}));
+
+const componentsSrcDir = join(pkgRoot, "src", "components");
+for (const dirName of readdirSync(componentsSrcDir)) {
+  const compSrcDir = join(componentsSrcDir, dirName);
+  const compDistDir = join(distDir, "components", dirName);
+  const cssPath = join(compSrcDir, `${dirName}.css`);
+  if (!existsSync(cssPath) || !existsSync(compDistDir)) continue;
+
+  const compText = readdirSync(compSrcDir)
+    .filter((f) => !f.includes(".test.") && (f.endsWith(".css") || f.endsWith(".ts") || f.endsWith(".tsx")))
+    .map((f) => readFileSync(join(compSrcDir, f), "utf8"))
+    .join("\n");
+
+  const chunks = [];
+  for (const partial of sharedCssPartials) {
+    if (partial.pattern.test(compText)) {
+      chunks.push(partial.css);
+    }
+  }
+  chunks.push(readFileSync(cssPath, "utf8").trim());
+
+  writeFileSync(
+    join(compDistDir, "styles.css"),
+    `@layer ${layerOrder.join(", ")};\n\n@layer m3e.components {\n${chunks.join("\n\n").trim()}\n}\n`,
+    "utf8",
+  );
+}
+
 const defaultPalette = tokens.generateM3EThemeTokens({
   seedHex: "#6750A4",
   variant: "expressive",

@@ -122,6 +122,7 @@ export function DynamicApp({ children }: { children: React.ReactNode }) {
 | :--- | :--- |
 | `m3eui` | 兼容 RSC 的组件、Hooks、`M3EProvider`、`M3EPortal`、配置、国际化与令牌入口 |
 | `m3eui/styles.css` | 组件样式表（`--m3e-*` 变量、`.m3e-type-*` 排版工具类与 `light-dark()`） |
+| `m3eui/styles/base.css` | 共享基础令牌、重置规则、排版工具类与滚动条层级样式 |
 | `m3eui/tailwind.css` | Tailwind CSS v4 `@theme inline` 令牌映射 |
 | `m3eui/tokens` | 纯函数兼容 RSC 的 61 语义角色 HCT 色阶计算、图片取色、自定义协调扩展色、弹簧求解、圆角拓扑、`parseShortcutKeys` 与 35 种 `MaterialShapes`（`getMaterialShape`） |
 | `m3eui/tokens.json` | 预计算的静态令牌与多边形 JSON |
@@ -130,7 +131,7 @@ export function DynamicApp({ children }: { children: React.ReactNode }) {
 | `m3eui/primitives` | 透出的 `@base-ui/react` 无头原语 |
 | `m3eui/cli` | CLI 编程接口 |
 | `m3eui/m3e.schema.json` | `m3e.json` JSON Schema |
-| `m3eui/components/*` | 单组件模块入口 |
+| `m3eui/components/*`（`.../styles.css`） | 单组件模块与单组件层级样式入口 |
 
 ## 组件清单
 

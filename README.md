@@ -148,6 +148,7 @@ Both `npx m3eui` and `npx m3e` are supported.
 | :--- | :--- |
 | `m3eui` | RSC-safe barrel for components, hooks, `M3EProvider`, `M3EPortal`, config, i18n, and tokens |
 | `m3eui/styles.css` | Component stylesheet (`--m3e-*` custom properties, `.m3e-type-*` typography utilities, and `light-dark()`) |
+| `m3eui/styles/base.css` | Shared base tokens, reset, typography utilities, and scrollbar layer CSS |
 | `m3eui/tailwind.css` | Tailwind CSS v4 `@theme inline` token mapping |
 | `m3eui/tokens` | Pure RSC-safe 61-role HCT color synthesis, image seed extraction, custom harmonized colors, spring solver, corner topology, `parseShortcutKeys`, and 35 `MaterialShapes` (`getMaterialShape`) |
 | `m3eui/tokens.json` | Precomputed token and polygon JSON |
@@ -156,7 +157,7 @@ Both `npx m3eui` and `npx m3e` are supported.
 | `m3eui/primitives` | Re-exported `@base-ui/react` primitives |
 | `m3eui/cli` | Programmatic CLI API |
 | `m3eui/m3e.schema.json` | JSON Schema for `m3e.json` |
-| `m3eui/components/*` | Individual component modules |
+| `m3eui/components/*` (`.../styles.css`) | Individual component modules and per-component layered stylesheets |
 
 ## Components
 

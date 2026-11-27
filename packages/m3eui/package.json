@@ -65,6 +65,7 @@
       "import": "./dist/index.js"
     },
     "./styles.css": "./dist/styles.css",
+    "./styles/base.css": "./dist/styles/base.css",
     "./tailwind.css": "./dist/tailwind.css",
     "./tokens": {
       "types": "./dist/tokens/index.d.ts",
@@ -94,6 +95,7 @@
     "./m3e.schema.json": "./m3e.schema.json",
     "./package.json": "./package.json",
     "./components/_*": null,
+    "./components/*/styles.css": "./dist/components/*/styles.css",
     "./components/*": {
       "types": "./dist/components/*/*.d.ts",
       "import": "./dist/components/*/*.js"
