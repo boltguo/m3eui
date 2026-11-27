@@ -32,8 +32,8 @@ import {
 import { useCopyResolver, usePlaygroundStrings } from "../i18n";
 import { CodeBlock } from "../layout/CodeBlock";
 import { AOSP_SCHEME_OPTIONS, SeedSwatchDot } from "../layout/ThemeStudioSheet";
-import { ALL_COMPONENT_DOCS } from "./components";
-import { getComponentDesignSpec } from "./design";
+import { COMPONENT_CATALOG } from "./catalog";
+import { loadComponentMatrixData } from "./loaders";
 import type {
   DesignProvenanceKind,
   DocGuideSpec,
@@ -392,8 +392,8 @@ function IntroDocContent() {
           <Card variant="outlined" title="m3eui/primitives & components">
             <p className="doc-prose-p">
               {resolve({
-                zh: `${ALL_COMPONENT_DOCS.length} 组组件模块，覆盖 AOSP M3E 标准组件与桌面 Web 无头原语适配组件。`,
-                en: `${ALL_COMPONENT_DOCS.length} component modules spanning official AOSP M3E specs and desktop Web adaptations.`,
+                zh: `${COMPONENT_CATALOG.length} 组组件模块，覆盖 AOSP M3E 标准组件与桌面 Web 无头原语适配组件。`,
+                en: `${COMPONENT_CATALOG.length} component modules spanning official AOSP M3E specs and desktop Web adaptations.`,
               })}
             </p>
           </Card>
@@ -432,19 +432,31 @@ function ComponentMatrixDocContent() {
   const resolve = useCopyResolver();
   const [filter, setFilter] = React.useState<"all" | DesignProvenanceKind>("all");
   const [query, setQuery] = React.useState("");
+  const [allRows, setAllRows] = React.useState<readonly ProvenanceRow[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
 
-  const allRows = React.useMemo<readonly ProvenanceRow[]>(() => {
-    return ALL_COMPONENT_DOCS.map((doc) => {
-      const spec = getComponentDesignSpec(doc.slug);
-      return {
-        slug: doc.slug,
-        title: doc.title,
-        provenance: spec?.provenance ?? "m3e-web-adaptation",
-        aospSources: spec?.aospSources ?? [],
-        primitive: doc.primitive,
-        tokenSources: spec?.tokenSources ?? [],
-      };
+  React.useEffect(() => {
+    let cancelled = false;
+    loadComponentMatrixData().then(({ docs, specs }) => {
+      if (cancelled) return;
+      setAllRows(
+        docs.map((doc) => {
+          const spec = specs[doc.slug];
+          return {
+            slug: doc.slug,
+            title: doc.title,
+            provenance: spec?.provenance ?? "m3e-web-adaptation",
+            aospSources: spec?.aospSources ?? [],
+            primitive: doc.primitive,
+            tokenSources: spec?.tokenSources ?? [],
+          };
+        }),
+      );
+      setIsLoading(false);
     });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const officialCount = React.useMemo(
@@ -582,6 +594,8 @@ function ComponentMatrixDocContent() {
           caption={resolve({ zh: "m3eui 组件规范溯源矩阵", en: "m3eui Component Provenance Matrix" })}
           hideCaption
           density="compact"
+          loading={isLoading}
+          loadingRows={8}
           rows={filteredRows}
           getRowKey={(r) => r.slug}
           columns={columns}

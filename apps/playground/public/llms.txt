@@ -1,0 +1,134 @@
+# m3eui v0.2.0
+
+> Material 3 Expressive React component library built on @base-ui/react with HCT dynamic color, spring physics, and built-in i18n/RTL.
+
+- Docs & Playground: https://m3eui.vercel.app
+- Repository: https://github.com/boltguo/m3eui
+- Sole runtime dependency: `@base-ui/react` (`react >= 18`, `react-dom >= 18`)
+
+## Quick Start
+
+```bash
+pnpm add m3eui
+npx m3eui init --seed "#6750A4" --variant expressive --locale en-US
+```
+
+```tsx
+import "./styles/m3e-theme.css";
+import "m3eui/styles.css";
+import { M3EProvider, Button } from "m3eui";
+import m3eConfig from "../m3e.json";
+
+export function App() {
+  return (
+    <M3EProvider config={m3eConfig}>
+      <Button variant="filled">Continue</Button>
+    </M3EProvider>
+  );
+}
+```
+
+## Subpath Exports
+
+- `m3eui` — Components, hooks (`useM3EToast`, `useM3E`, `useM3EI18n`, spring hooks), `M3EProvider`, `M3EPortal`, `CSPProvider`
+- `m3eui/styles.css` — Layered component CSS (`@layer m3e.tokens, m3e.base, m3e.components`, `light-dark()`, `.m3e-type-*`)
+- `m3eui/tailwind.css` — Tailwind CSS v4 `@theme inline` token mapping (`--color-m3e-*`, `--radius-m3e-*`, `--shadow-m3e-*`)
+- `m3eui/tokens` — Pure RSC-safe HCT palette generator (61 roles), `extractSeedHexFromImage`, `harmonizeHexColor`, spring solver, corner topology, 35 `MaterialShapes`
+- `m3eui/i18n` — Built-in `en-US`, `zh-CN`, `ja-JP`, `ar-SA` dictionaries, BCP 47 RTL & CLDR helpers
+- `m3eui/config` — `defineM3EConfig`, `resolveM3EConfig`, `generateM3EStaticThemeCss`, `getM3EInitScript`
+- `m3eui/primitives` — Re-exported `@base-ui/react` primitives
+- `m3eui/components/*` — Individual component modules
+
+## Integration Notes
+
+- Use `themeEngine={generateM3EThemeTokens}` on `<M3EProvider>` only when dynamic browser seed/variant switching is needed.
+- Use `syncDocumentRoot={false}` for isolated/embedded themes (`M3EPortal` keeps overlays scoped).
+- Use `render={<Link to="..." />}` on `Button`, `IconButton`, `FAB`, `Card`, `ListItem`, `Breadcrumb`, and `NavigationDestination` for SPA routing.
+- Tokens: 61 `--m3e-color-*` roles, 30 `.m3e-type-*` / `--m3e-typescale-*` scales, `--m3e-shape-corner-*`, `--m3e-elevation-level0..5`, `--m3e-spatial-*` / `--m3e-effects-*`.
+
+## CLI
+
+- `npx m3eui init [--seed] [--variant] [--locale] [--output] [--force]`
+- `npx m3eui sync [--config]`
+- `npx m3eui locale --list | <bcp47-tag> [--out] [--force]`
+- `npx m3eui doctor [--config]`
+
+## Documentation
+
+- [Introduction & Architecture](https://m3eui.vercel.app/docs/introduction)
+- [Component Matrix & Provenance](https://m3eui.vercel.app/docs/component-matrix)
+- [Installation & Setup](https://m3eui.vercel.app/docs/installation)
+- [Dynamic Color & Theming](https://m3eui.vercel.app/docs/theming)
+- [Spring Physics & Shapes](https://m3eui.vercel.app/docs/motion-shapes)
+- [Styling & Cascade Layers](https://m3eui.vercel.app/docs/styling)
+- [Forms & Validation](https://m3eui.vercel.app/docs/forms-validation)
+- [Internationalization & RTL](https://m3eui.vercel.app/docs/i18n-rtl)
+- [Subpath Exports & Boundaries](https://m3eui.vercel.app/docs/exports-boundaries)
+- [CLI Toolchain](https://m3eui.vercel.app/docs/cli)
+
+## Components (57)
+
+- [Accordion](https://m3eui.vercel.app/components/accordion)
+- [Alert](https://m3eui.vercel.app/components/alert)
+- [AlertDialog](https://m3eui.vercel.app/components/alert-dialog)
+- [Avatar](https://m3eui.vercel.app/components/avatar)
+- [Badge](https://m3eui.vercel.app/components/badge)
+- [Breadcrumb](https://m3eui.vercel.app/components/breadcrumb)
+- [Button](https://m3eui.vercel.app/components/button)
+- [ButtonGroup](https://m3eui.vercel.app/components/button-group)
+- [Card](https://m3eui.vercel.app/components/card)
+- [Carousel](https://m3eui.vercel.app/components/carousel)
+- [Checkbox](https://m3eui.vercel.app/components/checkbox)
+- [Chip](https://m3eui.vercel.app/components/chip)
+- [ColorPicker](https://m3eui.vercel.app/components/color-picker)
+- [Combobox](https://m3eui.vercel.app/components/combobox)
+- [CommandPalette](https://m3eui.vercel.app/components/command-palette)
+- [ContextMenu](https://m3eui.vercel.app/components/context-menu)
+- [DataTable](https://m3eui.vercel.app/components/data-table)
+- [DatePicker](https://m3eui.vercel.app/components/date-picker)
+- [Dialog](https://m3eui.vercel.app/components/dialog)
+- [Divider](https://m3eui.vercel.app/components/divider)
+- [DragHandle](https://m3eui.vercel.app/components/drag-handle)
+- [Empty](https://m3eui.vercel.app/components/empty)
+- [FAB](https://m3eui.vercel.app/components/fab)
+- [FABMenu](https://m3eui.vercel.app/components/fab-menu)
+- [FileUpload](https://m3eui.vercel.app/components/file-upload)
+- [FloatingToolbar](https://m3eui.vercel.app/components/floating-toolbar)
+- [Form](https://m3eui.vercel.app/components/form)
+- [IconButton](https://m3eui.vercel.app/components/icon-button)
+- [Kbd](https://m3eui.vercel.app/components/kbd)
+- [List](https://m3eui.vercel.app/components/list)
+- [LoadingIndicator](https://m3eui.vercel.app/components/loading-indicator)
+- [MaterialShape](https://m3eui.vercel.app/components/material-shape)
+- [Menu](https://m3eui.vercel.app/components/menu)
+- [Meter](https://m3eui.vercel.app/components/meter)
+- [NavigationBar](https://m3eui.vercel.app/components/navigation-bar)
+- [NavigationRail](https://m3eui.vercel.app/components/navigation-rail)
+- [NumberField](https://m3eui.vercel.app/components/number-field)
+- [OTPField](https://m3eui.vercel.app/components/otp-field)
+- [Pagination](https://m3eui.vercel.app/components/pagination)
+- [Popover](https://m3eui.vercel.app/components/popover)
+- [ProgressIndicator](https://m3eui.vercel.app/components/progress-indicator)
+- [RadioGroup](https://m3eui.vercel.app/components/radio-group)
+- [ScrollArea](https://m3eui.vercel.app/components/scroll-area)
+- [SearchBar](https://m3eui.vercel.app/components/search-bar)
+- [Select](https://m3eui.vercel.app/components/select)
+- [Sheet](https://m3eui.vercel.app/components/sheet)
+- [Skeleton](https://m3eui.vercel.app/components/skeleton)
+- [Slider](https://m3eui.vercel.app/components/slider)
+- [Snippet](https://m3eui.vercel.app/components/snippet)
+- [SplitButton](https://m3eui.vercel.app/components/split-button)
+- [Switch](https://m3eui.vercel.app/components/switch)
+- [Tabs](https://m3eui.vercel.app/components/tabs)
+- [TextField](https://m3eui.vercel.app/components/text-field)
+- [TimePicker](https://m3eui.vercel.app/components/time-picker)
+- [Toast](https://m3eui.vercel.app/components/toast)
+- [Tooltip](https://m3eui.vercel.app/components/tooltip)
+- [TopAppBar](https://m3eui.vercel.app/components/top-app-bar)
+
+## Blocks (3)
+
+- [Analytics Dashboard with Sidebar, Area Chart & Data Table](https://m3eui.vercel.app/blocks#dashboard-01)
+- [Split Brand Login with Passkey & 2FA OTP Step](https://m3eui.vercel.app/blocks#login-01)
+- [M3E AI Agent & Reasoning Studio](https://m3eui.vercel.app/blocks#ai-workspace-01)
+

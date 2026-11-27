@@ -15,6 +15,7 @@ import {
   NavigationRail,
   type NavigationDestination,
   SearchBar,
+  Skeleton,
   Tab,
   Tabs,
   TabsList,
@@ -30,8 +31,9 @@ import { DesignSpecView } from "../layout/DesignSpecView";
 import { OnThisPage, type TocAnchorItem } from "../layout/OnThisPage";
 import type { SiteOutletContext } from "../layout/SiteLayout";
 import { SiteSectionLinks } from "../layout/SiteSections";
-import { ALL_COMPONENT_DOCS } from "../registry/components";
-import { getComponentDesignSpec } from "../registry/design";
+import { COMPONENT_CATALOG } from "../registry/catalog";
+import { loadComponentDesignSpec, loadComponentDoc } from "../registry/loaders";
+import type { ComponentDesignSpec, ComponentDocSpec } from "../registry/types";
 
 type ComponentDocTab = "usage" | "design";
 
@@ -46,6 +48,11 @@ export function ComponentsPage() {
   const { toast } = useM3EToast();
 
   const [filterQuery, setFilterQuery] = React.useState("");
+  const [loadedState, setLoadedState] = React.useState<{
+    readonly slug: string;
+    readonly doc: ComponentDocSpec | undefined;
+    readonly designSpec: ComponentDesignSpec | undefined;
+  } | null>(null);
 
   const activeTab: ComponentDocTab =
     searchParams.get("tab") === "design" ? "design" : "usage";
@@ -72,46 +79,68 @@ export function ComponentsPage() {
 
   const sidebarItems = React.useMemo<readonly NavigationDestination<string>[]>(
     () =>
-      ALL_COMPONENT_DOCS.filter(
+      COMPONENT_CATALOG.filter(
         (item) =>
           !normalizedFilter ||
           item.title.toLowerCase().includes(normalizedFilter) ||
           item.slug.toLowerCase().includes(normalizedFilter) ||
-          resolve(item.subtitle).toLowerCase().includes(normalizedFilter),
+          (item.keywords?.some((kw) =>
+            kw.toLowerCase().includes(normalizedFilter),
+          ) ??
+            false),
       ).map((item) => ({
         value: item.slug,
         label: item.title,
         badgeLabel: item.isNew ? "NEW" : undefined,
       })),
-    [normalizedFilter, resolve],
+    [normalizedFilter],
   );
 
-  if (!slug) {
+  const catalogIndex = slug
+    ? COMPONENT_CATALOG.findIndex((item) => item.slug === slug)
+    : -1;
+  const catalogEntry =
+    catalogIndex >= 0 ? COMPONENT_CATALOG[catalogIndex] : undefined;
+
+  React.useEffect(() => {
+    if (!slug || !catalogEntry) return undefined;
+    let cancelled = false;
+    Promise.all([loadComponentDoc(slug), loadComponentDesignSpec(slug)]).then(
+      ([doc, designSpec]) => {
+        if (!cancelled) {
+          setLoadedState({ slug, doc, designSpec });
+        }
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, catalogEntry]);
+
+  if (!slug || !catalogEntry) {
     return <Navigate to="/components/button" replace />;
   }
 
-  const docIndex = ALL_COMPONENT_DOCS.findIndex((item) => item.slug === slug);
-  const doc = docIndex >= 0 ? ALL_COMPONENT_DOCS[docIndex] : undefined;
-
-  if (!doc) {
-    return <Navigate to="/components/button" replace />;
-  }
-
-  const designSpec = getComponentDesignSpec(doc.slug);
-
-  const prevDoc = docIndex > 0 ? ALL_COMPONENT_DOCS[docIndex - 1] : undefined;
-  const nextDoc =
-    docIndex < ALL_COMPONENT_DOCS.length - 1
-      ? ALL_COMPONENT_DOCS[docIndex + 1]
+  const prevEntry =
+    catalogIndex > 0 ? COMPONENT_CATALOG[catalogIndex - 1] : undefined;
+  const nextEntry =
+    catalogIndex < COMPONENT_CATALOG.length - 1
+      ? COMPONENT_CATALOG[catalogIndex + 1]
       : undefined;
 
-  const usageTocItems: readonly TocAnchorItem[] = [
-    ...doc.scenarios.map((sc) => ({
-      id: sc.id,
-      label: resolve(sc.title),
-    })),
-    ...(doc.apis.length > 0 ? [{ id: "api", label: ui.apiHeading }] : []),
-  ];
+  const isDocReady = loadedState?.slug === slug && loadedState.doc !== undefined;
+  const doc = isDocReady ? loadedState.doc : undefined;
+  const designSpec = isDocReady ? loadedState.designSpec : undefined;
+
+  const usageTocItems: readonly TocAnchorItem[] = doc
+    ? [
+        ...doc.scenarios.map((sc) => ({
+          id: sc.id,
+          label: resolve(sc.title),
+        })),
+        ...(doc.apis.length > 0 ? [{ id: "api", label: ui.apiHeading }] : []),
+      ]
+    : [];
 
   const designTocItems: readonly TocAnchorItem[] = [
     { id: "design-provenance", label: ui.designToc.provenance },
@@ -130,7 +159,7 @@ export function ComponentsPage() {
 
   const tabSuffix = activeTab === "design" ? "?tab=design" : "";
 
-  const usageSectionContent = (
+  const usageSectionContent = doc ? (
     <div className="m3e-doc-tabpanel__inner">
       <section
         aria-labelledby="examples-heading"
@@ -152,7 +181,7 @@ export function ComponentsPage() {
 
       <ApiTableSection apis={doc.apis} />
     </div>
-  );
+  ) : null;
 
   return (
     <div className="m3e-doc-layout">
@@ -175,14 +204,14 @@ export function ComponentsPage() {
           />
         }
         items={sidebarItems}
-        value={doc.slug}
+        value={catalogEntry.slug}
         onValueChange={(nextSlug) =>
           navigate(`/components/${nextSlug}${tabSuffix}`)
         }
       />
 
       {/* Center Component Documentation Article */}
-      <main className="m3e-doc-article" key={doc.slug}>
+      <main className="m3e-doc-article" key={catalogEntry.slug}>
         <Breadcrumb
           items={[
             {
@@ -196,8 +225,8 @@ export function ComponentsPage() {
               render: <Link to="/components/button" />,
             },
             {
-              key: doc.slug,
-              label: doc.title,
+              key: catalogEntry.slug,
+              label: catalogEntry.title,
             },
           ]}
         />
@@ -210,35 +239,44 @@ export function ComponentsPage() {
           }
         >
           <div className="demo-row" style={{ gap: 10 }}>
-            <h1 className="m3e-doc-header__title">{doc.title}</h1>
-            {doc.isNew && (
+            <h1 className="m3e-doc-header__title">{catalogEntry.title}</h1>
+            {catalogEntry.isNew && (
               <Chip tone="primary" variant="solid">
                 NEW
               </Chip>
             )}
-            {doc.primitive?.split(" · ").map((name) => (
+            {doc?.primitive?.split(" · ").map((name) => (
               <Chip key={name} tone="neutral" variant="outlined">
                 {name}
               </Chip>
             ))}
           </div>
-          <p className="m3e-doc-header__subtitle">{resolve(doc.subtitle)}</p>
+          {doc ? (
+            <>
+              <p className="m3e-doc-header__subtitle">{resolve(doc.subtitle)}</p>
 
-          <div className="m3e-import-banner">
-            <div className="m3e-import-banner__code">
-              <CodeBlock code={doc.importStatement} lang="tsx" compact />
-            </div>
-            <CopyButton
-              value={doc.importStatement}
-              variant="ghost"
-              label={ui.copyImportAria(doc.title)}
-              copiedLabel={ui.cardCopied}
-              onCopy={() => toast({ title: ui.cardCopiedCodeToast(doc.title) })}
-            />
-          </div>
+              <div className="m3e-import-banner">
+                <div className="m3e-import-banner__code">
+                  <CodeBlock code={doc.importStatement} lang="tsx" compact />
+                </div>
+                <CopyButton
+                  value={doc.importStatement}
+                  variant="ghost"
+                  label={ui.copyImportAria(doc.title)}
+                  copiedLabel={ui.cardCopied}
+                  onCopy={() => toast({ title: ui.cardCopiedCodeToast(doc.title) })}
+                />
+              </div>
+            </>
+          ) : null}
         </header>
 
-        {designSpec ? (
+        {!doc ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <Skeleton variant="rounded" width="100%" height={56} />
+            <Skeleton variant="rounded" width="100%" height={220} />
+          </div>
+        ) : designSpec ? (
           <Tabs
             variant="primary"
             className="m3e-doc-tabs"
@@ -281,29 +319,29 @@ export function ComponentsPage() {
         )}
 
         <nav className="m3e-doc-pager" aria-label={ui.componentPaginationAria}>
-          {prevDoc ? (
+          {prevEntry ? (
             <Card
               variant="outlined"
               interactive
-              render={<Link to={`/components/${prevDoc.slug}${tabSuffix}`} />}
+              render={<Link to={`/components/${prevEntry.slug}${tabSuffix}`} />}
               className="m3e-doc-pager__card-link"
             >
               <span className="m3e-doc-pager__dir">{prevArrow} {ui.prevPage}</span>
-              <strong className="m3e-doc-pager__title">{prevDoc.title}</strong>
+              <strong className="m3e-doc-pager__title">{prevEntry.title}</strong>
             </Card>
           ) : (
             <div />
           )}
 
-          {nextDoc ? (
+          {nextEntry ? (
             <Card
               variant="outlined"
               interactive
-              render={<Link to={`/components/${nextDoc.slug}${tabSuffix}`} />}
+              render={<Link to={`/components/${nextEntry.slug}${tabSuffix}`} />}
               className="m3e-doc-pager__card-link m3e-doc-pager__card-link--end"
             >
               <span className="m3e-doc-pager__dir">{ui.nextPage} {nextArrow}</span>
-              <strong className="m3e-doc-pager__title">{nextDoc.title}</strong>
+              <strong className="m3e-doc-pager__title">{nextEntry.title}</strong>
             </Card>
           ) : (
             <div />

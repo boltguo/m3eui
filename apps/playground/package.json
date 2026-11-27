@@ -7,7 +7,7 @@
   "description": "Interactive showcase and playground for m3eui.",
   "scripts": {
     "dev": "vite --port 5173",
-    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "build": "tsc -p tsconfig.json --noEmit && node scripts/generate-llms.mjs && vite build",
     "preview": "vite preview --port 4173",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
