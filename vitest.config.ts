@@ -9,6 +9,10 @@ export default defineConfig({
         replacement: resolve(__dirname, "packages/m3eui/src/tokens/index.ts"),
       },
       {
+        find: /^m3eui\/i18n\/([^/]+)$/,
+        replacement: resolve(__dirname, "packages/m3eui/src/i18n/locales/$1.ts"),
+      },
+      {
         find: "m3eui/i18n",
         replacement: resolve(__dirname, "packages/m3eui/src/i18n/index.ts"),
       },

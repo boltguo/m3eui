@@ -8,7 +8,7 @@ import {
   type FloatingToolbarTheme,
 } from "../../tokens/topology.js";
 import { useM3ERuntime } from "../../context/M3EContext.js";
-import { useM3EScalarSpring } from "../../hooks/useM3ESpring.js";
+import { useM3EScalarSpringEffect } from "../../hooks/useM3ESpring.js";
 import { INERT_TRUE } from "../../internal/inert.js";
 import { FAB, type M3EFABProps } from "../FAB/FAB.js";
 import { useIsoLayoutEffect } from "../../internal/useIsoLayoutEffect.js";
@@ -112,6 +112,7 @@ export function FloatingToolbar({
   const { t } = useM3ERuntime();
   const resolvedAriaLabel = ariaLabel ?? t("floatingToolbar.ariaLabel");
   const isVertical = orientation === "vertical";
+  const layoutRef = React.useRef<HTMLDivElement | null>(null);
   const toolbarRef = React.useRef<HTMLDivElement | null>(null);
   const companionRef = React.useRef<HTMLDivElement | null>(null);
   const companionFabBtnRef = React.useRef<HTMLElement | null>(null);
@@ -220,22 +221,73 @@ export function FloatingToolbar({
     return () => eventSource.removeEventListener("scroll", onScroll);
   }, [scrollCollapse, scrollTarget, updateCollapsed]);
 
-  const collapseMorph = useM3EScalarSpring(collapsed ? 1 : 0, "fastSpatial");
-  const clampedCollapse = Math.max(0, Math.min(1, collapseMorph));
+  const defaultFabVariant: FabColorVariant =
+    theme === "vibrant" ? "tertiary" : "primary";
+  const hasCompanion = Boolean(fab || companionFab);
+  const morphRef = React.useRef<number>(collapsed ? 1 : 0);
+  const metaRef = React.useRef({ hasCompanion, isVertical });
+  metaRef.current = { hasCompanion, isVertical };
 
+  useM3EScalarSpringEffect(collapsed ? 1 : 0, "fastSpatial", (val) => {
+    morphRef.current = val;
+    const clamped = Math.max(0, Math.min(1, val));
+    const { hasCompanion: companionActive, isVertical: vertical } =
+      metaRef.current;
+
+    if (layoutRef.current) {
+      const gapPx = companionActive
+        ? FLOATING_TOOLBAR_TOKENS.companionFabGap * (1 - clamped)
+        : 0;
+      layoutRef.current.style.gap = `${gapPx.toFixed(2)}px`;
+    }
+
+    if (toolbarRef.current) {
+      const padPx = FLOATING_TOOLBAR_TOKENS.containerPadding * (1 - clamped);
+      const crossPx = companionActive
+        ? FLOATING_TOOLBAR_TOKENS.containerCrossSize
+        : FLOATING_TOOLBAR_TOKENS.containerCrossSize * (1 - clamped);
+      toolbarRef.current.style.padding = `${padPx.toFixed(2)}px`;
+      toolbarRef.current.style.opacity = String(Math.max(0, 1 - clamped));
+      if (vertical) {
+        toolbarRef.current.style.minWidth = `${crossPx.toFixed(1)}px`;
+        toolbarRef.current.style.minHeight = "";
+      } else {
+        toolbarRef.current.style.minHeight = `${crossPx.toFixed(1)}px`;
+        toolbarRef.current.style.minWidth = "";
+      }
+    }
+
+    if (companionFabBtnRef.current) {
+      const sizePx = Math.max(
+        40,
+        FLOATING_TOOLBAR_TOKENS.companionFabExpandedSize +
+          (FLOATING_TOOLBAR_TOKENS.companionFabCollapsedSize -
+            FLOATING_TOOLBAR_TOKENS.companionFabExpandedSize) *
+            val,
+      );
+      const radiusPx = Math.max(8, 16 + (20 - 16) * val);
+      const iconPx = Math.max(18, 24 + (28 - 24) * val);
+      companionFabBtnRef.current.style.width = `${sizePx.toFixed(1)}px`;
+      companionFabBtnRef.current.style.height = `${sizePx.toFixed(1)}px`;
+      companionFabBtnRef.current.style.borderRadius = `${radiusPx.toFixed(1)}px`;
+      companionFabBtnRef.current.style.setProperty(
+        "--m3e-fab-icon-size",
+        `${iconPx.toFixed(1)}px`,
+      );
+    }
+  });
+
+  const initialMorph = morphRef.current;
+  const clampedCollapse = Math.max(0, Math.min(1, initialMorph));
   const fabSizePx = Math.max(
     40,
     FLOATING_TOOLBAR_TOKENS.companionFabExpandedSize +
       (FLOATING_TOOLBAR_TOKENS.companionFabCollapsedSize -
         FLOATING_TOOLBAR_TOKENS.companionFabExpandedSize) *
-        collapseMorph,
+        initialMorph,
   );
-  const fabRadiusPx = Math.max(8, 16 + (20 - 16) * collapseMorph);
-  const fabIconSizePx = Math.max(18, 24 + (28 - 24) * collapseMorph);
-  const defaultFabVariant: FabColorVariant =
-    theme === "vibrant" ? "tertiary" : "primary";
-
-  const hasCompanion = Boolean(fab || companionFab);
+  const fabRadiusPx = Math.max(8, 16 + (20 - 16) * initialMorph);
+  const fabIconSizePx = Math.max(18, 24 + (28 - 24) * initialMorph);
   const layoutGapPx = hasCompanion
     ? FLOATING_TOOLBAR_TOKENS.companionFabGap * (1 - clampedCollapse)
     : 0;
@@ -290,6 +342,7 @@ export function FloatingToolbar({
 
   return (
     <div
+      ref={layoutRef}
       className={
         className
           ? `m3e-floating-toolbar-layout ${className}`

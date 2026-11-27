@@ -6,6 +6,8 @@ import * as m3e from "m3eui";
 import * as tokens from "m3eui/tokens";
 import * as config from "m3eui/config";
 import * as i18n from "m3eui/i18n";
+import { enUSMessages } from "m3eui/i18n/en-US";
+import { zhCNMessages } from "m3eui/i18n/zh-CN";
 import * as primitives from "m3eui/primitives";
 import { Button as DirectButton } from "m3eui/components/Button";
 
@@ -19,6 +21,8 @@ if (
   typeof tokens.extractSeedHexFromImageBytes !== "function" ||
   typeof config.generateM3EStaticThemeCss !== "function" ||
   !i18n.enUSMessages ||
+  !enUSMessages ||
+  !zhCNMessages ||
   !primitives.CSPProvider ||
   !DirectButton
 ) {

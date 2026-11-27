@@ -14,7 +14,12 @@ describe("m3eui dist build invariants", () => {
       "config.js",
       "tokens/index.js",
       "i18n/index.js",
+      "i18n/locales/en-US.js",
+      "i18n/locales/zh-CN.js",
+      "i18n/locales/ja-JP.js",
+      "i18n/locales/ar-SA.js",
     ]) {
+      expect(existsSync(resolve(distRoot, rel)), `${rel} must exist`).toBe(true);
       const code = readFileSync(resolve(distRoot, rel), "utf8").trimStart();
       expect(code.startsWith('"use client"'), `${rel} must stay RSC-safe`).toBe(
         false,

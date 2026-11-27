@@ -75,6 +75,10 @@
       "types": "./dist/i18n/index.d.ts",
       "import": "./dist/i18n/index.js"
     },
+    "./i18n/*": {
+      "types": "./dist/i18n/locales/*.d.ts",
+      "import": "./dist/i18n/locales/*.js"
+    },
     "./config": {
       "types": "./dist/config.d.ts",
       "import": "./dist/config.js"
