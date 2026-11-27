@@ -3,10 +3,8 @@
 import * as React from "react";
 import { Tabs as BaseTabs } from "@base-ui/react/tabs";
 import { mergeProps } from "@base-ui/react/merge-props";
-import {
-  TABS_TOKENS,
-} from "../../tokens/topology.js";
 import { usePressHoldState } from "../../hooks/useM3ESpring.js";
+import { assignRef } from "../../internal/assignRef.js";
 import { useIsoLayoutEffect } from "../../internal/useIsoLayoutEffect.js";
 import { useM3ERipple } from "../../internal/ripple.js";
 
@@ -61,16 +59,19 @@ export interface M3ETabsPanelProps<Value extends string | number = string> {
   readonly style?: React.CSSProperties;
 }
 
-export function Tabs<Value extends string | number = string>({
-  children,
-  value,
-  defaultValue,
-  onValueChange,
-  variant = "primary",
-  scrollable = false,
-  className,
-  style,
-}: M3ETabsProps<Value>): React.JSX.Element {
+function TabsInner<Value extends string | number = string>(
+  {
+    children,
+    value,
+    defaultValue,
+    onValueChange,
+    variant = "primary",
+    scrollable = false,
+    className,
+    style,
+  }: M3ETabsProps<Value>,
+  ref: React.ForwardedRef<HTMLDivElement>,
+): React.JSX.Element {
   const ctxValue = React.useMemo(
     () => ({ variant, scrollable }),
     [variant, scrollable],
@@ -79,6 +80,7 @@ export function Tabs<Value extends string | number = string>({
   return (
     <TabsContext.Provider value={ctxValue}>
       <BaseTabs.Root
+        ref={ref}
         value={value}
         defaultValue={defaultValue}
         onValueChange={(next) => {
@@ -96,15 +98,25 @@ export function Tabs<Value extends string | number = string>({
   );
 }
 
-export function TabsList({
-  children,
-  scrollable,
-  activateOnFocus = true,
-  loopFocus = true,
-  "aria-label": ariaLabel,
-  className,
-  style,
-}: M3ETabsListProps): React.JSX.Element {
+export const Tabs = React.forwardRef(TabsInner) as <
+  Value extends string | number = string,
+>(
+  props: M3ETabsProps<Value> & React.RefAttributes<HTMLDivElement>,
+) => React.JSX.Element;
+
+export const TabsList = React.forwardRef<HTMLDivElement, M3ETabsListProps>(
+  function TabsList(
+    {
+      children,
+      scrollable,
+      activateOnFocus = true,
+      loopFocus = true,
+      "aria-label": ariaLabel,
+      className,
+      style,
+    },
+    ref,
+  ): React.JSX.Element {
   const { variant, scrollable: contextScrollable } =
     React.useContext(TabsContext);
   const resolvedScrollable = scrollable ?? contextScrollable;
@@ -184,7 +196,10 @@ export function TabsList({
 
   return (
     <BaseTabs.List
-      ref={listRef}
+      ref={(node) => {
+        listRef.current = node;
+        assignRef(ref, node);
+      }}
       activateOnFocus={activateOnFocus}
       loopFocus={loopFocus}
       aria-label={ariaLabel}
@@ -200,17 +215,20 @@ export function TabsList({
       />
     </BaseTabs.List>
   );
-}
+});
 
-export function Tab<Value extends string | number = string>({
-  value,
-  children,
-  icon,
-  badge,
-  disabled = false,
-  className,
-  style,
-}: M3ETabProps<Value>): React.JSX.Element {
+function TabInner<Value extends string | number = string>(
+  {
+    value,
+    children,
+    icon,
+    badge,
+    disabled = false,
+    className,
+    style,
+  }: M3ETabProps<Value>,
+  ref: React.ForwardedRef<HTMLButtonElement>,
+): React.JSX.Element {
   const { variant } = React.useContext(TabsContext);
   const { isPressed, pressHandlers } = usePressHoldState(disabled);
   const { rippleRef, rippleHandlers } = useM3ERipple(disabled);
@@ -218,26 +236,17 @@ export function Tab<Value extends string | number = string>({
     pressHandlers as unknown as React.ComponentPropsWithRef<"button">,
     rippleHandlers as unknown as React.ComponentPropsWithRef<"button">,
   );
-  const minHeight =
-    variant === "primary" && icon
-      ? TABS_TOKENS.primaryWithIconHeight
-      : variant === "primary"
-        ? TABS_TOKENS.primaryHeight
-        : TABS_TOKENS.secondaryHeight;
 
   return (
     <BaseTabs.Tab
+      ref={ref}
       value={value}
       disabled={disabled}
       className={className ? `m3e-tabs__tab ${className}` : "m3e-tabs__tab"}
       data-variant={variant}
       data-has-icon={icon ? "" : undefined}
       data-pressed={isPressed ? "" : undefined}
-      style={{
-        minHeight: `${minHeight}px`,
-        paddingInline: `${TABS_TOKENS.horizontalPadding}px`,
-        ...style,
-      }}
+      style={style}
       {...mergedHandlers}
     >
       <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
@@ -258,15 +267,25 @@ export function Tab<Value extends string | number = string>({
   );
 }
 
-export function TabsPanel<Value extends string | number = string>({
-  value,
-  children,
-  keepMounted = false,
-  className,
-  style,
-}: M3ETabsPanelProps<Value>): React.JSX.Element {
+export const Tab = React.forwardRef(TabInner) as <
+  Value extends string | number = string,
+>(
+  props: M3ETabProps<Value> & React.RefAttributes<HTMLButtonElement>,
+) => React.JSX.Element;
+
+function TabsPanelInner<Value extends string | number = string>(
+  {
+    value,
+    children,
+    keepMounted = false,
+    className,
+    style,
+  }: M3ETabsPanelProps<Value>,
+  ref: React.ForwardedRef<HTMLDivElement>,
+): React.JSX.Element {
   return (
     <BaseTabs.Panel
+      ref={ref}
       value={value}
       keepMounted={keepMounted}
       className="m3e-tabs__panel"
@@ -284,3 +303,9 @@ export function TabsPanel<Value extends string | number = string>({
     </BaseTabs.Panel>
   );
 }
+
+export const TabsPanel = React.forwardRef(TabsPanelInner) as <
+  Value extends string | number = string,
+>(
+  props: M3ETabsPanelProps<Value> & React.RefAttributes<HTMLDivElement>,
+) => React.JSX.Element;

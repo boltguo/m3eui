@@ -40,6 +40,7 @@ export const enUSMessages: M3EMessages = {
   "dataTable.empty": "No matching records",
   "dataTable.sortedAscending": "Sorted by {column}, ascending",
   "dataTable.sortedDescending": "Sorted by {column}, descending",
+  "dataTable.sortCleared": "Cleared sort on {column}",
   "dataTable.selectAllRows": "Select all rows",
   "dataTable.selectRow": "Select row {index}",
 

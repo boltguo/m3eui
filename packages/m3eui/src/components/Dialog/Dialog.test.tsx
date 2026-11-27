@@ -49,4 +49,26 @@ describe("Dialog", () => {
     ).toBeTruthy();
     expect(sheet!.contains(dialog)).toBe(false);
   });
+
+  it("forwards ref to the Dialog popup element", () => {
+    let popupEl: HTMLDivElement | null = null;
+    act(() => {
+      dom.root.render(
+        <PausedWrapper locale="en-US">
+          <Dialog
+            ref={(el) => {
+              popupEl = el;
+            }}
+            open
+            title="Ref Dialog"
+          >
+            Body
+          </Dialog>
+        </PausedWrapper>,
+      );
+    });
+
+    expect(popupEl).toBeInstanceOf(HTMLDivElement);
+    expect(popupEl!.classList.contains("m3e-dialog__popup")).toBe(true);
+  });
 });

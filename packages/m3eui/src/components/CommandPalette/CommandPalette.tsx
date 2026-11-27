@@ -10,6 +10,7 @@ import {
 } from "../../tokens/topology.js";
 import { Empty } from "../Empty/Empty.js";
 import { Kbd } from "../Kbd/Kbd.js";
+import { SpinnerIcon } from "../../internal/icons.js";
 import { useM3ERipple } from "../../internal/ripple.js";
 
 function CommandPaletteRow({
@@ -80,6 +81,12 @@ export interface M3ECommandPaletteProps {
   readonly onOpenChange?: (open: boolean) => void;
   readonly groups?: readonly CommandPaletteGroup[];
   readonly items?: readonly CommandPaletteItem[];
+  readonly query?: string;
+  readonly defaultQuery?: string;
+  readonly onQueryChange?: (query: string) => void;
+  readonly loading?: boolean;
+  readonly loadingMessage?: React.ReactNode;
+  readonly filterItems?: boolean;
   readonly enableShortcut?: boolean;
   readonly placeholder?: string;
   readonly emptyMessage?: React.ReactNode;
@@ -170,6 +177,12 @@ interface CommandEntry {
 function CommandPaletteBody({
   groups,
   items = [],
+  query,
+  defaultQuery,
+  onQueryChange,
+  loading = false,
+  loadingMessage,
+  filterItems = true,
   placeholder,
   emptyMessage,
   footerHint,
@@ -177,7 +190,17 @@ function CommandPaletteBody({
   onClose,
 }: Pick<
   M3ECommandPaletteProps,
-  "groups" | "items" | "placeholder" | "emptyMessage" | "footerHint"
+  | "groups"
+  | "items"
+  | "query"
+  | "defaultQuery"
+  | "onQueryChange"
+  | "loading"
+  | "loadingMessage"
+  | "filterItems"
+  | "placeholder"
+  | "emptyMessage"
+  | "footerHint"
 > & {
   readonly ariaLabel: string;
   readonly onClose: () => void;
@@ -215,11 +238,19 @@ function CommandPaletteBody({
     <BaseAutocomplete.Root
       inline
       open
+      value={query}
+      defaultValue={defaultQuery}
+      onValueChange={
+        onQueryChange ? (next) => onQueryChange(next) : undefined
+      }
       items={entries}
       autoHighlight="always"
       itemToStringValue={(entry: CommandEntry) => entry.item.label}
-      filter={(entry: CommandEntry, query) =>
-        entry.text.includes(query.trim().toLowerCase())
+      filter={
+        filterItems
+          ? (entry: CommandEntry, q) =>
+              entry.text.includes(q.trim().toLowerCase())
+          : () => true
       }
     >
       <div className="m3e-command-palette__input-bar">
@@ -232,17 +263,32 @@ function CommandPaletteBody({
           autoFocus
           className="m3e-command-palette__input"
         />
+        {loading ? (
+          <span
+            className="m3e-command-palette__loading-icon"
+            aria-hidden="true"
+          >
+            <SpinnerIcon size={16} className="m3e-command-palette__spinner" />
+          </span>
+        ) : null}
       </div>
 
-      <BaseAutocomplete.Empty>
-        <Empty
-          compact
-          className="m3e-command-palette__empty"
-          title={emptyMessage ?? t("command.empty")}
-        />
-      </BaseAutocomplete.Empty>
+      {loading && entries.length === 0 ? (
+        <div role="status" className="m3e-command-palette__loading">
+          {loadingMessage ?? t("loading.label")}
+        </div>
+      ) : (
+        <BaseAutocomplete.Empty>
+          <Empty
+            compact
+            className="m3e-command-palette__empty"
+            title={emptyMessage ?? t("command.empty")}
+          />
+        </BaseAutocomplete.Empty>
+      )}
       <BaseAutocomplete.List
         aria-label={ariaLabel}
+        aria-busy={loading ? true : undefined}
         className="m3e-command-palette__list"
       >
         {(group: (typeof entries)[number]) => (

@@ -3,9 +3,6 @@
 import * as React from "react";
 import { Popover as BasePopover } from "@base-ui/react/popover";
 import { Tooltip as BaseTooltip } from "@base-ui/react/tooltip";
-import {
-  TOOLTIP_TOKENS,
-} from "../../tokens/topology.js";
 import { useM3EPortalContainer } from "../../context/M3EPortal.js";
 import { useAdaptivePositionMethod } from "../../internal/positionMethod.js";
 
@@ -53,14 +50,7 @@ function PlainTooltip({
           sideOffset={sideOffset}
           className="m3e-tooltip__positioner"
         >
-          <BaseTooltip.Popup
-            className="m3e-tooltip m3e-tooltip--plain"
-            style={{
-              borderRadius: `${TOOLTIP_TOKENS.plainRadius}px`,
-              paddingBlock: `${TOOLTIP_TOKENS.plainPaddingBlock}px`,
-              paddingInline: `${TOOLTIP_TOKENS.plainPaddingInline}px`,
-            }}
-          >
+          <BaseTooltip.Popup className="m3e-tooltip m3e-tooltip--plain">
             {content}
           </BaseTooltip.Popup>
         </BaseTooltip.Positioner>
@@ -87,12 +77,6 @@ function RichTooltip({
   }, []);
   const positionMethod = useAdaptivePositionMethod(triggerRef, open);
   const pointerTypeRef = React.useRef("");
-  const popupStyle: React.CSSProperties = {
-    borderRadius: `${TOOLTIP_TOKENS.richRadius}px`,
-    paddingBlock: `${TOOLTIP_TOKENS.richPaddingBlock}px`,
-    paddingInline: `${TOOLTIP_TOKENS.richPaddingInline}px`,
-    maxWidth: `${TOOLTIP_TOKENS.richMaxWidth}px`,
-  };
 
   if (action) {
     return (
@@ -132,7 +116,6 @@ function RichTooltip({
             <BasePopover.Popup
               initialFocus={(openType) => openType === "keyboard"}
               className="m3e-tooltip m3e-tooltip--rich"
-              style={popupStyle}
             >
               {subhead ? (
                 <BasePopover.Title className="m3e-tooltip__subhead">
@@ -165,10 +148,7 @@ function RichTooltip({
           sideOffset={sideOffset}
           className="m3e-tooltip__positioner"
         >
-          <BaseTooltip.Popup
-            className="m3e-tooltip m3e-tooltip--rich"
-            style={popupStyle}
-          >
+          <BaseTooltip.Popup className="m3e-tooltip m3e-tooltip--rich">
             {subhead ? (
               <div className="m3e-tooltip__subhead">{subhead}</div>
             ) : null}

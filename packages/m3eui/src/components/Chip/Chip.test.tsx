@@ -1,6 +1,7 @@
 import { act } from "react";
 import { describe, expect, it } from "vitest";
 import { PausedWrapper, setupDomTest } from "../../__tests__/domHarness.js";
+import { Tooltip } from "../Tooltip/Tooltip.js";
 import { Chip } from "./Chip.js";
 
 describe("Chip", () => {
@@ -82,5 +83,49 @@ describe("Chip", () => {
       filterChip?.click();
     });
     expect(filterClicks).toBe(1);
+  });
+
+  it("forwards refs across Chip variants so Tooltip triggers attach cleanly", () => {
+    let tooltipChipEl: HTMLElement | null = null;
+    let staticLabelEl: HTMLElement | null = null;
+    let filterEl: HTMLElement | null = null;
+
+    act(() => {
+      dom.root.render(
+        <PausedWrapper locale="en-US">
+          <Tooltip content="Status details">
+            <Chip
+              ref={(el) => {
+                tooltipChipEl = el;
+              }}
+              tone="primary"
+            >
+              Stable
+            </Chip>
+          </Tooltip>
+          <Chip
+            ref={(el) => {
+              staticLabelEl = el;
+            }}
+            tone="success"
+          >
+            Ready
+          </Chip>
+          <Chip
+            ref={(el) => {
+              filterEl = el;
+            }}
+            defaultSelected
+            onSelectedChange={() => {}}
+          >
+            Active
+          </Chip>
+        </PausedWrapper>,
+      );
+    });
+
+    expect(tooltipChipEl).toBeInstanceOf(HTMLElement);
+    expect(staticLabelEl).toBeInstanceOf(HTMLSpanElement);
+    expect(filterEl).toBeInstanceOf(HTMLButtonElement);
   });
 });

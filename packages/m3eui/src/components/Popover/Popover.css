@@ -4,8 +4,11 @@
 
 .m3e-popover {
   box-sizing: border-box;
+  max-width: 340px;
   max-inline-size: min(340px, var(--available-width, calc(100dvw - 16px)));
   max-block-size: min(var(--available-height, 80dvh), 80dvh);
+  padding: 16px;
+  border-radius: 20px;
   overflow-y: auto;
   overscroll-behavior: contain;
   background-color: var(--m3e-color-surface-container-high);
@@ -73,9 +76,10 @@
 }
 
 .m3e-popover:has(> .m3e-popover__body > .m3e-color-picker) {
-  padding: 0 !important;
-  border-radius: 24px !important;
-  max-inline-size: calc(100dvw - 24px) !important;
+  padding: 0;
+  border-radius: 24px;
+  max-width: calc(100dvw - 24px);
+  max-inline-size: calc(100dvw - 24px);
 }
 
 .m3e-popover__body > .m3e-color-picker {

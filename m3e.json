@@ -15,10 +15,5 @@
   },
   "css": {
     "output": "apps/playground/src/m3e-theme.generated.css"
-  },
-  "aliases": {
-    "components": "m3eui",
-    "tokens": "m3eui/tokens",
-    "i18n": "m3eui/i18n"
   }
 }

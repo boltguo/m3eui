@@ -181,4 +181,102 @@ describe("DataTable", () => {
     expect(headerCells[1]?.style.insetInlineStart).toBe("48px");
     expect(headerCells[2]?.style.insetInlineStart).toBe("128px");
   });
+
+  it("forwards ref to the DataTable shell container", () => {
+    let shellEl: HTMLDivElement | null = null;
+    act(() => {
+      dom.root.render(
+        <M3EProvider syncDocumentRoot={false}>
+          <DataTable
+            ref={(el) => {
+              shellEl = el;
+            }}
+            caption="Items"
+            columns={[{ id: "name", header: "Name", cell: (r: { id: string; name: string }) => r.name }]}
+            rows={[{ id: "1", name: "Alpha" }]}
+            getRowKey={(r) => r.id}
+          />
+        </M3EProvider>,
+      );
+    });
+
+    expect(shellEl).toBeInstanceOf(HTMLDivElement);
+    expect(shellEl!.classList.contains("m3e-data-table-shell")).toBe(true);
+  });
+
+  it("supports clearableSort 3-state cycling, manualSort, and onRowClick ignoring interactive controls", () => {
+    const clickedIds: string[] = [];
+    const sortChanges: Array<{ columnId: string; direction: string } | null> = [];
+    const rows = [
+      { id: "r1", name: "Beta" },
+      { id: "r2", name: "Alpha" },
+    ];
+
+    act(() => {
+      dom.root.render(
+        <PausedWrapper locale="en-US">
+          <DataTable
+            caption="Services"
+            clearableSort
+            manualSort
+            selectable
+            onSortChange={(next) => sortChanges.push(next)}
+            onRowClick={(row) => clickedIds.push(row.id)}
+            rows={rows}
+            getRowKey={(r) => r.id}
+            columns={[
+              {
+                id: "name",
+                header: "Name",
+                sortable: true,
+                sortAccessor: (r) => r.name,
+                cell: (r) => r.name,
+              },
+            ]}
+          />
+        </PausedWrapper>,
+      );
+    });
+
+    const sortBtn = dom.container.querySelector<HTMLButtonElement>(
+      "button.m3e-data-table__sort-btn",
+    )!;
+    const th = sortBtn.closest("th")!;
+
+    act(() => sortBtn.click());
+    expect(th.getAttribute("aria-sort")).toBe("ascending");
+    // manualSort preserves caller order even after sorting ascending
+    expect(
+      Array.from(dom.container.querySelectorAll("tbody th[scope='row']")).map(
+        (el) => el.textContent,
+      ),
+    ).toEqual(["Beta", "Alpha"]);
+
+    act(() => sortBtn.click());
+    expect(th.getAttribute("aria-sort")).toBe("descending");
+
+    act(() => sortBtn.click());
+    expect(th.hasAttribute("aria-sort")).toBe(false);
+    expect(dom.container.querySelector('[role="status"]')?.textContent).toContain(
+      "Cleared sort on Name",
+    );
+    expect(sortChanges).toEqual([
+      { columnId: "name", direction: "ascending" },
+      { columnId: "name", direction: "descending" },
+      null,
+    ]);
+
+    const firstRow = dom.container.querySelectorAll("tbody tr.m3e-data-table__row")[0]!;
+    const rowCheckbox = firstRow.querySelector<HTMLElement>(".m3e-checkbox")!;
+    act(() => {
+      rowCheckbox.click();
+    });
+    expect(clickedIds).toEqual([]);
+
+    const rowCell = firstRow.querySelector<HTMLElement>("th[scope='row']")!;
+    act(() => {
+      rowCell.click();
+    });
+    expect(clickedIds).toEqual(["r1"]);
+  });
 });

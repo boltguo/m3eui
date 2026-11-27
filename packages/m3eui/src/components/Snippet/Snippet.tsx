@@ -5,7 +5,7 @@ import {
   KBD_SNIPPET_TOKENS,
 } from "../../tokens/topology.js";
 import { useM3EI18n } from "../../context/M3EContext.js";
-import { useM3EScalarSpring, usePressHoldState } from "../../hooks/useM3ESpring.js";
+import { useM3EScalarSpringEffect, usePressHoldState } from "../../hooks/useM3ESpring.js";
 import { CheckIcon } from "../../internal/icons.js";
 import { mergeInteractionHandlers, useM3ERipple } from "../../internal/ripple.js";
 
@@ -87,13 +87,17 @@ export function CopyButton({
     rippleHandlers,
   );
 
-  const radius = useM3EScalarSpring(
-    isPressed
-      ? 8
-      : copied || failed
-        ? 10
-        : KBD_SNIPPET_TOKENS.copyButtonSize / 2,
+  const btnRef = React.useRef<HTMLButtonElement | null>(null);
+  const restRadius = KBD_SNIPPET_TOKENS.copyButtonSize / 2;
+  const [initRadius] = React.useState(restRadius);
+  useM3EScalarSpringEffect(
+    isPressed ? 8 : copied || failed ? 10 : restRadius,
     "fastSpatial",
+    (next) => {
+      if (btnRef.current) {
+        btnRef.current.style.borderRadius = `${next.toFixed(1)}px`;
+      }
+    },
   );
 
   React.useEffect(() => {
@@ -130,6 +134,7 @@ export function CopyButton({
 
   return (
     <button
+      ref={btnRef}
       type="button"
       disabled={disabled}
       aria-label={activeAriaLabel}
@@ -142,7 +147,7 @@ export function CopyButton({
       style={{
         width: `${KBD_SNIPPET_TOKENS.copyButtonSize}px`,
         height: `${KBD_SNIPPET_TOKENS.copyButtonSize}px`,
-        borderRadius: `${radius.toFixed(1)}px`,
+        borderRadius: `${initRadius.toFixed(1)}px`,
         ...style,
       }}
       {...mergedHandlers}

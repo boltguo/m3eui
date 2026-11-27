@@ -86,4 +86,73 @@ describe("CommandPalette", () => {
     });
     expect(ran).toEqual(["b"]);
   });
+
+  it("supports controlled query, async loading state, and server-side filtering via filterItems={false}", async () => {
+    let latestQuery = "";
+    act(() => {
+      dom.root.render(
+        <PausedWrapper locale="en-US">
+          <CommandPalette
+            open
+            query="rem"
+            onQueryChange={(q) => {
+              latestQuery = q;
+            }}
+            filterItems={false}
+            loading
+            items={[]}
+          />
+        </PausedWrapper>,
+      );
+    });
+
+    const input = document.body.querySelector<HTMLInputElement>(
+      ".m3e-command-palette__input",
+    )!;
+    expect(input.value).toBe("rem");
+    expect(
+      document.body.querySelector(".m3e-command-palette__spinner"),
+    ).not.toBeNull();
+    expect(
+      document.body.querySelector(".m3e-command-palette__list")?.getAttribute("aria-busy"),
+    ).toBe("true");
+    expect(
+      document.body.querySelector(".m3e-command-palette__loading")?.textContent,
+    ).toBe("Loading");
+    expect(
+      document.body.querySelector(".m3e-command-palette__empty"),
+    ).toBeNull();
+
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(
+        input,
+        "remote-token",
+      );
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    expect(latestQuery).toBe("remote-token");
+
+    act(() => {
+      dom.root.render(
+        <PausedWrapper locale="en-US">
+          <CommandPalette
+            open
+            query="remote-token"
+            filterItems={false}
+            items={[
+              {
+                id: "server-1",
+                label: "Unmatched local text",
+                onSelect: () => {},
+              },
+            ]}
+          />
+        </PausedWrapper>,
+      );
+    });
+
+    const renderedItems = document.body.querySelectorAll(".m3e-command-palette__item");
+    expect(renderedItems.length).toBe(1);
+    expect(renderedItems[0]!.textContent).toContain("Unmatched local text");
+  });
 });

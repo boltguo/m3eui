@@ -59,7 +59,6 @@ const ALLOWED_ROOT_KEYS = new Set([
   "i18n",
   "csp",
   "css",
-  "aliases",
 ]);
 const ALLOWED_THEME_KEYS = new Set([
   "seed",
@@ -72,7 +71,6 @@ const ALLOWED_THEME_KEYS = new Set([
 const ALLOWED_I18N_KEYS = new Set(["locale", "direction", "messages"]);
 const ALLOWED_CSP_KEYS = new Set(["nonce", "disableStyleElements"]);
 const ALLOWED_CSS_KEYS = new Set(["output"]);
-const ALLOWED_ALIASES_KEYS = new Set(["components", "tokens", "i18n"]);
 
 const HEX_SEED_RE = /^#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 const BCP47_TAG_RE = /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{1,8})*$/;
@@ -235,24 +233,6 @@ function collectSchemaStructuralErrors(raw: Record<string, unknown>): string[] {
         (typeof raw.css.output !== "string" || raw.css.output.trim().length === 0)
       ) {
         errors.push(`"css.output" must be a non-empty string`);
-      }
-    }
-  }
-
-  if (raw.aliases !== undefined) {
-    if (!isPlainRecord(raw.aliases)) {
-      errors.push(`"aliases" must be an object`);
-    } else {
-      for (const k of Object.keys(raw.aliases)) {
-        if (!ALLOWED_ALIASES_KEYS.has(k)) {
-          errors.push(`Unknown key "aliases.${k}"`);
-        }
-        if (
-          raw.aliases[k] !== undefined &&
-          typeof raw.aliases[k] !== "string"
-        ) {
-          errors.push(`"aliases.${k}" must be a string`);
-        }
       }
     }
   }

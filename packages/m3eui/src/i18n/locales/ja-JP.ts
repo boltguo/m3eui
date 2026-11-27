@@ -40,6 +40,7 @@ export const jaJPMessages: M3EMessages = {
   "dataTable.empty": "一致するデータがありません",
   "dataTable.sortedAscending": "{column} で昇順に並べ替えました",
   "dataTable.sortedDescending": "{column} で降順に並べ替えました",
+  "dataTable.sortCleared": "{column} の並べ替えを解除しました",
   "dataTable.selectAllRows": "すべての行を選択",
   "dataTable.selectRow": "{index} 行目を選択",
 

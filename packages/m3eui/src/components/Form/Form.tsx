@@ -19,16 +19,19 @@ export interface M3EFormProps
   readonly children: React.ReactNode;
 }
 
-export function Form({
-  errors,
-  validationMode = "onSubmit",
-  onFormSubmit,
-  onSubmit,
-  showErrorSummary = false,
-  className,
-  children,
-  ...rest
-}: M3EFormProps): React.JSX.Element {
+export const Form = React.forwardRef<HTMLFormElement, M3EFormProps>(function Form(
+  {
+    errors,
+    validationMode = "onSubmit",
+    onFormSubmit,
+    onSubmit,
+    showErrorSummary = false,
+    className,
+    children,
+    ...rest
+  },
+  ref,
+): React.JSX.Element {
   const { t } = useM3EI18n();
   const errorList = React.useMemo(() => {
     if (!errors) return [];
@@ -42,6 +45,7 @@ export function Form({
 
   return (
     <BaseForm
+      ref={ref}
       errors={errors}
       validationMode={validationMode}
       onFormSubmit={
@@ -69,7 +73,7 @@ export function Form({
       {children}
     </BaseForm>
   );
-}
+});
 
 export interface M3EFieldsetProps {
   readonly legend: React.ReactNode;
@@ -81,37 +85,43 @@ export interface M3EFieldsetProps {
   readonly style?: React.CSSProperties;
 }
 
-export function Fieldset({
-  legend,
-  description,
-  disabled = false,
-  variant = "tonal",
-  children,
-  className,
-  style,
-}: M3EFieldsetProps): React.JSX.Element {
-  const descId = React.useId();
-  const isDisabled = useFieldsetDisabled(disabled);
+export const Fieldset = React.forwardRef<HTMLFieldSetElement, M3EFieldsetProps>(
+  function Fieldset(
+    {
+      legend,
+      description,
+      disabled = false,
+      variant = "tonal",
+      children,
+      className,
+      style,
+    },
+    ref,
+  ): React.JSX.Element {
+    const descId = React.useId();
+    const isDisabled = useFieldsetDisabled(disabled);
 
-  return (
-    <FieldsetDisabledContext.Provider value={isDisabled}>
-      <BaseFieldset.Root
-        disabled={isDisabled}
-        aria-describedby={description ? descId : undefined}
-        className={className ? `m3e-fieldset ${className}` : "m3e-fieldset"}
-        data-variant={variant}
-        style={style}
-      >
-        <BaseFieldset.Legend render={<legend />} className="m3e-fieldset__legend">
-          {legend}
-        </BaseFieldset.Legend>
-        {description ? (
-          <p id={descId} className="m3e-fieldset__description">
-            {description}
-          </p>
-        ) : null}
-        <div className="m3e-fieldset__body">{children}</div>
-      </BaseFieldset.Root>
-    </FieldsetDisabledContext.Provider>
-  );
-}
+    return (
+      <FieldsetDisabledContext.Provider value={isDisabled}>
+        <BaseFieldset.Root
+          ref={ref}
+          disabled={isDisabled}
+          aria-describedby={description ? descId : undefined}
+          className={className ? `m3e-fieldset ${className}` : "m3e-fieldset"}
+          data-variant={variant}
+          style={style}
+        >
+          <BaseFieldset.Legend render={<legend />} className="m3e-fieldset__legend">
+            {legend}
+          </BaseFieldset.Legend>
+          {description ? (
+            <p id={descId} className="m3e-fieldset__description">
+              {description}
+            </p>
+          ) : null}
+          <div className="m3e-fieldset__body">{children}</div>
+        </BaseFieldset.Root>
+      </FieldsetDisabledContext.Provider>
+    );
+  },
+);

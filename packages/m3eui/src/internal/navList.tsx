@@ -3,10 +3,14 @@ import { Drawer as BaseDrawer } from "@base-ui/react/drawer";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { useM3ERuntime } from "../context/M3EContext.js";
 import { useM3EPortalContainer } from "../context/M3EPortal.js";
-import { useM3EScalarSpring, usePressHoldState } from "../hooks/useM3ESpring.js";
+import { useM3EScalarSpringEffect, usePressHoldState } from "../hooks/useM3ESpring.js";
 import { formatLocalizedInteger } from "../i18n/index.js";
 import { useIsoLayoutEffect } from "./useIsoLayoutEffect.js";
-import { isModifiedLinkClick } from "./link.js";
+import {
+  LinkActionElement,
+  isLinkRenderTarget,
+  isModifiedLinkClick,
+} from "./link.js";
 import { useM3ERipple } from "./ripple.js";
 
 export interface NavigationDestination<Value extends string = string> {
@@ -18,6 +22,9 @@ export interface NavigationDestination<Value extends string = string> {
   readonly badgeDot?: boolean;
   readonly badgeLabel?: React.ReactNode;
   readonly href?: string;
+  readonly target?: string;
+  readonly rel?: string;
+  readonly render?: React.ReactElement;
   readonly disabled?: boolean;
   readonly section?: string;
 }
@@ -46,9 +53,18 @@ function NavListItem<Value extends string>({
     pressHandlers as unknown as React.ComponentPropsWithRef<"button">,
     rippleHandlers as unknown as React.ComponentPropsWithRef<"button">,
   );
-  const radius = useM3EScalarSpring(
+  const itemRef = React.useRef<HTMLElement | null>(null);
+  const [initRadius] = React.useState(
+    isPressed ? metrics.itemPressedRadius : metrics.itemRadius,
+  );
+  useM3EScalarSpringEffect(
     isPressed ? metrics.itemPressedRadius : metrics.itemRadius,
     "fastSpatial",
+    (r) => {
+      if (itemRef.current) {
+        itemRef.current.style.borderRadius = `${Math.max(4, r).toFixed(1)}px`;
+      }
+    },
   );
   const icon = active && item.activeIcon ? item.activeIcon : item.icon;
 
@@ -81,37 +97,44 @@ function NavListItem<Value extends string>({
   );
 
   const shared = {
+    ref: itemRef as React.Ref<never>,
     className: "m3e-nav-list__item",
     "data-nav-value": item.value,
     "data-active": active ? "" : undefined,
     "data-pressed": isPressed ? "" : undefined,
     style: {
       minHeight: `${metrics.itemHeight}px`,
-      borderRadius: `${Math.max(4, radius).toFixed(1)}px`,
+      borderRadius: `${Math.max(4, initRadius).toFixed(1)}px`,
     },
     ...(mergedHandlers as Record<string, unknown>),
   };
 
-  const handleAnchorClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleAnchorClick = (e: React.MouseEvent<HTMLElement>) => {
     if (isModifiedLinkClick(e)) return;
     onSelect(item.value);
   };
 
-  if (item.href && !item.disabled) {
+  const isLink = isLinkRenderTarget(item.href, item.render) || Boolean(item.render);
+
+  if (isLink) {
     const ariaCurrent = active
-      ? item.href.startsWith("#")
+      ? item.href?.startsWith("#")
         ? "true"
         : "page"
       : undefined;
     return (
-      <a
+      <LinkActionElement
         href={item.href}
+        target={item.target}
+        rel={item.rel}
+        render={item.render}
+        disabled={item.disabled}
         aria-current={ariaCurrent}
         {...shared}
         onClick={handleAnchorClick}
       >
         {content}
-      </a>
+      </LinkActionElement>
     );
   }
 

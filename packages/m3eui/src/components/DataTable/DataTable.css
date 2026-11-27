@@ -1,6 +1,7 @@
 .m3e-data-table-shell {
   width: 100%;
   box-sizing: border-box;
+  border-radius: 16px;
   background-color: var(--m3e-color-surface);
   border: 1px solid var(--m3e-color-outline-variant);
   overflow: clip;
@@ -66,6 +67,7 @@
 }
 
 .m3e-data-table__th {
+  height: 48px;
   font-size: 12.5px;
   font-weight: 650;
   color: var(--m3e-color-on-surface-variant);
@@ -173,6 +175,10 @@
   transition: background-color 120ms ease-out;
 }
 
+.m3e-data-table__row[data-clickable] {
+  cursor: pointer;
+}
+
 :is(.m3e-data-table__row, .m3e-data-table__expanded-row):last-child {
   border-block-end: 0;
 }
@@ -192,9 +198,14 @@
 }
 
 .m3e-data-table__td {
+  height: 52px;
   font-weight: 450;
   text-align: start;
   white-space: nowrap;
+}
+
+.m3e-data-table[data-density="compact"] .m3e-data-table__td {
+  height: 40px;
 }
 
 th.m3e-data-table__td {

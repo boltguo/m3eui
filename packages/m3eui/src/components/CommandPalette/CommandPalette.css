@@ -61,6 +61,31 @@
   color: var(--m3e-color-on-surface-variant);
 }
 
+.m3e-command-palette__loading-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--m3e-color-primary);
+  flex-shrink: 0;
+}
+
+@keyframes m3e-cmd-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+.m3e-command-palette__spinner {
+  animation: m3e-cmd-spin 760ms linear infinite;
+}
+
+.m3e-command-palette__loading {
+  padding: 28px 16px;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--m3e-color-on-surface-variant);
+}
+
 .m3e-command-palette__list {
   box-sizing: border-box;
   flex: 1 1 auto;
@@ -194,6 +219,10 @@
   .m3e-command-palette {
     transition-duration: 90ms;
     transition-timing-function: ease-out;
+  }
+
+  .m3e-command-palette__spinner {
+    animation-duration: 2.2s;
   }
 }
 

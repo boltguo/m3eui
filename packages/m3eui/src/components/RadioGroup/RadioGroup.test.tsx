@@ -23,4 +23,44 @@ describe("RadioGroup", () => {
     expect(radios[0]?.getAttribute("aria-checked")).toBe("true");
     expect(radios[1]?.getAttribute("aria-checked")).toBe("false");
   });
+
+  it("forwards refs to RadioGroup and Radio root elements", () => {
+    let groupEl: HTMLDivElement | null = null;
+    let labeledRadioEl: HTMLElement | null = null;
+    let bareRadioEl: HTMLElement | null = null;
+
+    act(() => {
+      dom.root.render(
+        <PausedWrapper locale="en-US">
+          <RadioGroup
+            ref={(el) => {
+              groupEl = el;
+            }}
+            defaultValue="a"
+            aria-label="Choices"
+          >
+            <Radio
+              ref={(el) => {
+                labeledRadioEl = el;
+              }}
+              value="a"
+              label="Option A"
+            />
+            <Radio
+              ref={(el) => {
+                bareRadioEl = el;
+              }}
+              value="b"
+              aria-label="Option B"
+            />
+          </RadioGroup>
+        </PausedWrapper>,
+      );
+    });
+
+    expect(groupEl).toBeInstanceOf(HTMLDivElement);
+    expect(labeledRadioEl).toBeInstanceOf(HTMLLabelElement);
+    expect(bareRadioEl).toBeInstanceOf(HTMLElement);
+    expect(bareRadioEl!.getAttribute("role")).toBe("radio");
+  });
 });

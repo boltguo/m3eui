@@ -36,6 +36,9 @@
 .m3e-tooltip--plain {
   background-color: var(--m3e-color-inverse-surface);
   color: var(--m3e-color-inverse-on-surface);
+  padding-block: 6px;
+  padding-inline: 10px;
+  border-radius: 4px;
   font-size: 12px;
   line-height: 16px;
   font-weight: 500;
@@ -48,6 +51,10 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  padding-block: 12px;
+  padding-inline: 16px;
+  border-radius: 12px;
+  max-width: 312px;
   max-inline-size: min(312px, calc(100dvw - 16px));
   background-color: var(--m3e-color-surface-container);
   color: var(--m3e-color-on-surface-variant);

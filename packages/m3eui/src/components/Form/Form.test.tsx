@@ -224,4 +224,33 @@ describe("Form & Fieldset", () => {
       brandColor: "#0B6B58",
     });
   });
+
+  it("forwards refs to Form and Fieldset", () => {
+    let formEl: HTMLFormElement | null = null;
+    let fieldsetEl: HTMLFieldSetElement | null = null;
+
+    act(() => {
+      dom.root.render(
+        <M3EProvider syncDocumentRoot={false}>
+          <Form
+            ref={(el) => {
+              formEl = el;
+            }}
+          >
+            <Fieldset
+              ref={(el) => {
+                fieldsetEl = el;
+              }}
+              legend="Account"
+            >
+              <span>Child</span>
+            </Fieldset>
+          </Form>
+        </M3EProvider>,
+      );
+    });
+
+    expect(formEl).toBeInstanceOf(HTMLFormElement);
+    expect(fieldsetEl).toBeInstanceOf(HTMLFieldSetElement);
+  });
 });

@@ -221,32 +221,35 @@ function SliderThumbBar({
   );
 }
 
-export function Slider<Value extends SliderValue = number>({
-  id,
-  value: controlledValue,
-  defaultValue,
-  onValueChange,
-  onValueCommitted,
-  min = 0,
-  max = 100,
-  step = 1,
-  minStepsBetweenValues = 0,
-  orientation = "horizontal",
-  centered = false,
-  startIcon,
-  endIcon,
-  disabled = false,
-  size = "sm",
-  label,
-  showValue = false,
-  showValueBubble = true,
-  showTicks = false,
-  formatValue,
-  name,
-  "aria-label": ariaLabel,
-  className,
-  style,
-}: M3ESliderProps<Value>): React.JSX.Element {
+function SliderInner<Value extends SliderValue = number>(
+  {
+    id,
+    value: controlledValue,
+    defaultValue,
+    onValueChange,
+    onValueCommitted,
+    min = 0,
+    max = 100,
+    step = 1,
+    minStepsBetweenValues = 0,
+    orientation = "horizontal",
+    centered = false,
+    startIcon,
+    endIcon,
+    disabled = false,
+    size = "sm",
+    label,
+    showValue = false,
+    showValueBubble = true,
+    showTicks = false,
+    formatValue,
+    name,
+    "aria-label": ariaLabel,
+    className,
+    style,
+  }: M3ESliderProps<Value>,
+  ref: React.ForwardedRef<HTMLDivElement>,
+): React.JSX.Element {
   const { debugGeometry, direction, locale, t } = useM3ERuntime();
   const isVertical = orientation === "vertical";
   const isDisabled = useFieldsetDisabled(disabled);
@@ -959,6 +962,7 @@ export function Slider<Value extends SliderValue = number>({
   return (
     <FormFieldScope name={name} disabled={isDisabled}>
     <BaseSlider.Root
+      ref={ref}
       id={id}
       orientation={orientation}
       value={resolvedBaseValue}
@@ -1029,3 +1033,9 @@ export function Slider<Value extends SliderValue = number>({
     </FormFieldScope>
   );
 }
+
+export const Slider = React.forwardRef(SliderInner) as <
+  Value extends SliderValue = number,
+>(
+  props: M3ESliderProps<Value> & React.RefAttributes<HTMLDivElement>,
+) => React.JSX.Element;

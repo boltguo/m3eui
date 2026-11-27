@@ -27,4 +27,53 @@ describe("Tabs", () => {
     ).toBe(true);
     expect(dom.container.textContent).toContain("Panel A");
   });
+
+  it("forwards refs to Tabs, TabsList, Tab, and TabsPanel", () => {
+    let rootEl: HTMLDivElement | null = null;
+    let listEl: HTMLDivElement | null = null;
+    let tabEl: HTMLButtonElement | null = null;
+    let panelEl: HTMLDivElement | null = null;
+
+    act(() => {
+      dom.root.render(
+        <PausedWrapper locale="en-US">
+          <Tabs
+            ref={(el) => {
+              rootEl = el;
+            }}
+            defaultValue="a"
+          >
+            <TabsList
+              ref={(el) => {
+                listEl = el;
+              }}
+              aria-label="Ref tabs"
+            >
+              <Tab
+                ref={(el) => {
+                  tabEl = el;
+                }}
+                value="a"
+              >
+                Tab A
+              </Tab>
+            </TabsList>
+            <TabsPanel
+              ref={(el) => {
+                panelEl = el;
+              }}
+              value="a"
+            >
+              Panel A
+            </TabsPanel>
+          </Tabs>
+        </PausedWrapper>,
+      );
+    });
+
+    expect(rootEl).toBeInstanceOf(HTMLDivElement);
+    expect(listEl).toBeInstanceOf(HTMLDivElement);
+    expect(tabEl).toBeInstanceOf(HTMLButtonElement);
+    expect(panelEl).toBeInstanceOf(HTMLDivElement);
+  });
 });

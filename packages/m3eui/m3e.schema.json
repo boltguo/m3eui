@@ -119,24 +119,6 @@
           "description": "Output path for generated theme CSS."
         }
       }
-    },
-    "aliases": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "components": {
-          "type": "string",
-          "default": "@/components/ui"
-        },
-        "tokens": {
-          "type": "string",
-          "default": "m3eui/tokens"
-        },
-        "i18n": {
-          "type": "string",
-          "default": "@/i18n"
-        }
-      }
     }
   }
 }

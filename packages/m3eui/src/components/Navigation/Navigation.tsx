@@ -8,9 +8,10 @@ import {
 } from "../../tokens/topology.js";
 import { useM3ERuntime } from "../../context/M3EContext.js";
 import {
-  useM3EScalarSpring,
+  useM3EScalarSpringEffect,
   usePressHoldState,
 } from "../../hooks/useM3ESpring.js";
+import { assignRef } from "../../internal/assignRef.js";
 import { Badge } from "../Badge/Badge.js";
 import {
   NavList,
@@ -18,7 +19,11 @@ import {
   useControllableOpen,
   type NavigationDestination,
 } from "../../internal/navList.js";
-import { isModifiedLinkClick } from "../../internal/link.js";
+import {
+  LinkActionElement,
+  isLinkRenderTarget,
+  isModifiedLinkClick,
+} from "../../internal/link.js";
 import { useM3ERipple } from "../../internal/ripple.js";
 
 export type { NavigationDestination };
@@ -51,7 +56,13 @@ function NavItemButton<Value extends string>({
     pressHandlers as unknown as React.ComponentPropsWithRef<"button">,
     rippleHandlers as unknown as React.ComponentPropsWithRef<"button">,
   );
-  const pillScale = useM3EScalarSpring(active ? 1 : 0.35, "fastSpatial");
+  const pillRef = React.useRef<HTMLSpanElement | null>(null);
+  const [initPillScale] = React.useState(active ? 1 : 0.35);
+  useM3EScalarSpringEffect(active ? 1 : 0.35, "fastSpatial", (s) => {
+    if (pillRef.current) {
+      pillRef.current.style.scale = `${Math.max(0.2, s).toFixed(3)} 1`;
+    }
+  });
   const pillOpacity = active ? 1 : 0;
   const isHorizontal = itemLayout === "horizontal";
 
@@ -64,11 +75,12 @@ function NavItemButton<Value extends string>({
       }}
     >
       <span
+        ref={pillRef}
         className="m3e-nav-item__pill"
         style={{
           borderRadius: `${NAVIGATION_TOKENS.horizontalIndicatorHeight / 2}px`,
           opacity: pillOpacity,
-          scale: `${Math.max(0.2, pillScale).toFixed(3)} 1`,
+          scale: `${Math.max(0.2, initPillScale).toFixed(3)} 1`,
         }}
         aria-hidden="true"
       />
@@ -95,11 +107,12 @@ function NavItemButton<Value extends string>({
         }}
       >
         <span
+          ref={pillRef}
           className="m3e-nav-item__pill"
           style={{
             borderRadius: `${NAVIGATION_TOKENS.indicatorRadius}px`,
             opacity: pillOpacity,
-            scale: `${Math.max(0.2, pillScale).toFixed(3)} 1`,
+            scale: `${Math.max(0.2, initPillScale).toFixed(3)} 1`,
           }}
           aria-hidden="true"
         />
@@ -119,15 +132,21 @@ function NavItemButton<Value extends string>({
     </>
   );
 
-  if (item.href && !item.disabled) {
+  const isLink = isLinkRenderTarget(item.href, item.render) || Boolean(item.render);
+
+  if (isLink) {
     const ariaCurrent = active
-      ? item.href.startsWith("#")
+      ? item.href?.startsWith("#")
         ? "true"
         : "page"
       : undefined;
     return (
-      <a
+      <LinkActionElement
         href={item.href}
+        target={item.target}
+        rel={item.rel}
+        render={item.render}
+        disabled={item.disabled}
         aria-current={ariaCurrent}
         className="m3e-nav-item"
         data-active={active ? "" : undefined}
@@ -140,7 +159,7 @@ function NavItemButton<Value extends string>({
         }}
       >
         {inner}
-      </a>
+      </LinkActionElement>
     );
   }
 
@@ -161,19 +180,23 @@ function NavItemButton<Value extends string>({
   );
 }
 
-export function NavigationBar<Value extends string = string>({
-  items,
-  value,
-  onValueChange,
-  itemLayout = "vertical",
-  arrangement = "equal-weight",
-  "aria-label": ariaLabel,
-  className,
-  style,
-}: M3ENavigationBarProps<Value>): React.JSX.Element {
+function NavigationBarInner<Value extends string = string>(
+  {
+    items,
+    value,
+    onValueChange,
+    itemLayout = "vertical",
+    arrangement = "equal-weight",
+    "aria-label": ariaLabel,
+    className,
+    style,
+  }: M3ENavigationBarProps<Value>,
+  ref: React.ForwardedRef<HTMLElement>,
+): React.JSX.Element {
   const { t } = useM3ERuntime();
   return (
     <nav
+      ref={ref}
       aria-label={ariaLabel ?? t("navigation.barLabel")}
       className={className ? `m3e-nav-bar ${className}` : "m3e-nav-bar"}
       data-item-layout={itemLayout}
@@ -195,6 +218,12 @@ export function NavigationBar<Value extends string = string>({
     </nav>
   );
 }
+
+export const NavigationBar = React.forwardRef(NavigationBarInner) as <
+  Value extends string = string,
+>(
+  props: M3ENavigationBarProps<Value> & React.RefAttributes<HTMLElement>,
+) => React.JSX.Element;
 
 function MenuToggleSvg({
   expanded,
@@ -284,26 +313,29 @@ function getWide(): boolean {
 
 const noopSubscribe = () => () => {};
 
-export function NavigationRail<Value extends string = string>({
-  items,
-  value,
-  onValueChange,
-  expanded: controlledExpanded,
-  defaultExpanded = false,
-  onExpandedChange,
-  collapsible = false,
-  modal = false,
-  density = "standard",
-  open,
-  defaultOpen = false,
-  onOpenChange,
-  trigger,
-  header,
-  footer,
-  "aria-label": ariaLabel,
-  className,
-  style,
-}: M3ENavigationRailProps<Value>): React.JSX.Element {
+function NavigationRailInner<Value extends string = string>(
+  {
+    items,
+    value,
+    onValueChange,
+    expanded: controlledExpanded,
+    defaultExpanded = false,
+    onExpandedChange,
+    collapsible = false,
+    modal = false,
+    density = "standard",
+    open,
+    defaultOpen = false,
+    onOpenChange,
+    trigger,
+    header,
+    footer,
+    "aria-label": ariaLabel,
+    className,
+    style,
+  }: M3ENavigationRailProps<Value>,
+  ref: React.ForwardedRef<HTMLElement>,
+): React.JSX.Element {
   const { direction, t } = useM3ERuntime();
   const resolvedLabel = ariaLabel ?? t("navigation.railLabel");
   const compact = density === "compact";
@@ -325,9 +357,25 @@ export function NavigationRail<Value extends string = string>({
     modal === "auto" ? getWide : () => true,
     () => true,
   );
-  const springWidth = useM3EScalarSpring(
+  const railElRef = React.useRef<HTMLElement | null>(null);
+  const mergeRailRef = React.useCallback(
+    (node: HTMLElement | null) => {
+      railElRef.current = node;
+      assignRef(ref, node);
+    },
+    [ref],
+  );
+  const [initWidth] = React.useState(
+    isExpanded ? expandedWidth : NAVIGATION_RAIL_TOKENS.collapsedWidth,
+  );
+  useM3EScalarSpringEffect(
     isExpanded ? expandedWidth : NAVIGATION_RAIL_TOKENS.collapsedWidth,
     "defaultSpatial",
+    (w) => {
+      if (railElRef.current) {
+        railElRef.current.style.width = `${Math.max(NAVIGATION_RAIL_TOKENS.collapsedWidth, w).toFixed(1)}px`;
+      }
+    },
   );
   const { rippleRef: toggleRippleRef, rippleHandlers: toggleRippleHandlers } =
     useM3ERipple(false);
@@ -370,12 +418,13 @@ export function NavigationRail<Value extends string = string>({
   return (
     <>
       <nav
+        ref={mergeRailRef}
         aria-label={resolvedLabel}
         className={cx("m3e-nav-rail")}
         data-expanded={isExpanded ? "" : undefined}
         data-modal={modal === "auto" ? "auto" : undefined}
         style={{
-          width: `${Math.max(NAVIGATION_RAIL_TOKENS.collapsedWidth, springWidth).toFixed(1)}px`,
+          width: `${Math.max(NAVIGATION_RAIL_TOKENS.collapsedWidth, initWidth).toFixed(1)}px`,
           ...paddingVar,
           ...style,
         }}
@@ -430,3 +479,9 @@ export function NavigationRail<Value extends string = string>({
     </>
   );
 }
+
+export const NavigationRail = React.forwardRef(NavigationRailInner) as <
+  Value extends string = string,
+>(
+  props: M3ENavigationRailProps<Value> & React.RefAttributes<HTMLElement>,
+) => React.JSX.Element;

@@ -3,9 +3,6 @@
 import * as React from "react";
 import { Button as BaseButton } from "@base-ui/react/button";
 import { mergeProps } from "@base-ui/react/merge-props";
-import {
-  CARD_TOKENS,
-} from "../../tokens/topology.js";
 import { LinkActionElement, isLinkRenderTarget } from "../../internal/link.js";
 import { useM3ERipple } from "../../internal/ripple.js";
 
@@ -56,15 +53,11 @@ export const Card = React.forwardRef<HTMLElement, M3ECardProps>(function Card(
   const { rippleRef, rippleHandlers } = useM3ERipple(
     !isInteractive || disabled,
   );
-  const restRadiusCss = `${CARD_TOKENS.restRadius}px`;
 
   const inner = (
     <>
       {media ? <div className="m3e-card__media">{media}</div> : null}
-      <div
-        className="m3e-card__body"
-        style={{ padding: `${CARD_TOKENS.padding}px` }}
-      >
+      <div className="m3e-card__body">
         {title || subtitle ? (
           <div className="m3e-card__header">
             {title ? <div className="m3e-card__title">{title}</div> : null}
@@ -95,10 +88,7 @@ export const Card = React.forwardRef<HTMLElement, M3ECardProps>(function Card(
         }
         data-variant={variant}
         data-disabled={disabled ? "" : undefined}
-        style={{
-          borderRadius: restRadiusCss,
-          ...style,
-        }}
+        style={style}
       >
         {isLink ? (
           <LinkActionElement
@@ -142,10 +132,6 @@ export const Card = React.forwardRef<HTMLElement, M3ECardProps>(function Card(
     const cardClassName = className
       ? `m3e-card m3e-card--interactive ${className}`
       : "m3e-card m3e-card--interactive";
-    const cardStyle = {
-      borderRadius: restRadiusCss,
-      ...style,
-    };
 
     if (isLink) {
       return (
@@ -161,7 +147,7 @@ export const Card = React.forwardRef<HTMLElement, M3ECardProps>(function Card(
           onClick={onClick}
           className={cardClassName}
           data-variant={variant}
-          style={cardStyle}
+          style={style}
         >
           {inner}
           <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
@@ -181,7 +167,7 @@ export const Card = React.forwardRef<HTMLElement, M3ECardProps>(function Card(
         className={cardClassName}
         data-variant={variant}
         data-disabled={disabled ? "" : undefined}
-        style={cardStyle}
+        style={style}
       >
         {inner}
         <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
@@ -196,10 +182,7 @@ export const Card = React.forwardRef<HTMLElement, M3ECardProps>(function Card(
       {...restProps}
       className={className ? `m3e-card ${className}` : "m3e-card"}
       data-variant={variant}
-      style={{
-        borderRadius: `${CARD_TOKENS.restRadius}px`,
-        ...style,
-      }}
+      style={style}
     >
       {inner}
     </article>

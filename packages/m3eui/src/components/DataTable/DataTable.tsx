@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { DATA_TABLE_TOKENS } from "../../tokens/topology.js";
 import { useM3EI18n } from "../../context/M3EContext.js";
 import { SkeletonBase } from "../../internal/skeletonBase.js";
 import { Checkbox } from "../Checkbox/Checkbox.js";
@@ -91,7 +90,10 @@ export interface M3EDataTableProps<Row> {
   readonly getRowKey: (row: Row, index: number) => string;
   readonly sort?: M3EDataTableSortState | null;
   readonly defaultSort?: M3EDataTableSortState | null;
-  readonly onSortChange?: (next: M3EDataTableSortState) => void;
+  readonly onSortChange?: (next: M3EDataTableSortState | null) => void;
+  readonly clearableSort?: boolean;
+  readonly manualSort?: boolean;
+  readonly onRowClick?: (row: Row, index: number) => void;
   readonly selectable?: boolean;
   readonly selectedRowKeys?: readonly string[];
   readonly defaultSelectedRowKeys?: readonly string[];
@@ -163,33 +165,39 @@ function ExpandChevronSvg({ expanded }: { readonly expanded: boolean }) {
   );
 }
 
-export function DataTable<Row>({
-  caption,
-  hideCaption = false,
-  columns,
-  rows,
-  getRowKey,
-  sort: controlledSort,
-  defaultSort = null,
-  onSortChange,
-  selectable = false,
-  selectedRowKeys: controlledSelectedKeys,
-  defaultSelectedRowKeys = [],
-  onSelectedRowKeysChange,
-  renderExpandedRow,
-  expandedRowKeys: controlledExpandedKeys,
-  defaultExpandedRowKeys = [],
-  onExpandedRowKeysChange,
-  density = "comfortable",
-  stickyHeader = false,
-  loading = false,
-  loadingRows = 4,
-  toolbar,
-  footer,
-  emptyMessage,
-  className,
-  style,
-}: M3EDataTableProps<Row>): React.JSX.Element {
+function DataTableInner<Row>(
+  {
+    caption,
+    hideCaption = false,
+    columns,
+    rows,
+    getRowKey,
+    sort: controlledSort,
+    defaultSort = null,
+    onSortChange,
+    clearableSort = false,
+    manualSort = false,
+    onRowClick,
+    selectable = false,
+    selectedRowKeys: controlledSelectedKeys,
+    defaultSelectedRowKeys = [],
+    onSelectedRowKeysChange,
+    renderExpandedRow,
+    expandedRowKeys: controlledExpandedKeys,
+    defaultExpandedRowKeys = [],
+    onExpandedRowKeysChange,
+    density = "comfortable",
+    stickyHeader = false,
+    loading = false,
+    loadingRows = 4,
+    toolbar,
+    footer,
+    emptyMessage,
+    className,
+    style,
+  }: M3EDataTableProps<Row>,
+  ref: React.ForwardedRef<HTMLDivElement>,
+): React.JSX.Element {
   const { locale, t } = useM3EI18n();
   const resolvedEmptyMessage = emptyMessage ?? t("dataTable.empty");
   const collator = React.useMemo(
@@ -228,7 +236,7 @@ export function DataTable<Row>({
   };
 
   const sortedRows = React.useMemo(() => {
-    if (!activeSort) return rows;
+    if (manualSort || !activeSort) return rows;
     const col = columns.find((c) => c.id === activeSort.columnId);
     if (!col || !col.sortable || !col.sortAccessor) return rows;
     const accessor = col.sortAccessor;
@@ -242,7 +250,7 @@ export function DataTable<Row>({
       }
       return collator.compare(String(va), String(vb)) * sign;
     });
-  }, [rows, columns, activeSort, collator]);
+  }, [rows, columns, activeSort, collator, manualSort]);
 
   const allRowKeys = React.useMemo(
     () => sortedRows.map((r, i) => getRowKey(r, i)),
@@ -265,14 +273,15 @@ export function DataTable<Row>({
   };
 
   const handleSortClick = (col: M3EDataTableColumn<Row>) => {
-    const nextDir: SortDirection =
-      activeSort?.columnId === col.id && activeSort.direction === "ascending"
-        ? "descending"
-        : "ascending";
-    const nextState: M3EDataTableSortState = {
-      columnId: col.id,
-      direction: nextDir,
-    };
+    const isSameCol = activeSort?.columnId === col.id;
+    let nextState: M3EDataTableSortState | null;
+    if (isSameCol && activeSort?.direction === "ascending") {
+      nextState = { columnId: col.id, direction: "descending" };
+    } else if (clearableSort && isSameCol && activeSort?.direction === "descending") {
+      nextState = null;
+    } else {
+      nextState = { columnId: col.id, direction: "ascending" };
+    }
     if (controlledSort === undefined) {
       setUncontrolledSort(nextState);
     }
@@ -282,18 +291,15 @@ export function DataTable<Row>({
       (typeof col.header === "string" ? col.header : col.id);
     setAnnouncement(
       t(
-        nextDir === "ascending"
-          ? "dataTable.sortedAscending"
-          : "dataTable.sortedDescending",
+        nextState === null
+          ? "dataTable.sortCleared"
+          : nextState.direction === "ascending"
+            ? "dataTable.sortedAscending"
+            : "dataTable.sortedDescending",
         { column: colName },
       ),
     );
   };
-
-  const rowHeight =
-    density === "compact"
-      ? DATA_TABLE_TOKENS.compactRowHeight
-      : DATA_TABLE_TOKENS.rowHeight;
 
   const headerCellRefs = React.useRef<Record<string, HTMLTableCellElement | null>>(
     {},
@@ -382,17 +388,30 @@ export function DataTable<Row>({
       : { insetInlineEnd: `${offset}px` };
   };
 
+  const getCellStyle = (
+    key: string,
+    sticky?: "start" | "end",
+    width?: number | string,
+  ): React.CSSProperties | undefined => {
+    const stickyStyle = getStickyStyle(key, sticky);
+    const resolvedWidth =
+      typeof width === "number" ? `${width}px` : width;
+    if (!stickyStyle && resolvedWidth === undefined) return undefined;
+    return {
+      ...(resolvedWidth !== undefined ? { width: resolvedWidth } : undefined),
+      ...stickyStyle,
+    };
+  };
+
   return (
     <div
+      ref={ref}
       className={
         className
           ? `m3e-data-table-shell ${className}`
           : "m3e-data-table-shell"
       }
-      style={{
-        borderRadius: `${DATA_TABLE_TOKENS.containerRadius}px`,
-        ...style,
-      }}
+      style={style}
     >
       <div role="status" aria-live="polite" className="m3e-sr-only">
         {announcement}
@@ -428,13 +447,10 @@ export function DataTable<Row>({
                   scope="col"
                   className="m3e-data-table__th m3e-data-table__th--expand"
                   data-sticky={hasStickyStart ? "start" : undefined}
-                  style={{
-                    height: `${DATA_TABLE_TOKENS.headerHeight}px`,
-                    ...getStickyStyle(
-                      "__expand",
-                      hasStickyStart ? "start" : undefined,
-                    ),
-                  }}
+                  style={getStickyStyle(
+                    "__expand",
+                    hasStickyStart ? "start" : undefined,
+                  )}
                 >
                   <span className="m3e-sr-only">
                     {t("dataTable.expandColumn")}
@@ -450,13 +466,10 @@ export function DataTable<Row>({
                   scope="col"
                   className="m3e-data-table__th m3e-data-table__th--checkbox"
                   data-sticky={hasStickyStart ? "start" : undefined}
-                  style={{
-                    height: `${DATA_TABLE_TOKENS.headerHeight}px`,
-                    ...getStickyStyle(
-                      "__select",
-                      hasStickyStart ? "start" : undefined,
-                    ),
-                  }}
+                  style={getStickyStyle(
+                    "__select",
+                    hasStickyStart ? "start" : undefined,
+                  )}
                 >
                   <Checkbox
                     aria-label={t("dataTable.selectAllRows")}
@@ -497,14 +510,7 @@ export function DataTable<Row>({
                     className="m3e-data-table__th"
                     data-align={col.align ?? "start"}
                     data-sticky={col.sticky}
-                    style={{
-                      height: `${DATA_TABLE_TOKENS.headerHeight}px`,
-                      width:
-                        typeof col.width === "number"
-                          ? `${col.width}px`
-                          : col.width,
-                      ...getStickyStyle(col.id, col.sticky),
-                    }}
+                    style={getCellStyle(col.id, col.sticky, col.width)}
                   >
                     {col.sortable ? (
                       <TableSortButton
@@ -543,13 +549,10 @@ export function DataTable<Row>({
                     <td
                       className="m3e-data-table__td m3e-data-table__td--expand"
                       data-sticky={hasStickyStart ? "start" : undefined}
-                      style={{
-                        height: `${rowHeight}px`,
-                        ...getStickyStyle(
-                          "__expand",
-                          hasStickyStart ? "start" : undefined,
-                        ),
-                      }}
+                      style={getStickyStyle(
+                        "__expand",
+                        hasStickyStart ? "start" : undefined,
+                      )}
                     >
                       <SkeletonBase variant="circular" width={18} height={18} />
                     </td>
@@ -558,13 +561,10 @@ export function DataTable<Row>({
                     <td
                       className="m3e-data-table__td m3e-data-table__td--checkbox"
                       data-sticky={hasStickyStart ? "start" : undefined}
-                      style={{
-                        height: `${rowHeight}px`,
-                        ...getStickyStyle(
-                          "__select",
-                          hasStickyStart ? "start" : undefined,
-                        ),
-                      }}
+                      style={getStickyStyle(
+                        "__select",
+                        hasStickyStart ? "start" : undefined,
+                      )}
                     >
                       <SkeletonBase variant="rounded" width={18} height={18} />
                     </td>
@@ -574,10 +574,7 @@ export function DataTable<Row>({
                       key={col.id}
                       className="m3e-data-table__td"
                       data-sticky={col.sticky}
-                      style={{
-                        height: `${rowHeight}px`,
-                        ...getStickyStyle(col.id, col.sticky),
-                      }}
+                      style={getStickyStyle(col.id, col.sticky)}
                     >
                       <SkeletonBase
                         variant="text"
@@ -612,18 +609,31 @@ export function DataTable<Row>({
                       className="m3e-data-table__row"
                       data-selected={isSelected ? "" : undefined}
                       data-expanded={isExpanded ? "" : undefined}
+                      data-clickable={onRowClick ? "" : undefined}
+                      onClick={
+                        onRowClick
+                          ? (e) => {
+                              const target = e.target as HTMLElement | null;
+                              if (
+                                target?.closest(
+                                  'button, a, input, select, textarea, label, [role="checkbox"], [role="button"]',
+                                )
+                              ) {
+                                return;
+                              }
+                              onRowClick(row, rowIndex);
+                            }
+                          : undefined
+                      }
                     >
                       {expandable ? (
                         <td
                           className="m3e-data-table__td m3e-data-table__td--expand"
                           data-sticky={hasStickyStart ? "start" : undefined}
-                          style={{
-                            height: `${rowHeight}px`,
-                            ...getStickyStyle(
-                              "__expand",
-                              hasStickyStart ? "start" : undefined,
-                            ),
-                          }}
+                          style={getStickyStyle(
+                            "__expand",
+                            hasStickyStart ? "start" : undefined,
+                          )}
                         >
                           <TableExpandButton
                             expanded={isExpanded}
@@ -651,13 +661,10 @@ export function DataTable<Row>({
                         <td
                           className="m3e-data-table__td m3e-data-table__td--checkbox"
                           data-sticky={hasStickyStart ? "start" : undefined}
-                          style={{
-                            height: `${rowHeight}px`,
-                            ...getStickyStyle(
-                              "__select",
-                              hasStickyStart ? "start" : undefined,
-                            ),
-                          }}
+                          style={getStickyStyle(
+                            "__select",
+                            hasStickyStart ? "start" : undefined,
+                          )}
                         >
                           <Checkbox
                             aria-label={t("dataTable.selectRow", {
@@ -689,14 +696,7 @@ export function DataTable<Row>({
                             className="m3e-data-table__td"
                             data-align={col.align ?? "start"}
                             data-sticky={col.sticky}
-                            style={{
-                              height: `${rowHeight}px`,
-                              width:
-                                typeof col.width === "number"
-                                  ? `${col.width}px`
-                                  : col.width,
-                              ...getStickyStyle(col.id, col.sticky),
-                            }}
+                            style={getCellStyle(col.id, col.sticky, col.width)}
                           >
                             {col.cell(row, rowIndex)}
                           </CellTag>
@@ -732,3 +732,7 @@ export function DataTable<Row>({
     </div>
   );
 }
+
+export const DataTable = React.forwardRef(DataTableInner) as <Row>(
+  props: M3EDataTableProps<Row> & React.RefAttributes<HTMLDivElement>,
+) => React.JSX.Element;

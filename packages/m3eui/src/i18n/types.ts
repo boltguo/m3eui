@@ -41,6 +41,7 @@ export interface M3EMessages {
   readonly "dataTable.empty": string;
   readonly "dataTable.sortedAscending": string;
   readonly "dataTable.sortedDescending": string;
+  readonly "dataTable.sortCleared": string;
   readonly "dataTable.selectAllRows": string;
   readonly "dataTable.selectRow": string;
 

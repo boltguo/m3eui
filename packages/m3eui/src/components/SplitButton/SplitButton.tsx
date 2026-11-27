@@ -12,7 +12,7 @@ import {
 import { useM3ERuntime } from "../../context/M3EContext.js";
 import {
   useM3ECornerSpringRef,
-  useM3EScalarSpring,
+  useM3EScalarSpringEffect,
   usePressHoldState,
 } from "../../hooks/useM3ESpring.js";
 import type { ButtonVariant } from "../Button/Button.js";
@@ -140,8 +140,19 @@ export function SplitButton({
       "fastSpatial",
     );
 
-  const chevronDeg = useM3EScalarSpring(geo.chevronRotationDeg, "fastSpatial");
-  const opticalX = useM3EScalarSpring(targetOpticalX, "defaultEffects");
+  const chevronRef = React.useRef<HTMLSpanElement | null>(null);
+  const [initChevronDeg] = React.useState(geo.chevronRotationDeg);
+  const [initOpticalX] = React.useState(targetOpticalX);
+  useM3EScalarSpringEffect(geo.chevronRotationDeg, "fastSpatial", (deg) => {
+    if (chevronRef.current) {
+      chevronRef.current.style.rotate = `${deg.toFixed(1)}deg`;
+    }
+  });
+  useM3EScalarSpringEffect(targetOpticalX, "defaultEffects", (x) => {
+    if (chevronRef.current) {
+      chevronRef.current.style.translate = `${x.toFixed(2)}px 0px`;
+    }
+  });
 
   const { spec } = geo;
   const scaleKey = SPLIT_BUTTON_TYPESCALE_MAP[size];
@@ -238,12 +249,13 @@ export function SplitButton({
           >
             <span ref={trailRippleRef} className="m3e-ripple" aria-hidden="true" />
             <span
+              ref={chevronRef}
               className="m3e-split-button__chevron"
               style={{
                 width: spec.trailingIconSize,
                 height: spec.trailingIconSize,
-                translate: `${opticalX.toFixed(2)}px 0px`,
-                rotate: `${chevronDeg.toFixed(1)}deg`,
+                translate: `${initOpticalX.toFixed(2)}px 0px`,
+                rotate: `${initChevronDeg.toFixed(1)}deg`,
               }}
               aria-hidden="true"
             >

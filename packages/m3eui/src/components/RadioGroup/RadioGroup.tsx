@@ -39,25 +39,29 @@ export interface M3ERadioProps<Value extends string = string> {
   readonly style?: React.CSSProperties;
 }
 
-export function RadioGroup<Value extends string = string>({
-  children,
-  value,
-  defaultValue,
-  onValueChange,
-  disabled,
-  readOnly = false,
-  required = false,
-  name,
-  orientation = "vertical",
-  "aria-label": ariaLabel,
-  className,
-  style,
-}: M3ERadioGroupProps<Value>): React.JSX.Element {
+function RadioGroupInner<Value extends string = string>(
+  {
+    children,
+    value,
+    defaultValue,
+    onValueChange,
+    disabled,
+    readOnly = false,
+    required = false,
+    name,
+    orientation = "vertical",
+    "aria-label": ariaLabel,
+    className,
+    style,
+  }: M3ERadioGroupProps<Value>,
+  ref: React.ForwardedRef<HTMLDivElement>,
+): React.JSX.Element {
   const isDisabled = useFieldsetDisabled(disabled);
   return (
     <FieldsetDisabledContext.Provider value={isDisabled}>
       <FormFieldScope name={name} disabled={isDisabled}>
       <BaseRadioGroup
+        ref={ref}
         value={value}
         defaultValue={defaultValue}
         disabled={isDisabled || undefined}
@@ -79,18 +83,27 @@ export function RadioGroup<Value extends string = string>({
   );
 }
 
-export function Radio<Value extends string = string>({
-  value,
-  label,
-  description,
-  disabled,
-  readOnly = false,
-  required = false,
-  id,
-  "aria-label": ariaLabel,
-  className,
-  style,
-}: M3ERadioProps<Value>): React.JSX.Element {
+export const RadioGroup = React.forwardRef(RadioGroupInner) as <
+  Value extends string = string,
+>(
+  props: M3ERadioGroupProps<Value> & React.RefAttributes<HTMLDivElement>,
+) => React.JSX.Element;
+
+function RadioInner<Value extends string = string>(
+  {
+    value,
+    label,
+    description,
+    disabled,
+    readOnly = false,
+    required = false,
+    id,
+    "aria-label": ariaLabel,
+    className,
+    style,
+  }: M3ERadioProps<Value>,
+  ref: React.ForwardedRef<HTMLElement>,
+): React.JSX.Element {
   const isDisabled = useFieldsetDisabled(disabled);
   const { isPressed, pressHandlers } = usePressHoldState(isDisabled || readOnly);
     const { rippleRef, rippleHandlers } = useM3ERipple(isDisabled || readOnly, {
@@ -103,6 +116,7 @@ export function Radio<Value extends string = string>({
 
   const radioNode = (
     <BaseRadio.Root
+      ref={!label ? (ref as React.Ref<HTMLButtonElement>) : undefined}
       id={id}
       value={value}
       disabled={isDisabled}
@@ -140,6 +154,7 @@ export function Radio<Value extends string = string>({
 
   return (
     <label
+      ref={ref as React.Ref<HTMLLabelElement>}
       className={
         className
           ? `m3e-control-row m3e-radio-row ${className}`
@@ -162,3 +177,9 @@ export function Radio<Value extends string = string>({
     </label>
   );
 }
+
+export const Radio = React.forwardRef(RadioInner) as <
+  Value extends string = string,
+>(
+  props: M3ERadioProps<Value> & React.RefAttributes<HTMLElement>,
+) => React.JSX.Element;

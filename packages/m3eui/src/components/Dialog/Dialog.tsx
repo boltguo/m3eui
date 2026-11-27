@@ -3,9 +3,6 @@
 import * as React from "react";
 import { AlertDialog as BaseAlertDialog } from "@base-ui/react/alert-dialog";
 import { Dialog as BaseDialog } from "@base-ui/react/dialog";
-import {
-  DIALOG_TOKENS,
-} from "../../tokens/topology.js";
 import { useM3EI18n } from "../../context/M3EContext.js";
 import { useM3EPortalContainer } from "../../context/M3EPortal.js";
 import { CloseIcon } from "../../internal/icons.js";
@@ -52,44 +49,43 @@ export interface M3EDialogCloseProps {
   readonly className?: string;
 }
 
-export function DialogClose({
-  render,
-  children,
-  className,
-}: M3EDialogCloseProps): React.JSX.Element {
-  return (
-    <BaseDialog.Close render={render} className={className}>
-      {children}
-    </BaseDialog.Close>
-  );
-}
+export const DialogClose = React.forwardRef<HTMLButtonElement, M3EDialogCloseProps>(
+  function DialogClose({ render, children, className }, ref): React.JSX.Element {
+    return (
+      <BaseDialog.Close ref={ref} render={render} className={className}>
+        {children}
+      </BaseDialog.Close>
+    );
+  },
+);
 
-export function AlertDialogClose({
-  render,
-  children,
-  className,
-}: M3EDialogCloseProps): React.JSX.Element {
-  return (
-    <BaseAlertDialog.Close render={render} className={className}>
-      {children}
-    </BaseAlertDialog.Close>
-  );
-}
+export const AlertDialogClose = React.forwardRef<HTMLButtonElement, M3EDialogCloseProps>(
+  function AlertDialogClose({ render, children, className }, ref): React.JSX.Element {
+    return (
+      <BaseAlertDialog.Close ref={ref} render={render} className={className}>
+        {children}
+      </BaseAlertDialog.Close>
+    );
+  },
+);
 
-export function Dialog({
-  open,
-  defaultOpen,
-  onOpenChange,
-  trigger,
-  icon,
-  title,
-  description,
-  children,
-  actions,
-  showCloseButton = false,
-  className,
-  style,
-}: M3EDialogProps): React.JSX.Element {
+export const Dialog = React.forwardRef<HTMLDivElement, M3EDialogProps>(function Dialog(
+  {
+    open,
+    defaultOpen,
+    onOpenChange,
+    trigger,
+    icon,
+    title,
+    description,
+    children,
+    actions,
+    showCloseButton = false,
+    className,
+    style,
+  },
+  ref,
+): React.JSX.Element {
   const { t } = useM3EI18n();
   const portalContainer = useM3EPortalContainer();
   return (
@@ -103,17 +99,12 @@ export function Dialog({
         <BaseDialog.Backdrop className="m3e-dialog__backdrop" />
         <BaseDialog.Viewport className="m3e-dialog__viewport">
           <BaseDialog.Popup
+            ref={ref}
             className={
               className ? `m3e-dialog__popup ${className}` : "m3e-dialog__popup"
             }
             data-has-icon={icon ? "" : undefined}
-            style={{
-              borderRadius: `${DIALOG_TOKENS.containerRadius}px`,
-              padding: `${DIALOG_TOKENS.padding}px`,
-              minWidth: `${DIALOG_TOKENS.minWidth}px`,
-              maxWidth: `${DIALOG_TOKENS.maxWidth}px`,
-              ...style,
-            }}
+            style={style}
           >
             {showCloseButton ? (
               <DialogCloseIconButton
@@ -143,99 +134,89 @@ export function Dialog({
               <div className="m3e-dialog__body">{children}</div>
             ) : null}
             {actions ? (
-              <div
-                className="m3e-dialog__actions"
-                style={{ gap: `${DIALOG_TOKENS.actionGap}px` }}
-              >
-                {actions}
-              </div>
+              <div className="m3e-dialog__actions">{actions}</div>
             ) : null}
           </BaseDialog.Popup>
         </BaseDialog.Viewport>
       </BaseDialog.Portal>
     </BaseDialog.Root>
   );
-}
+});
 
-export function AlertDialog({
-  open,
-  defaultOpen,
-  onOpenChange,
-  trigger,
-  icon,
-  title,
-  description,
-  children,
-  actions,
-  showCloseButton = false,
-  className,
-  style,
-}: M3EDialogProps): React.JSX.Element {
-  const { t } = useM3EI18n();
-  const portalContainer = useM3EPortalContainer();
-  return (
-    <BaseAlertDialog.Root
-      open={open}
-      defaultOpen={defaultOpen}
-      onOpenChange={(next) => onOpenChange?.(next)}
-    >
-      {trigger ? <BaseAlertDialog.Trigger render={trigger} /> : null}
-      <BaseAlertDialog.Portal container={portalContainer}>
-        <BaseAlertDialog.Backdrop className="m3e-dialog__backdrop" />
-        <BaseAlertDialog.Viewport className="m3e-dialog__viewport">
-          <BaseAlertDialog.Popup
-            className={
-              className
-                ? `m3e-dialog__popup m3e-alert-dialog__popup ${className}`
-                : "m3e-dialog__popup m3e-alert-dialog__popup"
-            }
-            data-has-icon={icon ? "" : undefined}
-            style={{
-              borderRadius: `${DIALOG_TOKENS.containerRadius}px`,
-              padding: `${DIALOG_TOKENS.padding}px`,
-              minWidth: `${DIALOG_TOKENS.minWidth}px`,
-              maxWidth: `${DIALOG_TOKENS.maxWidth}px`,
-              ...style,
-            }}
-          >
-            {showCloseButton ? (
-              <DialogCloseIconButton
-                CloseComponent={BaseAlertDialog.Close}
-                ariaLabel={t("dialog.close")}
-              />
-            ) : null}
-            <div
-              className="m3e-dialog__header"
-              data-has-close={showCloseButton ? "" : undefined}
+export const AlertDialog = React.forwardRef<HTMLDivElement, M3EDialogProps>(
+  function AlertDialog(
+    {
+      open,
+      defaultOpen,
+      onOpenChange,
+      trigger,
+      icon,
+      title,
+      description,
+      children,
+      actions,
+      showCloseButton = false,
+      className,
+      style,
+    },
+    ref,
+  ): React.JSX.Element {
+    const { t } = useM3EI18n();
+    const portalContainer = useM3EPortalContainer();
+    return (
+      <BaseAlertDialog.Root
+        open={open}
+        defaultOpen={defaultOpen}
+        onOpenChange={(next) => onOpenChange?.(next)}
+      >
+        {trigger ? <BaseAlertDialog.Trigger render={trigger} /> : null}
+        <BaseAlertDialog.Portal container={portalContainer}>
+          <BaseAlertDialog.Backdrop className="m3e-dialog__backdrop" />
+          <BaseAlertDialog.Viewport className="m3e-dialog__viewport">
+            <BaseAlertDialog.Popup
+              ref={ref}
+              className={
+                className
+                  ? `m3e-dialog__popup m3e-alert-dialog__popup ${className}`
+                  : "m3e-dialog__popup m3e-alert-dialog__popup"
+              }
+              data-has-icon={icon ? "" : undefined}
+              style={style}
             >
-              {icon ? (
-                <div className="m3e-dialog__icon m3e-dialog__icon--alert" aria-hidden="true">
-                  {icon}
-                </div>
+              {showCloseButton ? (
+                <DialogCloseIconButton
+                  CloseComponent={BaseAlertDialog.Close}
+                  ariaLabel={t("dialog.close")}
+                />
               ) : null}
-              <BaseAlertDialog.Title className="m3e-dialog__title">
-                {title}
-              </BaseAlertDialog.Title>
-            </div>
-            {description ? (
-              <BaseAlertDialog.Description className="m3e-dialog__description">
-                {description}
-              </BaseAlertDialog.Description>
-            ) : null}
-            {children ? (
-              <div className="m3e-dialog__body">{children}</div>
-            ) : null}
-            {actions ? (
               <div
-                className="m3e-dialog__actions"
-                style={{ gap: `${DIALOG_TOKENS.actionGap}px` }}
+                className="m3e-dialog__header"
+                data-has-close={showCloseButton ? "" : undefined}
               >
-                {actions}
+                {icon ? (
+                  <div className="m3e-dialog__icon m3e-dialog__icon--alert" aria-hidden="true">
+                    {icon}
+                  </div>
+                ) : null}
+                <BaseAlertDialog.Title className="m3e-dialog__title">
+                  {title}
+                </BaseAlertDialog.Title>
               </div>
-            ) : null}
-          </BaseAlertDialog.Popup>
-        </BaseAlertDialog.Viewport>
-      </BaseAlertDialog.Portal>
-    </BaseAlertDialog.Root>
-  );
-}
+              {description ? (
+                <BaseAlertDialog.Description className="m3e-dialog__description">
+                  {description}
+                </BaseAlertDialog.Description>
+              ) : null}
+              {children ? (
+                <div className="m3e-dialog__body">{children}</div>
+              ) : null}
+              {actions ? (
+                <div className="m3e-dialog__actions">{actions}</div>
+              ) : null}
+            </BaseAlertDialog.Popup>
+          </BaseAlertDialog.Viewport>
+        </BaseAlertDialog.Portal>
+      </BaseAlertDialog.Root>
+    );
+  },
+);

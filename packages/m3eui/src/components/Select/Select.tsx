@@ -8,7 +8,7 @@ import {
 import { useM3EPortalContainer } from "../../context/M3EPortal.js";
 import { useM3EI18n } from "../../context/M3EContext.js";
 import { formatLocalizedInteger } from "../../i18n/index.js";
-import { useM3EScalarSpring } from "../../hooks/useM3ESpring.js";
+import { useM3EScalarSpringEffect } from "../../hooks/useM3ESpring.js";
 import { useDropdownItemState } from "../../internal/dropdownItem.js";
 import {
   FieldErrorIconSvg,
@@ -259,7 +259,13 @@ function SelectInner<Value extends string = string>(
   const isLabelFloated = effectiveOpen || hasSelection;
   const hasExplicitError = Boolean(invalid || errorMessage);
 
-  const chevronDeg = useM3EScalarSpring(effectiveOpen ? 180 : 0, "fastSpatial");
+  const chevronRef = React.useRef<HTMLSpanElement | null>(null);
+  const [initialChevronDeg] = React.useState(effectiveOpen ? 180 : 0);
+  useM3EScalarSpringEffect(effectiveOpen ? 180 : 0, "fastSpatial", (deg) => {
+    if (chevronRef.current) {
+      chevronRef.current.style.rotate = `${deg.toFixed(1)}deg`;
+    }
+  });
 
   const generatedId = React.useId();
   const triggerId = id ?? generatedId;
@@ -462,8 +468,9 @@ function SelectInner<Value extends string = string>(
               />
             )}
             <BaseSelect.Icon
+              ref={chevronRef}
               className="m3e-select__chevron"
-              style={{ rotate: `${chevronDeg.toFixed(1)}deg` }}
+              style={{ rotate: `${initialChevronDeg.toFixed(1)}deg` }}
             >
               <ChevronDownIcon size={18} strokeWidth={2.2} />
             </BaseSelect.Icon>

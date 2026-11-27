@@ -1,12 +1,9 @@
 import * as React from "react";
 import { Toast as BaseToast } from "@base-ui/react/toast";
-import {
-  SNACKBAR_TOKENS,
-} from "../../tokens/topology.js";
 import { useM3EPortalContainer } from "../../context/M3EPortal.js";
 import { useM3ERuntime, useM3EI18n } from "../../context/M3EContext.js";
 import { M3EToastManagerContext } from "../../internal/toastManager.js";
-import { CloseIcon, StatusSeverityGlyph } from "../../internal/icons.js";
+import { CloseIcon, SpinnerIcon, StatusSeverityGlyph } from "../../internal/icons.js";
 import { useM3ERipple } from "../../internal/ripple.js";
 
 function SnackbarActionButton({
@@ -52,7 +49,8 @@ export type M3EToastType =
   | "info"
   | "success"
   | "warning"
-  | "error";
+  | "error"
+  | "loading";
 
 export interface M3EToastData {
   readonly actionLabel?: string;
@@ -71,6 +69,66 @@ export interface ShowM3EToastOptions {
   readonly type?: M3EToastType;
 }
 
+export type UpdateM3EToastOptions = Partial<Omit<ShowM3EToastOptions, "id">>;
+
+export type M3EToastPromiseResult<T = never> =
+  | string
+  | UpdateM3EToastOptions
+  | ((value: T) => string | UpdateM3EToastOptions);
+
+export interface PromiseM3EToastOptions<Value> {
+  readonly loading: string | UpdateM3EToastOptions;
+  readonly success: M3EToastPromiseResult<Value>;
+  readonly error: M3EToastPromiseResult<unknown>;
+}
+
+function toBaseToastUpdate(
+  input: string | UpdateM3EToastOptions,
+  defaults?: {
+    readonly type?: M3EToastType;
+    readonly timeout?: number;
+    readonly showClose?: boolean;
+    readonly priority?: "low" | "high";
+  },
+) {
+  const opts: UpdateM3EToastOptions =
+    typeof input === "string" ? { title: input } : input;
+  const resolvedType = opts.type ?? defaults?.type;
+  const resolvedShowClose = opts.showClose ?? defaults?.showClose;
+  const resolvedTimeout =
+    opts.timeout ?? (opts.actionLabel ? 10000 : defaults?.timeout);
+  const resolvedPriority =
+    resolvedType === "error" ? "high" : defaults?.priority;
+
+  const hasData =
+    opts.actionLabel !== undefined ||
+    opts.onAction !== undefined ||
+    resolvedShowClose !== undefined;
+
+  return {
+    ...(opts.title !== undefined ? { title: opts.title } : undefined),
+    ...(opts.description !== undefined
+      ? { description: opts.description }
+      : undefined),
+    ...(resolvedType !== undefined ? { type: resolvedType } : undefined),
+    ...(resolvedTimeout !== undefined ? { timeout: resolvedTimeout } : undefined),
+    ...(resolvedPriority !== undefined ? { priority: resolvedPriority } : undefined),
+    ...(hasData
+      ? {
+          data: {
+            ...(opts.actionLabel !== undefined
+              ? { actionLabel: opts.actionLabel }
+              : undefined),
+            ...(opts.onAction !== undefined ? { onAction: opts.onAction } : undefined),
+            ...(resolvedShowClose !== undefined
+              ? { showClose: resolvedShowClose }
+              : undefined),
+          },
+        }
+      : undefined),
+  };
+}
+
 export function M3EToastViewportHost(): React.JSX.Element {
   const { direction } = useM3ERuntime();
   const { t } = useM3EI18n();
@@ -84,7 +142,6 @@ export function M3EToastViewportHost(): React.JSX.Element {
       <BaseToast.Viewport
         aria-label={t("toast.viewportLabel")}
         className="m3e-toast__viewport"
-        style={{ gap: `${SNACKBAR_TOKENS.viewportGap}px` }}
       >
         {toasts.map((toast) => {
           const data = toast.data;
@@ -95,16 +152,13 @@ export function M3EToastViewportHost(): React.JSX.Element {
               swipeDirection={swipeDirection}
               className="m3e-snackbar"
               data-type={toast.type ?? "default"}
-              style={{
-                borderRadius: `${SNACKBAR_TOKENS.containerRadius}px`,
-                minHeight: `${SNACKBAR_TOKENS.minHeight}px`,
-                maxWidth: `${SNACKBAR_TOKENS.maxWidth}px`,
-                paddingBlock: `${SNACKBAR_TOKENS.paddingBlock}px`,
-                paddingInline: `${SNACKBAR_TOKENS.paddingInline}px`,
-              }}
             >
               <BaseToast.Content className="m3e-snackbar__content">
-                {toast.type === "info" ||
+                {toast.type === "loading" ? (
+                  <span className="m3e-snackbar__icon" aria-hidden="true">
+                    <SpinnerIcon size={18} className="m3e-snackbar__spinner" />
+                  </span>
+                ) : toast.type === "info" ||
                 toast.type === "success" ||
                 toast.type === "warning" ||
                 toast.type === "error" ? (
@@ -149,6 +203,11 @@ export function M3EToastViewportHost(): React.JSX.Element {
 
 export function useM3EToast(): {
   readonly toast: (options: ShowM3EToastOptions) => string;
+  readonly update: (id: string, options: UpdateM3EToastOptions) => void;
+  readonly promise: <Value>(
+    promiseValue: Promise<Value>,
+    options: PromiseM3EToastOptions<Value>,
+  ) => Promise<Value>;
   readonly close: (id?: string) => void;
 } {
   const manager = React.useContext(M3EToastManagerContext);
@@ -170,6 +229,49 @@ export function useM3EToast(): {
             onAction: options.onAction,
             showClose: options.showClose ?? true,
           },
+        });
+      },
+      update: (id, options) => {
+        if (!manager) return;
+        manager.update(id, toBaseToastUpdate(options));
+      },
+      promise: <Value,>(
+        promiseValue: Promise<Value>,
+        options: PromiseM3EToastOptions<Value>,
+      ): Promise<Value> => {
+        if (!manager) return promiseValue;
+        const mapResult = <T,>(
+          resolver: M3EToastPromiseResult<T>,
+          defaults: {
+            readonly type: M3EToastType;
+            readonly timeout: number;
+            readonly showClose: boolean;
+            readonly priority?: "low" | "high";
+          },
+        ) =>
+          typeof resolver === "function"
+            ? (val: T) => toBaseToastUpdate(resolver(val), defaults)
+            : toBaseToastUpdate(resolver, defaults);
+
+        return manager.promise(promiseValue, {
+          loading: toBaseToastUpdate(options.loading, {
+            type: "loading",
+            timeout: 0,
+            showClose: false,
+            priority: "low",
+          }),
+          success: mapResult(options.success, {
+            type: "success",
+            timeout: 4000,
+            showClose: true,
+            priority: "low",
+          }),
+          error: mapResult(options.error, {
+            type: "error",
+            timeout: 5000,
+            showClose: true,
+            priority: "high",
+          }),
         });
       },
       close: (id) => manager?.close(id),

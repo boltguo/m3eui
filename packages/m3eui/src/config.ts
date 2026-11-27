@@ -65,11 +65,6 @@ export interface M3EConfig {
   readonly css?: {
     readonly output?: string;
   };
-  readonly aliases?: {
-    readonly components?: string;
-    readonly tokens?: string;
-    readonly i18n?: string;
-  };
 }
 
 export interface ResolvedM3EConfig {
@@ -87,11 +82,6 @@ export interface ResolvedM3EConfig {
   readonly cspNonce?: string;
   readonly cspDisableStyleElements: boolean;
   readonly cssOutput: string;
-  readonly aliases: {
-    readonly components: string;
-    readonly tokens: string;
-    readonly i18n: string;
-  };
 }
 
 export function defineM3EConfig<const T extends M3EConfig>(config: T): T {
@@ -170,11 +160,6 @@ export function resolveM3EConfig(config?: M3EConfigInput): ResolvedM3EConfig {
     cspNonce: config?.csp?.nonce || undefined,
     cspDisableStyleElements: Boolean(config?.csp?.disableStyleElements),
     cssOutput: config?.css?.output ?? "src/styles/m3e-theme.css",
-    aliases: {
-      components: config?.aliases?.components ?? "@/components/ui",
-      tokens: config?.aliases?.tokens ?? "m3eui/tokens",
-      i18n: config?.aliases?.i18n ?? "@/i18n",
-    },
   };
 }
 
@@ -211,11 +196,6 @@ export function serializeM3EConfig(
     },
     css: {
       output: input.cssOutput ?? "src/styles/m3e-theme.css",
-    },
-    aliases: {
-      components: "@/components/ui",
-      tokens: "m3eui/tokens",
-      i18n: "@/i18n",
     },
   };
   return `${JSON.stringify(doc, null, 2)}\n`;

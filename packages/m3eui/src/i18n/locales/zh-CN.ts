@@ -40,6 +40,7 @@ export const zhCNMessages: M3EMessages = {
   "dataTable.empty": "暂无匹配的数据记录",
   "dataTable.sortedAscending": "已按{column}升序排列",
   "dataTable.sortedDescending": "已按{column}降序排列",
+  "dataTable.sortCleared": "已清除{column}排序",
   "dataTable.selectAllRows": "全选所有行",
   "dataTable.selectRow": "选择第 {index} 行",
 

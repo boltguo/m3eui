@@ -21,14 +21,6 @@ export type ButtonVariant = "filled" | "tonal" | "elevated" | "outlined" | "text
 export type ButtonShape = "round" | "square";
 export type ButtonIntent = "default" | "danger";
 
-const BUTTON_TYPESCALE_MAP: Record<ButtonSize, string> = {
-  xs: "label-large",
-  sm: "label-large",
-  md: "title-medium",
-  lg: "headline-small",
-  xl: "headline-large",
-};
-
 export interface M3EButtonActionProps
   extends Omit<
     React.HTMLAttributes<HTMLElement>,
@@ -84,45 +76,19 @@ function useGroupItemCorners(isPressed: boolean, radius: number): CornerTuple {
 }
 
 function buttonStyle(
-  size: ButtonSize,
-  variant: ButtonVariant,
-  isSelected: boolean,
   borderRadius: string,
   style: React.CSSProperties | undefined,
 ): React.CSSProperties {
-  const spec = BUTTON_SIZE_SPECS[size];
-  const scaleKey = BUTTON_TYPESCALE_MAP[size];
-  return {
-    height: `${spec.height}px`,
-    paddingInline: `${spec.paddingHorizontal}px`,
-    gap: `${spec.iconGap}px`,
-    fontFamily: `var(--m3e-typescale-${scaleKey}-font, inherit)`,
-    fontSize: `var(--m3e-typescale-${scaleKey}-size, ${spec.fontSize}px)`,
-    lineHeight: `var(--m3e-typescale-${scaleKey}-line-height, ${spec.lineHeight}px)`,
-    fontWeight: `var(--m3e-typescale-${scaleKey}-weight, ${spec.fontWeight})` as React.CSSProperties["fontWeight"],
-    letterSpacing: `var(--m3e-typescale-${scaleKey}-tracking, normal)`,
-    borderWidth:
-      variant === "outlined" && !isSelected ? `${spec.outlineWidth}px` : undefined,
-    borderRadius,
-    ...style,
-  };
+  return style ? { borderRadius, ...style } : { borderRadius };
 }
 
 function ButtonIcon({
-  size,
-  hidden,
   children,
 }: {
-  readonly size: number;
-  readonly hidden?: boolean;
   readonly children: React.ReactNode;
 }) {
   return (
-    <span
-      className="m3e-button__icon"
-      style={{ width: size, height: size, opacity: hidden ? 0 : undefined }}
-      aria-hidden="true"
-    >
+    <span className="m3e-button__icon" aria-hidden="true">
       {children}
     </span>
   );
@@ -181,35 +147,11 @@ const ActionButton = React.forwardRef<HTMLElement, M3EButtonActionProps>(functio
   const buttonBody = (
     <>
       <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
-      {leadingIcon ? (
-        <ButtonIcon size={spec.iconSize} hidden={loading}>
-          {leadingIcon}
-        </ButtonIcon>
-      ) : null}
-      <span
-        className="m3e-button__label"
-        style={loading ? { opacity: 0 } : undefined}
-      >
-        {children}
-      </span>
-      {trailingIcon ? (
-        <ButtonIcon size={spec.iconSize} hidden={loading}>
-          {trailingIcon}
-        </ButtonIcon>
-      ) : null}
+      {leadingIcon ? <ButtonIcon>{leadingIcon}</ButtonIcon> : null}
+      <span className="m3e-button__label">{children}</span>
+      {trailingIcon ? <ButtonIcon>{trailingIcon}</ButtonIcon> : null}
       {loading ? (
-        <span
-          className="m3e-button__loader"
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            pointerEvents: "none",
-          }}
-          aria-hidden="true"
-        >
+        <span className="m3e-button__loader" aria-hidden="true">
           <SpinnerIcon size={spec.iconSize} className="m3e-button__spinner" />
         </span>
       ) : null}
@@ -232,7 +174,7 @@ const ActionButton = React.forwardRef<HTMLElement, M3EButtonActionProps>(functio
         aria-label={ariaLabel}
         onClick={onClick as React.MouseEventHandler<HTMLElement> | undefined}
         className={className ? `m3e-button ${className}` : "m3e-button"}
-        style={buttonStyle(size, variant, false, borderRadiusCss, style)}
+        style={buttonStyle(borderRadiusCss, style)}
         data-variant={variant}
         data-intent={intent !== "default" ? intent : undefined}
         data-size={size}
@@ -262,7 +204,7 @@ const ActionButton = React.forwardRef<HTMLElement, M3EButtonActionProps>(functio
       aria-label={ariaLabel}
       onClick={onClick}
       className={className ? `m3e-button ${className}` : "m3e-button"}
-      style={buttonStyle(size, variant, false, borderRadiusCss, style)}
+      style={buttonStyle(borderRadiusCss, style)}
       data-variant={variant}
       data-intent={intent !== "default" ? intent : undefined}
       data-size={size}
@@ -378,7 +320,7 @@ const ToggleButton = React.forwardRef<HTMLButtonElement, M3EButtonToggleProps>(
           onPressedChange?.(next);
         }}
         className={className ? `m3e-button ${className}` : "m3e-button"}
-        style={buttonStyle(size, variant, isSelected, borderRadiusCss, style)}
+        style={buttonStyle(borderRadiusCss, style)}
         data-toggle=""
         data-variant={variant}
         data-size={size}
@@ -387,9 +329,7 @@ const ToggleButton = React.forwardRef<HTMLButtonElement, M3EButtonToggleProps>(
         data-selected={isSelected ? "" : undefined}
       >
         <span ref={rippleRef} className="m3e-ripple" aria-hidden="true" />
-        {resolvedIcon ? (
-          <ButtonIcon size={spec.iconSize}>{resolvedIcon}</ButtonIcon>
-        ) : null}
+        {resolvedIcon ? <ButtonIcon>{resolvedIcon}</ButtonIcon> : null}
         <span className="m3e-button__label">{children}</span>
         <CornerDebugBadge corners={targetCorners} />
       </BaseToggle>

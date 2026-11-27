@@ -8,6 +8,7 @@ import {
 } from "../../tokens/topology.js";
 import { useM3ERuntime } from "../../context/M3EContext.js";
 import { useM3ECornerSpringRef } from "../../hooks/useM3ESpring.js";
+import { assignRef } from "../../internal/assignRef.js";
 import { FieldErrorIconSvg, useFieldsetDisabled } from "../../internal/fieldOutline.js";
 
 export interface M3EOTPFieldProps {
@@ -77,27 +78,31 @@ function OTPSlotCell({
   );
 }
 
-export function OTPField({
-  length = 6,
-  separatorAfterIndex = 2,
-  value: controlledValue,
-  defaultValue,
-  onValueChange,
-  onValueComplete,
-  label,
-  helperText,
-  errorMessage,
-  invalid = false,
-  name,
-  id,
-  mask = false,
-  validationType = "numeric",
-  enableWebOTP = false,
-  disabled,
-  "aria-label": ariaLabel,
-  className,
-  style,
-}: M3EOTPFieldProps): React.JSX.Element {
+export const OTPField = React.forwardRef<HTMLDivElement, M3EOTPFieldProps>(
+  function OTPField(
+    {
+      length = 6,
+      separatorAfterIndex = 2,
+      value: controlledValue,
+      defaultValue,
+      onValueChange,
+      onValueComplete,
+      label,
+      helperText,
+      errorMessage,
+      invalid = false,
+      name,
+      id,
+      mask = false,
+      validationType = "numeric",
+      enableWebOTP = false,
+      disabled,
+      "aria-label": ariaLabel,
+      className,
+      style,
+    },
+    ref,
+  ): React.JSX.Element {
   const { t } = useM3ERuntime();
   const isDisabled = useFieldsetDisabled(disabled);
   const generatedId = React.useId();
@@ -162,7 +167,10 @@ export function OTPField({
 
   return (
     <BaseField.Root
-      ref={wrapRef}
+      ref={(node) => {
+        wrapRef.current = node;
+        assignRef(ref, node);
+      }}
       name={name}
       disabled={isDisabled || undefined}
       invalid={hasError || undefined}
@@ -259,4 +267,4 @@ export function OTPField({
       ) : null}
     </BaseField.Root>
   );
-}
+});

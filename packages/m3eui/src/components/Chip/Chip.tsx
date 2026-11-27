@@ -7,7 +7,8 @@ import {
   CHIP_TOKENS,
 } from "../../tokens/topology.js";
 import { useM3EI18n } from "../../context/M3EContext.js";
-import { useM3EScalarSpring, usePressHoldState } from "../../hooks/useM3ESpring.js";
+import { useM3EScalarSpringEffect, usePressHoldState } from "../../hooks/useM3ESpring.js";
+import { assignRef } from "../../internal/assignRef.js";
 import { CheckIcon, CloseIcon } from "../../internal/icons.js";
 import { mergeInteractionHandlers, useM3ERipple } from "../../internal/ripple.js";
 
@@ -113,21 +114,24 @@ export type M3EChipProps =
   | M3EChipFilterProps
   | M3EChipInputProps;
 
-function LabelChip({
-  children,
-  tone = "neutral",
-  variant = "tonal",
-  size = "md",
-  elevated = false,
-  dot = false,
-  icon,
-  onClick,
-  onRemove,
-  removeLabel,
-  disabled = false,
-  className,
-  style,
-}: M3EChipLabelProps): React.JSX.Element {
+function LabelChip(
+  {
+    children,
+    tone = "neutral",
+    variant = "tonal",
+    size = "md",
+    elevated = false,
+    dot = false,
+    icon,
+    onClick,
+    onRemove,
+    removeLabel,
+    disabled = false,
+    className,
+    style,
+  }: M3EChipLabelProps,
+  forwardedRef: React.ForwardedRef<HTMLElement>,
+): React.JSX.Element {
   const { t } = useM3EI18n();
   const hasAction = Boolean(onClick);
   const { isPressed, pressHandlers } = usePressHoldState(
@@ -139,9 +143,23 @@ function LabelChip({
     rippleHandlers,
   );
   const restRadius = size === "sm" ? 11 : 13;
-  const r = useM3EScalarSpring(
+  const chipRef = React.useRef<HTMLElement | null>(null);
+  const mergeChipRef = React.useCallback(
+    (node: HTMLElement | null) => {
+      chipRef.current = node;
+      assignRef(forwardedRef, node);
+    },
+    [forwardedRef],
+  );
+  const [initRadius] = React.useState(restRadius);
+  useM3EScalarSpringEffect(
     hasAction && isPressed ? 6 : restRadius,
     "fastSpatial",
+    (next) => {
+      if (hasAction && chipRef.current) {
+        chipRef.current.style.borderRadius = `${Math.max(4, next).toFixed(1)}px`;
+      }
+    },
   );
   const mergedClassName = className
     ? `m3e-chip-status ${className}`
@@ -164,6 +182,7 @@ function LabelChip({
   if (hasAction && !onRemove) {
     return (
       <BaseButton
+        ref={mergeChipRef as React.Ref<HTMLButtonElement>}
         type="button"
         disabled={disabled}
         onClick={onClick}
@@ -175,7 +194,7 @@ function LabelChip({
         data-elevated={elevated ? "" : undefined}
         data-pressed={isPressed ? "" : undefined}
         style={{
-          borderRadius: `${Math.max(4, r).toFixed(1)}px`,
+          borderRadius: `${Math.max(4, initRadius).toFixed(1)}px`,
           ...style,
         }}
         {...mergedActionHandlers}
@@ -189,6 +208,7 @@ function LabelChip({
   if (hasAction && onRemove) {
     return (
       <span
+        ref={mergeChipRef}
         className={mergedClassName}
         data-interactive=""
         data-compound=""
@@ -199,7 +219,7 @@ function LabelChip({
         data-pressed={isPressed ? "" : undefined}
         data-disabled={disabled ? "" : undefined}
         style={{
-          borderRadius: `${Math.max(4, r).toFixed(1)}px`,
+          borderRadius: `${Math.max(4, initRadius).toFixed(1)}px`,
           ...style,
         }}
       >
@@ -227,6 +247,7 @@ function LabelChip({
 
   return (
     <span
+      ref={forwardedRef}
       className={mergedClassName}
       data-tone={tone}
       data-variant={variant}
@@ -250,20 +271,24 @@ function LabelChip({
   );
 }
 
-function AssistChip({
-  children,
-  icon,
-  elevated = false,
-  disabled = false,
-  onClick,
-  className,
-  style,
-}: M3EChipAssistProps): React.JSX.Element {
+function AssistChip(
+  {
+    children,
+    icon,
+    elevated = false,
+    disabled = false,
+    onClick,
+    className,
+    style,
+  }: M3EChipAssistProps,
+  forwardedRef: React.ForwardedRef<HTMLElement>,
+): React.JSX.Element {
   const { rippleRef, rippleHandlers } = useM3ERipple(disabled);
   const hasLeading = Boolean(icon);
 
   return (
     <BaseButton
+      ref={forwardedRef as React.Ref<HTMLButtonElement>}
       type="button"
       disabled={disabled}
       onClick={onClick}
@@ -294,17 +319,20 @@ function AssistChip({
   );
 }
 
-function FilterChip({
-  children,
-  selected: controlledSelected,
-  defaultSelected = false,
-  onSelectedChange,
-  icon,
-  elevated = false,
-  disabled = false,
-  className,
-  style,
-}: M3EChipFilterProps): React.JSX.Element {
+function FilterChip(
+  {
+    children,
+    selected: controlledSelected,
+    defaultSelected = false,
+    onSelectedChange,
+    icon,
+    elevated = false,
+    disabled = false,
+    className,
+    style,
+  }: M3EChipFilterProps,
+  forwardedRef: React.ForwardedRef<HTMLElement>,
+): React.JSX.Element {
   const [uncontrolledSelected, setUncontrolledSelected] =
     React.useState<boolean>(defaultSelected);
   const isSelected = controlledSelected ?? uncontrolledSelected;
@@ -314,6 +342,7 @@ function FilterChip({
 
   return (
     <BaseToggle
+      ref={forwardedRef as React.Ref<HTMLButtonElement>}
       pressed={controlledSelected}
       defaultPressed={defaultSelected}
       disabled={disabled}
@@ -355,17 +384,20 @@ function FilterChip({
   );
 }
 
-function InputChip({
-  children,
-  avatar,
-  selected = false,
-  onClick,
-  onRemove,
-  removeLabel,
-  disabled = false,
-  className,
-  style,
-}: M3EChipInputProps): React.JSX.Element {
+function InputChip(
+  {
+    children,
+    avatar,
+    selected = false,
+    onClick,
+    onRemove,
+    removeLabel,
+    disabled = false,
+    className,
+    style,
+  }: M3EChipInputProps,
+  forwardedRef: React.ForwardedRef<HTMLElement>,
+): React.JSX.Element {
   const { t } = useM3EI18n();
   const resolvedRemoveLabel = removeLabel ?? t("chip.remove");
   const hasAction = Boolean(onClick);
@@ -392,6 +424,7 @@ function InputChip({
 
   return (
     <span
+      ref={forwardedRef}
       className={
         className
           ? `m3e-chip m3e-chip--input ${className}`
@@ -455,7 +488,10 @@ function InputChip({
   );
 }
 
-export function Chip(props: M3EChipProps): React.JSX.Element {
+export const Chip = React.forwardRef<HTMLElement, M3EChipProps>(function Chip(
+  props,
+  ref,
+): React.JSX.Element {
   const p = props as Partial<M3EChipLabelProps & M3EChipFilterProps & M3EChipInputProps>;
   if (
     p.tone !== undefined ||
@@ -463,20 +499,20 @@ export function Chip(props: M3EChipProps): React.JSX.Element {
     p.size !== undefined ||
     p.dot !== undefined
   ) {
-    return <LabelChip {...(props as M3EChipLabelProps)} />;
+    return LabelChip(props as M3EChipLabelProps, ref);
   }
   if (
     (p.selected !== undefined && p.onRemove === undefined) ||
     p.defaultSelected !== undefined ||
     p.onSelectedChange !== undefined
   ) {
-    return <FilterChip {...(props as M3EChipFilterProps)} />;
+    return FilterChip(props as M3EChipFilterProps, ref);
   }
   if (p.onRemove !== undefined) {
-    return <InputChip {...(props as M3EChipInputProps)} />;
+    return InputChip(props as M3EChipInputProps, ref);
   }
   if (p.onClick !== undefined) {
-    return <AssistChip {...(props as M3EChipAssistProps)} />;
+    return AssistChip(props as M3EChipAssistProps, ref);
   }
-  return <LabelChip {...(props as M3EChipLabelProps)} />;
-}
+  return LabelChip(props as M3EChipLabelProps, ref);
+});

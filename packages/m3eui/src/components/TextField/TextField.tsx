@@ -2,9 +2,6 @@ import * as React from "react";
 import { useFormReset } from "../../internal/formField.js";
 import { Field as BaseField } from "@base-ui/react/field";
 import { Input as BaseInput } from "@base-ui/react/input";
-import {
-  TEXT_FIELD_TOKENS,
-} from "../../tokens/topology.js";
 import { useM3EI18n } from "../../context/M3EContext.js";
 import {
   FieldErrorIconSvg,
@@ -220,23 +217,6 @@ function FieldFrame({
   const hasCounter = Boolean(showCharacterCount && maxLength);
   const hasError = invalid || Boolean(errorMessage);
 
-  const height = isFloatingLabel
-    ? variant === "filled"
-      ? TEXT_FIELD_TOKENS.filledHeight
-      : TEXT_FIELD_TOKENS.outlinedHeight
-    : 48;
-
-  const baseRadius = isFloatingLabel
-    ? variant === "filled"
-      ? TEXT_FIELD_TOKENS.filledTopRadius
-      : TEXT_FIELD_TOKENS.outlinedRadius
-    : TEXT_FIELD_TOKENS.outsideLabelRadius;
-
-  const containerRadius =
-    variant === "filled"
-      ? `${baseRadius}px ${baseRadius}px ${TEXT_FIELD_TOKENS.filledBottomRadius}px ${TEXT_FIELD_TOKENS.filledBottomRadius}px`
-      : `${baseRadius}px`;
-
   const labelContent = (
     <>
       {label}
@@ -290,17 +270,13 @@ function FieldFrame({
         className={textareaMod("m3e-text-field__shell")}
         data-variant={variant}
         data-label-position={labelPosition}
+        data-has-floating-label={isFloatingLabel ? "" : undefined}
         data-floating={floated ? "" : undefined}
         data-populated={valueLength > 0 ? "" : undefined}
         data-has-leading={leading ? "" : undefined}
         data-invalid={hasError ? "" : undefined}
         data-disabled={isDisabled ? "" : undefined}
         data-readonly={readOnly ? "" : undefined}
-        style={{
-          minHeight: textarea ? undefined : `${height}px`,
-          paddingInline: `${TEXT_FIELD_TOKENS.paddingInline}px`,
-          borderRadius: containerRadius,
-        }}
       >
         {isFloatingLabel && variant === "outlined" ? (
           <FieldNotchedOutline

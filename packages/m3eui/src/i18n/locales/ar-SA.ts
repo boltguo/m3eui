@@ -40,6 +40,7 @@ export const arSAMessages: M3EMessages = {
   "dataTable.empty": "لا توجد سجلات مطابقة",
   "dataTable.sortedAscending": "تم الفرز حسب {column} تصاعدياً",
   "dataTable.sortedDescending": "تم الفرز حسب {column} تنازلياً",
+  "dataTable.sortCleared": "تم مسح فرز {column}",
   "dataTable.selectAllRows": "تحديد كل الصفوف",
   "dataTable.selectRow": "تحديد الصف {index}",
 

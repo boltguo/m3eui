@@ -189,4 +189,90 @@ describe("Navigation", () => {
     expect(onBarChange).toHaveBeenCalledWith("docs");
     expect(onRailChange).toHaveBeenCalledWith("b");
   });
+
+  it("supports custom render link targets and ref forwarding on NavigationBar and NavigationRail", () => {
+    let barNode: HTMLElement | null = null;
+    let railNode: HTMLElement | null = null;
+    const onBarChange = vi.fn();
+    const onRailChange = vi.fn();
+
+    act(() => {
+      dom.root.render(
+        <M3EProvider syncDocumentRoot={false}>
+          <NavigationBar
+            ref={(el) => {
+              barNode = el;
+            }}
+            value="home"
+            onValueChange={onBarChange}
+            items={[
+              {
+                value: "home",
+                label: "Home",
+                render: <a href="/home" data-router-link="bar" />,
+              },
+              {
+                value: "inbox",
+                label: "Inbox",
+                render: <a href="/inbox" data-router-link="bar" />,
+              },
+            ]}
+          />
+          <NavigationRail
+            ref={(el) => {
+              railNode = el;
+            }}
+            expanded
+            value="overview"
+            onValueChange={onRailChange}
+            items={[
+              {
+                value: "overview",
+                label: "Overview",
+                render: <a href="/overview" data-router-link="rail" />,
+              },
+              {
+                value: "tokens",
+                label: "Tokens",
+                render: <a href="/tokens" data-router-link="rail" />,
+                disabled: true,
+              },
+            ]}
+          />
+        </M3EProvider>,
+      );
+    });
+
+    expect(barNode).toBeInstanceOf(HTMLElement);
+    expect(railNode).toBeInstanceOf(HTMLElement);
+
+    const barHome = dom.container.querySelector<HTMLAnchorElement>(
+      'a[data-router-link="bar"][href="/home"]',
+    )!;
+    const barInbox = dom.container.querySelector<HTMLAnchorElement>(
+      'a[data-router-link="bar"][href="/inbox"]',
+    )!;
+    expect(barHome.getAttribute("aria-current")).toBe("page");
+
+    act(() => {
+      barInbox.dispatchEvent(
+        new MouseEvent("click", { bubbles: true, cancelable: true, ctrlKey: true, button: 0 }),
+      );
+    });
+    expect(onBarChange).not.toHaveBeenCalled();
+
+    act(() => {
+      barInbox.click();
+    });
+    expect(onBarChange).toHaveBeenCalledWith("inbox");
+
+    const disabledRailLink = dom.container.querySelector<HTMLAnchorElement>(
+      'a[data-router-link="rail"][href="/tokens"]',
+    )!;
+    expect(disabledRailLink.getAttribute("aria-disabled")).toBe("true");
+    act(() => {
+      disabledRailLink.click();
+    });
+    expect(onRailChange).not.toHaveBeenCalled();
+  });
 });

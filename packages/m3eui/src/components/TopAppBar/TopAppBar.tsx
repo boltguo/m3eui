@@ -12,6 +12,7 @@ import { useM3EScalarSpringEffect } from "../../hooks/useM3ESpring.js";
 import { IconButton } from "../IconButton/IconButton.js";
 import { DropdownMenu, type M3EMenuItemSpec } from "../Menu/Menu.js";
 import { MoreVertIconSvg } from "../../internal/icons.js";
+import { assignRef } from "../../internal/assignRef.js";
 import { useIsoLayoutEffect } from "../../internal/useIsoLayoutEffect.js";
 
 export type TopAppBarScrollBehavior =
@@ -38,14 +39,18 @@ export interface M3EAppBarRowProps {
   readonly style?: React.CSSProperties;
 }
 
-export function AppBarRow({
-  items,
-  maxVisibleItems = 3,
-  "aria-label": ariaLabel,
-  moreActionsLabel,
-  className,
-  style,
-}: M3EAppBarRowProps): React.JSX.Element {
+export const AppBarRow = React.forwardRef<HTMLDivElement, M3EAppBarRowProps>(
+  function AppBarRow(
+    {
+      items,
+      maxVisibleItems = 3,
+      "aria-label": ariaLabel,
+      moreActionsLabel,
+      className,
+      style,
+    },
+    ref,
+  ): React.JSX.Element {
   const { t } = useM3EI18n();
   const rowRef = React.useRef<HTMLDivElement | null>(null);
   const [fitSlots, setFitSlots] = React.useState<number>(maxVisibleItems);
@@ -101,7 +106,10 @@ export function AppBarRow({
 
   return (
     <Toolbar.Root
-      ref={rowRef}
+      ref={(node) => {
+        rowRef.current = node;
+        assignRef(ref, node);
+      }}
       aria-label={resolvedAriaLabel}
       className={className ? `m3e-app-bar-row ${className}` : "m3e-app-bar-row"}
       style={style}
@@ -137,7 +145,7 @@ export function AppBarRow({
       ) : null}
     </Toolbar.Root>
   );
-}
+});
 
 export interface M3ETopAppBarProps {
   readonly title: React.ReactNode;
@@ -155,21 +163,25 @@ export interface M3ETopAppBarProps {
   readonly style?: React.CSSProperties;
 }
 
-export function TopAppBar({
-  title,
-  subtitle,
-  variant = "small",
-  navigationIcon,
-  actions,
-  actionItems,
-  maxVisibleActions = 3,
-  collapsedFraction: controlledFraction,
-  scrolled: controlledScrolled,
-  scrollBehavior,
-  scrollTargetRef,
-  className,
-  style,
-}: M3ETopAppBarProps): React.JSX.Element {
+export const TopAppBar = React.forwardRef<HTMLElement, M3ETopAppBarProps>(
+  function TopAppBar(
+    {
+      title,
+      subtitle,
+      variant = "small",
+      navigationIcon,
+      actions,
+      actionItems,
+      maxVisibleActions = 3,
+      collapsedFraction: controlledFraction,
+      scrolled: controlledScrolled,
+      scrollBehavior,
+      scrollTargetRef,
+      className,
+      style,
+    },
+    ref,
+  ): React.JSX.Element {
   const { t } = useM3EI18n();
   const hasSubtitle = Boolean(subtitle);
   const headerRef = React.useRef<HTMLElement | null>(null);
@@ -388,7 +400,10 @@ export function TopAppBar({
     <header
       className={className ? `m3e-top-app-bar ${className}` : "m3e-top-app-bar"}
       data-variant={variant}
-      ref={headerRef}
+      ref={(node) => {
+        headerRef.current = node;
+        assignRef(ref, node);
+      }}
       data-elevated={isElevated ? "" : undefined}
       style={{
         ["--m3e-top-app-bar-t" as string]: initialT,
@@ -504,4 +519,4 @@ export function TopAppBar({
       ) : null}
     </header>
   );
-}
+});

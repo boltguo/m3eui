@@ -77,6 +77,7 @@
 .m3e-sheet__popup[data-non-modal]:is([data-side="right"], [data-side="left"]) {
   --m3e-sheet-surface: var(--m3e-color-surface);
   --m3e-sheet-elevation: none;
+  border-radius: 0;
 }
 
 .m3e-sheet__popup[data-non-modal][data-side="right"] {
@@ -90,16 +91,22 @@
 .m3e-sheet__popup[data-side="bottom"] {
   --m3e-sheet-bleed: 0 48px 0 0 var(--m3e-sheet-surface);
   padding-block-end: calc(var(--m3e-sheet-pad, 24px) + env(safe-area-inset-bottom, 0px));
+  max-width: 640px;
   max-height: min(85dvh, 720px);
+  border-radius: 28px 28px 0 0;
   translate: 0px calc(var(--drawer-snap-point-offset, 0px) + var(--drawer-swipe-movement-y, 0px));
 }
 
 .m3e-sheet__popup[data-side="right"] {
   --m3e-sheet-bleed: 48px 0 0 0 var(--m3e-sheet-surface);
+  max-width: 400px;
+  border-radius: 28px 0 0 28px;
 }
 
 .m3e-sheet__popup[data-side="left"] {
   --m3e-sheet-bleed: -48px 0 0 0 var(--m3e-sheet-surface);
+  max-width: 400px;
+  border-radius: 0 28px 28px 0;
 }
 
 .m3e-sheet__popup[data-side="right"],
@@ -134,6 +141,8 @@
 }
 
 .m3e-sheet__drag-handle {
+  width: 32px;
+  height: 4px;
   border-radius: 9999px;
   background-color: color-mix(in srgb, var(--m3e-color-on-surface-variant) 42%, transparent);
 }

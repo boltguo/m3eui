@@ -59,39 +59,40 @@ export interface M3ESheetCloseProps {
   readonly className?: string;
 }
 
-export function SheetClose({
-  render,
-  children,
-  className,
-}: M3ESheetCloseProps): React.JSX.Element {
-  return (
-    <BaseDrawer.Close render={render} className={className}>
-      {children}
-    </BaseDrawer.Close>
-  );
-}
+export const SheetClose = React.forwardRef<HTMLButtonElement, M3ESheetCloseProps>(
+  function SheetClose({ render, children, className }, ref): React.JSX.Element {
+    return (
+      <BaseDrawer.Close ref={ref} render={render} className={className}>
+        {children}
+      </BaseDrawer.Close>
+    );
+  },
+);
 
-export function Sheet({
-  open,
-  defaultOpen,
-  onOpenChange,
-  modal = true,
-  disablePointerDismissal,
-  snapPoints,
-  snapPoint,
-  defaultSnapPoint,
-  onSnapPointChange,
-  snapToSequentialPoints,
-  side = "bottom",
-  trigger,
-  title,
-  description,
-  "aria-label": ariaLabel,
-  children,
-  footer,
-  className,
-  style,
-}: M3ESheetProps): React.JSX.Element {
+export const Sheet = React.forwardRef<HTMLDivElement, M3ESheetProps>(function Sheet(
+  {
+    open,
+    defaultOpen,
+    onOpenChange,
+    modal = true,
+    disablePointerDismissal,
+    snapPoints,
+    snapPoint,
+    defaultSnapPoint,
+    onSnapPointChange,
+    snapToSequentialPoints,
+    side = "bottom",
+    trigger,
+    title,
+    description,
+    "aria-label": ariaLabel,
+    children,
+    footer,
+    className,
+    style,
+  },
+  ref,
+): React.JSX.Element {
   const { direction, t } = useM3ERuntime();
   const portalContainer = useM3EPortalContainer();
   const physicalSide: "bottom" | "right" | "left" =
@@ -114,15 +115,6 @@ export function Sheet({
         : "left";
 
   const isNonModal = modal === false;
-  const radius = SHEET_TOKENS.cornerRadius;
-  const borderRadius =
-    isNonModal && physicalSide !== "bottom"
-      ? "0px"
-      : physicalSide === "bottom"
-        ? `${radius}px ${radius}px 0px 0px`
-        : physicalSide === "right"
-          ? `${radius}px 0px 0px ${radius}px`
-          : `0px ${radius}px ${radius}px 0px`;
 
   const resolvedSnapPoints = React.useMemo(
     () => (snapPoints ? [...snapPoints] : undefined),
@@ -158,6 +150,7 @@ export function Sheet({
           data-non-modal={isNonModal ? "" : undefined}
         >
           <BaseDrawer.Popup
+            ref={ref}
             aria-label={ariaLabel ?? (!title ? t("sheet.ariaLabel") : undefined)}
             className={
               className ? `m3e-sheet__popup ${className}` : "m3e-sheet__popup"
@@ -166,24 +159,14 @@ export function Sheet({
             data-non-modal={isNonModal ? "" : undefined}
             style={
               {
-                borderRadius,
                 "--m3e-sheet-pad": `${SHEET_TOKENS.padding}px`,
-                ...(physicalSide === "bottom"
-                  ? { maxWidth: `${SHEET_TOKENS.bottomMaxWidth}px` }
-                  : { maxWidth: `${SHEET_TOKENS.sideWidth}px` }),
                 ...style,
               } as React.CSSProperties
             }
           >
             {physicalSide === "bottom" ? (
               <div className="m3e-sheet__handle-wrap" aria-hidden="true">
-                <span
-                  className="m3e-sheet__drag-handle"
-                  style={{
-                    width: `${SHEET_TOKENS.dragHandleWidth}px`,
-                    height: `${SHEET_TOKENS.dragHandleHeight}px`,
-                  }}
-                />
+                <span className="m3e-sheet__drag-handle" />
               </div>
             ) : null}
 
@@ -215,4 +198,4 @@ export function Sheet({
       </BaseDrawer.Portal>
     </BaseDrawer.Root>
   );
-}
+});
