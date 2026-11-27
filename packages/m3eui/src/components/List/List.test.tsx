@@ -192,15 +192,17 @@ describe("List", () => {
       `translate3d(${(40 - endRadius).toFixed(2)}px, ${(28 - endRadius).toFixed(2)}px, 0) scale(${initScale})`,
     );
 
-    act(() => {
-      vi.advanceTimersByTime(460);
-    });
-    expect(wave.style.transform).toBe(
+    const anims = wave.getAnimations();
+    expect(anims.length).toBeGreaterThanOrEqual(2);
+    const expandKeyframes = (anims[0]!.effect as KeyframeEffect).getKeyframes();
+    const fadeKeyframes = (anims[1]!.effect as KeyframeEffect).getKeyframes();
+    expect(expandKeyframes[1]?.transform).toBe(
       `translate3d(${(100 - endRadius).toFixed(2)}px, ${(28 - endRadius).toFixed(2)}px, 0) scale(1.0000)`,
     );
-    expect(wave.style.opacity).toBe("0.1");
+    expect(Number(fadeKeyframes[1]?.opacity)).toBeCloseTo(0.1, 3);
 
     act(() => {
+      vi.advanceTimersByTime(460);
       btn.dispatchEvent(
         new PointerEvent("pointerup", {
           bubbles: true,

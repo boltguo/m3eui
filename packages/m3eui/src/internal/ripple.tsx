@@ -84,6 +84,19 @@ interface ActiveWave {
   readonly el: HTMLSpanElement;
   rafId: number | null;
   timerId: ReturnType<typeof setTimeout> | null;
+  animations: Animation[];
+}
+
+function cancelWaveAnimations(entry: ActiveWave) {
+  for (const anim of entry.animations) {
+    anim.onfinish = null;
+    anim.oncancel = null;
+    try {
+      anim.cancel();
+    } catch {
+      // ignore detached animation errors
+    }
+  }
 }
 
 export function useM3ERipple(
@@ -105,6 +118,7 @@ export function useM3ERipple(
       if (entry.timerId !== null) {
         clearTimeout(entry.timerId);
       }
+      cancelWaveAnimations(entry);
       entry.el.remove();
     }
     activeWavesRef.current.clear();
@@ -136,14 +150,21 @@ export function useM3ERipple(
       const rect = host.getBoundingClientRect();
       const wave = document.createElement("span");
       wave.className = "m3e-ripple__wave";
-      const entry: ActiveWave = { el: wave, rafId: null, timerId: null };
+      const entry: ActiveWave = {
+        el: wave,
+        rafId: null,
+        timerId: null,
+        animations: [],
+      };
       activeWavesRef.current.add(entry);
+
+      const canAnimateWaapi = typeof wave.animate === "function";
 
       if (
         prefersReducedMotion ||
         paused ||
-        typeof requestAnimationFrame !== "function" ||
-        (rect.width <= 0 && rect.height <= 0)
+        (rect.width <= 0 && rect.height <= 0) ||
+        (!canAnimateWaapi && typeof requestAnimationFrame !== "function")
       ) {
         wave.dataset.staticWave = "";
         wave.style.inset = "0";
@@ -196,15 +217,109 @@ export function useM3ERipple(
       }
       const diameter = endRadius * 2;
       const initScale = solidEndRadius > 0 ? startRadius / solidEndRadius : 1;
+      const initTransform = `translate3d(${(originX - endRadius).toFixed(2)}px, ${(originY - endRadius).toFixed(2)}px, 0) scale(${initScale.toFixed(4)})`;
+      const endTransform = `translate3d(${(targetX - endRadius).toFixed(2)}px, ${(targetY - endRadius).toFixed(2)}px, 0) scale(1.0000)`;
 
       wave.style.width = `${diameter.toFixed(2)}px`;
       wave.style.height = `${diameter.toFixed(2)}px`;
-      wave.style.transform = `translate3d(${(originX - endRadius).toFixed(2)}px, ${(originY - endRadius).toFixed(2)}px, 0) scale(${initScale.toFixed(4)})`;
+      wave.style.transform = initTransform;
       wave.style.opacity = "0";
       host.appendChild(wave);
 
       const rate = Math.max(0.1, motionRef.current.playbackRate);
       const startTime = nowMs();
+
+      if (canAnimateWaapi) {
+        const expandAnim = wave.animate(
+          [{ transform: initTransform }, { transform: endTransform }],
+          {
+            duration: ENTER_MS,
+            easing: "cubic-bezier(0.2, 0, 0, 1)",
+            fill: "forwards",
+          },
+        );
+        expandAnim.playbackRate = rate;
+        expandAnim.finished?.catch(() => {});
+
+        const fadeInAnim = wave.animate(
+          [{ opacity: 0 }, { opacity: PRESS_WAVE_OPACITY }],
+          {
+            duration: FADE_IN_MS,
+            easing: "linear",
+            fill: "forwards",
+          },
+        );
+        fadeInAnim.playbackRate = rate;
+        fadeInAnim.finished?.catch(() => {});
+        entry.animations.push(expandAnim, fadeInAnim);
+
+        let finishRequested = false;
+
+        const removeWave = () => {
+          if (entry.timerId !== null) {
+            clearTimeout(entry.timerId);
+            entry.timerId = null;
+          }
+          cancelWaveAnimations(entry);
+          wave.remove();
+          activeWavesRef.current.delete(entry);
+        };
+
+        const startFadeOut = () => {
+          entry.timerId = null;
+          if (!wave.isConnected) {
+            removeWave();
+            return;
+          }
+          const fadeInProgress = Math.min(
+            1,
+            Math.max(0, ((nowMs() - startTime) * rate) / FADE_IN_MS),
+          );
+          const startOpacity = +(fadeInProgress * PRESS_WAVE_OPACITY).toFixed(4);
+          fadeInAnim.onfinish = null;
+          fadeInAnim.oncancel = null;
+          try {
+            fadeInAnim.cancel();
+          } catch {
+            // ignore
+          }
+          const fadeOutAnim = wave.animate(
+            [{ opacity: startOpacity }, { opacity: 0 }],
+            {
+              duration: FADE_OUT_MS,
+              easing: "linear",
+              fill: "forwards",
+            },
+          );
+          fadeOutAnim.playbackRate = rate;
+          fadeOutAnim.finished?.catch(() => {});
+          entry.animations.push(fadeOutAnim);
+          fadeOutAnim.onfinish = removeWave;
+          fadeOutAnim.oncancel = removeWave;
+          if (typeof setTimeout === "function") {
+            entry.timerId = setTimeout(
+              removeWave,
+              Math.ceil(FADE_OUT_MS / rate) + 16,
+            );
+          }
+        };
+
+        heldFinishRef.current = () => {
+          if (finishRequested) return;
+          finishRequested = true;
+          const remainingHold = Math.max(
+            0,
+            MIN_HOLD_MS / rate - (nowMs() - startTime),
+          );
+          if (remainingHold > 0 && typeof setTimeout === "function") {
+            entry.timerId = setTimeout(startFadeOut, remainingHold);
+            return;
+          }
+          startFadeOut();
+        };
+        return;
+      }
+
       let finishRequested = false;
       let releaseTime = startTime;
       let fadeOutStartTime: number | null = null;

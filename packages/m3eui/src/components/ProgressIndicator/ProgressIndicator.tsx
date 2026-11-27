@@ -11,7 +11,7 @@ import {
 } from "../../tokens/wavy.js";
 import { useM3ERuntime } from "../../context/M3EContext.js";
 import { useOffscreen } from "../../internal/useOffscreen.js";
-import { subscribeSpringFrame, useM3EScalarSpring } from "../../hooks/useM3ESpring.js";
+import { subscribeSpringFrame, useM3EScalarSpringEffect } from "../../hooks/useM3ESpring.js";
 import { formatLocalizedPercent } from "../../i18n/index.js";
 import { useIsoLayoutEffect } from "../../internal/useIsoLayoutEffect.js";
 import {
@@ -158,8 +158,8 @@ function FlatLinearProgressIndicator({
   const pausedByOwner = pausedProp ?? contextPaused;
   const isIndet = indeterminate || value === null || value === undefined;
   const clampedPct = isIndet ? 0 : Math.max(0, Math.min(100, value));
-  const smoothPct = useM3EScalarSpring(clampedPct, "defaultSpatial");
-  const displayPct = Math.max(0, Math.min(100, smoothPct));
+  const pctRef = React.useRef(clampedPct);
+  const displayPct = Math.max(0, Math.min(100, pctRef.current));
 
   const barHeight =
     thickness === "thick"
@@ -169,6 +169,41 @@ function FlatLinearProgressIndicator({
     displayPct <= 1 || displayPct >= 99 ? 0 : PROGRESS_TOKENS.trackGap;
 
   const trackRef = React.useRef<HTMLDivElement | null>(null);
+  const splitRef = React.useRef<HTMLDivElement | null>(null);
+  const activeBarRef = React.useRef<HTMLDivElement | null>(null);
+  const restBarRef = React.useRef<HTMLDivElement | null>(null);
+
+  const applyDetLinear = React.useCallback((rawPct: number) => {
+    const pct = Math.max(0, Math.min(100, rawPct));
+    const nextGap = pct <= 1 || pct >= 99 ? 0 : PROGRESS_TOKENS.trackGap;
+    if (splitRef.current) {
+      splitRef.current.style.gap = `${nextGap}px`;
+    }
+    if (activeBarRef.current) {
+      if (pct > 0.2) {
+        activeBarRef.current.style.display = "";
+        activeBarRef.current.style.flex = `0 0 calc(${pct.toFixed(2)}% - ${(nextGap / 2).toFixed(1)}px)`;
+      } else {
+        activeBarRef.current.style.display = "none";
+      }
+    }
+    if (restBarRef.current) {
+      restBarRef.current.style.display = pct < 99.8 ? "" : "none";
+    }
+  }, []);
+
+  useM3EScalarSpringEffect(clampedPct, "defaultSpatial", (val) => {
+    pctRef.current = val;
+    if (!isIndet) {
+      applyDetLinear(val);
+    }
+  });
+
+  useIsoLayoutEffect(() => {
+    if (!isIndet) {
+      applyDetLinear(pctRef.current);
+    }
+  }, [isIndet, applyDetLinear]);
   const offscreen = useOffscreen(trackRef, isIndet);
   const isPaused = pausedByOwner || offscreen;
   const trackWidthRef = React.useRef<number>(240);
@@ -374,29 +409,35 @@ function FlatLinearProgressIndicator({
           </div>
         ) : (
           <div
+            ref={splitRef}
             className="m3e-linear-progress__split"
             style={{ gap: `${gapPx}px` }}
             aria-hidden="true"
           >
-            {displayPct > 0.2 ? (
-              <BaseProgress.Indicator
-                className="m3e-linear-progress__active"
+            <BaseProgress.Indicator
+              ref={activeBarRef}
+              className="m3e-linear-progress__active"
+              style={{
+                display: displayPct > 0.2 ? undefined : "none",
+                flex:
+                  displayPct > 0.2
+                    ? `0 0 calc(${displayPct.toFixed(2)}% - ${(gapPx / 2).toFixed(1)}px)`
+                    : "0 0 0%",
+              }}
+            />
+            <div
+              ref={restBarRef}
+              className="m3e-linear-progress__rest"
+              style={{ display: displayPct < 99.8 ? undefined : "none" }}
+            >
+              <span
+                className="m3e-linear-progress__stop-dot"
                 style={{
-                  flex: `0 0 calc(${displayPct.toFixed(2)}% - ${(gapPx / 2).toFixed(1)}px)`,
+                  width: `${PROGRESS_TOKENS.stopDotSize}px`,
+                  height: `${PROGRESS_TOKENS.stopDotSize}px`,
                 }}
               />
-            ) : null}
-            {displayPct < 99.8 ? (
-              <div className="m3e-linear-progress__rest">
-                <span
-                  className="m3e-linear-progress__stop-dot"
-                  style={{
-                    width: `${PROGRESS_TOKENS.stopDotSize}px`,
-                    height: `${PROGRESS_TOKENS.stopDotSize}px`,
-                  }}
-                />
-              </div>
-            ) : null}
+            </div>
           </div>
         )}
       </BaseProgress.Track>
@@ -468,11 +509,11 @@ function FlatCircularProgressIndicator({
   const localizedPctText = !isIndet
     ? formatLocalizedPercent(locale, clamped / 100)
     : undefined;
-  const smooth = useM3EScalarSpring(clamped / 100, "defaultSpatial");
+  const detProgressRef = React.useRef(clamped / 100);
   const spec = resolveCircularSizeSpec(size, strokeWidthProp);
 
   const arcs = resolveCircularProgressArcs({
-    progress: isIndet ? 0.28 : smooth,
+    progress: isIndet ? 0.28 : detProgressRef.current,
     size: spec.size,
     strokeWidth: spec.strokeWidth,
   });
@@ -484,7 +525,59 @@ function FlatCircularProgressIndicator({
   const isPaused = pausedByOwner || offscreen;
   const indetTrackRef = React.useRef<SVGCircleElement | null>(null);
   const indetActiveRef = React.useRef<SVGCircleElement | null>(null);
+  const detTrackRef = React.useRef<SVGCircleElement | null>(null);
+  const detActiveRef = React.useRef<SVGCircleElement | null>(null);
   const elapsedMsRef = React.useRef<number>(0);
+
+  const applyDetCircular = React.useCallback(
+    (progressFrac: number) => {
+      const nextArcs = resolveCircularProgressArcs({
+        progress: progressFrac,
+        size: spec.size,
+        strokeWidth: spec.strokeWidth,
+      });
+      if (detTrackRef.current) {
+        if (nextArcs.trackDashLength > 0.5) {
+          detTrackRef.current.style.display = "";
+          detTrackRef.current.setAttribute(
+            "stroke-dasharray",
+            `${nextArcs.trackDashLength.toFixed(2)} ${nextArcs.circumference.toFixed(2)}`,
+          );
+          detTrackRef.current.setAttribute(
+            "transform",
+            `rotate(${nextArcs.trackRotationDeg.toFixed(2)} ${center} ${center})`,
+          );
+        } else {
+          detTrackRef.current.style.display = "none";
+        }
+      }
+      if (detActiveRef.current) {
+        if (nextArcs.activeDashLength > 0.5) {
+          detActiveRef.current.style.display = "";
+          detActiveRef.current.setAttribute(
+            "stroke-dasharray",
+            `${nextArcs.activeDashLength.toFixed(2)} ${nextArcs.circumference.toFixed(2)}`,
+          );
+        } else {
+          detActiveRef.current.style.display = "none";
+        }
+      }
+    },
+    [spec.size, spec.strokeWidth, center],
+  );
+
+  useM3EScalarSpringEffect(clamped / 100, "defaultSpatial", (val) => {
+    detProgressRef.current = val;
+    if (!isIndet) {
+      applyDetCircular(val);
+    }
+  });
+
+  useIsoLayoutEffect(() => {
+    if (!isIndet) {
+      applyDetCircular(detProgressRef.current);
+    }
+  }, [isIndet, applyDetCircular]);
 
   React.useEffect(() => {
     if (!isIndet) return undefined;
@@ -651,32 +744,32 @@ function FlatCircularProgressIndicator({
           </g>
         ) : (
           <>
-            {arcs.trackDashLength > 0.5 ? (
-              <circle
-                cx={center}
-                cy={center}
-                r={arcs.radius}
-                fill="none"
-                stroke="var(--m3e-color-secondary-container)"
-                strokeWidth={spec.strokeWidth}
-                strokeLinecap="round"
-                strokeDasharray={`${arcs.trackDashLength.toFixed(2)} ${arcs.circumference.toFixed(2)}`}
-                transform={`rotate(${arcs.trackRotationDeg.toFixed(2)} ${center} ${center})`}
-              />
-            ) : null}
-            {arcs.activeDashLength > 0.5 ? (
-              <circle
-                cx={center}
-                cy={center}
-                r={arcs.radius}
-                fill="none"
-                stroke="var(--m3e-color-primary)"
-                strokeWidth={spec.strokeWidth}
-                strokeLinecap="round"
-                strokeDasharray={`${arcs.activeDashLength.toFixed(2)} ${arcs.circumference.toFixed(2)}`}
-                transform={`rotate(-90 ${center} ${center})`}
-              />
-            ) : null}
+            <circle
+              ref={detTrackRef}
+              cx={center}
+              cy={center}
+              r={arcs.radius}
+              fill="none"
+              stroke="var(--m3e-color-secondary-container)"
+              strokeWidth={spec.strokeWidth}
+              strokeLinecap="round"
+              style={{ display: arcs.trackDashLength > 0.5 ? undefined : "none" }}
+              strokeDasharray={`${arcs.trackDashLength.toFixed(2)} ${arcs.circumference.toFixed(2)}`}
+              transform={`rotate(${arcs.trackRotationDeg.toFixed(2)} ${center} ${center})`}
+            />
+            <circle
+              ref={detActiveRef}
+              cx={center}
+              cy={center}
+              r={arcs.radius}
+              fill="none"
+              stroke="var(--m3e-color-primary)"
+              strokeWidth={spec.strokeWidth}
+              strokeLinecap="round"
+              style={{ display: arcs.activeDashLength > 0.5 ? undefined : "none" }}
+              strokeDasharray={`${arcs.activeDashLength.toFixed(2)} ${arcs.circumference.toFixed(2)}`}
+              transform={`rotate(-90 ${center} ${center})`}
+            />
           </>
         )}
       </svg>

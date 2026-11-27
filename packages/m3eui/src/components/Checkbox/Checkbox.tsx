@@ -6,7 +6,7 @@ import { CheckboxGroup as BaseCheckboxGroup } from "@base-ui/react/checkbox-grou
 import {
   CHECKBOX_TOKENS,
 } from "../../tokens/topology.js";
-import { useM3EScalarSpring, usePressHoldState } from "../../hooks/useM3ESpring.js";
+import { useM3EScalarSpringEffect, usePressHoldState } from "../../hooks/useM3ESpring.js";
 import { FieldsetDisabledContext, useFieldsetDisabled } from "../../internal/fieldOutline.js";
 import { FormFieldScope, useFormReset } from "../../internal/formField.js";
 import { mergeInteractionHandlers, useM3ERipple } from "../../internal/ripple.js";
@@ -42,16 +42,11 @@ export interface M3ECheckboxGroupProps {
   readonly style?: React.CSSProperties;
 }
 
-function CheckGlyph({
-  checked,
-  indeterminate,
-}: {
-  readonly checked: boolean;
-  readonly indeterminate: boolean;
-}) {
-  const active = checked || indeterminate;
-  const draw = useM3EScalarSpring(active ? 1 : 0, "defaultSpatial");
-  const grav = useM3EScalarSpring(indeterminate ? 1 : 0, "fastSpatial");
+function computeCheckPath(draw: number, grav: number): {
+  readonly d: string;
+  readonly dashOffset: string;
+  readonly opacity: string;
+} {
   const clampedDraw = Math.max(0, Math.min(1, draw));
   const g = Math.max(0, Math.min(1, grav));
   const x1 = 4.5 + 0.5 * g;
@@ -60,7 +55,44 @@ function CheckGlyph({
   const y2 = 17.5 - 5.5 * g;
   const x3 = 19.5 - 0.5 * g;
   const y3 = 6.5 + 5.5 * g;
-  const d = `M ${x1.toFixed(2)} ${y1.toFixed(2)} L ${x2.toFixed(2)} ${y2.toFixed(2)} L ${x3.toFixed(2)} ${y3.toFixed(2)}`;
+  return {
+    d: `M ${x1.toFixed(2)} ${y1.toFixed(2)} L ${x2.toFixed(2)} ${y2.toFixed(2)} L ${x3.toFixed(2)} ${y3.toFixed(2)}`,
+    dashOffset: (1 - clampedDraw).toFixed(3),
+    opacity: clampedDraw <= 0.01 ? "0" : "1",
+  };
+}
+
+function CheckGlyph({
+  checked,
+  indeterminate,
+}: {
+  readonly checked: boolean;
+  readonly indeterminate: boolean;
+}) {
+  const active = checked || indeterminate;
+  const pathRef = React.useRef<SVGPathElement | null>(null);
+  const drawRef = React.useRef(active ? 1 : 0);
+  const gravRef = React.useRef(indeterminate ? 1 : 0);
+
+  const applyGlyph = React.useCallback(() => {
+    const path = pathRef.current;
+    if (!path) return;
+    const next = computeCheckPath(drawRef.current, gravRef.current);
+    path.setAttribute("d", next.d);
+    path.setAttribute("stroke-dashoffset", next.dashOffset);
+    path.style.opacity = next.opacity;
+  }, []);
+
+  useM3EScalarSpringEffect(active ? 1 : 0, "defaultSpatial", (val) => {
+    drawRef.current = val;
+    applyGlyph();
+  });
+  useM3EScalarSpringEffect(indeterminate ? 1 : 0, "fastSpatial", (val) => {
+    gravRef.current = val;
+    applyGlyph();
+  });
+
+  const initial = computeCheckPath(drawRef.current, gravRef.current);
 
   return (
     <svg
@@ -75,11 +107,12 @@ function CheckGlyph({
       aria-hidden="true"
     >
       <path
-        d={d}
+        ref={pathRef}
+        d={initial.d}
         pathLength={1}
         strokeDasharray={1}
-        strokeDashoffset={(1 - clampedDraw).toFixed(3)}
-        style={{ opacity: clampedDraw <= 0.01 ? 0 : 1 }}
+        strokeDashoffset={initial.dashOffset}
+        style={{ opacity: Number(initial.opacity) }}
       />
     </svg>
   );
@@ -110,6 +143,18 @@ export const Checkbox = React.forwardRef<HTMLElement, M3ECheckboxProps>(
     const isDisabled = useFieldsetDisabled(disabled);
     const [resetKey, setResetKey] = React.useState(0);
     const inputRef = React.useRef<HTMLInputElement | null>(null);
+    const boxRef = React.useRef<HTMLElement | null>(null);
+    const setBoxRef = React.useCallback(
+      (node: HTMLElement | null) => {
+        boxRef.current = node;
+        if (typeof ref === "function") {
+          ref(node);
+        } else if (ref) {
+          ref.current = node;
+        }
+      },
+      [ref],
+    );
     useFormReset(inputRef, () => setResetKey((k) => k + 1), checked === undefined);
     const { isPressed, pressHandlers } = usePressHoldState(isDisabled || readOnly);
     const { rippleRef, rippleHandlers } = useM3ERipple(isDisabled || readOnly, {
@@ -119,17 +164,21 @@ export const Checkbox = React.forwardRef<HTMLElement, M3ECheckboxProps>(
       pressHandlers,
       rippleHandlers,
     );
-    const cornerRadius = useM3EScalarSpring(
-      isPressed
-        ? CHECKBOX_TOKENS.pressedCornerRadius
-        : CHECKBOX_TOKENS.cornerRadius,
-      "fastSpatial",
-    );
+    const targetCornerRadius = isPressed
+      ? CHECKBOX_TOKENS.pressedCornerRadius
+      : CHECKBOX_TOKENS.cornerRadius;
+    const cornerRadiusRef = React.useRef<number>(targetCornerRadius);
+    useM3EScalarSpringEffect(targetCornerRadius, "fastSpatial", (val) => {
+      cornerRadiusRef.current = val;
+      if (boxRef.current) {
+        boxRef.current.style.borderRadius = `${Math.max(2, val).toFixed(1)}px`;
+      }
+    });
 
     const boxNode = (
       <FormFieldScope name={parent ? undefined : name} disabled={isDisabled}>
       <BaseCheckbox.Root
-        ref={ref}
+        ref={setBoxRef}
         id={id}
         name={name}
         value={value}
@@ -153,7 +202,7 @@ export const Checkbox = React.forwardRef<HTMLElement, M3ECheckboxProps>(
         style={{
           width: `${CHECKBOX_TOKENS.boxSize}px`,
           height: `${CHECKBOX_TOKENS.boxSize}px`,
-          borderRadius: `${Math.max(2, cornerRadius).toFixed(1)}px`,
+          borderRadius: `${Math.max(2, cornerRadiusRef.current).toFixed(1)}px`,
           ...(!label ? style : undefined),
         }}
         {...(!label ? mergedInteractionHandlers : undefined)}

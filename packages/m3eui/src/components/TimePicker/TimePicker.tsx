@@ -11,7 +11,7 @@ import {
 import { useM3EI18n } from "../../context/M3EContext.js";
 import { useM3EPortalContainer } from "../../context/M3EPortal.js";
 import {
-  useM3EScalarSpring,
+  useM3EScalarSpringEffect,
   usePressHoldState,
 } from "../../hooks/useM3ESpring.js";
 import { Button } from "../Button/Button.js";
@@ -26,6 +26,7 @@ import { useFormReset } from "../../internal/formField.js";
 import { ClockIcon } from "../../internal/icons.js";
 import { useAdaptivePositionMethod } from "../../internal/positionMethod.js";
 import { mergeInteractionHandlers, useM3ERipple } from "../../internal/ripple.js";
+import { useIsoLayoutEffect } from "../../internal/useIsoLayoutEffect.js";
 
 export type PlainTimeString = `${string}:${string}` | string;
 
@@ -80,15 +81,21 @@ function TimeSegmentChip({
     pressHandlers,
     rippleHandlers,
   );
-  const radius = useM3EScalarSpring(
-    isPressed
-      ? TIME_PICKER_TOKENS.fieldPressedRadius
-      : TIME_PICKER_TOKENS.fieldRadius,
-    "fastSpatial",
-  );
+  const btnRef = React.useRef<HTMLButtonElement | null>(null);
+  const targetRadius = isPressed
+    ? TIME_PICKER_TOKENS.fieldPressedRadius
+    : TIME_PICKER_TOKENS.fieldRadius;
+  const radiusRef = React.useRef<number>(targetRadius);
+  useM3EScalarSpringEffect(targetRadius, "fastSpatial", (val) => {
+    radiusRef.current = val;
+    if (btnRef.current) {
+      btnRef.current.style.borderRadius = `${Math.max(4, val).toFixed(1)}px`;
+    }
+  });
 
   return (
     <button
+      ref={btnRef}
       type="button"
       aria-label={label}
       aria-pressed={active}
@@ -98,7 +105,7 @@ function TimeSegmentChip({
       style={{
         width: `${TIME_PICKER_TOKENS.fieldWidth}px`,
         height: `${TIME_PICKER_TOKENS.fieldHeight}px`,
-        borderRadius: `${Math.max(4, radius).toFixed(1)}px`,
+        borderRadius: `${Math.max(4, radiusRef.current).toFixed(1)}px`,
       }}
       {...mergedHandlers}
     >
@@ -281,12 +288,46 @@ export function TimePicker({
     return next;
   }, [handTarget.angleDeg]);
 
-  const springAngleDeg = useM3EScalarSpring(targetUnwrappedDeg, "fastSpatial");
-  const springRadius = useM3EScalarSpring(handTarget.radius, "fastSpatial");
+  const angleRef = React.useRef(targetUnwrappedDeg);
+  const radiusRef = React.useRef(handTarget.radius);
+  const handLineRef = React.useRef<SVGLineElement | null>(null);
+  const handBobRef = React.useRef<SVGCircleElement | null>(null);
+  const handDotRef = React.useRef<SVGCircleElement | null>(null);
 
-  const rad = ((springAngleDeg - 90) * Math.PI) / 180;
-  const bobX = Math.cos(rad) * springRadius;
-  const bobY = Math.sin(rad) * springRadius;
+  const applyClockHand = React.useCallback((angleDeg: number, radiusVal: number) => {
+    const rad = ((angleDeg - 90) * Math.PI) / 180;
+    const cx = String(TIME_PICKER_TOKENS.dialSize / 2 + Math.cos(rad) * radiusVal);
+    const cy = String(TIME_PICKER_TOKENS.dialSize / 2 + Math.sin(rad) * radiusVal);
+    if (handLineRef.current) {
+      handLineRef.current.setAttribute("x2", cx);
+      handLineRef.current.setAttribute("y2", cy);
+    }
+    if (handBobRef.current) {
+      handBobRef.current.setAttribute("cx", cx);
+      handBobRef.current.setAttribute("cy", cy);
+    }
+    if (handDotRef.current) {
+      handDotRef.current.setAttribute("cx", cx);
+      handDotRef.current.setAttribute("cy", cy);
+    }
+  }, []);
+
+  useM3EScalarSpringEffect(targetUnwrappedDeg, "fastSpatial", (val) => {
+    angleRef.current = val;
+    applyClockHand(val, radiusRef.current);
+  });
+  useM3EScalarSpringEffect(handTarget.radius, "fastSpatial", (val) => {
+    radiusRef.current = val;
+    applyClockHand(angleRef.current, val);
+  });
+
+  useIsoLayoutEffect(() => {
+    applyClockHand(angleRef.current, radiusRef.current);
+  }, [inputMode, selectionMode, minute, applyClockHand]);
+
+  const rad = ((angleRef.current - 90) * Math.PI) / 180;
+  const bobX = Math.cos(rad) * radiusRef.current;
+  const bobY = Math.sin(rad) * radiusRef.current;
 
   const dialRef = React.useRef<HTMLDivElement | null>(null);
   const scrubbingRef = React.useRef<boolean>(false);
@@ -712,6 +753,7 @@ export function TimePicker({
               aria-hidden="true"
             >
               <line
+                ref={handLineRef}
                 x1={TIME_PICKER_TOKENS.dialSize / 2}
                 y1={TIME_PICKER_TOKENS.dialSize / 2}
                 x2={TIME_PICKER_TOKENS.dialSize / 2 + bobX}
@@ -726,6 +768,7 @@ export function TimePicker({
                 fill="var(--m3e-color-primary)"
               />
               <circle
+                ref={handBobRef}
                 cx={TIME_PICKER_TOKENS.dialSize / 2 + bobX}
                 cy={TIME_PICKER_TOKENS.dialSize / 2 + bobY}
                 r={TIME_PICKER_TOKENS.selectorHandleSize / 2}
@@ -733,6 +776,7 @@ export function TimePicker({
               />
               {selectionMode === "minute" && minute % 5 !== 0 ? (
                 <circle
+                  ref={handDotRef}
                   cx={TIME_PICKER_TOKENS.dialSize / 2 + bobX}
                   cy={TIME_PICKER_TOKENS.dialSize / 2 + bobY}
                   r={2}
