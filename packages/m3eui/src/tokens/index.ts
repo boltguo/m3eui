@@ -1,6 +1,12 @@
 export {
+  extractSeedHexFromImage,
+  extractSeedHexFromImageBytes,
   generateM3EThemeTokens,
+  harmonizeHexColor,
   type ColorPlatform,
+  type M3ECustomColorInput,
+  type M3ECustomColorRoleSet,
+  type M3ECustomColorRoles,
   type M3ESemanticColorRoles,
   type M3EThemeTokens,
   type SemanticColorRoleKey,

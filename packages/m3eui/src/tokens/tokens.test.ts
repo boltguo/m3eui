@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { M3E_DEFAULT_THEME } from "../context/M3EContext.js";
 import {
+  extractSeedHexFromImageBytes,
   generateM3EThemeTokens,
+  harmonizeHexColor,
 } from "./color.js";
 import {
   M3E_COLOR_SCHEME_VARIANTS,
@@ -881,5 +883,37 @@ describe("m3eui/tokens — AOSP Compose Material 3 Expressive 1.5.0 Parity", () 
     expect(M3E_DEFAULT_THEME.light).toEqual(expected.light);
     expect(M3E_DEFAULT_THEME.dark).toEqual(expected.dark);
     expect(M3E_DEFAULT_THEME.cssLightDarkVars).toEqual(expected.cssLightDarkVars);
+  });
+
+  it("extracts image seed hex, harmonizes colors, and generates custom harmonized color roles", () => {
+    const rgba = new Uint8ClampedArray([
+      11, 107, 88, 255,
+      11, 107, 88, 255,
+      11, 107, 88, 255,
+      11, 107, 88, 255,
+    ]);
+    const extracted = extractSeedHexFromImageBytes(rgba);
+    expect(extracted).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(extracted.toLowerCase()).toBe("#0b6b58");
+
+    const harmonized = harmonizeHexColor("#0288D1", "#6750A4");
+    expect(harmonized).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(harmonized.toLowerCase()).not.toBe("#0288d1");
+
+    const tokens = generateM3EThemeTokens({
+      seedHex: "#6750A4",
+      customColors: {
+        info: "#0288D1",
+        brandAccent: { hex: "#E91E63", harmonize: false },
+      },
+    });
+    expect(tokens.customColors?.info?.light.color).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(tokens.customColors?.info?.dark.colorContainer).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(tokens.customColors?.brandAccent?.light.color).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(tokens.cssLightDarkVars["--m3e-color-info"]).toContain("light-dark(");
+    expect(tokens.cssLightDarkVars["--m3e-color-on-info"]).toContain("light-dark(");
+    expect(tokens.cssLightDarkVars["--m3e-color-info-container"]).toContain("light-dark(");
+    expect(tokens.cssLightDarkVars["--m3e-color-on-info-container"]).toContain("light-dark(");
+    expect(tokens.cssLightDarkVars["--m3e-color-brand-accent"]).toContain("light-dark(");
   });
 });

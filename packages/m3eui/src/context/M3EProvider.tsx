@@ -16,15 +16,9 @@ import {
   type ColorSchemeVariant,
 } from "../tokens/color-variants.js";
 import {
-  generateM3ESystemCssVars,
-} from "../tokens/elevation.js";
-import {
   MOTION_SCHEMES,
   type MotionSchemeName,
 } from "../tokens/motion.js";
-import {
-  generateM3ETypographyCssVars,
-} from "../tokens/typography.js";
 import { M3EToastViewportHost } from "../components/Toast/Toast.js";
 import {
   M3EToastManagerContext,
@@ -64,10 +58,6 @@ import {
   resolveM3EMessages,
 } from "../i18n/index.js";
 
-const STATIC_SCOPE_CSS_VARS: Record<string, string> = {
-  ...generateM3ESystemCssVars(),
-  ...generateM3ETypographyCssVars(),
-};
 import { useIsoLayoutEffect } from "../internal/useIsoLayoutEffect.js";
 
 export type { ColorMode, M3EContextValue, TextDirection };
@@ -87,6 +77,7 @@ export interface M3EProviderProps {
   readonly initialSchemeVariant?: ColorSchemeVariant;
   readonly initialPlatform?: ColorPlatform;
   readonly initialContrastLevel?: number;
+  readonly autoContrast?: boolean;
   readonly initialColorMode?: ColorMode;
   readonly initialLocale?: M3ELocale;
   readonly locale?: M3ELocale;
@@ -94,6 +85,9 @@ export interface M3EProviderProps {
   readonly initialDirection?: M3EDirectionSetting;
   readonly initialMotionScheme?: MotionSchemeName;
   readonly initialPlaybackRate?: number;
+  readonly toastLimit?: number;
+  readonly toastTimeout?: number;
+  readonly tooltipDelay?: number;
   readonly cspNonce?: string;
   readonly cspDisableStyleElements?: boolean;
   readonly syncDocumentRoot?: boolean;
@@ -108,6 +102,7 @@ export function M3EProvider({
   initialSchemeVariant,
   initialPlatform,
   initialContrastLevel,
+  autoContrast = false,
   initialColorMode,
   initialLocale,
   locale: controlledLocale,
@@ -115,6 +110,9 @@ export function M3EProvider({
   initialDirection,
   initialMotionScheme,
   initialPlaybackRate = 1,
+  toastLimit = 4,
+  toastTimeout = 4000,
+  tooltipDelay = 280,
   cspNonce,
   cspDisableStyleElements,
   syncDocumentRoot = true,
@@ -174,6 +172,8 @@ export function M3EProvider({
   const [debugGeometry, setDebugGeometry] = React.useState<boolean>(false);
   const [prefersReducedMotion, setPrefersReducedMotion] =
     React.useState<boolean>(false);
+  const [prefersHighContrast, setPrefersHighContrast] =
+    React.useState<boolean>(false);
   const [prefersDarkColorScheme, setPrefersDarkColorScheme] =
     React.useState<boolean>(false);
 
@@ -220,6 +220,16 @@ export function M3EProvider({
   }, []);
 
   React.useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const mq = window.matchMedia("(prefers-contrast: more)");
+    setPrefersHighContrast(mq.matches);
+    const onChange = (e: MediaQueryListEvent) =>
+      setPrefersHighContrast(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  React.useEffect(() => {
     if (!syncDocumentRoot || typeof window === "undefined") return;
     const onStorage = (e: StorageEvent) => {
       if (e.key !== M3E_COLOR_SCHEME_STORAGE_KEY) return;
@@ -237,28 +247,38 @@ export function M3EProvider({
     return () => window.removeEventListener("storage", onStorage);
   }, [fallbackColorMode, syncDocumentRoot]);
 
+  const effectiveContrastLevel =
+    autoContrast && prefersHighContrast && contrastLevel === 0
+      ? 0.5
+      : contrastLevel;
+
   const themeTokens = React.useMemo(
     () =>
       themeEngine
         ? themeEngine({
             seedHex,
             variant: schemeVariant,
-            contrastLevel,
+            contrastLevel: effectiveContrastLevel,
             platform,
           })
         : M3E_DEFAULT_THEME,
-    [themeEngine, seedHex, schemeVariant, contrastLevel, platform],
+    [themeEngine, seedHex, schemeVariant, effectiveContrastLevel, platform],
   );
 
   const motionScheme = MOTION_SCHEMES[motionSchemeName];
+  const needsRuntimeMotionVars =
+    motionSchemeName !== resolvedCfg.motionScheme || playbackRate !== 1;
 
   const cssVars = React.useMemo(() => {
-    return {
-      ...STATIC_SCOPE_CSS_VARS,
-      ...(themeEngine ? themeTokens.cssLightDarkVars : undefined),
-      ...generateM3EMotionCssVars(motionScheme, playbackRate),
-    } as Record<string, string>;
-  }, [themeEngine, themeTokens, motionScheme, playbackRate]);
+    const next: Record<string, string> = {};
+    if (themeEngine) {
+      Object.assign(next, themeTokens.cssLightDarkVars);
+    }
+    if (needsRuntimeMotionVars) {
+      Object.assign(next, generateM3EMotionCssVars(motionScheme, playbackRate));
+    }
+    return next;
+  }, [themeEngine, themeTokens, needsRuntimeMotionVars, motionScheme, playbackRate]);
 
   useIsoLayoutEffect(() => {
     if (!syncDocumentRoot || typeof document === "undefined") return;
@@ -319,6 +339,11 @@ export function M3EProvider({
     if (!syncDocumentRoot || typeof document === "undefined") return;
     const rootStyle = document.documentElement.style;
     const prev = appliedCssVarsRef.current;
+    for (const k of Object.keys(prev)) {
+      if (!(k in cssVars)) {
+        rootStyle.removeProperty(k);
+      }
+    }
     const nextKeys = Object.keys(cssVars);
     for (const k of nextKeys) {
       const nextVal = cssVars[k]!;
@@ -430,6 +455,7 @@ export function M3EProvider({
       debugGeometry,
       setDebugGeometry,
       prefersReducedMotion,
+      prefersHighContrast,
       themeTokens,
       exportConfigJson,
     }),
@@ -453,6 +479,7 @@ export function M3EProvider({
       paused,
       debugGeometry,
       prefersReducedMotion,
+      prefersHighContrast,
       themeTokens,
       exportConfigJson,
     ],
@@ -495,11 +522,11 @@ export function M3EProvider({
     <M3EPortalScopeContext.Provider value={portalScope}>
       <M3EPortalContext.Provider value={effectivePortalContainer}>
       <DirectionProvider direction={direction}>
-        <BaseTooltip.Provider delay={280} timeout={400}>
+        <BaseTooltip.Provider delay={tooltipDelay} timeout={400}>
           <BaseToast.Provider
             toastManager={toastManager}
-            limit={4}
-            timeout={4000}
+            limit={toastLimit}
+            timeout={toastTimeout}
           >
             <div
               lang={canonicalLocale}

@@ -323,4 +323,97 @@ describe("M3EProvider & M3EPortal", () => {
     expect(scopedPortal.textContent).toContain("RTL Portal Dialog");
     expect(scopedPortal.textContent).toContain("Popover body");
   });
+
+  it("avoids writing static CSS variables onto documentElement in default static mode and cleans up runtime motion overrides", () => {
+    let updateRate: ((rate: number) => void) | undefined;
+
+    function RateProbe() {
+      const { setPlaybackRate } = useM3E();
+      updateRate = setPlaybackRate;
+      return null;
+    }
+
+    act(() => {
+      dom.root.render(
+        <M3EProvider>
+          <RateProbe />
+        </M3EProvider>,
+      );
+    });
+
+    const rootStyle = document.documentElement.style;
+    expect(rootStyle.getPropertyValue("--m3e-font-brand")).toBe("");
+    expect(rootStyle.getPropertyValue("--m3e-elevation-level1")).toBe("");
+    expect(rootStyle.getPropertyValue("--m3e-shape-corner-medium")).toBe("");
+    expect(rootStyle.getPropertyValue("--m3e-spatial-fast-duration")).toBe("");
+
+    act(() => {
+      updateRate?.(0.5);
+    });
+    expect(rootStyle.getPropertyValue("--m3e-spatial-fast-duration")).not.toBe("");
+
+    act(() => {
+      updateRate?.(1);
+    });
+    expect(rootStyle.getPropertyValue("--m3e-spatial-fast-duration")).toBe("");
+  });
+
+  it("tracks OS prefers-contrast: more and elevates contrastLevel when autoContrast is enabled", () => {
+    let contrastMatches = false;
+    const listeners = new Set<(e: MediaQueryListEvent) => void>();
+    const originalMatchMedia = window.matchMedia;
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: query.includes("prefers-contrast: more") ? contrastMatches : false,
+      media: query,
+      onchange: null,
+      addEventListener: (_type: string, cb: (e: MediaQueryListEvent) => void) => {
+        if (query.includes("prefers-contrast: more")) listeners.add(cb);
+      },
+      removeEventListener: (_type: string, cb: (e: MediaQueryListEvent) => void) => {
+        listeners.delete(cb);
+      },
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+
+    let latestPrefers = false;
+    let latestContrast = 0;
+
+    function ContrastProbe() {
+      const { prefersHighContrast, themeTokens } = useM3E();
+      latestPrefers = prefersHighContrast;
+      latestContrast = themeTokens.contrastLevel;
+      return null;
+    }
+
+    try {
+      act(() => {
+        dom.root.render(
+          <M3EProvider
+            syncDocumentRoot={false}
+            autoContrast
+            themeEngine={generateM3EThemeTokens}
+          >
+            <ContrastProbe />
+          </M3EProvider>,
+        );
+      });
+
+      expect(latestPrefers).toBe(false);
+      expect(latestContrast).toBe(0);
+
+      contrastMatches = true;
+      act(() => {
+        for (const cb of listeners) {
+          cb({ matches: true } as MediaQueryListEvent);
+        }
+      });
+
+      expect(latestPrefers).toBe(true);
+      expect(latestContrast).toBe(0.5);
+    } finally {
+      window.matchMedia = originalMatchMedia;
+    }
+  });
 });

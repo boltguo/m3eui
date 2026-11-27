@@ -41,6 +41,16 @@ describe("m3eui dist build invariants", () => {
     expect(existsSync(resolve(distRoot, "components/Button/Button.js"))).toBe(true);
     expect(existsSync(resolve(distRoot, "components/Button/Button.d.ts"))).toBe(true);
 
+    const stylesCss = readFileSync(resolve(distRoot, "styles.css"), "utf8");
+    expect(stylesCss).toContain(".m3e-type-title-medium");
+    expect(stylesCss).toContain(".m3e-type-headline-small-emphasized");
+
+    const tailwindCss = readFileSync(resolve(distRoot, "tailwind.css"), "utf8");
+    expect(tailwindCss).toContain("@theme inline");
+    expect(tailwindCss).toContain("--color-m3e-primary: var(--m3e-color-primary);");
+    expect(tailwindCss).toContain("--radius-m3e-medium: var(--m3e-shape-corner-medium);");
+    expect(tailwindCss).toContain("--shadow-m3e-level2: var(--m3e-elevation-level2);");
+
     const emitted = readdirSync(distRoot, { recursive: true, encoding: "utf8" });
     const leakedTests = emitted.filter(
       (f) => f.includes(".test.") || f.includes("__tests__"),

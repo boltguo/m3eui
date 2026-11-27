@@ -65,6 +65,7 @@
       "import": "./dist/index.js"
     },
     "./styles.css": "./dist/styles.css",
+    "./tailwind.css": "./dist/tailwind.css",
     "./tokens": {
       "types": "./dist/tokens/index.d.ts",
       "import": "./dist/tokens/index.js"

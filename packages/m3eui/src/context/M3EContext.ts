@@ -59,6 +59,7 @@ export interface M3EContextValue {
   readonly debugGeometry: boolean;
   readonly setDebugGeometry: (debug: boolean) => void;
   readonly prefersReducedMotion: boolean;
+  readonly prefersHighContrast: boolean;
   readonly themeTokens: M3EThemeTokens;
   readonly exportConfigJson: () => string;
 }
@@ -243,6 +244,7 @@ export const M3EContext = React.createContext<M3EContextValue>({
   debugGeometry: false,
   setDebugGeometry: () => {},
   prefersReducedMotion: false,
+  prefersHighContrast: false,
   themeTokens: M3E_DEFAULT_THEME,
   exportConfigJson: () => serializeM3EConfig({}),
 });

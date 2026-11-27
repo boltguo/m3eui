@@ -324,3 +324,20 @@ export function generateM3ETypographyCssVars(): Record<string, string> {
 
   return vars;
 }
+
+export function generateM3ETypographyUtilityCss(): string {
+  return (Object.keys(M3E_TYPOGRAPHY_TOKENS) as M3ETypeScaleKey[])
+    .map((key) => {
+      const kebab = typeScaleKeyToKebab(key);
+      return [
+        `.m3e-type-${kebab} {`,
+        `  font-family: var(--m3e-typescale-${kebab}-font);`,
+        `  font-size: var(--m3e-typescale-${kebab}-size);`,
+        `  line-height: var(--m3e-typescale-${kebab}-line-height);`,
+        `  font-weight: var(--m3e-typescale-${kebab}-weight);`,
+        `  letter-spacing: var(--m3e-typescale-${kebab}-tracking);`,
+        `}`,
+      ].join("\n");
+    })
+    .join("\n\n");
+}

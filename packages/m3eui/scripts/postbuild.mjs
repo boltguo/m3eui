@@ -79,6 +79,15 @@ if (
 }
 
 const { generateM3EStaticThemeCss } = await import(join(distDir, "config.js"));
+const tokens = {
+  ...(await import(join(distDir, "tokens", "motion.js"))),
+  ...(await import(join(distDir, "tokens", "shapes.js"))),
+  ...(await import(join(distDir, "tokens", "color.js"))),
+  ...(await import(join(distDir, "tokens", "typography.js"))),
+  ...(await import(join(distDir, "tokens", "elevation.js"))),
+  ...(await import(join(distDir, "tokens", "topology.js"))),
+};
+
 const indexCss = readFileSync(join(stylesDir, "index.css"), "utf8");
 const layerOrder = indexCss.match(/^@layer ([^;{]+);/m)[1].split(/\s*,\s*/);
 const layerParts = new Map([["m3e.tokens", [generateM3EStaticThemeCss()]]]);
@@ -86,6 +95,7 @@ for (const [, file, layer] of indexCss.matchAll(/@import "([^"]+)" layer\(([^)]+
   if (!layerParts.has(layer)) layerParts.set(layer, []);
   layerParts.get(layer).push(readFileSync(join(stylesDir, file), "utf8").trim());
 }
+layerParts.get("m3e.base").push(tokens.generateM3ETypographyUtilityCss());
 writeFileSync(
   join(distDir, "styles.css"),
   [
@@ -95,14 +105,35 @@ writeFileSync(
   "utf8",
 );
 
-const tokens = {
-  ...(await import(join(distDir, "tokens", "motion.js"))),
-  ...(await import(join(distDir, "tokens", "shapes.js"))),
-  ...(await import(join(distDir, "tokens", "color.js"))),
-  ...(await import(join(distDir, "tokens", "typography.js"))),
-  ...(await import(join(distDir, "tokens", "elevation.js"))),
-  ...(await import(join(distDir, "tokens", "topology.js"))),
-};
+const defaultPalette = tokens.generateM3EThemeTokens({
+  seedHex: "#6750A4",
+  variant: "expressive",
+});
+const tailwindThemeLines = [
+  "@theme inline {",
+  "  --font-m3e-brand: var(--m3e-font-brand);",
+  "  --font-m3e-plain: var(--m3e-font-plain);",
+];
+for (const roleKey of Object.keys(defaultPalette.light)) {
+  const cssVar = tokens.roleKeyToCssVarName(roleKey);
+  const roleKebab = cssVar.slice("--m3e-color-".length);
+  tailwindThemeLines.push(`  --color-m3e-${roleKebab}: var(${cssVar});`);
+}
+for (const cornerKey of Object.keys(tokens.SHAPE_CORNER_TOKENS)) {
+  const cornerKebab = cornerKey.replace(/[A-Z]/g, (ch) => `-${ch.toLowerCase()}`);
+  tailwindThemeLines.push(
+    `  --radius-m3e-${cornerKebab}: var(--m3e-shape-corner-${cornerKebab});`,
+  );
+}
+for (const level of Object.keys(tokens.M3E_ELEVATION_TOKENS)) {
+  tailwindThemeLines.push(`  --shadow-m3e-${level}: var(--m3e-elevation-${level});`);
+}
+tailwindThemeLines.push("}");
+writeFileSync(
+  join(distDir, "tailwind.css"),
+  `${tailwindThemeLines.join("\n")}\n`,
+  "utf8",
+);
 
 function resolveSchemeMap(scheme) {
   const out = {};

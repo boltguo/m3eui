@@ -123,6 +123,25 @@ export interface M3ESemanticColorRoles {
 
 export type SemanticColorRoleKey = keyof M3ESemanticColorRoles;
 
+export interface M3ECustomColorRoleSet {
+  readonly color: string;
+  readonly onColor: string;
+  readonly colorContainer: string;
+  readonly onColorContainer: string;
+}
+
+export interface M3ECustomColorRoles {
+  readonly light: M3ECustomColorRoleSet;
+  readonly dark: M3ECustomColorRoleSet;
+}
+
+export type M3ECustomColorInput =
+  | string
+  | {
+      readonly hex: string;
+      readonly harmonize?: boolean;
+    };
+
 export interface M3EThemeTokens {
   readonly seedHex: string;
   readonly variant: ColorSchemeVariant;
@@ -130,7 +149,26 @@ export interface M3EThemeTokens {
   readonly platform: ColorPlatform;
   readonly light: M3ESemanticColorRoles;
   readonly dark: M3ESemanticColorRoles;
+  readonly customColors?: Readonly<Record<string, M3ECustomColorRoles>>;
   readonly cssLightDarkVars: Record<string, string>;
+}
+
+export function extractSeedHexFromImageBytes(
+  imageBytes: Uint8ClampedArray,
+): string {
+  return hexFromArgb(sourceColorFromImageBytes(imageBytes));
+}
+
+export async function extractSeedHexFromImage(
+  image: HTMLImageElement,
+): Promise<string> {
+  return hexFromArgb(await sourceColorFromImage(image));
+}
+
+export function harmonizeHexColor(designHex: string, seedHex: string): string {
+  return hexFromArgb(
+    Blend.harmonize(argbFromHex(designHex), argbFromHex(seedHex)),
+  );
 }
 
 const MDC = new MaterialDynamicColors();
@@ -348,6 +386,7 @@ export function generateM3EThemeTokens(options?: {
   variant?: ColorSchemeVariant;
   contrastLevel?: number;
   platform?: ColorPlatform;
+  customColors?: Readonly<Record<string, M3ECustomColorInput>>;
 }): M3EThemeTokens {
   const seedHex = options?.seedHex ?? "#6750A4";
   const variant = options?.variant ?? "expressive";
@@ -399,6 +438,77 @@ export function generateM3EThemeTokens(options?: {
     cssLightDarkVars[cssVar] = `light-dark(var(${cssVar}-light, ${light[key]}), var(${cssVar}-dark, ${dark[key]}))`;
   }
 
+  let customColorsOut: Record<string, M3ECustomColorRoles> | undefined;
+  if (options?.customColors) {
+    for (const [rawName, input] of Object.entries(options.customColors)) {
+      const kebab = rawName
+        .replace(/[A-Z]/g, (ch) => `-${ch.toLowerCase()}`)
+        .toLowerCase()
+        .replace(/[^a-z0-9-]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+      if (!kebab) continue;
+      const rawHex = typeof input === "string" ? input : input.hex;
+      let customArgb: number;
+      try {
+        customArgb = argbFromHex(rawHex);
+      } catch {
+        continue;
+      }
+      const shouldHarmonize =
+        typeof input === "string" ? true : input.harmonize !== false;
+      const palette = shouldHarmonize
+        ? buildSemanticExtensionPalette(customArgb, argb, hct.chroma, variant)
+        : (() => {
+            const cHct = Hct.fromInt(customArgb);
+            return TonalPalette.fromHueAndChroma(
+              cHct.hue,
+              Math.max(42, cHct.chroma),
+            );
+          })();
+      const lightExt = evaluateSemanticExtensionRoles(
+        kebab,
+        palette,
+        lightScheme,
+      );
+      const darkExt = evaluateSemanticExtensionRoles(
+        kebab,
+        palette,
+        darkScheme,
+      );
+      if (!customColorsOut) customColorsOut = {};
+      customColorsOut[rawName] = {
+        light: {
+          color: lightExt.role,
+          onColor: lightExt.onRole,
+          colorContainer: lightExt.container,
+          onColorContainer: lightExt.onContainer,
+        },
+        dark: {
+          color: darkExt.role,
+          onColor: darkExt.onRole,
+          colorContainer: darkExt.container,
+          onColorContainer: darkExt.onContainer,
+        },
+      };
+      const entries: readonly [string, string, string][] = [
+        [`--m3e-color-${kebab}`, lightExt.role, darkExt.role],
+        [`--m3e-color-on-${kebab}`, lightExt.onRole, darkExt.onRole],
+        [`--m3e-color-${kebab}-container`, lightExt.container, darkExt.container],
+        [
+          `--m3e-color-on-${kebab}-container`,
+          lightExt.onContainer,
+          darkExt.onContainer,
+        ],
+      ];
+      for (const [cssVar, lVal, dVal] of entries) {
+        cssLightDarkVars[`${cssVar}-light`] = lVal;
+        cssLightDarkVars[`${cssVar}-dark`] = dVal;
+        cssLightDarkVars[cssVar] =
+          `light-dark(var(${cssVar}-light, ${lVal}), var(${cssVar}-dark, ${dVal}))`;
+      }
+    }
+  }
+
   return {
     seedHex,
     variant,
@@ -406,6 +516,7 @@ export function generateM3EThemeTokens(options?: {
     platform,
     light,
     dark,
+    ...(customColorsOut ? { customColors: customColorsOut } : undefined),
     cssLightDarkVars,
   };
 }
