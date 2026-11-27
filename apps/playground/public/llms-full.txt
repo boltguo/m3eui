@@ -1,4 +1,4 @@
-# m3eui v0.2.0
+# m3eui v0.3.0
 
 > Material 3 Expressive React component library built on @base-ui/react with HCT dynamic color, spring physics, and built-in i18n/RTL.
 

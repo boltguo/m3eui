@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://unpkg.com/m3eui@0.2.0/m3e.schema.json",
+  "$id": "https://unpkg.com/m3eui@0.3.0/m3e.schema.json",
   "title": "m3e.json",
   "description": "m3eui project configuration.",
   "type": "object",
