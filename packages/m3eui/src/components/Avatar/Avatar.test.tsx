@@ -1,3 +1,4 @@
+import * as React from "react";
 import { act } from "react";
 import { describe, expect, it } from "vitest";
 import { PausedWrapper, setupDomTest } from "../../__tests__/domHarness.js";
@@ -7,10 +8,11 @@ describe("Avatar & AvatarGroup", () => {
   const dom = setupDomTest();
 
   it("renders MaterialShapes clipPath, AvatarGroup overflow badge, and polygon ring SVG", () => {
+    const avatarRef = React.createRef<HTMLSpanElement>();
     act(() => {
       dom.root.render(
         <PausedWrapper locale="zh-CN">
-          <Avatar shape="clover4Leaf" fallback="M3" />
+          <Avatar ref={avatarRef} shape="clover4Leaf" fallback="M3" />
           <AvatarGroup
             max={3}
             shape="cookie9Sided"
@@ -26,6 +28,7 @@ describe("Avatar & AvatarGroup", () => {
       );
     });
 
+    expect(avatarRef.current).toBe(dom.container.querySelector(".m3e-avatar-wrap"));
     expect(dom.container.querySelector(".m3e-avatar-group__overflow")?.textContent).toContain("+2");
     expect(dom.container.querySelector(".m3e-avatar-group__ring-svg")).not.toBeNull();
   });

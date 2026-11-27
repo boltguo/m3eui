@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import { Toast as BaseToast } from "@base-ui/react/toast";
 import { useM3EPortalContainer } from "../../context/M3EPortal.js";

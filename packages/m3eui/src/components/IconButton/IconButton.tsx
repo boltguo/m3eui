@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import { Button as BaseButton } from "@base-ui/react/button";
 import { mergeProps } from "@base-ui/react/merge-props";

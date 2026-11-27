@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import type {
   M3EShapeName,
@@ -37,54 +39,60 @@ function DefaultEmptyGlyph({ compact }: { readonly compact: boolean }) {
   );
 }
 
-export function Empty({
-  title,
-  description,
-  icon,
-  shape = "cookie9Sided",
-  actions,
-  compact = false,
-  className,
-  style,
-}: M3EEmptyProps): React.JSX.Element {
-  const { t } = useM3EI18n();
-  const resolvedTitle = title ?? t("empty.title");
-  const hasDescription =
-    description !== undefined &&
-    description !== null &&
-    description !== false &&
-    description !== "";
-  const emblemSize = compact ? 56 : 76;
+export const Empty = React.forwardRef<HTMLDivElement, M3EEmptyProps>(
+  function Empty(
+    {
+      title,
+      description,
+      icon,
+      shape = "cookie9Sided",
+      actions,
+      compact = false,
+      className,
+      style,
+    },
+    ref,
+  ): React.JSX.Element {
+    const { t } = useM3EI18n();
+    const resolvedTitle = title ?? t("empty.title");
+    const hasDescription =
+      description !== undefined &&
+      description !== null &&
+      description !== false &&
+      description !== "";
+    const emblemSize = compact ? 56 : 76;
 
-  return (
-    <div
-      className={className ? `m3e-empty ${className}` : "m3e-empty"}
-      data-compact={compact ? "" : undefined}
-      style={style}
-    >
-      <span
-        className="m3e-empty__emblem"
-        style={{ width: emblemSize, height: emblemSize }}
-        aria-hidden="true"
+    return (
+      <div
+        ref={ref}
+        className={className ? `m3e-empty ${className}` : "m3e-empty"}
+        data-compact={compact ? "" : undefined}
+        style={style}
       >
-        <MaterialShapeView
-          shape={shape}
-          size={emblemSize}
-          fill="var(--m3e-color-secondary-container)"
-        />
-        <span className="m3e-empty__glyph">
-          {icon ?? <DefaultEmptyGlyph compact={compact} />}
+        <span
+          className="m3e-empty__emblem"
+          style={{ width: emblemSize, height: emblemSize }}
+          aria-hidden="true"
+        >
+          <MaterialShapeView
+            shape={shape}
+            size={emblemSize}
+            fill="var(--m3e-color-secondary-container)"
+          />
+          <span className="m3e-empty__glyph">
+            {icon ?? <DefaultEmptyGlyph compact={compact} />}
+          </span>
         </span>
-      </span>
 
-      <div className="m3e-empty__copy">
-        <div className="m3e-empty__title">{resolvedTitle}</div>
-        {hasDescription ? (
-          <div className="m3e-empty__description">{description}</div>
-        ) : null}
+        <div className="m3e-empty__copy">
+          <div className="m3e-empty__title">{resolvedTitle}</div>
+          {hasDescription ? (
+            <div className="m3e-empty__description">{description}</div>
+          ) : null}
+        </div>
+
+        {actions ? <div className="m3e-empty__actions">{actions}</div> : null}
       </div>
-
-      {actions ? <div className="m3e-empty__actions">{actions}</div> : null}
-    </div>
-  );
-}
+    );
+  },
+);

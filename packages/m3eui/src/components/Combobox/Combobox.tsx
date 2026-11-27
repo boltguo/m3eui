@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import { useFormReset } from "../../internal/formField.js";
 import { Combobox as BaseCombobox } from "@base-ui/react/combobox";

@@ -1,3 +1,4 @@
+import * as React from "react";
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
@@ -8,6 +9,7 @@ describe("Kbd", () => {
   const dom = setupDomTest();
 
   it("formats platform modifier keys for macOS and Linux", async () => {
+    const kbdRef = React.createRef<HTMLElement>();
     const platformSpy = vi
       .spyOn(navigator, "platform", "get")
       .mockReturnValue("MacIntel");
@@ -15,11 +17,12 @@ describe("Kbd", () => {
     act(() => {
       dom.root.render(
         <PausedWrapper locale="zh-CN">
-          <Kbd keys={["mod", "shift", "p"]} />
+          <Kbd ref={kbdRef} keys={["mod", "shift", "p"]} />
         </PausedWrapper>,
       );
     });
 
+    expect(kbdRef.current).toBe(dom.container.querySelector("kbd.m3e-kbd"));
     expect(dom.container.querySelector("kbd.m3e-kbd")?.textContent).toBe("⌘⇧P");
 
     platformSpy.mockReturnValue("Linux x86_64");

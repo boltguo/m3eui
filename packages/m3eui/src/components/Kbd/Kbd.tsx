@@ -54,13 +54,10 @@ export interface M3EKbdProps {
   readonly style?: React.CSSProperties;
 }
 
-export function Kbd({
-  keys,
-  children,
-  size = "md",
-  className,
-  style,
-}: M3EKbdProps): React.JSX.Element {
+export const Kbd = React.forwardRef<HTMLElement, M3EKbdProps>(function Kbd(
+  { keys, children, size = "md", className, style },
+  ref,
+): React.JSX.Element {
   const [isApplePlatform, setIsApplePlatform] = React.useState(false);
 
   React.useEffect(() => {
@@ -71,6 +68,7 @@ export function Kbd({
 
   return (
     <kbd
+      ref={ref}
       className={className ? `m3e-kbd ${className}` : "m3e-kbd"}
       data-size={size}
       style={{
@@ -99,4 +97,4 @@ export function Kbd({
         : children}
     </kbd>
   );
-}
+});

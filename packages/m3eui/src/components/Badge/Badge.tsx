@@ -17,17 +17,21 @@ export interface M3EBadgeProps {
   readonly style?: React.CSSProperties;
 }
 
-export function Badge({
-  children,
-  count,
-  max = 99,
-  dot = false,
-  hidden = false,
-  color = "error",
-  "aria-label": ariaLabel,
-  className,
-  style,
-}: M3EBadgeProps): React.JSX.Element {
+export const Badge = React.forwardRef<HTMLSpanElement, M3EBadgeProps>(
+  function Badge(
+    {
+      children,
+      count,
+      max = 99,
+      dot = false,
+      hidden = false,
+      color = "error",
+      "aria-label": ariaLabel,
+      className,
+      style,
+    },
+    ref,
+  ): React.JSX.Element {
   const { locale, t } = useM3EI18n();
   const show = !hidden && (dot || (count !== undefined && count > 0));
   const text =
@@ -47,6 +51,7 @@ export function Badge({
 
   const indicator = show ? (
     <span
+      ref={standalone ? ref : undefined}
       role={resolvedAriaLabel ? "status" : undefined}
       aria-live={resolvedAriaLabel ? "off" : undefined}
       aria-label={resolvedAriaLabel}
@@ -82,6 +87,7 @@ export function Badge({
 
   return (
     <span
+      ref={ref}
       className={
         className ? `m3e-badge-anchor ${className}` : "m3e-badge-anchor"
       }
@@ -91,4 +97,4 @@ export function Badge({
       {indicator}
     </span>
   );
-}
+});

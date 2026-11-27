@@ -21,16 +21,21 @@ describe("m3eui dist build invariants", () => {
       );
     }
 
-    for (const rel of [
-      "context/M3EContext.js",
-      "context/M3EProvider.js",
-      "context/M3EPortal.js",
-      "components/Button/Button.js",
-      "components/Tabs/Tabs.js",
-      "components/TopAppBar/TopAppBar.js",
-      "components/DragHandle/DragHandle.js",
-      "components/Navigation/Navigation.js",
-    ]) {
+    const clientFiles: string[] = [
+      "primitives.js",
+      ...readdirSync(resolve(distRoot, "context"))
+        .filter((f) => f.endsWith(".js"))
+        .map((f) => `context/${f}`),
+      ...readdirSync(resolve(distRoot, "hooks"))
+        .filter((f) => f.endsWith(".js"))
+        .map((f) => `hooks/${f}`),
+      ...readdirSync(resolve(distRoot, "components"))
+        .filter((dir) => existsSync(resolve(distRoot, "components", dir, `${dir}.js`)))
+        .map((dir) => `components/${dir}/${dir}.js`),
+    ];
+    expect(clientFiles.length).toBeGreaterThan(50);
+
+    for (const rel of clientFiles) {
       const code = readFileSync(resolve(distRoot, rel), "utf8").trimStart();
       expect(
         code.startsWith('"use client"'),

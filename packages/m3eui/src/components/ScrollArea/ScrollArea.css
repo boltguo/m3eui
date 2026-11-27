@@ -102,3 +102,16 @@
     --m3e-scrollbar-thumb: var(--m3e-color-on-surface);
   }
 }
+
+@media (forced-colors: active) {
+  .m3e-scroll-area__thumb {
+    background-color: ButtonText;
+    border: 1px solid CanvasText;
+    forced-color-adjust: none;
+  }
+
+  .m3e-scroll-area__thumb[data-scrolling] {
+    background-color: Highlight;
+    border-color: Highlight;
+  }
+}

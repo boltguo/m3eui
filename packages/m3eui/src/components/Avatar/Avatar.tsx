@@ -20,15 +20,19 @@ export interface M3EAvatarProps {
 
 const DEFAULT_AVATAR_ALT = "";
 
-export function Avatar({
-  src,
-  alt = DEFAULT_AVATAR_ALT,
-  fallback,
-  size = "md",
-  shape = "circle",
-  className,
-  style,
-}: M3EAvatarProps): React.JSX.Element {
+export const Avatar = React.forwardRef<HTMLSpanElement, M3EAvatarProps>(
+  function Avatar(
+    {
+      src,
+      alt = DEFAULT_AVATAR_ALT,
+      fallback,
+      size = "md",
+      shape = "circle",
+      className,
+      style,
+    },
+    ref,
+  ): React.JSX.Element {
   const px = AVATAR_SIZE_SPECS[size];
   const rawClipId = React.useId();
   const clipId = `m3e-avatar-clip-${rawClipId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
@@ -52,6 +56,7 @@ export function Avatar({
 
   return (
     <span
+      ref={ref}
       className={className ? `m3e-avatar-wrap ${className}` : "m3e-avatar-wrap"}
       data-shape={shape}
       style={{ width: `${px}px`, height: `${px}px`, ...style }}
@@ -105,7 +110,7 @@ export function Avatar({
       </span>
     </span>
   );
-}
+});
 
 export interface M3EAvatarGroupItem {
   readonly id?: string;

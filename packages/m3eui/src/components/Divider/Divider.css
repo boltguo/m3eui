@@ -45,3 +45,16 @@
   color: var(--m3e-color-on-surface-variant);
   white-space: nowrap;
 }
+
+@media (forced-colors: active) {
+  .m3e-divider[data-orientation="horizontal"]:not(.m3e-divider--labeled),
+  .m3e-divider__line {
+    background-color: transparent;
+    border-block-start: 1px solid CanvasText;
+  }
+
+  .m3e-divider[data-orientation="vertical"] {
+    background-color: transparent;
+    border-inline-start: 1px solid CanvasText;
+  }
+}

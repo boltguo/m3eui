@@ -94,3 +94,9 @@
   gap: 4px;
   min-width: 0;
 }
+
+@media (forced-colors: active) {
+  .m3e-top-app-bar[data-elevated] {
+    border-block-end: 1px solid CanvasText;
+  }
+}

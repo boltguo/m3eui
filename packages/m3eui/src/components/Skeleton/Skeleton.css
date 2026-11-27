@@ -51,3 +51,14 @@
     animation: none;
   }
 }
+
+@media (forced-colors: active) {
+  .m3e-skeleton:not(.m3e-skeleton--shape) {
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
+  }
+
+  .m3e-skeleton--shape {
+    color: CanvasText;
+  }
+}
