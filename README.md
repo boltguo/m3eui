@@ -146,7 +146,8 @@ Both `npx m3eui` and `npx m3e` are supported.
 | :--- | :--- |
 | `m3eui` | RSC-safe barrel for components, hooks, `M3EProvider`, `M3EPortal`, config, i18n, and tokens |
 | `m3eui/styles.css` | Component stylesheet (`--m3e-*` custom properties + `light-dark()`) |
-| `m3eui/tokens` | Pure RSC-safe 61-role HCT color synthesis, spring solver, corner topology, `parseShortcutKeys`, and 35 `MaterialShapes` (`getMaterialShape`) |
+| `m3eui/tailwind.css` | Tailwind CSS v4 `@theme inline` token mapping |
+| `m3eui/tokens` | Pure RSC-safe 61-role HCT color synthesis, image seed extraction, custom harmonized colors, spring solver, corner topology, `parseShortcutKeys`, and 35 `MaterialShapes` (`getMaterialShape`) |
 | `m3eui/tokens.json` | Precomputed token and polygon JSON |
 | `m3eui/i18n` | RSC-safe `en-US`, `zh-CN`, `ja-JP`, `ar-SA` dictionaries and `M3EMessageKey` types |
 | `m3eui/config` | RSC-safe `defineM3EConfig`, `resolveM3EConfig`, `serializeM3EConfig`, `generateM3EStaticThemeCss` |
