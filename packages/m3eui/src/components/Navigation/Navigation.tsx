@@ -301,14 +301,20 @@ const RAIL_METRICS = {
 const WIDE_QUERY = `(min-width: ${NAVIGATION_RAIL_TOKENS.autoModalBreakpoint}px)`;
 
 function subscribeWide(onChange: () => void): () => void {
-  if (typeof window.matchMedia !== "function") return () => {};
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return () => {};
+  }
   const mq = window.matchMedia(WIDE_QUERY);
   mq.addEventListener("change", onChange);
   return () => mq.removeEventListener("change", onChange);
 }
 
 function getWide(): boolean {
-  return typeof window.matchMedia !== "function" || window.matchMedia(WIDE_QUERY).matches;
+  return (
+    typeof window === "undefined" ||
+    typeof window.matchMedia !== "function" ||
+    window.matchMedia(WIDE_QUERY).matches
+  );
 }
 
 const noopSubscribe = () => () => {};

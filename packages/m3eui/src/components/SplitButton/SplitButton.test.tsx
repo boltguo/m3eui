@@ -50,17 +50,19 @@ describe("SplitButton", () => {
         <PausedWrapper locale="en-US">
           <div id="split-disabled">
             <SplitButton
-              label="Locked"
               disabled
               menuItems={[{ id: "a", label: "One" }]}
-            />
+            >
+              Locked
+            </SplitButton>
           </div>
           <div id="split-open">
             <SplitButton
-              label="Expanded"
               open
               menuItems={[{ id: "b", label: "Two" }]}
-            />
+            >
+              Expanded
+            </SplitButton>
           </div>
         </PausedWrapper>,
       );
