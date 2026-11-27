@@ -9,7 +9,7 @@ import {
   type M3EBuiltInLocale,
   MaterialShapeView,
   NavigationRail,
-  useM3EI18n,
+  useM3E,
 } from "m3eui";
 import m3ePkg from "../../../../packages/m3eui/package.json";
 import { useCopyResolver, usePlaygroundStrings } from "../i18n";
@@ -35,9 +35,10 @@ const SIDEBAR_SECTIONS = /^\/(components|docs)(\/|$)/;
 export function SiteLayout() {
   const ui = usePlaygroundStrings();
   const resolve = useCopyResolver();
-  const { locale, setLocale } = useM3EI18n();
+  const { locale, setLocale, prefersReducedMotion } = useM3E();
   const location = useLocation();
   const navigate = useNavigate();
+  const scrollBehavior: ScrollBehavior = prefersReducedMotion ? "auto" : "smooth";
 
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
   const [studioOpen, setStudioOpen] = React.useState(false);
@@ -47,11 +48,17 @@ export function SiteLayout() {
   React.useEffect(() => {
     setMobileNavOpen(false);
     if (location.hash) {
-      const id = decodeURIComponent(location.hash.slice(1));
+      const rawHash = location.hash.slice(1);
+      let id = rawHash;
+      try {
+        id = decodeURIComponent(rawHash);
+      } catch {
+        id = rawHash;
+      }
       const scrollToHash = () => {
         const el = document.getElementById(id);
         if (el) {
-          el.scrollIntoView({ behavior: "smooth" });
+          el.scrollIntoView({ behavior: scrollBehavior });
           return true;
         }
         return false;
@@ -65,7 +72,7 @@ export function SiteLayout() {
       return () => window.cancelAnimationFrame(rafId);
     }
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
-  }, [location.pathname, location.hash]);
+  }, [location.pathname, location.hash, scrollBehavior]);
 
   // Update document.title dynamically on SPA route transitions (WCAG / Modern Web Guidance)
   React.useEffect(() => {
@@ -277,7 +284,7 @@ export function SiteLayout() {
               <Button
                 size="xs"
                 variant="tonal"
-                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                onClick={() => window.scrollTo({ top: 0, behavior: scrollBehavior })}
               >
                 {ui.backToTop}
               </Button>
