@@ -3,6 +3,7 @@
 > Material 3 Expressive React component library built on @base-ui/react with HCT dynamic color, spring physics, and built-in i18n/RTL.
 
 - Docs & Playground: https://m3eui.vercel.app
+- Full AI reference: https://m3eui.vercel.app/llms-full.txt
 - Repository: https://github.com/boltguo/m3eui
 - Sole runtime dependency: `@base-ui/react` (`react >= 18`, `react-dom >= 18`)
 
@@ -34,7 +35,7 @@ export function App() {
 - `m3eui/styles.css` — Layered component CSS (`@layer m3e.tokens, m3e.base, m3e.components`, `light-dark()`, `.m3e-type-*`)
 - `m3eui/tailwind.css` — Tailwind CSS v4 `@theme inline` token mapping (`--color-m3e-*`, `--radius-m3e-*`, `--shadow-m3e-*`)
 - `m3eui/tokens` — Pure RSC-safe HCT palette generator (61 roles), `extractSeedHexFromImage`, `harmonizeHexColor`, spring solver, corner topology, 35 `MaterialShapes`
-- `m3eui/i18n` — Built-in `en-US`, `zh-CN`, `ja-JP`, `ar-SA` dictionaries, BCP 47 RTL & CLDR helpers
+- `m3eui/i18n` & `m3eui/i18n/*` — Built-in `en-US`, `zh-CN`, `ja-JP`, `ar-SA` dictionaries (with per-locale `m3eui/i18n/*` imports), BCP 47 RTL & CLDR helpers
 - `m3eui/config` — `defineM3EConfig`, `resolveM3EConfig`, `generateM3EStaticThemeCss`, `getM3EInitScript`
 - `m3eui/primitives` — Re-exported `@base-ui/react` primitives
 - `m3eui/components/*` — Individual component modules
@@ -49,7 +50,7 @@ export function App() {
 ## CLI
 
 - `npx m3eui init [--seed] [--variant] [--locale] [--output] [--force]`
-- `npx m3eui sync [--config]`
+- `npx m3eui sync [--config] [--watch]`
 - `npx m3eui locale --list | <bcp47-tag> [--out] [--force]`
 - `npx m3eui doctor [--config]`
 
@@ -126,9 +127,10 @@ export function App() {
 - [Tooltip](https://m3eui.vercel.app/components/tooltip)
 - [TopAppBar](https://m3eui.vercel.app/components/top-app-bar)
 
-## Blocks (3)
+## Blocks (4)
 
 - [Analytics Dashboard with Sidebar, Area Chart & Data Table](https://m3eui.vercel.app/blocks#dashboard-01)
 - [Split Brand Login with Passkey & 2FA OTP Step](https://m3eui.vercel.app/blocks#login-01)
 - [M3E AI Agent & Reasoning Studio](https://m3eui.vercel.app/blocks#ai-workspace-01)
+- [Resizable Split-Pane Workspace with DragHandle](https://m3eui.vercel.app/blocks#split-pane-01)
 

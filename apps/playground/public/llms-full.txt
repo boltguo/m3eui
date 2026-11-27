@@ -1,0 +1,355 @@
+# m3eui v0.2.0
+
+> Material 3 Expressive React component library built on @base-ui/react with HCT dynamic color, spring physics, and built-in i18n/RTL.
+
+- Docs & Playground: https://m3eui.vercel.app
+- Full AI reference: https://m3eui.vercel.app/llms-full.txt
+- Repository: https://github.com/boltguo/m3eui
+- Sole runtime dependency: `@base-ui/react` (`react >= 18`, `react-dom >= 18`)
+
+## Quick Start
+
+```bash
+pnpm add m3eui
+npx m3eui init --seed "#6750A4" --variant expressive --locale en-US
+```
+
+```tsx
+import "./styles/m3e-theme.css";
+import "m3eui/styles.css";
+import { M3EProvider, Button } from "m3eui";
+import m3eConfig from "../m3e.json";
+
+export function App() {
+  return (
+    <M3EProvider config={m3eConfig}>
+      <Button variant="filled">Continue</Button>
+    </M3EProvider>
+  );
+}
+```
+
+## Subpath Exports
+
+- `m3eui` — Components, hooks (`useM3EToast`, `useM3E`, `useM3EI18n`, spring hooks), `M3EProvider`, `M3EPortal`, `CSPProvider`
+- `m3eui/styles.css` — Layered component CSS (`@layer m3e.tokens, m3e.base, m3e.components`, `light-dark()`, `.m3e-type-*`)
+- `m3eui/tailwind.css` — Tailwind CSS v4 `@theme inline` token mapping (`--color-m3e-*`, `--radius-m3e-*`, `--shadow-m3e-*`)
+- `m3eui/tokens` — Pure RSC-safe HCT palette generator (61 roles), `extractSeedHexFromImage`, `harmonizeHexColor`, spring solver, corner topology, 35 `MaterialShapes`
+- `m3eui/i18n` & `m3eui/i18n/*` — Built-in `en-US`, `zh-CN`, `ja-JP`, `ar-SA` dictionaries (with per-locale `m3eui/i18n/*` imports), BCP 47 RTL & CLDR helpers
+- `m3eui/config` — `defineM3EConfig`, `resolveM3EConfig`, `generateM3EStaticThemeCss`, `getM3EInitScript`
+- `m3eui/primitives` — Re-exported `@base-ui/react` primitives
+- `m3eui/components/*` — Individual component modules
+
+## Integration Notes
+
+- Use `themeEngine={generateM3EThemeTokens}` on `<M3EProvider>` only when dynamic browser seed/variant switching is needed.
+- Use `syncDocumentRoot={false}` for isolated/embedded themes (`M3EPortal` keeps overlays scoped).
+- Use `render={<Link to="..." />}` on `Button`, `IconButton`, `FAB`, `Card`, `ListItem`, `Breadcrumb`, and `NavigationDestination` for SPA routing.
+- Tokens: 61 `--m3e-color-*` roles, 30 `.m3e-type-*` / `--m3e-typescale-*` scales, `--m3e-shape-corner-*`, `--m3e-elevation-level0..5`, `--m3e-spatial-*` / `--m3e-effects-*`.
+
+## CLI
+
+- `npx m3eui init [--seed] [--variant] [--locale] [--output] [--force]`
+- `npx m3eui sync [--config] [--watch]`
+- `npx m3eui locale --list | <bcp47-tag> [--out] [--force]`
+- `npx m3eui doctor [--config]`
+
+## Documentation
+
+- [Introduction & Architecture](https://m3eui.vercel.app/docs/introduction)
+- [Component Matrix & Provenance](https://m3eui.vercel.app/docs/component-matrix)
+- [Installation & Setup](https://m3eui.vercel.app/docs/installation)
+- [Dynamic Color & Theming](https://m3eui.vercel.app/docs/theming)
+- [Spring Physics & Shapes](https://m3eui.vercel.app/docs/motion-shapes)
+- [Styling & Cascade Layers](https://m3eui.vercel.app/docs/styling)
+- [Forms & Validation](https://m3eui.vercel.app/docs/forms-validation)
+- [Internationalization & RTL](https://m3eui.vercel.app/docs/i18n-rtl)
+- [Subpath Exports & Boundaries](https://m3eui.vercel.app/docs/exports-boundaries)
+- [CLI Toolchain](https://m3eui.vercel.app/docs/cli)
+
+## Components (57)
+
+- [Accordion](https://m3eui.vercel.app/components/accordion)
+- [Alert](https://m3eui.vercel.app/components/alert)
+- [AlertDialog](https://m3eui.vercel.app/components/alert-dialog)
+- [Avatar](https://m3eui.vercel.app/components/avatar)
+- [Badge](https://m3eui.vercel.app/components/badge)
+- [Breadcrumb](https://m3eui.vercel.app/components/breadcrumb)
+- [Button](https://m3eui.vercel.app/components/button)
+- [ButtonGroup](https://m3eui.vercel.app/components/button-group)
+- [Card](https://m3eui.vercel.app/components/card)
+- [Carousel](https://m3eui.vercel.app/components/carousel)
+- [Checkbox](https://m3eui.vercel.app/components/checkbox)
+- [Chip](https://m3eui.vercel.app/components/chip)
+- [ColorPicker](https://m3eui.vercel.app/components/color-picker)
+- [Combobox](https://m3eui.vercel.app/components/combobox)
+- [CommandPalette](https://m3eui.vercel.app/components/command-palette)
+- [ContextMenu](https://m3eui.vercel.app/components/context-menu)
+- [DataTable](https://m3eui.vercel.app/components/data-table)
+- [DatePicker](https://m3eui.vercel.app/components/date-picker)
+- [Dialog](https://m3eui.vercel.app/components/dialog)
+- [Divider](https://m3eui.vercel.app/components/divider)
+- [DragHandle](https://m3eui.vercel.app/components/drag-handle)
+- [Empty](https://m3eui.vercel.app/components/empty)
+- [FAB](https://m3eui.vercel.app/components/fab)
+- [FABMenu](https://m3eui.vercel.app/components/fab-menu)
+- [FileUpload](https://m3eui.vercel.app/components/file-upload)
+- [FloatingToolbar](https://m3eui.vercel.app/components/floating-toolbar)
+- [Form](https://m3eui.vercel.app/components/form)
+- [IconButton](https://m3eui.vercel.app/components/icon-button)
+- [Kbd](https://m3eui.vercel.app/components/kbd)
+- [List](https://m3eui.vercel.app/components/list)
+- [LoadingIndicator](https://m3eui.vercel.app/components/loading-indicator)
+- [MaterialShape](https://m3eui.vercel.app/components/material-shape)
+- [Menu](https://m3eui.vercel.app/components/menu)
+- [Meter](https://m3eui.vercel.app/components/meter)
+- [NavigationBar](https://m3eui.vercel.app/components/navigation-bar)
+- [NavigationRail](https://m3eui.vercel.app/components/navigation-rail)
+- [NumberField](https://m3eui.vercel.app/components/number-field)
+- [OTPField](https://m3eui.vercel.app/components/otp-field)
+- [Pagination](https://m3eui.vercel.app/components/pagination)
+- [Popover](https://m3eui.vercel.app/components/popover)
+- [ProgressIndicator](https://m3eui.vercel.app/components/progress-indicator)
+- [RadioGroup](https://m3eui.vercel.app/components/radio-group)
+- [ScrollArea](https://m3eui.vercel.app/components/scroll-area)
+- [SearchBar](https://m3eui.vercel.app/components/search-bar)
+- [Select](https://m3eui.vercel.app/components/select)
+- [Sheet](https://m3eui.vercel.app/components/sheet)
+- [Skeleton](https://m3eui.vercel.app/components/skeleton)
+- [Slider](https://m3eui.vercel.app/components/slider)
+- [Snippet](https://m3eui.vercel.app/components/snippet)
+- [SplitButton](https://m3eui.vercel.app/components/split-button)
+- [Switch](https://m3eui.vercel.app/components/switch)
+- [Tabs](https://m3eui.vercel.app/components/tabs)
+- [TextField](https://m3eui.vercel.app/components/text-field)
+- [TimePicker](https://m3eui.vercel.app/components/time-picker)
+- [Toast](https://m3eui.vercel.app/components/toast)
+- [Tooltip](https://m3eui.vercel.app/components/tooltip)
+- [TopAppBar](https://m3eui.vercel.app/components/top-app-bar)
+
+## Blocks (4)
+
+- [Analytics Dashboard with Sidebar, Area Chart & Data Table](https://m3eui.vercel.app/blocks#dashboard-01)
+- [Split Brand Login with Passkey & 2FA OTP Step](https://m3eui.vercel.app/blocks#login-01)
+- [M3E AI Agent & Reasoning Studio](https://m3eui.vercel.app/blocks#ai-workspace-01)
+- [Resizable Split-Pane Workspace with DragHandle](https://m3eui.vercel.app/blocks#split-pane-01)
+
+## `m3e.json` Theme Schema Properties
+
+- `theme.seed`: Hex seed color for HCT palette generation.
+- `theme.schemeVariant`: Dynamic color scheme variant.
+- `theme.platform`: Target device platform for SPEC_2025 tonal surfaces.
+- `theme.colorMode`: Initial color-scheme value.
+- `theme.contrastLevel`: Contrast level in [-1, 1].
+- `theme.autoContrast`: Automatically elevate contrast level to 0.5 when prefers-contrast: more is active and contrastLevel is 0.
+- `theme.customColors`: Custom semantic color roles harmonized to the theme seed.
+- `theme.motionScheme`: Spring motion scheme.
+
+## Semantic Color CSS Variables (61)
+
+`--m3e-color-primary`, `--m3e-color-primary-dim`, `--m3e-color-on-primary`, `--m3e-color-primary-container`, `--m3e-color-on-primary-container`, `--m3e-color-inverse-primary`, `--m3e-color-primary-fixed`, `--m3e-color-primary-fixed-dim`, `--m3e-color-on-primary-fixed`, `--m3e-color-on-primary-fixed-variant`, `--m3e-color-secondary`, `--m3e-color-secondary-dim`, `--m3e-color-on-secondary`, `--m3e-color-secondary-container`, `--m3e-color-on-secondary-container`, `--m3e-color-secondary-fixed`, `--m3e-color-secondary-fixed-dim`, `--m3e-color-on-secondary-fixed`, `--m3e-color-on-secondary-fixed-variant`, `--m3e-color-tertiary`, `--m3e-color-tertiary-dim`, `--m3e-color-on-tertiary`, `--m3e-color-tertiary-container`, `--m3e-color-on-tertiary-container`, `--m3e-color-tertiary-fixed`, `--m3e-color-tertiary-fixed-dim`, `--m3e-color-on-tertiary-fixed`, `--m3e-color-on-tertiary-fixed-variant`, `--m3e-color-error`, `--m3e-color-error-dim`, `--m3e-color-on-error`, `--m3e-color-error-container`, `--m3e-color-on-error-container`, `--m3e-color-success`, `--m3e-color-on-success`, `--m3e-color-success-container`, `--m3e-color-on-success-container`, `--m3e-color-warning`, `--m3e-color-on-warning`, `--m3e-color-warning-container`, `--m3e-color-on-warning-container`, `--m3e-color-background`, `--m3e-color-on-background`, `--m3e-color-surface`, `--m3e-color-surface-dim`, `--m3e-color-surface-bright`, `--m3e-color-surface-container-lowest`, `--m3e-color-surface-container-low`, `--m3e-color-surface-container`, `--m3e-color-surface-container-high`, `--m3e-color-surface-container-highest`, `--m3e-color-on-surface`, `--m3e-color-surface-variant`, `--m3e-color-on-surface-variant`, `--m3e-color-surface-tint`, `--m3e-color-outline`, `--m3e-color-outline-variant`, `--m3e-color-inverse-surface`, `--m3e-color-inverse-on-surface`, `--m3e-color-shadow`, `--m3e-color-scrim`
+
+## Typography Utility Classes (30)
+
+`.m3e-type-display-large`, `.m3e-type-display-medium`, `.m3e-type-display-small`, `.m3e-type-headline-large`, `.m3e-type-headline-medium`, `.m3e-type-headline-small`, `.m3e-type-title-large`, `.m3e-type-title-medium`, `.m3e-type-title-small`, `.m3e-type-body-large`, `.m3e-type-body-medium`, `.m3e-type-body-small`, `.m3e-type-label-large`, `.m3e-type-label-medium`, `.m3e-type-label-small`, `.m3e-type-display-large-emphasized`, `.m3e-type-display-medium-emphasized`, `.m3e-type-display-small-emphasized`, `.m3e-type-headline-large-emphasized`, `.m3e-type-headline-medium-emphasized`, `.m3e-type-headline-small-emphasized`, `.m3e-type-title-large-emphasized`, `.m3e-type-title-medium-emphasized`, `.m3e-type-title-small-emphasized`, `.m3e-type-body-large-emphasized`, `.m3e-type-body-medium-emphasized`, `.m3e-type-body-small-emphasized`, `.m3e-type-label-large-emphasized`, `.m3e-type-label-medium-emphasized`, `.m3e-type-label-small-emphasized`
+
+## MaterialShapes (35)
+
+`circle`, `square`, `slanted`, `arch`, `fan`, `arrow`, `semiCircle`, `oval`, `pill`, `triangle`, `diamond`, `clamShell`, `pentagon`, `gem`, `sunny`, `verySunny`, `cookie4Sided`, `cookie6Sided`, `cookie7Sided`, `cookie9Sided`, `cookie12Sided`, `ghostish`, `clover4Leaf`, `clover8Leaf`, `burst`, `softBurst`, `boom`, `softBoom`, `flower`, `puffy`, `puffyDiamond`, `pixelCircle`, `pixelTriangle`, `bun`, `heart`
+
+## Component API Reference
+
+### Accordion (`m3eui/components/Accordion`)
+- Exports: `Accordion`
+- `M3EAccordionProps`: `items: readonly AccordionItemSpec[]`, `value?: string[]`, `defaultValue?: string[]`, `onValueChange?: (value: string[]) => void`, `multiple?: boolean`, `variant?: AccordionVariant`, `showExpandAll?: boolean`, `hiddenUntilFound?: boolean`, `disabled?: boolean`, `"aria-label"?: string`, `className?: string`, `style?: React.CSSProperties`
+### Alert (`m3eui/components/Alert`)
+- Exports: `Alert`
+- `M3EAlertProps`: `severity?: AlertSeverity`, `variant?: AlertVariant`, `title?: React.ReactNode`, `children?: React.ReactNode`, `icon?: React.ReactNode | false`, `action?: React.ReactNode`, `open?: boolean`, `defaultOpen?: boolean`, `onOpenChange?: (open: boolean) => void`, `closable?: boolean`, `onClose?: () => void`, `role?: "alert" | "status" | "region"`, `className?: string`, `style?: React.CSSProperties`
+### Avatar (`m3eui/components/Avatar`)
+- Exports: `Avatar`, `AvatarGroup`
+- `M3EAvatarProps`: `src?: string`, `alt?: string`, `fallback: React.ReactNode`, `size?: AvatarSize`, `shape?: AvatarShape`, `className?: string`, `style?: React.CSSProperties`
+- `M3EAvatarGroupProps`: `items?: readonly M3EAvatarGroupItem[]`, `children?: React.ReactNode`, `max?: number`, `size?: AvatarSize`, `shape?: AvatarShape`, `spacing?: number`, `className?: string`, `style?: React.CSSProperties`
+### Badge (`m3eui/components/Badge`)
+- Exports: `Badge`
+- `M3EBadgeProps`: `children?: React.ReactNode`, `count?: number`, `max?: number`, `dot?: boolean`, `hidden?: boolean`, `color?: "error" | "primary" | "secondary"`, `"aria-label"?: string`, `className?: string`, `style?: React.CSSProperties`
+### Breadcrumb (`m3eui/components/Breadcrumb`)
+- Exports: `Breadcrumb`
+- `M3EBreadcrumbProps`: `items: readonly M3EBreadcrumbItem[]`, `separator?: BreadcrumbSeparator`, `maxItems?: number`, `"aria-label"?: string`, `className?: string`, `style?: React.CSSProperties`
+### Button (`m3eui/components/Button`)
+- Exports: `Button`
+- `M3EButtonActionProps`: `children: React.ReactNode`, `pressed?: never`, `defaultPressed?: never`, `onPressedChange?: never`, `variant?: ButtonVariant`, `intent?: ButtonIntent`, `size?: ButtonSize`, `shape?: ButtonShape`, `disabled?: boolean`, `loading?: boolean`, `fullWidth?: boolean`, `leadingIcon?: React.ReactNode`, `trailingIcon?: React.ReactNode`, `href?: string`, `target?: string`, `rel?: string`, `render?: React.ReactElement`, `onClick?: React.MouseEventHandler<HTMLElement>`, `type?: "button" | "submit" | "reset"`, `className?: string`, `style?: React.CSSProperties`, `"aria-label"?: string`
+- `M3EButtonToggleProps`: `children: React.ReactNode`, `value?: string`, `pressed?: boolean`, `defaultPressed?: boolean`, `onPressedChange?: (pressed: boolean) => void`, `variant?: Exclude<ButtonVariant, "text">`, `size?: ButtonSize`, `shape?: ButtonShape`, `disabled?: boolean`, `showCheckIcon?: boolean`, `leadingIcon?: React.ReactNode`, `className?: string`, `style?: React.CSSProperties`, `"aria-label"?: string`
+### ButtonGroup (`m3eui/components/ButtonGroup`)
+- Exports: `ButtonGroup`
+- `M3EButtonGroupProps`: `items: readonly ButtonGroupOption[]`, `variant?: "standard" | "connected"`, `selectionMode?: "none" | "single" | "multiple"`, `value?: readonly string[]`, `defaultValue?: readonly string[]`, `onValueChange?: (value: string[]) => void`, `onAction?: (value: string) => void`, `size?: ButtonSize`, `buttonVariant?: Exclude<ButtonVariant, "text">`, `expandedRatio?: number`, `maxVisibleItems?: number`, `autoOverflow?: boolean`, `"aria-label"?: string`, `className?: string`
+### Card (`m3eui/components/Card`)
+- Exports: `Card`
+- `M3ECardProps`: `children: React.ReactNode`, `variant?: CardVariant`, `title?: React.ReactNode`, `subtitle?: React.ReactNode`, `media?: React.ReactNode`, `actions?: React.ReactNode`, `interactive?: boolean`, `disabled?: boolean`, `href?: string`, `target?: string`, `rel?: string`, `render?: React.ReactElement<Record<string, unknown>>`, `onClick?: React.MouseEventHandler<HTMLElement>`, `className?: string`, `style?: React.CSSProperties`
+### Carousel (`m3eui/components/Carousel`)
+- Exports: `Carousel`
+- `M3ECarouselProps`: `items: readonly CarouselItemSpec[]`, `"aria-label"?: string`, `variant?: CarouselVariant`, `preferredItemWidth?: number`, `gap?: number`, `activeIndex?: number`, `defaultActiveIndex?: number`, `onActiveIndexChange?: (index: number) => void`, `height?: number`, `loop?: boolean`, `className?: string`, `style?: React.CSSProperties`
+### Checkbox (`m3eui/components/Checkbox`)
+- Exports: `Checkbox`, `CheckboxGroup`
+- `M3ECheckboxProps`: `checked?: boolean`, `defaultChecked?: boolean`, `indeterminate?: boolean`, `onCheckedChange?: (checked: boolean) => void`, `value?: string`, `name?: string`, `id?: string`, `parent?: boolean`, `disabled?: boolean`, `readOnly?: boolean`, `required?: boolean`, `label?: React.ReactNode`, `description?: React.ReactNode`, `"aria-label"?: string`, `className?: string`, `style?: React.CSSProperties`
+- `M3ECheckboxGroupProps`: `children: React.ReactNode`, `value?: string[]`, `defaultValue?: string[]`, `allValues?: string[]`, `onValueChange?: (value: string[]) => void`, `disabled?: boolean`, `"aria-label"?: string`, `className?: string`, `style?: React.CSSProperties`
+### Chip (`m3eui/components/Chip`)
+- Exports: `Chip`
+- `M3EChipLabelProps`: `children: React.ReactNode`, `tone?: ChipTone`, `variant?: ChipVariant`, `size?: ChipSize`, `elevated?: boolean`, `dot?: boolean`, `icon?: React.ReactNode`, `onClick?: React.MouseEventHandler<HTMLElement>`, `onRemove?: () => void`, `removeLabel?: string`, `disabled?: boolean`, `className?: string`, `style?: React.CSSProperties`
+- `M3EChipAssistProps`: `children: React.ReactNode`, `onClick: React.MouseEventHandler<HTMLElement>`, `icon?: React.ReactNode`, `elevated?: boolean`, `disabled?: boolean`, `className?: string`, `style?: React.CSSProperties`
+- `M3EChipFilterProps`: `children: React.ReactNode`, `selected?: boolean`, `defaultSelected?: boolean`, `onSelectedChange?: (selected: boolean) => void`, `icon?: React.ReactNode`, `elevated?: boolean`, `disabled?: boolean`, `className?: string`, `style?: React.CSSProperties`
+- `M3EChipInputProps`: `children: React.ReactNode`, `onRemove: () => void`, `avatar?: React.ReactNode`, `selected?: boolean`, `onClick?: React.MouseEventHandler<HTMLElement>`, `removeLabel?: string`, `disabled?: boolean`, `className?: string`, `style?: React.CSSProperties`
+### ColorPicker (`m3eui/components/ColorPicker`)
+- Exports: `ColorSwatch`, `ColorPicker`, `ColorPickerField`
+- `M3EColorSwatchProps`: `colors?: readonly string[]`, `value?: string`, `onValueChange?: (hex: string) => void`, `disabled?: boolean`, `"aria-label"?: string`, `className?: string`, `style?: React.CSSProperties`
+- `M3EColorPickerProps`: `value?: string`, `defaultValue?: string`, `onValueChange?: (hex: string) => void`, `onValueCommitted?: (hex: string) => void`, `swatches?: readonly string[]`, `showTonalRamp?: boolean`, `disabled?: boolean`, `"aria-label"?: string`, `className?: string`, `style?: React.CSSProperties`
+- `M3EColorPickerFieldProps`: `id?: string`, `name?: string`, `label?: React.ReactNode`, `labelPosition?: "floating" | "outside"`, `description?: React.ReactNode`, `errorMessage?: React.ReactNode`, `invalid?: boolean`, `required?: boolean`, `value?: string`, `defaultValue?: string`, `onValueChange?: (hex: string) => void`, `onValueCommitted?: (hex: string) => void`, `swatches?: readonly string[]`, `showTonalRamp?: boolean`, `disabled?: boolean`, `readOnly?: boolean`, `className?: string`, `style?: React.CSSProperties`
+### Combobox (`m3eui/components/Combobox`)
+- Exports: `Combobox`
+- `M3EComboboxSingleProps extends ComboboxBaseProps`: `multiple?: false`, `value?: ComboboxOption | string | null`, `defaultValue?: ComboboxOption | string | null`, `onValueChange?: (option: ComboboxOption | null) => void`
+- `M3EComboboxMultipleProps extends ComboboxBaseProps`: `multiple: true`, `value?: readonly ComboboxOption[]`, `defaultValue?: readonly ComboboxOption[]`, `onValueChange?: (options: ComboboxOption[]) => void`
+### CommandPalette (`m3eui/components/CommandPalette`)
+- Exports: `CommandPalette`
+- `M3ECommandPaletteProps`: `open?: boolean`, `defaultOpen?: boolean`, `onOpenChange?: (open: boolean) => void`, `groups?: readonly CommandPaletteGroup[]`, `items?: readonly CommandPaletteItem[]`, `query?: string`, `defaultQuery?: string`, `onQueryChange?: (query: string) => void`, `loading?: boolean`, `loadingMessage?: React.ReactNode`, `filterItems?: boolean`, `enableShortcut?: boolean`, `placeholder?: string`, `emptyMessage?: React.ReactNode`, `footerHint?: React.ReactNode`, `"aria-label"?: string`
+### DataTable (`m3eui/components/DataTable`)
+- Exports: `DataTable`
+- `M3EDataTableProps<Row>`: `caption: React.ReactNode`, `hideCaption?: boolean`, `columns: readonly M3EDataTableColumn<Row>[]`, `rows: readonly Row[]`, `getRowKey: (row: Row, index: number) => string`, `sort?: M3EDataTableSortState | null`, `defaultSort?: M3EDataTableSortState | null`, `onSortChange?: (next: M3EDataTableSortState | null) => void`, `clearableSort?: boolean`, `manualSort?: boolean`, `onRowClick?: (row: Row, index: number) => void`, `selectable?: boolean`, `selectedRowKeys?: readonly string[]`, `defaultSelectedRowKeys?: readonly string[]`, `onSelectedRowKeysChange?: (keys: string[]) => void`, `renderExpandedRow?: (row: Row, index: number) => React.ReactNode`, `expandedRowKeys?: readonly string[]`, `defaultExpandedRowKeys?: readonly string[]`, `onExpandedRowKeysChange?: (keys: string[]) => void`, `density?: "comfortable" | "compact"`, `stickyHeader?: boolean`, `loading?: boolean`, `loadingRows?: number`, `toolbar?: React.ReactNode`, `footer?: React.ReactNode`, `emptyMessage?: React.ReactNode`, `className?: string`, `style?: React.CSSProperties`
+### DatePicker (`m3eui/components/DatePicker`)
+- Exports: `DatePicker`, `DatePickerField`
+- `M3EDatePickerSingleProps`: `mode?: "single"`, `value?: PlainDateString`, `defaultValue?: PlainDateString`, `onValueChange?: (value: string) => void`, `minDate?: PlainDateString`, `maxDate?: PlainDateString`, `isDateDisabled?: (iso: PlainDateString) => boolean`, `firstDayOfWeek?: number`, `title?: React.ReactNode`, `className?: string`, `style?: React.CSSProperties`
+- `M3EDatePickerRangeProps`: `mode: "range"`, `value?: PlainDateRange`, `defaultValue?: PlainDateRange`, `onValueChange?: (range: PlainDateRange) => void`, `minDate?: PlainDateString`, `maxDate?: PlainDateString`, `isDateDisabled?: (iso: PlainDateString) => boolean`, `firstDayOfWeek?: number`, `title?: React.ReactNode`, `className?: string`, `style?: React.CSSProperties`
+- `M3EDatePickerFieldSingleProps extends DatePickerFieldBaseProps`: `mode?: "single"`, `value?: PlainDateString`, `defaultValue?: PlainDateString`, `onValueChange?: (value: string) => void`
+- `M3EDatePickerFieldRangeProps extends DatePickerFieldBaseProps`: `mode: "range"`, `value?: PlainDateRange`, `defaultValue?: PlainDateRange`, `onValueChange?: (range: PlainDateRange) => void`
+### Dialog (`m3eui/components/Dialog`)
+- Exports: `DialogClose`, `AlertDialogClose`, `Dialog`, `AlertDialog`
+- `M3EDialogProps`: `open?: boolean`, `defaultOpen?: boolean`, `onOpenChange?: (open: boolean) => void`, `trigger?: React.ReactElement`, `icon?: React.ReactNode`, `title: React.ReactNode`, `description?: React.ReactNode`, `children?: React.ReactNode`, `actions?: React.ReactNode`, `showCloseButton?: boolean`, `fullScreen?: boolean | "mobile"`, `className?: string`, `style?: React.CSSProperties`
+- `M3EDialogCloseProps`: `render?: React.ReactElement`, `children?: React.ReactNode`, `className?: string`
+### Divider (`m3eui/components/Divider`)
+- Exports: `Divider`
+- `M3EDividerProps`: `orientation?: "horizontal" | "vertical"`, `inset?: boolean`, `label?: React.ReactNode`, `children?: React.ReactNode`, `className?: string`, `style?: React.CSSProperties`
+### DragHandle (`m3eui/components/DragHandle`)
+- Exports: `DragHandle`
+- `M3EDragHandleProps`: `orientation?: "vertical" | "horizontal"`, `value?: number`, `defaultValue?: number`, `min?: number`, `max?: number`, `step?: number`, `onValueChange?: (value: number) => void`, `onDragDelta?: (deltaPx: number) => void`, `containerRef?: React.RefObject<HTMLElement | null>`, `disabled?: boolean`, `"aria-label"?: string`, `"aria-controls"?: string`, `className?: string`, `style?: React.CSSProperties`
+### Empty (`m3eui/components/Empty`)
+- Exports: `Empty`
+- `M3EEmptyProps`: `title?: React.ReactNode`, `description?: React.ReactNode`, `icon?: React.ReactNode`, `shape?: M3EShapeName`, `actions?: React.ReactNode`, `compact?: boolean`, `className?: string`, `style?: React.CSSProperties`
+### FAB (`m3eui/components/FAB`)
+- Exports: `FAB`, `FABMenu`
+- `M3EIconFABProps`: `icon: React.ReactNode`, `children?: never`, `expanded?: never`, `"aria-label": string`, `size?: FabSize`, `variant?: FabColorVariant`, `elevation?: FabElevation`, `visible?: boolean`, `morphOnPress?: boolean`, `disabled?: boolean`, `onClick?: React.MouseEventHandler<HTMLElement>`, `type?: "button" | "submit" | "reset"`, `href?: string`, `target?: string`, `rel?: string`, `render?: React.ReactElement`, `className?: string`, `style?: React.CSSProperties`
+- `M3EExtendedFABProps`: `icon: React.ReactNode`, `children: React.ReactNode`, `expanded?: boolean`, `size?: ExtendedFabSize`, `variant?: FabColorVariant`, `elevation?: FabElevation`, `visible?: boolean`, `morphOnPress?: boolean`, `disabled?: boolean`, `"aria-label"?: string`, `onClick?: React.MouseEventHandler<HTMLElement>`, `type?: "button" | "submit" | "reset"`, `href?: string`, `target?: string`, `rel?: string`, `render?: React.ReactElement`, `className?: string`, `style?: React.CSSProperties`
+- `M3EFABMenuProps`: `items: readonly FABMenuItemSpec[]`, `size?: ToggleFabSize`, `open?: boolean`, `defaultOpen?: boolean`, `onOpenChange?: (open: boolean) => void`, `icon?: React.ReactNode`, `triggerLabel?: string`, `className?: string`, `style?: React.CSSProperties`
+### FileUpload (`m3eui/components/FileUpload`)
+- Exports: `FileUploadDropzone`, `FileUpload`
+- `M3EFileUploadDropzoneProps`: `accept?: string`, `multiple?: boolean`, `disabled?: boolean`, `label?: React.ReactNode`, `hint?: React.ReactNode`, `filterOnDrop?: boolean`, `onFilesAccepted: (files: File[]) => void`, `className?: string`, `style?: React.CSSProperties`
+- `M3EFileUploadProps`: `value?: readonly M3EUploadFileItem[]`, `defaultValue?: readonly M3EUploadFileItem[]`, `onValueChange?: (items: M3EUploadFileItem[]) => void`, `onFilesRejected?: (errors: string[]) => void`, `accept?: string`, `multiple?: boolean`, `maxFiles?: number`, `maxSize?: number`, `disabled?: boolean`, `label?: React.ReactNode`, `hint?: React.ReactNode`, `className?: string`, `style?: React.CSSProperties`
+### FloatingToolbar (`m3eui/components/FloatingToolbar`)
+- Exports: `FloatingToolbar`
+- `M3EFloatingToolbarProps`: `items: readonly FloatingToolbarItemSpec[]`, `"aria-label"?: string`, `orientation?: "horizontal" | "vertical"`, `theme?: FloatingToolbarTheme`, `expanded?: boolean`, `defaultExpanded?: boolean`, `onExpandedChange?: (expanded: boolean) => void`, `collapsed?: boolean`, `defaultCollapsed?: boolean`, `onCollapsedChange?: (collapsed: boolean) => void`, `scrollCollapse?: boolean`, `scrollTarget?: React.RefObject<HTMLElement | null>`, `fab?: FloatingToolbarFabSpec`, `companionFab?: React.ReactNode`, `className?: string`, `style?: React.CSSProperties`
+### Form (`m3eui/components/Form`)
+- Exports: `Form`, `Fieldset`
+- `M3EFormProps`: `errors?: Record<string, string | string[]>`, `validationMode?: "onSubmit" | "onBlur" | "onChange"`, `onFormSubmit?: ( formValues: Record<string, unknown>, eventDetails: { readonly event: SubmitEvent }, ) => void`, `onSubmit?: React.FormEventHandler<HTMLFormElement>`, `showErrorSummary?: boolean`, `children: React.ReactNode`
+- `M3EFieldsetProps`: `legend: React.ReactNode`, `description?: React.ReactNode`, `disabled?: boolean`, `variant?: "outlined" | "tonal" | "plain"`, `children: React.ReactNode`, `className?: string`, `style?: React.CSSProperties`
+### IconButton (`m3eui/components/IconButton`)
+- Exports: `IconButton`
+- `M3EIconButtonActionProps`: `icon: React.ReactNode`, `pressed?: never`, `defaultPressed?: never`, `onPressedChange?: never`, `checkedIcon?: never`, `"aria-label": string`, `size?: ButtonSize`, `widthVariant?: IconButtonWidthVariant`, `variant?: IconButtonVariant`, `intent?: ButtonIntent`, `shape?: "round" | "square"`, `disabled?: boolean`, `loading?: boolean`, `onClick?: React.MouseEventHandler<HTMLElement>`, `type?: "button" | "submit" | "reset"`, `href?: string`, `target?: string`, `rel?: string`, `render?: React.ReactElement`, `className?: string`, `style?: React.CSSProperties`
+- `M3EIconButtonToggleProps`: `icon: React.ReactNode`, `checkedIcon?: React.ReactNode`, `"aria-label": string`, `value?: string`, `pressed?: boolean`, `defaultPressed?: boolean`, `onPressedChange?: (pressed: boolean) => void`, `size?: ButtonSize`, `widthVariant?: IconButtonWidthVariant`, `variant?: IconButtonVariant`, `shape?: "round" | "square"`, `disabled?: boolean`, `className?: string`, `style?: React.CSSProperties`
+### Kbd (`m3eui/components/Kbd`)
+- Exports: `Kbd`
+- `M3EKbdProps`: `keys?: readonly KbdKeyAlias[]`, `children?: React.ReactNode`, `size?: "sm" | "md"`, `className?: string`, `style?: React.CSSProperties`
+### List (`m3eui/components/List`)
+- Exports: `List`, `ListItem`
+- `ListProps`: `children: React.ReactNode`, `label?: React.ReactNode`, `variant?: ListVariant`, `dividers?: ListDividerMode`, `"aria-label"?: string`, `"aria-labelledby"?: string`, `className?: string`, `style?: React.CSSProperties`
+- `ListItemProps`: `headline: React.ReactNode`, `supportingText?: React.ReactNode`, `leading?: React.ReactNode`, `trailing?: React.ReactNode`, `chevron?: boolean`, `trailingDivider?: boolean`, `lines?: 1 | 2 | 3`, `selected?: boolean`, `interactive?: boolean`, `disabled?: boolean`, `href?: string`, `target?: string`, `rel?: string`, `render?: React.ReactElement`, `onClick?: React.MouseEventHandler<HTMLElement>`, `className?: string`, `style?: React.CSSProperties`
+### LoadingIndicator (`m3eui/components/LoadingIndicator`)
+- Exports: `LoadingIndicator`
+- `LoadingIndicatorProps`: `size?: number`, `progress?: number`, `morphSequence?: readonly MorphPair[]`, `paused?: boolean`, `contained?: boolean`, `"aria-label"?: string`, `className?: string`, `style?: React.CSSProperties`
+### MaterialShapeView (`m3eui/components/MaterialShapeView`)
+- Exports: `MaterialShapeView`
+- `M3EMaterialShapeViewProps`: `shape: M3EShapeName`, `toShape?: M3EShapeName`, `morphProgress?: number`, `size?: number`, `scaleFactor?: number`, `motionToken?: MotionTokenKey`, `fill?: string`, `"aria-label"?: string`, `className?: string`, `style?: React.CSSProperties`
+### Menu (`m3eui/components/Menu`)
+- Exports: `DropdownMenu`, `ContextMenu`
+- `M3EDropdownMenuProps`: `trigger: React.ReactElement`, `items: readonly M3EMenuItemSpec[]`, `theme?: M3EMenuTheme`, `variant?: M3EMenuVariant`, `open?: boolean`, `defaultOpen?: boolean`, `onOpenChange?: (open: boolean) => void`, `side?: "top" | "bottom" | "left" | "right"`, `align?: "start" | "center" | "end"`
+- `M3EContextMenuProps`: `children: React.ReactNode`, `items: readonly M3EMenuItemSpec[]`, `theme?: M3EMenuTheme`, `variant?: M3EMenuVariant`, `className?: string`, `style?: React.CSSProperties`
+### Meter (`m3eui/components/Meter`)
+- Exports: `Meter`
+- `M3EMeterProps`: `id?: string`, `value: number`, `min?: number`, `max?: number`, `label: React.ReactNode`, `valueText?: string`, `className?: string`, `style?: React.CSSProperties`
+### Navigation (`m3eui/components/Navigation`)
+- Exports: `NavigationBar`, `NavigationRail`
+- `M3ENavigationBarProps<Value extends string = string>`: `items: readonly NavigationDestination<Value>[]`, `value: Value`, `onValueChange: (value: Value) => void`, `itemLayout?: "vertical" | "horizontal"`, `arrangement?: "equal-weight" | "centered"`, `"aria-label"?: string`, `className?: string`, `style?: React.CSSProperties`
+- `M3ENavigationRailProps<Value extends string = string>`: `items: readonly NavigationDestination<Value>[]`, `value: Value | null`, `onValueChange: (value: Value) => void`, `expanded?: boolean`, `defaultExpanded?: boolean`, `onExpandedChange?: (expanded: boolean) => void`, `collapsible?: boolean`, `modal?: boolean | "auto"`, `density?: "standard" | "compact"`, `open?: boolean`, `defaultOpen?: boolean`, `onOpenChange?: (open: boolean) => void`, `trigger?: React.ReactElement`, `header?: React.ReactNode`, `footer?: React.ReactNode`, `"aria-label"?: string`, `className?: string`, `style?: React.CSSProperties`
+### NumberField (`m3eui/components/NumberField`)
+- Exports: `NumberField`
+- `M3ENumberFieldProps`: `label?: React.ReactNode`, `value?: number | null`, `defaultValue?: number`, `onValueChange?: (value: number | null) => void`, `min?: number`, `max?: number`, `step?: number`, `format?: Intl.NumberFormatOptions`, `description?: React.ReactNode`, `errorMessage?: React.ReactNode`, `invalid?: boolean`, `disabled?: boolean`, `readOnly?: boolean`, `required?: boolean`, `name?: string`, `id?: string`, `"aria-label"?: string`, `className?: string`, `style?: React.CSSProperties`
+### OTPField (`m3eui/components/OTPField`)
+- Exports: `OTPField`
+- `M3EOTPFieldProps`: `length?: number`, `separatorAfterIndex?: number`, `value?: string`, `defaultValue?: string`, `onValueChange?: (value: string) => void`, `onValueComplete?: (value: string) => void`, `label?: React.ReactNode`, `helperText?: React.ReactNode`, `errorMessage?: React.ReactNode`, `invalid?: boolean`, `name?: string`, `id?: string`, `mask?: boolean`, `validationType?: "numeric" | "alphanumeric" | "alpha" | "none"`, `enableWebOTP?: boolean`, `disabled?: boolean`, `"aria-label"?: string`, `className?: string`, `style?: React.CSSProperties`
+### Pagination (`m3eui/components/Pagination`)
+- Exports: `Pagination`
+- `M3EPaginationProps`: `page?: number`, `defaultPage?: number`, `totalPages?: number`, `totalItems?: number`, `pageSize?: number`, `onPageChange?: (page: number) => void`, `getItemHref?: (page: number) => string | undefined`, `siblingCount?: number`, `size?: PaginationSize`, `showSummary?: boolean`, `disabled?: boolean`, `"aria-label"?: string`, `className?: string`, `style?: React.CSSProperties`
+### Popover (`m3eui/components/Popover`)
+- Exports: `PopoverClose`, `Popover`
+- `M3EPopoverProps`: `open?: boolean`, `defaultOpen?: boolean`, `onOpenChange?: (open: boolean) => void`, `trigger: React.ReactElement`, `openOnHover?: boolean`, `delay?: number`, `closeDelay?: number`, `title?: React.ReactNode`, `description?: React.ReactNode`, `"aria-label"?: string`, `side?: "top" | "bottom" | "left" | "right"`, `align?: "start" | "center" | "end"`, `sideOffset?: number`, `children: React.ReactNode`, `className?: string`, `style?: React.CSSProperties`
+### ProgressIndicator (`m3eui/components/ProgressIndicator`)
+- Exports: `LinearProgressIndicator`, `CircularProgressIndicator`
+- `M3ELinearProgressIndicatorFlatProps extends ProgressBaseProps`: `wavy?: false`, `id?: string`, `thickness?: "standard" | "thick"`, `label?: React.ReactNode`, `showValue?: boolean`
+- `M3ELinearProgressIndicatorWavyProps extends ProgressBaseProps`: `wavy: true`, `amplitude?: number`, `wavelength?: number`, `strokeWidth?: number`, `trackGap?: number`
+- `M3ECircularProgressIndicatorFlatProps extends ProgressBaseProps`: `wavy?: false`, `id?: string`, `size?: "sm" | "md" | "lg" | number`, `strokeWidth?: number`, `showValue?: boolean`, `showValueLabel?: boolean`
+- `M3ECircularProgressIndicatorWavyProps extends ProgressBaseProps`: `wavy: true`, `size?: number`, `strokeWidth?: number`, `maxAmplitudePx?: number`, `targetWavelength?: number`, `trackGap?: number`, `amplitude?: number`
+### RadioGroup (`m3eui/components/RadioGroup`)
+- Exports: `RadioGroup`, `Radio`
+- `M3ERadioGroupProps<Value extends string = string>`: `children: React.ReactNode`, `value?: Value`, `defaultValue?: Value`, `onValueChange?: (value: Value) => void`, `disabled?: boolean`, `readOnly?: boolean`, `required?: boolean`, `name?: string`, `orientation?: "horizontal" | "vertical"`, `"aria-label"?: string`, `className?: string`, `style?: React.CSSProperties`
+- `M3ERadioProps<Value extends string = string>`: `value: Value`, `label?: React.ReactNode`, `description?: React.ReactNode`, `disabled?: boolean`, `readOnly?: boolean`, `required?: boolean`, `id?: string`, `"aria-label"?: string`, `className?: string`, `style?: React.CSSProperties`
+### ScrollArea (`m3eui/components/ScrollArea`)
+- Exports: `ScrollArea`
+- `M3EScrollAreaProps`: `children: React.ReactNode`, `maxHeight?: number | string`, `orientation?: "vertical" | "horizontal" | "both"`, `className?: string`, `style?: React.CSSProperties`
+### SearchBar (`m3eui/components/SearchBar`)
+- Exports: `SearchBar`, `SearchView`
+- `M3ESearchBarProps`: `suggestions?: readonly SearchSuggestion[]`, `value?: string`, `defaultValue?: string`, `onValueChange?: (value: string) => void`, `onSearchSubmit?: (query: string) => void`, `placeholder?: string`, `"aria-label"?: string`, `trailingSlot?: React.ReactNode`, `emptyText?: React.ReactNode`, `size?: "md" | "sm"`, `disabled?: boolean`, `className?: string`, `style?: React.CSSProperties`
+- `M3ESearchViewProps`: `open?: boolean`, `defaultOpen?: boolean`, `onOpenChange?: (open: boolean) => void`, `anchorRef?: React.RefObject<HTMLElement | null>`, `value?: string`, `defaultValue?: string`, `onValueChange?: (value: string) => void`, `onSearchSubmit?: (query: string) => void`, `recentSearches?: readonly string[]`, `onClearRecent?: () => void`, `suggestions?: readonly SearchSuggestion[]`, `placeholder?: string`, `"aria-label"?: string`, `trailingSlot?: React.ReactNode`, `children?: React.ReactNode`, `className?: string`, `style?: React.CSSProperties`
+### Select (`m3eui/components/Select`)
+- Exports: `Select`
+- `M3ESelectSingleProps<Value extends string = string>`: `multiple?: false`, `value?: Value | null`, `defaultValue?: Value | null`, `onValueChange?: (value: Value | null) => void`
+- `M3ESelectMultipleProps<Value extends string = string>`: `multiple: true`, `value?: readonly Value[]`, `defaultValue?: readonly Value[]`, `onValueChange?: (value: Value[]) => void`, `maxVisibleTags?: number`
+### Sheet (`m3eui/components/Sheet`)
+- Exports: `SheetClose`, `Sheet`
+- `M3ESheetProps`: `open?: boolean`, `defaultOpen?: boolean`, `onOpenChange?: (open: boolean) => void`, `modal?: boolean | "trap-focus"`, `disablePointerDismissal?: boolean`, `snapPoints?: readonly SheetSnapPoint[]`, `snapPoint?: SheetSnapPoint | null`, `defaultSnapPoint?: SheetSnapPoint | null`, `onSnapPointChange?: (snapPoint: SheetSnapPoint | null) => void`, `snapToSequentialPoints?: boolean`, `side?: SheetSide`, `trigger?: React.ReactElement`, `title?: React.ReactNode`, `description?: React.ReactNode`, `"aria-label"?: string`, `children: React.ReactNode`, `footer?: React.ReactNode`, `className?: string`, `style?: React.CSSProperties`
+- `M3ESheetCloseProps`: `render?: React.ReactElement`, `children?: React.ReactNode`, `className?: string`
+### Skeleton (`m3eui/components/Skeleton`)
+- Exports: `Skeleton`
+- `M3ESkeletonProps`: `variant?: "text" | "rectangular" | "rounded" | "circular"`, `shape?: M3EShapeName`, `width?: number | string`, `height?: number | string`, `animated?: boolean`, `className?: string`, `style?: React.CSSProperties`
+### Slider (`m3eui/components/Slider`)
+- Exports: `Slider`
+- `M3ESliderProps<Value extends SliderValue = number>`: `id?: string`, `value?: Value`, `defaultValue?: Value`, `onValueChange?: (value: Value) => void`, `onValueCommitted?: (value: Value) => void`, `min?: number`, `max?: number`, `step?: number`, `minStepsBetweenValues?: number`, `orientation?: "horizontal" | "vertical"`, `centered?: boolean`, `startIcon?: React.ReactNode`, `endIcon?: React.ReactNode`, `disabled?: boolean`, `size?: SliderSize`, `label?: React.ReactNode`, `showValue?: boolean`, `showValueBubble?: boolean`, `showTicks?: boolean`, `formatValue?: (value: number) => string`, `name?: string`, `"aria-label"?: string`, `className?: string`, `style?: React.CSSProperties`
+### Snippet (`m3eui/components/Snippet`)
+- Exports: `CopyButton`, `Snippet`
+- `M3ECopyButtonProps`: `value: string`, `timeout?: number`, `onCopy?: (value: string) => unknown`, `onCopyError?: (error: unknown) => void`, `label?: string`, `copiedLabel?: string`, `errorLabel?: string`, `variant?: "ghost" | "tonal" | "outlined"`, `disabled?: boolean`, `className?: string`, `style?: React.CSSProperties`
+- `M3ESnippetProps`: `code: string | readonly string[]`, `symbol?: React.ReactNode | false`, `variant?: "filled" | "outlined"`, `hideCopyButton?: boolean`, `onCopy?: (value: string) => unknown`, `onCopyError?: (error: unknown) => void`, `className?: string`, `style?: React.CSSProperties`
+### SplitButton (`m3eui/components/SplitButton`)
+- Exports: `SplitButton`
+- `M3ESplitButtonProps`: `children: React.ReactNode`, `menuItems: readonly M3EMenuItemSpec[]`, `variant?: SplitButtonVariant`, `size?: ButtonSize`, `disabled?: boolean`, `leadingIcon?: React.ReactNode`, `onClick?: React.MouseEventHandler<HTMLElement>`, `open?: boolean`, `defaultOpen?: boolean`, `onOpenChange?: (open: boolean) => void`, `menuTriggerLabel?: string`, `className?: string`, `style?: React.CSSProperties`
+### Switch (`m3eui/components/Switch`)
+- Exports: `Switch`
+- `M3ESwitchProps`: `checked?: boolean`, `defaultChecked?: boolean`, `onCheckedChange?: (checked: boolean) => void`, `disabled?: boolean`, `readOnly?: boolean`, `required?: boolean`, `name?: string`, `id?: string`, `label?: React.ReactNode`, `description?: React.ReactNode`, `showIcons?: boolean`, `checkedIcon?: React.ReactNode`, `uncheckedIcon?: React.ReactNode`, `"aria-label"?: string`, `className?: string`, `style?: React.CSSProperties`
+### Tabs (`m3eui/components/Tabs`)
+- Exports: `Tabs`, `TabsList`, `Tab`, `TabsPanel`
+- `M3ETabsProps<Value extends string`: `children: React.ReactNode`, `value?: Value`, `defaultValue?: Value`, `onValueChange?: (value: Value) => void`, `variant?: TabsVariant`, `scrollable?: boolean`, `className?: string`, `style?: React.CSSProperties`
+- `M3ETabsListProps`: `children: React.ReactNode`, `scrollable?: boolean`, `activateOnFocus?: boolean`, `loopFocus?: boolean`, `"aria-label"?: string`, `className?: string`, `style?: React.CSSProperties`
+- `M3ETabProps<Value extends string`: `value: Value`, `children: React.ReactNode`, `icon?: React.ReactNode`, `badge?: React.ReactNode`, `disabled?: boolean`, `className?: string`, `style?: React.CSSProperties`
+- `M3ETabsPanelProps<Value extends string`: `value: Value`, `children: React.ReactNode`, `keepMounted?: boolean`, `className?: string`, `style?: React.CSSProperties`
+### TextField (`m3eui/components/TextField`)
+- Exports: `TextField`
+- `M3ETextFieldSingleLineProps extends TextFieldBaseProps`: `multiline?: false`, `type?: "text" | "email" | "password" | "search" | "tel" | "url"`, `autoComplete?: string`, `inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"]`, `enterKeyHint?: React.HTMLAttributes<HTMLInputElement>["enterKeyHint"]`, `pattern?: string`, `minLength?: number`, `clearable?: boolean`, `prefixText?: React.ReactNode`, `suffixText?: React.ReactNode`, `leadingIcon?: React.ReactNode`, `trailingIcon?: React.ReactNode`
+- `M3ETextFieldMultilineProps extends TextFieldBaseProps`: `multiline: true`, `rows?: number`
+### TimePicker (`m3eui/components/TimePicker`)
+- Exports: `TimePicker`, `TimePickerField`
+- `M3ETimePickerProps`: `value?: PlainTimeString`, `defaultValue?: PlainTimeString`, `onValueChange?: (value: string) => void`, `use24Hour?: boolean`, `inputMode?: "dial" | "keyboard"`, `defaultInputMode?: "dial" | "keyboard"`, `onInputModeChange?: (mode: "dial" | "keyboard") => void`, `hideModeToggle?: boolean`, `variant?: "standard" | "vibrant"`, `title?: React.ReactNode`, `titleId?: string`, `className?: string`, `style?: React.CSSProperties`
+- `M3ETimePickerFieldProps`: `id?: string`, `name?: string`, `label?: React.ReactNode`, `labelPosition?: "floating" | "outside"`, `description?: React.ReactNode`, `errorMessage?: React.ReactNode`, `invalid?: boolean`, `required?: boolean`, `value?: PlainTimeString`, `defaultValue?: PlainTimeString`, `onValueChange?: (value: string) => void`, `use24Hour?: boolean`, `disabled?: boolean`, `readOnly?: boolean`, `modal?: boolean`, `className?: string`, `style?: React.CSSProperties`
+### Toast (`m3eui/components/Toast`)
+- Exports: `M3EToastViewportHost`
+### Tooltip (`m3eui/components/Tooltip`)
+- Exports: `Tooltip`
+- `M3ETooltipProps`: `children: React.ReactElement`, `content: React.ReactNode`, `subhead?: React.ReactNode`, `action?: React.ReactNode`, `side?: "top" | "bottom" | "left" | "right"`, `sideOffset?: number`, `delay?: number`, `disabled?: boolean`
+### TopAppBar (`m3eui/components/TopAppBar`)
+- Exports: `AppBarRow`, `TopAppBar`
+- `M3EAppBarRowProps`: `items: readonly AppBarActionItem[]`, `maxVisibleItems?: number`, `"aria-label"?: string`, `moreActionsLabel?: string`, `className?: string`, `style?: React.CSSProperties`
+- `M3ETopAppBarProps`: `title: React.ReactNode`, `subtitle?: React.ReactNode`, `variant?: TopAppBarVariant`, `navigationIcon?: React.ReactNode`, `actions?: React.ReactNode`, `actionItems?: readonly AppBarActionItem[]`, `maxVisibleActions?: number`, `collapsedFraction?: number`, `scrolled?: boolean`, `scrollBehavior?: TopAppBarScrollBehavior`, `scrollTargetRef?: React.RefObject<HTMLElement | Window | null>`, `className?: string`, `style?: React.CSSProperties`
+

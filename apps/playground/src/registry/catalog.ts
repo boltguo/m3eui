@@ -76,6 +76,7 @@ export const BLOCK_CATALOG: readonly {
   { slug: "dashboard-01", category: "dashboard", title: { zh: "企业分析仪表盘与数据工作台", en: "Analytics Dashboard with Sidebar, Area Chart & Data Table" } },
   { slug: "login-01", category: "auth", title: { zh: "双栏品牌视觉登录与 2FA 验证", en: "Split Brand Login with Passkey & 2FA OTP Step" } },
   { slug: "ai-workspace-01", category: "ai", title: { zh: "AI 智能体对话与推理流工作台", en: "M3E AI Agent & Reasoning Studio" } },
+  { slug: "split-pane-01", category: "sidebar", title: { zh: "可拖拽双栏文档工作台", en: "Resizable Split-Pane Workspace with DragHandle" } },
 ];
 
 export const DOC_CATALOG: readonly { readonly slug: string; readonly title: LocalizedCopy }[] = [

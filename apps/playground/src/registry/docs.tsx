@@ -1283,8 +1283,8 @@ function ExportsBoundariesDocContent() {
         entry: "m3eui/i18n",
         runtime: "Pure ESM / RSC-safe",
         contents: resolve({
-          zh: "zh-CN、en-US、ja-JP、ar-SA 语言包、BCP 47 解析与本地化数字/日期格式化",
-          en: "Built-in locale packs, BCP 47 resolution, and localized number/date formatters",
+          zh: "zh-CN、en-US、ja-JP、ar-SA 语言包（支持按需 m3eui/i18n/*）、BCP 47 解析与本地化格式化",
+          en: "Built-in locale packs (plus per-locale m3eui/i18n/* subpaths), BCP 47 resolution, and CLDR formatters",
         }),
       },
       {

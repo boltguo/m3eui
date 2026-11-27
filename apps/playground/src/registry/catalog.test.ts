@@ -41,8 +41,18 @@ it("keeps the lightweight catalog in sync with the full registry", async () => {
   if (existsSync(llmsPath)) {
     const llms = readFileSync(llmsPath, "utf8");
     expect(llms).toContain("m3eui/tailwind.css");
+    expect(llms).toContain("m3eui/i18n/*");
     for (const entry of COMPONENT_CATALOG) {
       expect(llms).toContain(`/components/${entry.slug}`);
     }
+  }
+
+  const llmsFullPath = resolve(__dirname, "../../public/llms-full.txt");
+  if (existsSync(llmsFullPath)) {
+    const llmsFull = readFileSync(llmsFullPath, "utf8");
+    expect(llmsFull).toContain("m3eui/i18n/*");
+    expect(llmsFull).toContain("theme.autoContrast");
+    expect(llmsFull).toContain("--m3e-color-primary");
+    expect(llmsFull).toContain("fullScreen");
   }
 });

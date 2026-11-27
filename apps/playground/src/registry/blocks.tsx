@@ -8,11 +8,16 @@ import {
   ButtonGroup,
   Card,
   DataTable,
+  Dialog,
+  DialogClose,
   Divider,
+  DragHandle,
   DropdownMenu,
   Empty,
   IconButton,
   LinearProgressIndicator,
+  List,
+  ListItem,
   type M3EDataTableColumn,
   type M3EDataTableSortState,
   type M3EShapeName,
@@ -21,6 +26,7 @@ import {
   NavigationRail,
   OTPField,
   Pagination,
+  ScrollArea,
   Select,
   Tab,
   Tabs,
@@ -1810,4 +1816,235 @@ export function AiReasoningStudio() {
   );
 }`,
   },
+  {
+    slug: "split-pane-01",
+    category: "sidebar",
+    featured: true,
+    title: {
+      zh: "可拖拽双栏文档工作台",
+      en: "Resizable Split-Pane Workspace with DragHandle",
+    },
+    description: {
+      zh: "DragHandle 联动左右双栏百分比宽度调节、ScrollArea + 分段列表目录及移动端自适应全屏 Dialog 详情编辑。",
+      en: "Keyboard- and pointer-resizable Split Pane via DragHandle, segmented List inside ScrollArea, and responsive Dialog.",
+    },
+    minHeight: 460,
+    render: () => <SplitPane01Block />,
+    code: `import * as React from "react";
+import {
+  Button,
+  Card,
+  Dialog,
+  DialogClose,
+  DragHandle,
+  List,
+  ListItem,
+  ScrollArea,
+  TextField,
+} from "m3eui";
+
+export function ResizableSplitWorkspace() {
+  const containerRef = React.useRef<HTMLDivElement | null>(null);
+  const [splitPct, setSplitPct] = React.useState(34);
+  const [activeId, setActiveId] = React.useState("tokens");
+  const [editOpen, setEditOpen] = React.useState(false);
+
+  return (
+    <div ref={containerRef} style={{ display: "flex", minHeight: 380 }}>
+      <div id="split-pane-sidebar" style={{ flexBasis: \`\${splitPct}%\`, minWidth: 160 }}>
+        <ScrollArea maxHeight={360}>
+          <List variant="segmented" aria-label="Specs">
+            <ListItem headline="Color Tokens" selected={activeId === "tokens"} onClick={() => setActiveId("tokens")} />
+            <ListItem headline="Spring Physics" selected={activeId === "spring"} onClick={() => setActiveId("spring")} />
+          </List>
+        </ScrollArea>
+      </div>
+      <DragHandle
+        containerRef={containerRef}
+        value={splitPct}
+        min={22}
+        max={56}
+        onValueChange={setSplitPct}
+        aria-controls="split-pane-sidebar"
+      />
+      <Card variant="outlined" style={{ flex: 1 }}>
+        <Button variant="tonal" onClick={() => setEditOpen(true)}>Edit Spec</Button>
+        <Dialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          fullScreen="mobile"
+          title="Edit Specification"
+          actions={<DialogClose render={<Button variant="filled">Save</Button>} />}
+        >
+          <TextField label="Title" defaultValue={activeId} />
+        </Dialog>
+      </Card>
+    </div>
+  );
+}`,
+  },
 ];
+
+interface SplitSpecDoc {
+  readonly id: string;
+  readonly title: string;
+  readonly summary: string;
+  readonly owner: string;
+}
+
+const SPLIT_PANE_DOCS: readonly SplitSpecDoc[] = [
+  {
+    id: "tokens",
+    title: "HCT Dynamic Color",
+    summary: "61 semantic roles computed via 2025 AOSP Monet curves across light, dark, and +0.5/+1.0 contrast.",
+    owner: "Design Tokens",
+  },
+  {
+    id: "springs",
+    title: "Analytical Spring ODE",
+    summary: "Velocity-preserving spatial and effects springs driving DOM refs without React re-renders.",
+    owner: "Motion Core",
+  },
+  {
+    id: "shapes",
+    title: "MaterialShapes",
+    summary: "35 morphable RoundedPolygons with normalized cubic Bezier outlines for indicators and avatars.",
+    owner: "Geometry",
+  },
+  {
+    id: "a11y",
+    title: "Accessibility & RTL",
+    summary: "Built on @base-ui/react primitives with forced-colors fallbacks and CSS logical properties.",
+    owner: "Platform UI",
+  },
+];
+
+function SplitPane01Block() {
+  const { locale } = useM3EI18n();
+  const containerRef = React.useRef<HTMLDivElement | null>(null);
+  const [splitPct, setSplitPct] = React.useState(34);
+  const [activeId, setActiveId] = React.useState(SPLIT_PANE_DOCS[0]!.id);
+  const [editOpen, setEditOpen] = React.useState(false);
+
+  const activeDoc =
+    SPLIT_PANE_DOCS.find((doc) => doc.id === activeId) ?? SPLIT_PANE_DOCS[0]!;
+
+  return (
+    <div
+      ref={containerRef}
+      style={{
+        display: "flex",
+        alignItems: "stretch",
+        gap: 6,
+        minHeight: 380,
+      }}
+    >
+      <div
+        id="split-pane-sidebar"
+        style={{
+          flexBasis: `${splitPct}%`,
+          flexShrink: 0,
+          minWidth: 168,
+        }}
+      >
+        <ScrollArea maxHeight={380}>
+          <List
+            variant="segmented"
+            aria-label={resolveCopy(locale, {
+              zh: "规范条目",
+              en: "Specification sections",
+            })}
+          >
+            {SPLIT_PANE_DOCS.map((doc) => (
+              <ListItem
+                key={doc.id}
+                headline={doc.title}
+                supportingText={doc.owner}
+                selected={doc.id === activeDoc.id}
+                onClick={() => setActiveId(doc.id)}
+              />
+            ))}
+          </List>
+        </ScrollArea>
+      </div>
+
+      <DragHandle
+        containerRef={containerRef}
+        value={splitPct}
+        min={24}
+        max={56}
+        onValueChange={setSplitPct}
+        aria-controls="split-pane-sidebar"
+      />
+
+      <Card
+        variant="outlined"
+        style={{
+          flex: 1,
+          minWidth: 220,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          gap: 16,
+          padding: 20,
+        }}
+      >
+        <div style={{ display: "grid", gap: 10 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 8,
+            }}
+          >
+            <strong style={{ fontSize: 18 }}>{activeDoc.title}</strong>
+            <Chip size="sm" tone="primary" variant="tonal">
+              {Math.round(splitPct)}%
+            </Chip>
+          </div>
+          <p style={{ margin: 0, color: "var(--m3e-color-on-surface-variant)" }}>
+            {activeDoc.summary}
+          </p>
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+          <Button
+            size="sm"
+            variant="tonal"
+            onClick={() => setEditOpen(true)}
+          >
+            {resolveCopy(locale, { zh: "编辑条目", en: "Edit Section" })}
+          </Button>
+        </div>
+
+        <Dialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          fullScreen="mobile"
+          showCloseButton
+          title={activeDoc.title}
+          actions={
+            <DialogClose
+              render={
+                <Button variant="filled">
+                  {resolveCopy(locale, { zh: "完成", en: "Done" })}
+                </Button>
+              }
+            />
+          }
+        >
+          <TextField
+            label={resolveCopy(locale, { zh: "标题", en: "Title" })}
+            defaultValue={activeDoc.title}
+          />
+          <TextField
+            multiline
+            label={resolveCopy(locale, { zh: "摘要", en: "Summary" })}
+            defaultValue={activeDoc.summary}
+          />
+        </Dialog>
+      </Card>
+    </div>
+  );
+}
