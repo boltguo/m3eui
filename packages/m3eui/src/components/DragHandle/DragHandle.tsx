@@ -6,7 +6,7 @@ import {
   resolveDragHandleGeometry,
 } from "../../tokens/topology.js";
 import { useM3ERuntime } from "../../context/M3EContext.js";
-import { useM3EScalarSpring } from "../../hooks/useM3ESpring.js";
+import { useM3EScalarSpringEffect } from "../../hooks/useM3ESpring.js";
 import { assignRef } from "../../internal/assignRef.js";
 
 export interface M3EDragHandleProps
@@ -118,15 +118,39 @@ export const DragHandle = React.forwardRef<HTMLDivElement, M3EDragHandleProps>(
       isActive,
       orientation,
     });
-    const springInline = useM3EScalarSpring(
-      targetGeo.inlineSize,
-      "fastSpatial",
-    );
-    const springBlock = useM3EScalarSpring(targetGeo.blockSize, "fastSpatial");
-    const springRadius = useM3EScalarSpring(
-      targetGeo.cornerRadius,
-      "fastSpatial",
-    );
+    const pillRef = React.useRef<HTMLSpanElement | null>(null);
+    const debugBadgeRef = React.useRef<HTMLSpanElement | null>(null);
+    const liveGeoRef = React.useRef({
+      inline: targetGeo.inlineSize,
+      block: targetGeo.blockSize,
+      radius: targetGeo.cornerRadius,
+    });
+
+    const syncPillDom = React.useCallback(() => {
+      const geo = liveGeoRef.current;
+      const pill = pillRef.current;
+      if (pill) {
+        pill.style.inlineSize = `${Math.max(2, geo.inline).toFixed(2)}px`;
+        pill.style.blockSize = `${Math.max(2, geo.block).toFixed(2)}px`;
+        pill.style.borderRadius = `${Math.max(2, Math.min(9999, geo.radius)).toFixed(1)}px`;
+      }
+      if (debugBadgeRef.current) {
+        debugBadgeRef.current.textContent = `${Math.round(geo.inline)}×${Math.round(geo.block)}`;
+      }
+    }, []);
+
+    useM3EScalarSpringEffect(targetGeo.inlineSize, "fastSpatial", (val) => {
+      liveGeoRef.current.inline = val;
+      syncPillDom();
+    });
+    useM3EScalarSpringEffect(targetGeo.blockSize, "fastSpatial", (val) => {
+      liveGeoRef.current.block = val;
+      syncPillDom();
+    });
+    useM3EScalarSpringEffect(targetGeo.cornerRadius, "fastSpatial", (val) => {
+      liveGeoRef.current.radius = val;
+      syncPillDom();
+    });
 
     const endDragSession = React.useCallback(
       (el: HTMLDivElement | null, pointerId?: number) => {
@@ -287,17 +311,18 @@ export const DragHandle = React.forwardRef<HTMLDivElement, M3EDragHandleProps>(
         }}
       >
         <span
+          ref={pillRef}
           className="m3e-drag-handle__pill"
           aria-hidden="true"
           style={{
-            inlineSize: `${Math.max(2, springInline).toFixed(2)}px`,
-            blockSize: `${Math.max(2, springBlock).toFixed(2)}px`,
-            borderRadius: `${Math.max(2, Math.min(9999, springRadius)).toFixed(1)}px`,
+            inlineSize: `${Math.max(2, liveGeoRef.current.inline).toFixed(2)}px`,
+            blockSize: `${Math.max(2, liveGeoRef.current.block).toFixed(2)}px`,
+            borderRadius: `${Math.max(2, Math.min(9999, liveGeoRef.current.radius)).toFixed(1)}px`,
           }}
         />
         {debugGeometry ? (
-          <span className="m3e-debug-badge" aria-hidden="true">
-            {Math.round(springInline)}×{Math.round(springBlock)}
+          <span ref={debugBadgeRef} className="m3e-debug-badge" aria-hidden="true">
+            {Math.round(liveGeoRef.current.inline)}×{Math.round(liveGeoRef.current.block)}
           </span>
         ) : null}
       </div>

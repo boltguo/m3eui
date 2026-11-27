@@ -18,7 +18,7 @@ import { useM3EPortalContainer } from "../../context/M3EPortal.js";
 import { useM3ERuntime } from "../../context/M3EContext.js";
 import {
   useM3ECornerSpringRef,
-  useM3EScalarSpring,
+  useM3EScalarSpringEffect,
   usePressHoldState,
 } from "../../hooks/useM3ESpring.js";
 import { ButtonGroupItemContext } from "../../internal/buttonGroupContext.js";
@@ -67,10 +67,11 @@ function GroupPressTracker({
   readonly index: number;
   readonly onProgress: (index: number, value: number) => void;
 }) {
-  const progress = useM3EScalarSpring(isPressed ? 1 : 0, "fastSpatial");
-  React.useEffect(() => {
-    onProgress(index, Math.max(0, progress));
-  }, [index, progress, onProgress]);
+  const onProgressRef = React.useRef(onProgress);
+  onProgressRef.current = onProgress;
+  useM3EScalarSpringEffect(isPressed ? 1 : 0, "fastSpatial", (val) => {
+    onProgressRef.current(index, Math.max(0, val));
+  });
   return null;
 }
 

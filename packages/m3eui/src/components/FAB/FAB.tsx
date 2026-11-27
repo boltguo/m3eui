@@ -16,9 +16,10 @@ import {
 import { useM3ERuntime } from "../../context/M3EContext.js";
 import {
   useM3ECornerSpringRef,
-  useM3EScalarSpring,
+  useM3EScalarSpringEffect,
   usePressHoldState,
 } from "../../hooks/useM3ESpring.js";
+import { assignRef } from "../../internal/assignRef.js";
 import { useIsoLayoutEffect } from "../../internal/useIsoLayoutEffect.js";
 import { INERT_TRUE } from "../../internal/inert.js";
 import { LinkActionElement, isLinkRenderTarget } from "../../internal/link.js";
@@ -56,6 +57,26 @@ export interface M3EIconFABProps
   readonly style?: React.CSSProperties;
 }
 
+function applyVisibilityToEl(
+  el: HTMLElement | null,
+  scale: number,
+  opacity: number,
+  visible: boolean,
+): void {
+  if (!el) return;
+  const active =
+    !visible || Math.abs(scale - 1) > 0.005 || Math.abs(opacity - 1) > 0.005;
+  if (active) {
+    el.style.scale = `${Math.max(0, scale).toFixed(3)}`;
+    el.style.opacity = String(Math.max(0, Math.min(1, opacity)));
+    el.style.pointerEvents = !visible ? "none" : "";
+  } else {
+    el.style.scale = "";
+    el.style.opacity = "";
+    el.style.pointerEvents = "";
+  }
+}
+
 const IconFAB = React.forwardRef<HTMLElement, M3EIconFABProps>(function IconFAB(
   {
     icon,
@@ -87,13 +108,30 @@ const IconFAB = React.forwardRef<HTMLElement, M3EIconFABProps>(function IconFAB(
     isPressed: morphOnPress ? isPressed : false,
   });
   const r = Math.max(4, geo.cornerRadius);
-  const { ref: mergedRef, borderRadiusCss } = useM3ECornerSpringRef<HTMLElement>(
+  const fabElRef = React.useRef<HTMLElement | null>(null);
+  const { ref: cornerMergedRef, borderRadiusCss } = useM3ECornerSpringRef<HTMLElement>(
     [r, r, r, r],
     "defaultEffects",
     ref,
   );
-  const visibilityScale = useM3EScalarSpring(visible ? 1 : 0.2, "fastSpatial");
-  const visibilityOpacity = useM3EScalarSpring(visible ? 1 : 0, "fastEffects");
+  const mergedRef = React.useCallback(
+    (node: HTMLElement | null) => {
+      fabElRef.current = node;
+      cornerMergedRef(node);
+    },
+    [cornerMergedRef],
+  );
+  const visRef = React.useRef({ scale: visible ? 1 : 0.2, opacity: visible ? 1 : 0 });
+  const visibleRef = React.useRef(visible);
+  visibleRef.current = visible;
+  useM3EScalarSpringEffect(visible ? 1 : 0.2, "fastSpatial", (val) => {
+    visRef.current.scale = val;
+    applyVisibilityToEl(fabElRef.current, val, visRef.current.opacity, visibleRef.current);
+  });
+  useM3EScalarSpringEffect(visible ? 1 : 0, "fastEffects", (val) => {
+    visRef.current.opacity = val;
+    applyVisibilityToEl(fabElRef.current, visRef.current.scale, val, visibleRef.current);
+  });
 
   const isLink = isLinkRenderTarget(href, render);
   const isCustomElement = Boolean(render);
@@ -104,19 +142,19 @@ const IconFAB = React.forwardRef<HTMLElement, M3EIconFABProps>(function IconFAB(
     restProps as unknown as React.ComponentPropsWithRef<"button">,
   );
 
-  const isAnimatingVisibility =
+  const isInitiallyAnimating =
     !visible ||
-    Math.abs(visibilityScale - 1) > 0.005 ||
-    Math.abs(visibilityOpacity - 1) > 0.005;
+    Math.abs(visRef.current.scale - 1) > 0.005 ||
+    Math.abs(visRef.current.opacity - 1) > 0.005;
 
   const fabStyle: React.CSSProperties = {
     width: `${geo.containerSize}px`,
     height: `${geo.containerSize}px`,
     borderRadius: borderRadiusCss,
-    ...(isAnimatingVisibility
+    ...(isInitiallyAnimating
       ? {
-          scale: `${Math.max(0, visibilityScale).toFixed(3)}`,
-          opacity: Math.max(0, Math.min(1, visibilityOpacity)),
+          scale: `${Math.max(0, visRef.current.scale).toFixed(3)}`,
+          opacity: Math.max(0, Math.min(1, visRef.current.opacity)),
           pointerEvents: !visible ? "none" : undefined,
         }
       : null),
@@ -296,29 +334,98 @@ const ExtendedFAB = React.forwardRef<HTMLElement, M3EExtendedFABProps>(
     const collapsedWidth = spec.height;
     const expandedWidth =
       spec.paddingInline * 2 + spec.iconSize + spec.iconGap + labelWidth;
+    const collapsedInlinePadding = (spec.height - spec.iconSize) / 2;
+
+    const efabElRef = React.useRef<HTMLElement | null>(null);
+    const efabDebugRef = React.useRef<HTMLSpanElement | null>(null);
+    const assignEfabRef = React.useCallback(
+      (node: HTMLElement | null) => {
+        efabElRef.current = node;
+        assignRef(ref, node);
+      },
+      [ref],
+    );
 
     const targetWidth = expanded ? expandedWidth : collapsedWidth;
-    const animatedWidth = useM3EScalarSpring(targetWidth, "defaultSpatial");
-    const expandProgress = useM3EScalarSpring(expanded ? 1 : 0, "defaultSpatial");
-    const labelOpacity = useM3EScalarSpring(expanded ? 1 : 0, "fastEffects");
-
-    const collapsedInlinePadding = (spec.height - spec.iconSize) / 2;
-    const clampedExpandProgress = Math.max(0, Math.min(1, expandProgress));
-    const animatedInlinePadding =
-      collapsedInlinePadding +
-      (spec.paddingInline - collapsedInlinePadding) * clampedExpandProgress;
-
     const targetRadius =
       morphOnPress && isPressed ? spec.pressedRadius : spec.restRadius;
-    const animatedRadius = useM3EScalarSpring(targetRadius, "defaultEffects");
-    const visibilityScale = useM3EScalarSpring(
-      visible ? 1 : 0.2,
-      "fastSpatial",
-    );
-    const visibilityOpacity = useM3EScalarSpring(
-      visible ? 1 : 0,
-      "fastEffects",
-    );
+
+    const efabSpringRef = React.useRef({
+      width: targetWidth,
+      expand: expanded ? 1 : 0,
+      labelOpacity: expanded ? 1 : 0,
+      radius: targetRadius,
+      visScale: visible ? 1 : 0.2,
+      visOpacity: visible ? 1 : 0,
+    });
+    const visibleRef = React.useRef(visible);
+    visibleRef.current = visible;
+    const efabSpecRef = React.useRef({
+      collapsedWidth,
+      collapsedInlinePadding,
+      paddingInline: spec.paddingInline,
+    });
+    efabSpecRef.current = {
+      collapsedWidth,
+      collapsedInlinePadding,
+      paddingInline: spec.paddingInline,
+    };
+
+    const syncEfabDebug = () => {
+      if (efabDebugRef.current) {
+        efabDebugRef.current.textContent = `w:${Math.round(efabSpringRef.current.width)} r:${efabSpringRef.current.radius.toFixed(0)}`;
+      }
+    };
+
+    useM3EScalarSpringEffect(targetWidth, "defaultSpatial", (val) => {
+      efabSpringRef.current.width = val;
+      if (efabElRef.current) {
+        efabElRef.current.style.width = `${Math.max(efabSpecRef.current.collapsedWidth, val).toFixed(1)}px`;
+      }
+      syncEfabDebug();
+    });
+    useM3EScalarSpringEffect(expanded ? 1 : 0, "defaultSpatial", (val) => {
+      efabSpringRef.current.expand = val;
+      const clamped = Math.max(0, Math.min(1, val));
+      const pad =
+        efabSpecRef.current.collapsedInlinePadding +
+        (efabSpecRef.current.paddingInline - efabSpecRef.current.collapsedInlinePadding) *
+          clamped;
+      if (efabElRef.current) {
+        efabElRef.current.style.paddingInlineStart = `${pad.toFixed(2)}px`;
+      }
+    });
+    useM3EScalarSpringEffect(expanded ? 1 : 0, "fastEffects", (val) => {
+      efabSpringRef.current.labelOpacity = val;
+      if (labelRef.current) {
+        labelRef.current.style.opacity = String(Math.max(0, Math.min(1, val)));
+      }
+    });
+    useM3EScalarSpringEffect(targetRadius, "defaultEffects", (val) => {
+      efabSpringRef.current.radius = val;
+      if (efabElRef.current) {
+        efabElRef.current.style.borderRadius = `${Math.max(6, val).toFixed(1)}px`;
+      }
+      syncEfabDebug();
+    });
+    useM3EScalarSpringEffect(visible ? 1 : 0.2, "fastSpatial", (val) => {
+      efabSpringRef.current.visScale = val;
+      applyVisibilityToEl(
+        efabElRef.current,
+        val,
+        efabSpringRef.current.visOpacity,
+        visibleRef.current,
+      );
+    });
+    useM3EScalarSpringEffect(visible ? 1 : 0, "fastEffects", (val) => {
+      efabSpringRef.current.visOpacity = val;
+      applyVisibilityToEl(
+        efabElRef.current,
+        efabSpringRef.current.visScale,
+        val,
+        visibleRef.current,
+      );
+    });
 
     const stringLabel =
       typeof children === "string" || typeof children === "number"
@@ -341,25 +448,32 @@ const ExtendedFAB = React.forwardRef<HTMLElement, M3EExtendedFABProps>(
       restProps as unknown as React.ComponentPropsWithRef<"button">,
     );
 
-    const isAnimatingVisibility =
+    const isInitiallyAnimating =
       !visible ||
-      Math.abs(visibilityScale - 1) > 0.005 ||
-      Math.abs(visibilityOpacity - 1) > 0.005;
+      Math.abs(efabSpringRef.current.visScale - 1) > 0.005 ||
+      Math.abs(efabSpringRef.current.visOpacity - 1) > 0.005;
+    const initialClampedExpand = Math.max(
+      0,
+      Math.min(1, efabSpringRef.current.expand),
+    );
+    const initialInlinePadding =
+      collapsedInlinePadding +
+      (spec.paddingInline - collapsedInlinePadding) * initialClampedExpand;
 
     const efabStyle: React.CSSProperties = {
-      width: `${Math.max(collapsedWidth, animatedWidth).toFixed(1)}px`,
+      width: `${Math.max(collapsedWidth, efabSpringRef.current.width).toFixed(1)}px`,
       height: `${spec.height}px`,
-      borderRadius: `${Math.max(6, animatedRadius).toFixed(1)}px`,
-      paddingInlineStart: `${animatedInlinePadding.toFixed(2)}px`,
+      borderRadius: `${Math.max(6, efabSpringRef.current.radius).toFixed(1)}px`,
+      paddingInlineStart: `${initialInlinePadding.toFixed(2)}px`,
       fontFamily: `var(--m3e-typescale-${scaleKey}-font, inherit)`,
       fontSize: `var(--m3e-typescale-${scaleKey}-size, ${spec.fontSize}px)`,
       lineHeight: `var(--m3e-typescale-${scaleKey}-line-height, ${fallbackLineHeight}px)`,
       fontWeight: `var(--m3e-typescale-${scaleKey}-weight, 500)` as React.CSSProperties["fontWeight"],
       letterSpacing: `var(--m3e-typescale-${scaleKey}-tracking, normal)`,
-      ...(isAnimatingVisibility
+      ...(isInitiallyAnimating
         ? {
-            scale: `${Math.max(0, visibilityScale).toFixed(3)}`,
-            opacity: Math.max(0, Math.min(1, visibilityOpacity)),
+            scale: `${Math.max(0, efabSpringRef.current.visScale).toFixed(3)}`,
+            opacity: Math.max(0, Math.min(1, efabSpringRef.current.visOpacity)),
             pointerEvents: !visible ? "none" : undefined,
           }
         : null),
@@ -383,14 +497,14 @@ const ExtendedFAB = React.forwardRef<HTMLElement, M3EExtendedFABProps>(
           aria-hidden={!expanded && !needsFallbackLabelledBy ? true : undefined}
           style={{
             marginInlineStart: `${spec.iconGap}px`,
-            opacity: Math.max(0, Math.min(1, labelOpacity)),
+            opacity: Math.max(0, Math.min(1, efabSpringRef.current.labelOpacity)),
           }}
         >
           {children}
         </span>
         {debugGeometry ? (
-          <span className="m3e-debug-badge" aria-hidden="true">
-            w:{Math.round(animatedWidth)} r:{animatedRadius.toFixed(0)}
+          <span ref={efabDebugRef} className="m3e-debug-badge" aria-hidden="true">
+            w:{Math.round(efabSpringRef.current.width)} r:{efabSpringRef.current.radius.toFixed(0)}
           </span>
         ) : null}
       </>
@@ -400,7 +514,7 @@ const ExtendedFAB = React.forwardRef<HTMLElement, M3EExtendedFABProps>(
       return (
         <LinkActionElement
           {...(mergedProps as Record<string, unknown>)}
-          ref={ref}
+          ref={assignEfabRef}
           href={href}
           target={target}
           rel={rel}
@@ -434,7 +548,7 @@ const ExtendedFAB = React.forwardRef<HTMLElement, M3EExtendedFABProps>(
     return (
       <BaseButton
         {...mergedProps}
-        ref={ref}
+        ref={assignEfabRef}
         type={isCustomElement ? undefined : type}
         nativeButton={!isCustomElement}
         render={render}
@@ -573,23 +687,46 @@ function StaggeredFabMenuItem({
     return () => clearTimeout(timer);
   }, [isOpen, index, count]);
 
-  const spatialProgress = useM3EScalarSpring(
-    itemActive ? 1 : 0,
-    "defaultSpatial",
+  const localBtnRef = React.useRef<HTMLButtonElement | null>(null);
+  const assignItemRef = React.useCallback(
+    (el: HTMLButtonElement | null) => {
+      localBtnRef.current = el;
+      buttonRef(el);
+    },
+    [buttonRef],
   );
-  const opacityProgress = useM3EScalarSpring(itemActive ? 1 : 0, "fastEffects");
+  const itemSpringRef = React.useRef({
+    spatial: itemActive ? 1 : 0,
+    opacity: itemActive ? 1 : 0,
+  });
+
+  useM3EScalarSpringEffect(itemActive ? 1 : 0, "defaultSpatial", (val) => {
+    itemSpringRef.current.spatial = val;
+    if (localBtnRef.current) {
+      const ty = (1 - val) * 18;
+      const sc = 0.88 + 0.12 * val;
+      localBtnRef.current.style.translate = `0px ${ty.toFixed(2)}px`;
+      localBtnRef.current.style.scale = `${sc.toFixed(3)}`;
+    }
+  });
+  useM3EScalarSpringEffect(itemActive ? 1 : 0, "fastEffects", (val) => {
+    itemSpringRef.current.opacity = val;
+    if (localBtnRef.current) {
+      localBtnRef.current.style.opacity = String(Math.max(0, Math.min(1, val)));
+    }
+  });
 
   const { rippleRef, rippleHandlers } = useM3ERipple(
     !isOpen || Boolean(item.disabled),
   );
 
-  const translateY = (1 - spatialProgress) * 18;
-  const scale = 0.88 + 0.12 * spatialProgress;
-  const clampedOpacity = Math.max(0, Math.min(1, opacityProgress));
+  const translateY = (1 - itemSpringRef.current.spatial) * 18;
+  const scale = 0.88 + 0.12 * itemSpringRef.current.spatial;
+  const clampedOpacity = Math.max(0, Math.min(1, itemSpringRef.current.opacity));
 
   return (
     <button
-      ref={buttonRef}
+      ref={assignItemRef}
       type="button"
       role="menuitem"
       disabled={item.disabled}
@@ -711,11 +848,50 @@ export function FABMenu({
 
   const { rippleRef: triggerRippleRef, rippleHandlers: triggerRippleHandlers } =
     useM3ERipple(false);
-  const morphProgress = useM3EScalarSpring(isOpen ? 1 : 0, "fastSpatial");
-  const clampedMorph = Math.max(0, Math.min(1, morphProgress));
-  const fabGeo = resolveToggleFabGeometry(size, morphProgress);
-
+  const iconWrapRef = React.useRef<HTMLSpanElement | null>(null);
+  const customIconRef = React.useRef<HTMLSpanElement | null>(null);
+  const closeIconRef = React.useRef<HTMLSpanElement | null>(null);
+  const menuDebugRef = React.useRef<HTMLSpanElement | null>(null);
   const hasCustomIcon = icon !== undefined;
+  const morphRef = React.useRef(isOpen ? 1 : 0);
+
+  useM3EScalarSpringEffect(isOpen ? 1 : 0, "fastSpatial", (val) => {
+    morphRef.current = val;
+    const clamped = Math.max(0, Math.min(1, val));
+    const geo = resolveToggleFabGeometry(size, val);
+    if (triggerRef.current) {
+      triggerRef.current.style.width = `${geo.containerSize.toFixed(1)}px`;
+      triggerRef.current.style.height = `${geo.containerSize.toFixed(1)}px`;
+      triggerRef.current.style.borderRadius = `${Number(geo.cornerRadius.toFixed(1))}px`;
+    }
+    if (iconWrapRef.current) {
+      iconWrapRef.current.style.width = `${geo.iconSize.toFixed(1)}px`;
+      iconWrapRef.current.style.height = `${geo.iconSize.toFixed(1)}px`;
+      iconWrapRef.current.style.rotate = hasCustomIcon
+        ? "0deg"
+        : `${geo.iconRotationDeg.toFixed(1)}deg`;
+    }
+    if (customIconRef.current) {
+      customIconRef.current.style.opacity = String(
+        Math.max(0, Math.min(1, 1 - clamped * 1.4)),
+      );
+      customIconRef.current.style.scale = `${(1 - 0.25 * clamped).toFixed(3)}`;
+      customIconRef.current.style.rotate = `${(45 * clamped).toFixed(1)}deg`;
+    }
+    if (closeIconRef.current) {
+      closeIconRef.current.style.opacity = String(
+        Math.max(0, Math.min(1, (clamped - 0.2) / 0.8)),
+      );
+      closeIconRef.current.style.scale = `${(0.75 + 0.25 * clamped).toFixed(3)}`;
+      closeIconRef.current.style.rotate = `${(-45 * (1 - clamped)).toFixed(1)}deg`;
+    }
+    if (menuDebugRef.current) {
+      menuDebugRef.current.textContent = `${Math.round(geo.containerSize)}px r:${geo.cornerRadius.toFixed(0)}`;
+    }
+  });
+
+  const clampedMorph = Math.max(0, Math.min(1, morphRef.current));
+  const fabGeo = resolveToggleFabGeometry(size, morphRef.current);
   const customIconOpacity = Math.max(0, Math.min(1, 1 - clampedMorph * 1.4));
   const closeIconOpacity = Math.max(0, Math.min(1, (clampedMorph - 0.2) / 0.8));
 
@@ -810,12 +986,13 @@ export function FABMenu({
         style={{
           width: `${fabGeo.containerSize.toFixed(1)}px`,
           height: `${fabGeo.containerSize.toFixed(1)}px`,
-          borderRadius: `${fabGeo.cornerRadius.toFixed(1)}px`,
+          borderRadius: `${Number(fabGeo.cornerRadius.toFixed(1))}px`,
         }}
         {...triggerRippleHandlers}
       >
         <span ref={triggerRippleRef} className="m3e-ripple" aria-hidden="true" />
         <span
+          ref={iconWrapRef}
           className="m3e-toggle-fab__icon"
           style={{
             position: "relative",
@@ -830,6 +1007,7 @@ export function FABMenu({
           {hasCustomIcon ? (
             <>
               <span
+                ref={customIconRef}
                 style={{
                   position: "absolute",
                   inset: 0,
@@ -844,6 +1022,7 @@ export function FABMenu({
                 {icon}
               </span>
               <span
+                ref={closeIconRef}
                 style={{
                   position: "absolute",
                   inset: 0,
@@ -863,7 +1042,7 @@ export function FABMenu({
           )}
         </span>
         {debugGeometry ? (
-          <span className="m3e-debug-badge" aria-hidden="true">
+          <span ref={menuDebugRef} className="m3e-debug-badge" aria-hidden="true">
             {Math.round(fabGeo.containerSize)}px r:{fabGeo.cornerRadius.toFixed(0)}
           </span>
         ) : null}
