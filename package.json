@@ -32,11 +32,14 @@
     "m3e:doctor": "node packages/m3eui/dist/cli/bin.js doctor",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
     "typecheck": "pnpm -r typecheck",
     "verify": "pnpm build && pnpm m3e:doctor && pnpm typecheck && pnpm test",
     "release": "pnpm build && pnpm --filter m3eui publish --no-git-checks --access public"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.1",
+    "@playwright/test": "^1.65.1",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

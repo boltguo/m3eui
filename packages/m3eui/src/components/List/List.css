@@ -184,7 +184,7 @@
 }
 
 .m3e-segmented-list__item[data-selected] .m3e-segmented-list__supporting {
-  color: color-mix(in srgb, var(--m3e-color-on-secondary-container) 82%, transparent);
+  color: var(--m3e-color-on-secondary-container);
 }
 
 .m3e-segmented-list__chevron {

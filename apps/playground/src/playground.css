@@ -659,7 +659,6 @@ body {
 .home-player__meta span {
   font-size: 14px;
   line-height: 20px;
-  opacity: 0.8;
 }
 
 .home-player__controls {
@@ -919,7 +918,7 @@ body {
 
 /* Shiki Syntax Highlighted Code Surfaces */
 :root {
-  --code-bg-light: #fafafa;
+  --code-bg-light: #ffffff;
   --code-bg-dark: #0d1117;
   --code-header-bg-light: #f3f4f6;
   --code-header-bg-dark: #161b22;
@@ -929,8 +928,8 @@ body {
   --code-fg-dark: #e6edf3;
   --code-muted-light: #57606a;
   --code-muted-dark: #8b949e;
-  --code-ln-light: #8c959f;
-  --code-ln-dark: #6e7681;
+  --code-ln-light: #57606a;
+  --code-ln-dark: #8b949e;
   --code-copied-light: #15803d;
   --code-copied-dark: #4ade80;
 

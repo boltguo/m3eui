@@ -312,17 +312,15 @@ export function SiteHeader({
             size="xs"
             variant="outlined"
             className="m3e-cmd-trigger"
-            aria-label={ui.searchAriaLabel}
+            aria-keyshortcuts="Control+K Meta+K"
             leadingIcon={<SearchIcon size={15} />}
             onClick={onOpenCommandPalette}
           >
             <span className="m3e-cmd-trigger__content">
               <span className="m3e-cmd-trigger__text">{ui.searchBtnLabel}</span>
-              <Kbd
-                size="sm"
-                className="m3e-cmd-trigger__kbd"
-                keys={["mod", "k"]}
-              />
+              <span className="m3e-cmd-trigger__kbd" aria-hidden="true">
+                <Kbd size="sm" keys={["mod", "k"]} />
+              </span>
             </span>
           </Button>
 
@@ -334,7 +332,7 @@ export function SiteHeader({
                 size="xs"
                 variant="outlined"
                 className="docs-locale-btn"
-                aria-label={ui.languageLabel}
+                aria-label={`${activeLocaleOption.shortLabel} — ${ui.languageLabel}`}
                 leadingIcon={<GlobeIcon />}
                 trailingIcon={<ChevronDownTinyIcon />}
               >

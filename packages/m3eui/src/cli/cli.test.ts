@@ -433,6 +433,8 @@ describe("m3eui CLI — Declarative m3e.json & Theme Sync CLI Suite", () => {
       const cssPath = join(tempDir, "src/styles/m3e-theme.css");
       const beforeCss = readFileSync(cssPath, "utf8");
 
+      await new Promise((r) => setTimeout(r, 60));
+
       writeFileSync(
         join(tempDir, "m3e.json"),
         JSON.stringify({ theme: { seed: "#0B6B58" } }),
