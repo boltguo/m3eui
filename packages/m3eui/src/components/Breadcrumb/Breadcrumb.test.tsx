@@ -9,10 +9,12 @@ describe("Breadcrumb", () => {
   const dom = setupDomTest();
 
   it("marks the current item with aria-current='page'", () => {
+    const navRef = React.createRef<HTMLElement>();
     act(() => {
       dom.root.render(
         <PausedWrapper locale="zh-CN">
           <Breadcrumb
+            ref={navRef}
             items={[
               { key: "home", label: "首页", href: "/" },
               { key: "comp", label: "组件", href: "/components" },
@@ -23,6 +25,7 @@ describe("Breadcrumb", () => {
       );
     });
 
+    expect(navRef.current).toBe(dom.container.querySelector("nav.m3e-breadcrumb"));
     const breadcrumbOl = dom.container.querySelector("nav.m3e-breadcrumb > ol");
     expect(breadcrumbOl).not.toBeNull();
     const lastCrumbLink = breadcrumbOl?.querySelector(

@@ -178,22 +178,27 @@ export interface M3ESnippetProps {
   readonly style?: React.CSSProperties;
 }
 
-export function Snippet({
-  code,
-  symbol = "$",
-  variant = "filled",
-  hideCopyButton = false,
-  onCopy,
-  onCopyError,
-  className,
-  style,
-}: M3ESnippetProps): React.JSX.Element {
-  const lines = Array.isArray(code) ? code : [code];
-  const rawCopyValue = lines.join("\n");
+export const Snippet = React.forwardRef<HTMLDivElement, M3ESnippetProps>(
+  function Snippet(
+    {
+      code,
+      symbol = "$",
+      variant = "filled",
+      hideCopyButton = false,
+      onCopy,
+      onCopyError,
+      className,
+      style,
+    },
+    ref,
+  ): React.JSX.Element {
+    const lines = Array.isArray(code) ? code : [code];
+    const rawCopyValue = lines.join("\n");
 
-  return (
-    <div
-      className={className ? `m3e-snippet ${className}` : "m3e-snippet"}
+    return (
+      <div
+        ref={ref}
+        className={className ? `m3e-snippet ${className}` : "m3e-snippet"}
       data-variant={variant}
       style={{
         minHeight: `${KBD_SNIPPET_TOKENS.snippetMinHeight}px`,
@@ -224,4 +229,4 @@ export function Snippet({
       ) : null}
     </div>
   );
-}
+});

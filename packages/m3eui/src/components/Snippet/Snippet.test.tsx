@@ -1,3 +1,4 @@
+import * as React from "react";
 import { act } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { PausedWrapper, setupDomTest } from "../../__tests__/domHarness.js";
@@ -7,11 +8,13 @@ describe("Snippet & CopyButton", () => {
   const dom = setupDomTest();
 
   it("copies Snippet code and surfaces data-error + onCopyError on clipboard failure", async () => {
+    const snippetRef = React.createRef<HTMLDivElement>();
     let copiedSnippet = "";
     act(() => {
       dom.root.render(
         <PausedWrapper locale="zh-CN">
           <Snippet
+            ref={snippetRef}
             code="npx m3eui init"
             onCopy={(val) => {
               copiedSnippet = val;
@@ -21,6 +24,7 @@ describe("Snippet & CopyButton", () => {
       );
     });
 
+    expect(snippetRef.current).toBe(dom.container.querySelector(".m3e-snippet"));
     const snippetCopyBtn = dom.container.querySelector<HTMLButtonElement>(
       ".m3e-snippet .m3e-copy-button",
     );

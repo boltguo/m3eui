@@ -130,36 +130,41 @@ const BreadcrumbEllipsisButton = React.forwardRef<
   );
 });
 
-export function Breadcrumb({
-  items,
-  separator = "slash",
-  maxItems,
-  "aria-label": ariaLabel,
-  className,
-  style,
-}: M3EBreadcrumbProps): React.JSX.Element | null {
-  const { t } = useM3EI18n();
-  const [menuOpen, setMenuOpen] = React.useState(false);
+export const Breadcrumb = React.forwardRef<HTMLElement, M3EBreadcrumbProps>(
+  function Breadcrumb(
+    {
+      items,
+      separator = "slash",
+      maxItems,
+      "aria-label": ariaLabel,
+      className,
+      style,
+    },
+    ref,
+  ): React.JSX.Element | null {
+    const { t } = useM3EI18n();
+    const [menuOpen, setMenuOpen] = React.useState(false);
 
-  if (items.length === 0) {
-    return null;
-  }
+    if (items.length === 0) {
+      return null;
+    }
 
-  const shouldCollapse =
-    typeof maxItems === "number" && maxItems >= 3 && items.length > maxItems;
+    const shouldCollapse =
+      typeof maxItems === "number" && maxItems >= 3 && items.length > maxItems;
 
-  const firstItem = items[0]!;
-  const trailingCount = shouldCollapse ? Math.max(1, maxItems - 2) : items.length;
-  const collapsedItems = shouldCollapse
-    ? items.slice(1, items.length - trailingCount)
-    : [];
-  const trailingItems = shouldCollapse
-    ? items.slice(items.length - trailingCount)
-    : items;
+    const firstItem = items[0]!;
+    const trailingCount = shouldCollapse ? Math.max(1, maxItems - 2) : items.length;
+    const collapsedItems = shouldCollapse
+      ? items.slice(1, items.length - trailingCount)
+      : [];
+    const trailingItems = shouldCollapse
+      ? items.slice(items.length - trailingCount)
+      : items;
 
-  return (
-    <nav
-      aria-label={ariaLabel ?? t("breadcrumb.ariaLabel")}
+    return (
+      <nav
+        ref={ref}
+        aria-label={ariaLabel ?? t("breadcrumb.ariaLabel")}
       className={className ? `m3e-breadcrumb ${className}` : "m3e-breadcrumb"}
       data-separator={separator}
       style={style}
@@ -225,4 +230,4 @@ export function Breadcrumb({
       </ol>
     </nav>
   );
-}
+});

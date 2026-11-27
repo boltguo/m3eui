@@ -14,21 +14,20 @@ export interface M3EScrollAreaProps {
   readonly style?: React.CSSProperties;
 }
 
-export function ScrollArea({
-  children,
-  maxHeight = 220,
-  orientation = "vertical",
-  className,
-  style,
-}: M3EScrollAreaProps): React.JSX.Element {
-  const showVertical = orientation === "vertical" || orientation === "both";
-  const showHorizontal = orientation === "horizontal" || orientation === "both";
+export const ScrollArea = React.forwardRef<HTMLDivElement, M3EScrollAreaProps>(
+  function ScrollArea(
+    { children, maxHeight = 220, orientation = "vertical", className, style },
+    ref,
+  ): React.JSX.Element {
+    const showVertical = orientation === "vertical" || orientation === "both";
+    const showHorizontal = orientation === "horizontal" || orientation === "both";
 
-  return (
-    <BaseScrollArea.Root
-      className={
-        className ? `m3e-scroll-area ${className}` : "m3e-scroll-area"
-      }
+    return (
+      <BaseScrollArea.Root
+        ref={ref}
+        className={
+          className ? `m3e-scroll-area ${className}` : "m3e-scroll-area"
+        }
       data-orientation={orientation}
       style={style}
     >
@@ -88,4 +87,4 @@ export function ScrollArea({
       {showVertical && showHorizontal ? <BaseScrollArea.Corner /> : null}
     </BaseScrollArea.Root>
   );
-}
+});

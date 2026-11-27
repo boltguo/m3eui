@@ -237,22 +237,26 @@ function PaginationStepButton({
   );
 }
 
-export function Pagination({
-  page: controlledPage,
-  defaultPage = 1,
-  totalPages: explicitTotalPages,
-  totalItems,
-  pageSize = 10,
-  onPageChange,
-  getItemHref,
-  siblingCount = 1,
-  size = "md",
-  showSummary = false,
-  disabled = false,
-  "aria-label": ariaLabel,
-  className,
-  style,
-}: M3EPaginationProps): React.JSX.Element {
+export const Pagination = React.forwardRef<HTMLElement, M3EPaginationProps>(
+  function Pagination(
+    {
+      page: controlledPage,
+      defaultPage = 1,
+      totalPages: explicitTotalPages,
+      totalItems,
+      pageSize = 10,
+      onPageChange,
+      getItemHref,
+      siblingCount = 1,
+      size = "md",
+      showSummary = false,
+      disabled = false,
+      "aria-label": ariaLabel,
+      className,
+      style,
+    },
+    ref,
+  ): React.JSX.Element {
   const { locale, t } = useM3EI18n();
   const computedTotalPages = Math.max(
     1,
@@ -329,6 +333,7 @@ export function Pagination({
 
   return (
     <nav
+      ref={ref}
       aria-label={ariaLabel ?? t("pagination.ariaLabel")}
       className={className ? `m3e-pagination ${className}` : "m3e-pagination"}
       data-size={size}
@@ -374,4 +379,4 @@ export function Pagination({
       </ul>
     </nav>
   );
-}
+});
