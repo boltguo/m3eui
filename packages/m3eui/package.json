@@ -3,8 +3,31 @@
   "version": "0.2.0",
   "type": "module",
   "license": "Apache-2.0",
-  "description": "Material 3 Expressive React component library built on @base-ui/react.",
-  "homepage": "https://github.com/boltguo/m3eui#readme",
+  "description": "Material 3 Expressive React component library built on @base-ui/react with HCT dynamic color, spring physics, and built-in i18n/RTL.",
+  "author": {
+    "name": "boltguo",
+    "url": "https://github.com/boltguo"
+  },
+  "keywords": [
+    "react",
+    "material-3",
+    "material-3-expressive",
+    "m3e",
+    "material-design",
+    "material-you",
+    "base-ui",
+    "components",
+    "ui",
+    "design-system",
+    "hct",
+    "dynamic-color",
+    "spring-physics",
+    "a11y",
+    "rtl",
+    "i18n",
+    "typescript"
+  ],
+  "homepage": "https://m3eui.vercel.app",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/boltguo/m3eui.git",
@@ -12,6 +35,12 @@
   },
   "bugs": {
     "url": "https://github.com/boltguo/m3eui/issues"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "bin": {
     "m3eui": "./dist/cli/bin.js",
@@ -58,6 +87,7 @@
       "import": "./dist/cli/index.js"
     },
     "./m3e.schema.json": "./m3e.schema.json",
+    "./package.json": "./package.json",
     "./components/_*": null,
     "./components/*": {
       "types": "./dist/components/*/*.d.ts",
@@ -66,6 +96,7 @@
   },
   "scripts": {
     "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.json && node scripts/postbuild.mjs",
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

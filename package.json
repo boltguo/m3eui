@@ -4,20 +4,36 @@
   "private": true,
   "type": "module",
   "license": "Apache-2.0",
+  "author": {
+    "name": "boltguo",
+    "url": "https://github.com/boltguo"
+  },
+  "homepage": "https://m3eui.vercel.app",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/boltguo/m3eui.git"
   },
+  "bugs": {
+    "url": "https://github.com/boltguo/m3eui/issues"
+  },
   "description": "Material 3 Expressive React component library monorepo.",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=10.0.0"
+  },
   "scripts": {
     "dev": "pnpm --filter m3eui-playground dev",
     "build": "pnpm --filter m3eui build && node packages/m3eui/dist/cli/bin.js sync && pnpm --filter m3eui-playground build",
+    "build:lib": "pnpm --filter m3eui build",
+    "clean": "pnpm --filter m3eui clean",
     "m3eui": "node packages/m3eui/dist/cli/bin.js",
     "m3e": "node packages/m3eui/dist/cli/bin.js",
     "m3e:sync": "node packages/m3eui/dist/cli/bin.js sync",
     "m3e:doctor": "node packages/m3eui/dist/cli/bin.js doctor",
     "test": "vitest run",
+    "test:watch": "vitest",
     "typecheck": "pnpm -r typecheck",
+    "verify": "pnpm build && pnpm m3e:doctor && pnpm typecheck && pnpm test",
     "release": "pnpm build && pnpm --filter m3eui publish --no-git-checks --access public"
   },
   "devDependencies": {
