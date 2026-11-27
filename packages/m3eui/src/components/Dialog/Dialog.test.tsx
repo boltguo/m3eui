@@ -71,4 +71,51 @@ describe("Dialog", () => {
     expect(popupEl).toBeInstanceOf(HTMLDivElement);
     expect(popupEl!.classList.contains("m3e-dialog__popup")).toBe(true);
   });
+
+  it("supports fullScreen always and mobile modes and defaults close button for fullScreen", () => {
+    act(() => {
+      dom.root.render(
+        <PausedWrapper locale="en-US">
+          <Dialog open fullScreen title="Full Editor">
+            Editor content
+          </Dialog>
+        </PausedWrapper>,
+      );
+    });
+
+    expect(
+      document.body
+        .querySelector(".m3e-dialog__viewport")
+        ?.getAttribute("data-fullscreen"),
+    ).toBe("always");
+    expect(
+      document.body
+        .querySelector(".m3e-dialog__popup")
+        ?.getAttribute("data-fullscreen"),
+    ).toBe("always");
+    expect(
+      document.body.querySelector('button[aria-label="Close dialog"]'),
+    ).not.toBeNull();
+
+    act(() => {
+      dom.root.render(
+        <PausedWrapper locale="en-US">
+          <Dialog open fullScreen="mobile" title="Responsive Dialog">
+            Responsive content
+          </Dialog>
+        </PausedWrapper>,
+      );
+    });
+
+    expect(
+      document.body
+        .querySelector(".m3e-dialog__viewport")
+        ?.getAttribute("data-fullscreen"),
+    ).toBe("mobile");
+    expect(
+      document.body
+        .querySelector(".m3e-dialog__popup")
+        ?.getAttribute("data-fullscreen"),
+    ).toBe("mobile");
+  });
 });

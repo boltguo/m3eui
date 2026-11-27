@@ -163,6 +163,36 @@
   z-index: 91;
 }
 
+.m3e-dialog__viewport[data-fullscreen="always"] {
+  padding: 0;
+}
+
+.m3e-dialog__popup[data-fullscreen="always"] {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100dvh;
+  border-radius: 0;
+  box-shadow: none;
+  background-color: var(--m3e-color-surface);
+}
+
+@media (max-width: 600px) {
+  .m3e-dialog__viewport[data-fullscreen="mobile"] {
+    padding: 0;
+  }
+
+  .m3e-dialog__popup[data-fullscreen="mobile"] {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100dvh;
+    border-radius: 0;
+    box-shadow: none;
+    background-color: var(--m3e-color-surface);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .m3e-dialog__backdrop,
   .m3e-dialog__popup {

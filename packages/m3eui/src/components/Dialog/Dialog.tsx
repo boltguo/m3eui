@@ -39,6 +39,7 @@ export interface M3EDialogProps {
   readonly children?: React.ReactNode;
   readonly actions?: React.ReactNode;
   readonly showCloseButton?: boolean;
+  readonly fullScreen?: boolean | "mobile";
   readonly className?: string;
   readonly style?: React.CSSProperties;
 }
@@ -80,7 +81,8 @@ export const Dialog = React.forwardRef<HTMLDivElement, M3EDialogProps>(function 
     description,
     children,
     actions,
-    showCloseButton = false,
+    showCloseButton,
+    fullScreen = false,
     className,
     style,
   },
@@ -88,6 +90,13 @@ export const Dialog = React.forwardRef<HTMLDivElement, M3EDialogProps>(function 
 ): React.JSX.Element {
   const { t } = useM3EI18n();
   const portalContainer = useM3EPortalContainer();
+  const effectiveShowClose = showCloseButton ?? fullScreen === true;
+  const fullScreenAttr =
+    fullScreen === true
+      ? "always"
+      : fullScreen === "mobile"
+        ? "mobile"
+        : undefined;
   return (
     <BaseDialog.Root
       open={open}
@@ -97,16 +106,20 @@ export const Dialog = React.forwardRef<HTMLDivElement, M3EDialogProps>(function 
       {trigger ? <BaseDialog.Trigger render={trigger} /> : null}
       <BaseDialog.Portal container={portalContainer}>
         <BaseDialog.Backdrop className="m3e-dialog__backdrop" />
-        <BaseDialog.Viewport className="m3e-dialog__viewport">
+        <BaseDialog.Viewport
+          className="m3e-dialog__viewport"
+          data-fullscreen={fullScreenAttr}
+        >
           <BaseDialog.Popup
             ref={ref}
             className={
               className ? `m3e-dialog__popup ${className}` : "m3e-dialog__popup"
             }
+            data-fullscreen={fullScreenAttr}
             data-has-icon={icon ? "" : undefined}
             style={style}
           >
-            {showCloseButton ? (
+            {effectiveShowClose ? (
               <DialogCloseIconButton
                 CloseComponent={BaseDialog.Close}
                 ariaLabel={t("dialog.close")}
@@ -114,7 +127,7 @@ export const Dialog = React.forwardRef<HTMLDivElement, M3EDialogProps>(function 
             ) : null}
             <div
               className="m3e-dialog__header"
-              data-has-close={showCloseButton ? "" : undefined}
+              data-has-close={effectiveShowClose ? "" : undefined}
             >
               {icon ? (
                 <div className="m3e-dialog__icon" aria-hidden="true">
