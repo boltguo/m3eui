@@ -4,9 +4,10 @@ import {
   readdirSync,
   readFileSync,
   statSync,
+  watch,
   writeFileSync,
 } from "node:fs";
-import { dirname, extname, join, resolve } from "node:path";
+import { basename, dirname, extname, join, resolve } from "node:path";
 import {
   type M3EColorModeSetting,
   type M3EConfig,
@@ -450,6 +451,53 @@ export function syncM3EThemeCss(
   return { configPath, cssPath, cssContent };
 }
 
+export function watchM3EThemeCss(
+  cwd: string,
+  customConfigPath?: string,
+  io?: {
+    readonly log?: (line: string) => void;
+    readonly error?: (line: string) => void;
+  },
+): { readonly close: () => void } {
+  const log = io?.log ?? ((line: string) => console.log(line));
+  const error = io?.error ?? ((line: string) => console.error(line));
+  const initial = syncM3EThemeCss(cwd, customConfigPath);
+  log(`[m3e] Synced static theme CSS -> ${initial.cssPath}`);
+
+  const targetFileName = basename(initial.configPath);
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let closed = false;
+
+  const watcher = watch(dirname(initial.configPath), (_eventType, filename) => {
+    if (closed) return;
+    if (filename && String(filename) !== targetFileName) return;
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      debounceTimer = null;
+      if (closed) return;
+      try {
+        const updated = syncM3EThemeCss(cwd, initial.configPath);
+        log(`[m3e] Re-synced static theme CSS -> ${updated.cssPath}`);
+      } catch (err) {
+        error(
+          `[m3e] Sync error: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    }, 100);
+  });
+
+  return {
+    close() {
+      closed = true;
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+        debounceTimer = null;
+      }
+      watcher.close();
+    },
+  };
+}
+
 export function scaffoldM3ELocalePack(
   cwd: string,
   localeCode: string,
@@ -710,6 +758,15 @@ export function runM3EDoctor(
           ? themeRecord.colorMode
           : "system",
       contrastLevel: contrastValid ? rawContrast : 0,
+      ...(typeof themeRecord?.autoContrast === "boolean"
+        ? { autoContrast: themeRecord.autoContrast }
+        : undefined),
+      ...(structuralIssues.length === 0 && isPlainRecord(themeRecord?.customColors)
+        ? {
+            customColors:
+              themeRecord.customColors as NonNullable<M3EConfig["theme"]>["customColors"],
+          }
+        : undefined),
       motionScheme: motionValid ? (motion as MotionSchemeName) : "expressive",
     },
     i18n: {
@@ -802,6 +859,53 @@ export function runM3EDoctor(
           ? "Zero hardcoded ARIA/placeholder/alt string literals in packages/m3eui/src/components"
           : `Found hardcoded UI literals: ${literalOffenders.join(", ")}`,
     });
+  } else {
+    const pkgPath = resolve(cwd, "package.json");
+    if (existsSync(pkgPath)) {
+      try {
+        const pkg = JSON.parse(readFileSync(pkgPath, "utf8")) as {
+          readonly dependencies?: Record<string, unknown>;
+          readonly devDependencies?: Record<string, unknown>;
+          readonly peerDependencies?: Record<string, unknown>;
+        };
+        const rawReact =
+          pkg.dependencies?.react ??
+          pkg.peerDependencies?.react ??
+          pkg.devDependencies?.react;
+        if (typeof rawReact === "string") {
+          const majorMatch = rawReact.match(/\d+/);
+          const major = majorMatch ? Number(majorMatch[0]) : null;
+          const passed = major === null || major >= 18;
+          checks.push({
+            name: "react-peer-version",
+            passed,
+            detail: passed
+              ? `React dependency "${rawReact}" satisfies >= 18`
+              : `React dependency "${rawReact}" is below required >= 18`,
+          });
+        }
+      } catch {
+        // Ignore unreadable package.json
+      }
+    }
+
+    const htmlCandidate = existsSync(resolve(cwd, "index.html"))
+      ? resolve(cwd, "index.html")
+      : existsSync(resolve(cwd, "public/index.html"))
+        ? resolve(cwd, "public/index.html")
+        : null;
+    if (htmlCandidate) {
+      const htmlContent = readFileSync(htmlCandidate, "utf8");
+      const hasColorSchemeMeta =
+        /<meta[^>]+name=["']color-scheme["']/i.test(htmlContent);
+      checks.push({
+        name: "html-color-scheme-meta",
+        passed: hasColorSchemeMeta,
+        detail: hasColorSchemeMeta
+          ? `Found <meta name="color-scheme"> in ${basename(htmlCandidate)}`
+          : `Missing <meta name="color-scheme" content="light dark"> in ${basename(htmlCandidate)} for light-dark() support`,
+      });
+    }
   }
 
   return {
@@ -924,8 +1028,21 @@ export function runM3ECli(
     if (cmd === "sync") {
       const parsed = parseCliArgs(rest, {
         valueFlags: ["--config"],
+        booleanFlags: ["--watch", "-w"],
         maxPositionals: 0,
       });
+      if (parsed.booleans.has("--watch") || parsed.booleans.has("-w")) {
+        const handle = watchM3EThemeCss(cwd, parsed.values["--config"], {
+          log,
+          error,
+        });
+        const configDisplay = parsed.values["--config"] ?? "m3e.json";
+        log(`[m3e] Watching ${configDisplay} for changes...`);
+        const cleanup = () => handle.close();
+        process.once("SIGINT", cleanup);
+        process.once("SIGTERM", cleanup);
+        return 0;
+      }
       const result = syncM3EThemeCss(cwd, parsed.values["--config"]);
       log(`[m3e] Synced static theme CSS -> ${result.cssPath}`);
       return 0;
@@ -989,7 +1106,7 @@ export function runM3ECli(
           "",
           "Usage:",
           "  npx m3eui init [--seed #6750A4] [--variant expressive] [--locale zh-CN] [--output src/styles/m3e-theme.css] [--force]",
-          "  npx m3eui sync [--config m3e.json]",
+          "  npx m3eui sync [--config m3e.json] [--watch]",
           "  npx m3eui locale --list | npx m3eui locale <bcp47-tag> [--out src/i18n/<tag>.ts] [--force]",
           "  npx m3eui doctor [--config m3e.json]",
         ].join("\n"),

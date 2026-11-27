@@ -112,7 +112,7 @@ export function DynamicApp({ children }: { children: React.ReactNode }) {
 | 命令 | 说明 |
 | :--- | :--- |
 | `npx m3eui init [--seed] [--variant] [--locale] [--output] [--force]` | 创建 `m3e.json` 并生成静态主题 CSS |
-| `npx m3eui sync [--config]` | 根据 `m3e.json` 重新生成静态主题 CSS |
+| `npx m3eui sync [--config] [--watch]` | 根据 `m3e.json` 重新生成静态主题 CSS |
 | `npx m3eui locale --list \| <bcp47-tag> [--out] [--force]` | 列出内置语言或生成自定义语言包模板 |
 | `npx m3eui doctor [--config]` | 校验 `m3e.json`、静态主题同步与国际化规范 |
 

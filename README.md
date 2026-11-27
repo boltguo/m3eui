@@ -138,7 +138,7 @@ Both `npx m3eui` and `npx m3e` are supported.
 | Command | Description |
 | :--- | :--- |
 | `npx m3eui init [--seed] [--variant] [--locale] [--output] [--force]` | Create `m3e.json` and generate static theme CSS |
-| `npx m3eui sync [--config]` | Regenerate static theme CSS from `m3e.json` |
+| `npx m3eui sync [--config] [--watch]` | Regenerate static theme CSS from `m3e.json` |
 | `npx m3eui locale --list \| <bcp47-tag> [--out] [--force]` | List built-in locales or scaffold a custom locale pack |
 | `npx m3eui doctor [--config]` | Validate `m3e.json`, theme CSS sync, and i18n checks |
 

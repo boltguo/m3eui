@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { runM3ECli, runM3EDoctor } from "./index.js";
+import { runM3ECli, runM3EDoctor, watchM3EThemeCss } from "./index.js";
 
 describe("m3eui CLI — Declarative m3e.json & Theme Sync CLI Suite", () => {
   let tempDir: string;
@@ -344,5 +344,118 @@ describe("m3eui CLI — Declarative m3e.json & Theme Sync CLI Suite", () => {
     expect(schemaCheck?.detail).toContain("theme.autoContrast");
     expect(schemaCheck?.detail).toContain("theme.customColors.brand");
     expect(schemaCheck?.detail).toContain("theme.customColors.accent.extraKey");
+  });
+
+  it("checks static-theme-css-sync with customColors/autoContrast and runs external project health checks", () => {
+    runM3ECli(["init"], {
+      cwd: tempDir,
+      log: () => {},
+      error: () => {},
+    });
+
+    writeFileSync(
+      join(tempDir, "m3e.json"),
+      JSON.stringify({
+        theme: {
+          seed: "#6750A4",
+          autoContrast: true,
+          customColors: { brand: "#006C51" },
+        },
+      }),
+      "utf8",
+    );
+    expect(
+      runM3ECli(["sync"], {
+        cwd: tempDir,
+        log: () => {},
+        error: () => {},
+      }),
+    ).toBe(0);
+
+    writeFileSync(
+      join(tempDir, "package.json"),
+      JSON.stringify({ dependencies: { react: "^19.0.0" } }),
+      "utf8",
+    );
+    writeFileSync(
+      join(tempDir, "index.html"),
+      '<!doctype html><html><head><meta name="color-scheme" content="light dark"></head><body></body></html>',
+      "utf8",
+    );
+
+    const healthyReport = runM3EDoctor(tempDir);
+    expect(healthyReport.ok).toBe(true);
+    expect(
+      healthyReport.checks.find((c) => c.name === "static-theme-css-sync")?.passed,
+    ).toBe(true);
+    expect(
+      healthyReport.checks.find((c) => c.name === "react-peer-version")?.passed,
+    ).toBe(true);
+    expect(
+      healthyReport.checks.find((c) => c.name === "html-color-scheme-meta")?.passed,
+    ).toBe(true);
+
+    writeFileSync(
+      join(tempDir, "package.json"),
+      JSON.stringify({ dependencies: { react: "^17.0.2" } }),
+      "utf8",
+    );
+    writeFileSync(
+      join(tempDir, "index.html"),
+      "<!doctype html><html><head></head><body></body></html>",
+      "utf8",
+    );
+
+    const unhealthyReport = runM3EDoctor(tempDir);
+    expect(unhealthyReport.ok).toBe(false);
+    expect(
+      unhealthyReport.checks.find((c) => c.name === "react-peer-version")?.passed,
+    ).toBe(false);
+    expect(
+      unhealthyReport.checks.find((c) => c.name === "html-color-scheme-meta")?.passed,
+    ).toBe(false);
+  });
+
+  it("re-syncs theme CSS automatically in watchM3EThemeCss when m3e.json changes", async () => {
+    runM3ECli(["init", "--seed", "#6750A4"], {
+      cwd: tempDir,
+      log: () => {},
+      error: () => {},
+    });
+
+    const logs: string[] = [];
+    const watcher = watchM3EThemeCss(tempDir, undefined, {
+      log: (line) => logs.push(line),
+      error: () => {},
+    });
+
+    try {
+      const cssPath = join(tempDir, "src/styles/m3e-theme.css");
+      const beforeCss = readFileSync(cssPath, "utf8");
+
+      writeFileSync(
+        join(tempDir, "m3e.json"),
+        JSON.stringify({ theme: { seed: "#0B6B58" } }),
+        "utf8",
+      );
+
+      await new Promise<void>((resolveWait) => {
+        const deadline = Date.now() + 2000;
+        const poll = () => {
+          if (readFileSync(cssPath, "utf8") !== beforeCss || Date.now() >= deadline) {
+            resolveWait();
+          } else {
+            setTimeout(poll, 30);
+          }
+        };
+        setTimeout(poll, 120);
+      });
+
+      const afterCss = readFileSync(cssPath, "utf8");
+      expect(afterCss).not.toBe(beforeCss);
+      expect(logs.some((l) => l.includes("Synced static theme CSS"))).toBe(true);
+    } finally {
+      watcher.close();
+    }
   });
 });
