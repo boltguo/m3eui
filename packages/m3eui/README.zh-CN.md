@@ -121,7 +121,7 @@ export function DynamicApp({ children }: { children: React.ReactNode }) {
 | 路径 | 说明 |
 | :--- | :--- |
 | `m3eui` | 兼容 RSC 的组件、Hooks、`M3EProvider`、`M3EPortal`、配置、国际化与令牌入口 |
-| `m3eui/styles.css` | 组件样式表（`--m3e-*` 变量 + `light-dark()`） |
+| `m3eui/styles.css` | 组件样式表（`--m3e-*` 变量、`.m3e-type-*` 排版工具类与 `light-dark()`） |
 | `m3eui/tailwind.css` | Tailwind CSS v4 `@theme inline` 令牌映射 |
 | `m3eui/tokens` | 纯函数兼容 RSC 的 61 语义角色 HCT 色阶计算、图片取色、自定义协调扩展色、弹簧求解、圆角拓扑、`parseShortcutKeys` 与 35 种 `MaterialShapes`（`getMaterialShape`） |
 | `m3eui/tokens.json` | 预计算的静态令牌与多边形 JSON |
