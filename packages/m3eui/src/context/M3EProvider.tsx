@@ -10,6 +10,7 @@ import { Toast as BaseToast } from "@base-ui/react/toast";
 import { Tooltip as BaseTooltip } from "@base-ui/react/tooltip";
 import {
   type ColorPlatform,
+  type M3ECustomColorInput,
   type M3EThemeTokens,
 } from "../tokens/color.js";
 import {
@@ -72,6 +73,7 @@ export interface M3EProviderProps {
     readonly variant: ColorSchemeVariant;
     readonly contrastLevel: number;
     readonly platform: ColorPlatform;
+    readonly customColors?: Readonly<Record<string, M3ECustomColorInput>>;
   }) => M3EThemeTokens;
   readonly initialSeedHex?: string;
   readonly initialSchemeVariant?: ColorSchemeVariant;
@@ -102,7 +104,7 @@ export function M3EProvider({
   initialSchemeVariant,
   initialPlatform,
   initialContrastLevel,
-  autoContrast = false,
+  autoContrast,
   initialColorMode,
   initialLocale,
   locale: controlledLocale,
@@ -247,8 +249,9 @@ export function M3EProvider({
     return () => window.removeEventListener("storage", onStorage);
   }, [fallbackColorMode, syncDocumentRoot]);
 
+  const effectiveAutoContrast = autoContrast ?? resolvedCfg.autoContrast;
   const effectiveContrastLevel =
-    autoContrast && prefersHighContrast && contrastLevel === 0
+    effectiveAutoContrast && prefersHighContrast && contrastLevel === 0
       ? 0.5
       : contrastLevel;
 
@@ -260,9 +263,19 @@ export function M3EProvider({
             variant: schemeVariant,
             contrastLevel: effectiveContrastLevel,
             platform,
+            ...(resolvedCfg.customColors
+              ? { customColors: resolvedCfg.customColors }
+              : undefined),
           })
         : M3E_DEFAULT_THEME,
-    [themeEngine, seedHex, schemeVariant, effectiveContrastLevel, platform],
+    [
+      themeEngine,
+      seedHex,
+      schemeVariant,
+      effectiveContrastLevel,
+      platform,
+      resolvedCfg.customColors,
+    ],
   );
 
   const motionScheme = MOTION_SCHEMES[motionSchemeName];
@@ -406,6 +419,10 @@ export function M3EProvider({
         platform,
         colorMode,
         contrastLevel,
+        autoContrast: effectiveAutoContrast,
+        ...(resolvedCfg.customColors
+          ? { customColors: resolvedCfg.customColors }
+          : undefined),
         motionScheme: motionSchemeName,
         locale: canonicalLocale,
         directionMode,
@@ -417,6 +434,8 @@ export function M3EProvider({
       platform,
       colorMode,
       contrastLevel,
+      effectiveAutoContrast,
+      resolvedCfg.customColors,
       motionSchemeName,
       canonicalLocale,
       directionMode,

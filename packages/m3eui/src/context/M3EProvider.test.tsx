@@ -416,4 +416,58 @@ describe("M3EProvider & M3EPortal", () => {
       window.matchMedia = originalMatchMedia;
     }
   });
+
+  it("reads theme.autoContrast and theme.customColors from config and preserves them in exportConfigJson", () => {
+    const originalMatchMedia = window.matchMedia;
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: query.includes("prefers-contrast: more"),
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+
+    let capturedBrand: string | undefined;
+    let capturedContrast = 0;
+    let exportedJson = "";
+
+    function ConfigProbe() {
+      const { themeTokens, exportConfigJson } = useM3E();
+      capturedBrand = themeTokens.customColors?.brand?.light.color;
+      capturedContrast = themeTokens.contrastLevel;
+      exportedJson = exportConfigJson();
+      return null;
+    }
+
+    try {
+      act(() => {
+        dom.root.render(
+          <M3EProvider
+            syncDocumentRoot={false}
+            config={{
+              theme: {
+                seed: "#6750A4",
+                autoContrast: true,
+                customColors: { brand: "#006C51" },
+              },
+            }}
+            themeEngine={generateM3EThemeTokens}
+          >
+            <ConfigProbe />
+          </M3EProvider>,
+        );
+      });
+
+      expect(capturedBrand).toMatch(/^#[0-9a-f]{6}$/);
+      expect(capturedContrast).toBe(0.5);
+      const parsed = JSON.parse(exportedJson);
+      expect(parsed.theme.autoContrast).toBe(true);
+      expect(parsed.theme.customColors).toEqual({ brand: "#006C51" });
+    } finally {
+      window.matchMedia = originalMatchMedia;
+    }
+  });
 });

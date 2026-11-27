@@ -61,6 +61,38 @@
           "default": 0,
           "description": "Contrast level in [-1, 1]."
         },
+        "autoContrast": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically elevate contrast level to 0.5 when prefers-contrast: more is active and contrastLevel is 0."
+        },
+        "customColors": {
+          "type": "object",
+          "description": "Custom semantic color roles harmonized to the theme seed.",
+          "additionalProperties": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$"
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["hex"],
+                "properties": {
+                  "hex": {
+                    "type": "string",
+                    "pattern": "^#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$"
+                  },
+                  "harmonize": {
+                    "type": "boolean",
+                    "default": true
+                  }
+                }
+              }
+            ]
+          }
+        },
         "motionScheme": {
           "type": "string",
           "enum": ["expressive", "standard"],

@@ -1,9 +1,8 @@
 import type { TextDirection } from "@base-ui/react/direction-provider";
 import {
   type ColorPlatform,
-  type SemanticColorRoleKey,
+  type M3ECustomColorInput,
   generateM3EThemeTokens,
-  roleKeyToCssVarName,
 } from "./tokens/color.js";
 import {
   type ColorSchemeVariant,
@@ -51,6 +50,8 @@ export interface M3EConfig {
     readonly platform?: ColorPlatform;
     readonly colorMode?: M3EColorModeSetting;
     readonly contrastLevel?: number;
+    readonly autoContrast?: boolean;
+    readonly customColors?: Readonly<Record<string, M3ECustomColorInput>>;
     readonly motionScheme?: MotionSchemeName;
   };
   readonly i18n?: {
@@ -74,6 +75,8 @@ export interface ResolvedM3EConfig {
   readonly platform: ColorPlatform;
   readonly colorMode: M3EColorModeSetting;
   readonly contrastLevel: number;
+  readonly autoContrast: boolean;
+  readonly customColors?: Readonly<Record<string, M3ECustomColorInput>>;
   readonly motionScheme: MotionSchemeName;
   readonly locale: M3ELocale;
   readonly directionMode: M3EDirectionSetting;
@@ -104,6 +107,35 @@ function oneOf<T extends string>(
   return allowed.includes(value as T) ? (value as T) : fallback;
 }
 
+function resolveCustomColors(
+  raw: unknown,
+): Readonly<Record<string, M3ECustomColorInput>> | undefined {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return undefined;
+  }
+  const out: Record<string, M3ECustomColorInput> = {};
+  let count = 0;
+  for (const [name, entry] of Object.entries(raw)) {
+    if (typeof entry === "string") {
+      out[name] = entry;
+      count++;
+    } else if (
+      typeof entry === "object" &&
+      entry !== null &&
+      !Array.isArray(entry) &&
+      typeof (entry as { hex?: unknown }).hex === "string"
+    ) {
+      const harmonize = (entry as { harmonize?: unknown }).harmonize;
+      out[name] =
+        typeof harmonize === "boolean"
+          ? { hex: (entry as { hex: string }).hex, harmonize }
+          : { hex: (entry as { hex: string }).hex };
+      count++;
+    }
+  }
+  return count > 0 ? out : undefined;
+}
+
 export function resolveM3EConfig(config?: M3EConfigInput): ResolvedM3EConfig {
   const style = config?.style === "standard" ? "standard" : "expressive";
   const seedHex = config?.theme?.seed ?? "#6750A4";
@@ -126,6 +158,8 @@ export function resolveM3EConfig(config?: M3EConfigInput): ResolvedM3EConfig {
     -1,
     Math.min(1, config?.theme?.contrastLevel ?? 0),
   );
+  const autoContrast = Boolean(config?.theme?.autoContrast);
+  const customColors = resolveCustomColors(config?.theme?.customColors);
   const motionScheme = oneOf<MotionSchemeName>(
     config?.theme?.motionScheme,
     ["expressive", "standard"],
@@ -152,6 +186,8 @@ export function resolveM3EConfig(config?: M3EConfigInput): ResolvedM3EConfig {
     platform,
     colorMode,
     contrastLevel,
+    autoContrast,
+    ...(customColors ? { customColors } : undefined),
     motionScheme,
     locale,
     directionMode,
@@ -171,12 +207,17 @@ export function serializeM3EConfig(
     platform: ColorPlatform;
     colorMode: M3EColorModeSetting;
     contrastLevel: number;
+    autoContrast: boolean;
+    customColors: Readonly<Record<string, M3ECustomColorInput>>;
     motionScheme: MotionSchemeName;
     locale: M3ELocale;
     directionMode: M3EDirectionSetting;
     cssOutput: string;
   }>,
 ): string {
+  const hasCustomColors =
+    Boolean(input.customColors) &&
+    Object.keys(input.customColors!).length > 0;
   const doc: M3EConfig = {
     $schema:
       input.schemaUrl ??
@@ -188,6 +229,8 @@ export function serializeM3EConfig(
       platform: input.platform ?? "phone",
       colorMode: input.colorMode ?? "system",
       contrastLevel: input.contrastLevel ?? 0,
+      ...(input.autoContrast === true ? { autoContrast: true } : undefined),
+      ...(hasCustomColors ? { customColors: input.customColors } : undefined),
       motionScheme: input.motionScheme ?? "expressive",
     },
     i18n: {
@@ -235,6 +278,7 @@ export function generateM3EStaticThemeCss(config?: M3EConfigInput): string {
     variant: resolved.schemeVariant,
     contrastLevel: resolved.contrastLevel,
     platform: resolved.platform,
+    ...(resolved.customColors ? { customColors: resolved.customColors } : undefined),
   });
   const scheme = MOTION_SCHEMES[resolved.motionScheme];
   const motionVars = generateM3EMotionCssVars(scheme, 1);
@@ -284,28 +328,49 @@ export function generateM3EStaticThemeCss(config?: M3EConfigInput): string {
     "",
   );
 
-  const roleKeys = Object.keys(tokens.light) as SemanticColorRoleKey[];
+  if (resolved.autoContrast && resolved.contrastLevel === 0) {
+    const hcTokens = generateM3EThemeTokens({
+      seedHex: resolved.seedHex,
+      variant: resolved.schemeVariant,
+      contrastLevel: 0.5,
+      platform: resolved.platform,
+      ...(resolved.customColors ? { customColors: resolved.customColors } : undefined),
+    });
+    lines.push(`@media (prefers-contrast: more) {`, `  :root {`);
+    for (const [key, val] of Object.entries(hcTokens.cssLightDarkVars)) {
+      lines.push(`    ${key}: ${val};`);
+    }
+    lines.push(`  }`, `}`, "");
+  }
+
+  const fallbackPairs: readonly [string, string, string][] = Object.keys(
+    tokens.cssLightDarkVars,
+  )
+    .filter((key) => !key.endsWith("-light") && !key.endsWith("-dark"))
+    .flatMap((cssVar) => {
+      const lightVal = tokens.cssLightDarkVars[`${cssVar}-light`];
+      const darkVal = tokens.cssLightDarkVars[`${cssVar}-dark`];
+      return lightVal && darkVal ? [[cssVar, lightVal, darkVal] as const] : [];
+    });
+
   lines.push(`@supports not (color: light-dark(white, black)) {`);
   lines.push(`  :root {`);
-  for (const key of roleKeys) {
-    const cssVar = roleKeyToCssVarName(key);
-    lines.push(`    ${cssVar}: var(${cssVar}-light, ${tokens.light[key]});`);
+  for (const [cssVar, lightVal] of fallbackPairs) {
+    lines.push(`    ${cssVar}: var(${cssVar}-light, ${lightVal});`);
   }
   lines.push(`  }`);
   lines.push(`  @media (prefers-color-scheme: dark) {`);
   lines.push(`    :root:not([data-color-mode="light"]),`);
   lines.push(`    .m3e-scope[data-color-mode="system"] {`);
-  for (const key of roleKeys) {
-    const cssVar = roleKeyToCssVarName(key);
-    lines.push(`      ${cssVar}: var(${cssVar}-dark, ${tokens.dark[key]});`);
+  for (const [cssVar, , darkVal] of fallbackPairs) {
+    lines.push(`      ${cssVar}: var(${cssVar}-dark, ${darkVal});`);
   }
   lines.push(`    }`);
   lines.push(`  }`);
   lines.push(`  :root[data-color-mode="dark"],`);
   lines.push(`  .m3e-scope[data-color-mode="dark"] {`);
-  for (const key of roleKeys) {
-    const cssVar = roleKeyToCssVarName(key);
-    lines.push(`    ${cssVar}: var(${cssVar}-dark, ${tokens.dark[key]});`);
+  for (const [cssVar, , darkVal] of fallbackPairs) {
+    lines.push(`    ${cssVar}: var(${cssVar}-dark, ${darkVal});`);
   }
   lines.push(`  }`);
   lines.push(`}`, "");

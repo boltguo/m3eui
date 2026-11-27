@@ -4,6 +4,7 @@ import {
   generateM3EStaticThemeCss,
   getM3EInitScript,
   resolveM3EConfig,
+  serializeM3EConfig,
 } from "./config.js";
 import * as Primitives from "./primitives.js";
 
@@ -54,5 +55,47 @@ describe("m3eui/config & m3eui/primitives", () => {
     expect(Primitives.DialogPrimitives).toBeDefined();
     expect(Primitives.SelectPrimitives).toBeDefined();
     expect(typeof Primitives.mergeProps).toBe("function");
+  });
+
+  it("supports theme.autoContrast and theme.customColors in resolver, static CSS, and serializer", () => {
+    const cfg = defineM3EConfig({
+      theme: {
+        seed: "#6750A4",
+        autoContrast: true,
+        customColors: {
+          brand: "#006C51",
+          accent: { hex: "#D84315", harmonize: false },
+        },
+      },
+    });
+
+    const resolved = resolveM3EConfig(cfg);
+    expect(resolved.autoContrast).toBe(true);
+    expect(resolved.customColors).toEqual({
+      brand: "#006C51",
+      accent: { hex: "#D84315", harmonize: false },
+    });
+
+    const css = generateM3EStaticThemeCss(cfg);
+    expect(css).toContain("--m3e-color-brand: light-dark(");
+    expect(css).toContain("--m3e-color-brand-container: light-dark(");
+    expect(css).toContain("--m3e-color-accent: light-dark(");
+    expect(css).toContain("@media (prefers-contrast: more) {");
+    expect(css).toMatch(
+      /@supports not \(color: light-dark\(white, black\)\)[\s\S]*--m3e-color-brand: var\(--m3e-color-brand-light/,
+    );
+
+    const defaultSerialized = JSON.parse(serializeM3EConfig({}));
+    expect(defaultSerialized.theme.autoContrast).toBeUndefined();
+    expect(defaultSerialized.theme.customColors).toBeUndefined();
+
+    const customSerialized = JSON.parse(
+      serializeM3EConfig({
+        autoContrast: true,
+        customColors: { brand: "#006C51" },
+      }),
+    );
+    expect(customSerialized.theme.autoContrast).toBe(true);
+    expect(customSerialized.theme.customColors).toEqual({ brand: "#006C51" });
   });
 });

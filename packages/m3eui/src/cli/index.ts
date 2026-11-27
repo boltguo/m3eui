@@ -66,6 +66,8 @@ const ALLOWED_THEME_KEYS = new Set([
   "platform",
   "colorMode",
   "contrastLevel",
+  "autoContrast",
+  "customColors",
   "motionScheme",
 ]);
 const ALLOWED_I18N_KEYS = new Set(["locale", "direction", "messages"]);
@@ -160,6 +162,53 @@ function collectSchemaStructuralErrors(raw: Record<string, unknown>): string[] {
         errors.push(
           `Invalid "theme.colorMode": "${String(raw.theme.colorMode)}" (expected "light", "dark", or "system")`,
         );
+      }
+      if (
+        raw.theme.autoContrast !== undefined &&
+        typeof raw.theme.autoContrast !== "boolean"
+      ) {
+        errors.push(`"theme.autoContrast" must be a boolean`);
+      }
+      if (raw.theme.customColors !== undefined) {
+        if (!isPlainRecord(raw.theme.customColors)) {
+          errors.push(`"theme.customColors" must be an object`);
+        } else {
+          for (const [colorName, colorVal] of Object.entries(raw.theme.customColors)) {
+            if (typeof colorVal === "string") {
+              if (!HEX_SEED_RE.test(colorVal)) {
+                errors.push(
+                  `Invalid "theme.customColors.${colorName}": "${colorVal}" (expected #RRGGBB or #RRGGBBAA)`,
+                );
+              }
+            } else if (isPlainRecord(colorVal)) {
+              for (const ck of Object.keys(colorVal)) {
+                if (ck !== "hex" && ck !== "harmonize") {
+                  errors.push(`Unknown key "theme.customColors.${colorName}.${ck}"`);
+                }
+              }
+              if (
+                typeof colorVal.hex !== "string" ||
+                !HEX_SEED_RE.test(colorVal.hex)
+              ) {
+                errors.push(
+                  `Invalid "theme.customColors.${colorName}.hex": "${String(colorVal.hex)}" (expected #RRGGBB or #RRGGBBAA)`,
+                );
+              }
+              if (
+                colorVal.harmonize !== undefined &&
+                typeof colorVal.harmonize !== "boolean"
+              ) {
+                errors.push(
+                  `"theme.customColors.${colorName}.harmonize" must be a boolean`,
+                );
+              }
+            } else {
+              errors.push(
+                `"theme.customColors.${colorName}" must be a hex string or { hex, harmonize? }`,
+              );
+            }
+          }
+        }
       }
     }
   }

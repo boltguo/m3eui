@@ -295,4 +295,54 @@ describe("m3eui CLI — Declarative m3e.json & Theme Sync CLI Suite", () => {
     ).toBe(0);
     expect(readFileSync(localePath, "utf8")).toContain('"Close dialog"');
   });
+
+  it("validates theme.autoContrast and theme.customColors in m3e doctor", () => {
+    runM3ECli(["init"], {
+      cwd: tempDir,
+      log: () => {},
+      error: () => {},
+    });
+
+    writeFileSync(
+      join(tempDir, "m3e.json"),
+      JSON.stringify({
+        theme: {
+          seed: "#6750A4",
+          autoContrast: true,
+          customColors: {
+            brand: "#006C51",
+            accent: { hex: "#D84315", harmonize: false },
+          },
+        },
+      }),
+      "utf8",
+    );
+    const validReport = runM3EDoctor(tempDir);
+    expect(
+      validReport.checks.find((c) => c.name === "config-schema")?.passed,
+    ).toBe(true);
+
+    writeFileSync(
+      join(tempDir, "m3e.json"),
+      JSON.stringify({
+        theme: {
+          autoContrast: "yes",
+          customColors: {
+            brand: "not-a-hex",
+            accent: { hex: "#D84315", extraKey: 1 },
+          },
+        },
+      }),
+      "utf8",
+    );
+    const invalidReport = runM3EDoctor(tempDir);
+    const schemaCheck = invalidReport.checks.find(
+      (c) => c.name === "config-schema",
+    );
+    expect(invalidReport.ok).toBe(false);
+    expect(schemaCheck?.passed).toBe(false);
+    expect(schemaCheck?.detail).toContain("theme.autoContrast");
+    expect(schemaCheck?.detail).toContain("theme.customColors.brand");
+    expect(schemaCheck?.detail).toContain("theme.customColors.accent.extraKey");
+  });
 });
